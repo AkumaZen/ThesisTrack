@@ -7,17 +7,33 @@ from sqlalchemy.orm import Session
 
 from app.auth import require_api_key
 from app.db import get_db
-from app.models import BroadIndustry, Company, SpecificNiche, ThesisVersion
+from app.models import (
+    BroadIndustry,
+    Company,
+    HealthCheck,
+    KillTrigger,
+    MetricDefinition,
+    Observation,
+    SpecificNiche,
+    StatusEvent,
+    StatusProposal,
+    ThesisVersion,
+    TriggerEvaluation,
+)
 from app.schemas.company import (
+    ActiveOverrideOut,
     CompanyDetail,
     CompanyListResponse,
     CompanyOut,
+    KillTriggerOut,
+    ObservationOut,
     ThesisAmend,
     VersionDetail,
     VersionDiffEntry,
     VersionDiffResponse,
     VersionSummary,
 )
+from app.schemas.proposal import HealthCheckOut, ProposalOut
 from app.schemas.thesis import ThesisCreate
 from app.services.versioning import (
     AlreadyExistsError,
@@ -31,7 +47,13 @@ from app.services.versioning import (
 router = APIRouter(prefix="/api", tags=["companies"], dependencies=[Depends(require_api_key)])
 
 
-def _company_row_to_out(company: Company, industry_name: str, niche_name: str) -> CompanyOut:
+def _company_row_to_out(
+    company: Company,
+    industry_name: str,
+    niche_name: str,
+    has_active_override: bool = False,
+    core_metrics: Optional[dict[str, float]] = None,
+) -> CompanyOut:
     return CompanyOut(
         company_id=company.company_id,
         name=company.name,
@@ -45,7 +67,44 @@ def _company_row_to_out(company: Company, industry_name: str, niche_name: str) -
         conviction=company.conviction,
         last_reviewed=company.last_reviewed,
         current_version_id=company.current_version_id,
+        has_active_override=has_active_override,
+        core_metrics=core_metrics or {},
     )
+
+
+def _core_metrics_by_company(db: Session, companies: list[Company]) -> dict[str, dict[str, float]]:
+    """company_id -> {metric_key: value} for is_core registry metrics, read from
+    each company's current thesis_data.proof_points.model_specific_metrics — the
+    'denormalized convenience copy for the card render' BUILD_PLAN.md §1.2 describes."""
+    version_ids = [c.current_version_id for c in companies if c.current_version_id]
+    if not version_ids:
+        return {}
+    versions_by_id = {
+        v.version_id: v for v in db.scalars(select(ThesisVersion).where(ThesisVersion.version_id.in_(version_ids))).all()
+    }
+    core_keys = set(db.scalars(select(MetricDefinition.metric_key).where(MetricDefinition.is_core.is_(True))).all())
+
+    result = {}
+    for company in companies:
+        version = versions_by_id.get(company.current_version_id)
+        if version is None:
+            continue
+        snapshot = (version.thesis_data or {}).get("proof_points", {}).get("model_specific_metrics", {})
+        result[company.company_id] = {k: v for k, v in snapshot.items() if k in core_keys}
+    return result
+
+
+def _latest_override_flags(db: Session, company_ids: list[str]) -> dict[str, bool]:
+    """company_id -> whether that company's MOST RECENT status_event has override=True."""
+    if not company_ids:
+        return {}
+    rows = db.execute(
+        select(StatusEvent.company_id, StatusEvent.override)
+        .distinct(StatusEvent.company_id)
+        .where(StatusEvent.company_id.in_(company_ids))
+        .order_by(StatusEvent.company_id, StatusEvent.created_at.desc())
+    ).all()
+    return {company_id: bool(override) for company_id, override in rows}
 
 
 @router.post("/companies", response_model=CompanyOut, status_code=status.HTTP_201_CREATED)
@@ -102,7 +161,18 @@ def list_companies(
     stmt = stmt.order_by(sort_column).offset((page - 1) * page_size).limit(page_size)
 
     rows = db.execute(stmt).all()
-    items = [_company_row_to_out(company, industry_name, niche_name) for company, industry_name, niche_name in rows]
+    override_flags = _latest_override_flags(db, [company.company_id for company, _, _ in rows])
+    core_metrics = _core_metrics_by_company(db, [company for company, _, _ in rows])
+    items = [
+        _company_row_to_out(
+            company,
+            industry_name,
+            niche_name,
+            override_flags.get(company.company_id, False),
+            core_metrics.get(company.company_id),
+        )
+        for company, industry_name, niche_name in rows
+    ]
 
     return CompanyListResponse(items=items, total=total or 0, page=page, page_size=page_size)
 
@@ -127,7 +197,82 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
         .limit(8)
     ).all()
 
-    base = _company_row_to_out(company, industry_name, niche_name)
+    last_8_periods = list(
+        db.scalars(
+            select(Observation.period)
+            .where(Observation.company_id == company_id)
+            .distinct()
+            .order_by(Observation.period.desc())
+            .limit(8)
+        ).all()
+    )
+    observations = (
+        db.scalars(
+            select(Observation)
+            .where(Observation.company_id == company_id, Observation.period.in_(last_8_periods))
+            .order_by(Observation.period_end.desc())
+        ).all()
+        if last_8_periods
+        else []
+    )
+
+    health_checks = db.scalars(
+        select(HealthCheck).where(HealthCheck.company_id == company_id).order_by(HealthCheck.created_at.desc())
+    ).all()
+
+    pending_proposals = db.scalars(
+        select(StatusProposal)
+        .where(StatusProposal.company_id == company_id, StatusProposal.state == "pending")
+        .order_by(StatusProposal.created_at.desc())
+    ).all()
+
+    kill_triggers_out = []
+    if current_version is not None:
+        triggers = db.scalars(
+            select(KillTrigger).where(KillTrigger.version_id == current_version.version_id)
+        ).all()
+        for t in triggers:
+            latest_eval = db.scalar(
+                select(TriggerEvaluation)
+                .where(TriggerEvaluation.trigger_id == t.id)
+                .order_by(TriggerEvaluation.evaluated_at.desc())
+            )
+            kill_triggers_out.append(
+                KillTriggerOut(
+                    id=t.id,
+                    label=t.label,
+                    metric_key=t.metric_key,
+                    operator=t.operator,
+                    threshold=float(t.threshold) if t.threshold is not None else None,
+                    severity=t.severity,
+                    action=t.action,
+                    grace_periods=t.grace_periods,
+                    manual_check=t.manual_check,
+                    latest_observed_value=(
+                        float(latest_eval.observed_value)
+                        if latest_eval and latest_eval.observed_value is not None
+                        else None
+                    ),
+                    latest_breached=latest_eval.breached if latest_eval else None,
+                    latest_fired=latest_eval.fired if latest_eval else None,
+                )
+            )
+
+    latest_event = db.scalar(
+        select(StatusEvent).where(StatusEvent.company_id == company_id).order_by(StatusEvent.created_at.desc())
+    )
+    active_override = (
+        ActiveOverrideOut(
+            to_status=latest_event.to_status,
+            rationale=latest_event.rationale,
+            actor=latest_event.actor,
+            created_at=latest_event.created_at,
+        )
+        if latest_event and latest_event.override
+        else None
+    )
+
+    base = _company_row_to_out(company, industry_name, niche_name, active_override is not None)
     return CompanyDetail(
         **base.model_dump(),
         current_thesis=current_version.thesis_data if current_version else {},
@@ -141,6 +286,50 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
             )
             for v in versions
         ],
+        observations=[
+            ObservationOut(
+                period=o.period,
+                period_end=o.period_end,
+                metric_key=o.metric_key,
+                numeric_value=float(o.numeric_value) if o.numeric_value is not None else None,
+                text_value=o.text_value,
+                source_type=o.source_type,
+                source_url=o.source_url,
+                note=o.note,
+            )
+            for o in observations
+        ],
+        health_checks=[
+            HealthCheckOut(
+                id=h.id,
+                company_id=h.company_id,
+                period=h.period,
+                verdict=h.verdict,
+                source=h.source,
+                note=h.note,
+                human_confirmed=h.human_confirmed,
+                author=h.author,
+                created_at=h.created_at,
+            )
+            for h in health_checks
+        ],
+        pending_proposals=[
+            ProposalOut(
+                id=p.id,
+                company_id=p.company_id,
+                period=p.period,
+                proposed_status=p.proposed_status,
+                source=p.source,
+                rationale=p.rationale,
+                evidence=p.evidence,
+                state=p.state,
+                model_name=p.model_name,
+                created_at=p.created_at,
+            )
+            for p in pending_proposals
+        ],
+        kill_triggers=kill_triggers_out,
+        active_override=active_override,
     )
 
 

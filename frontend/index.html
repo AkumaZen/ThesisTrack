@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Investment Thesis Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <h1 class="font-semibold text-lg">Investment Thesis Platform</h1>
+      <div class="flex items-center gap-2">
+        <input id="api-key-input" placeholder="X-API-Key" class="rounded-md border border-slate-300 px-2 py-1 text-sm w-40" />
+        <button id="nav-companies" class="text-sm px-3 py-1.5 rounded-md hover:bg-slate-100">Companies</button>
+        <button id="nav-review-queue" class="text-sm px-3 py-1.5 rounded-md hover:bg-slate-100">Review Queue</button>
+        <button id="nav-export" class="text-sm px-3 py-1.5 rounded-md hover:bg-slate-100">Export</button>
+        <button id="nav-new-company" class="text-sm px-3 py-1.5 rounded-md bg-slate-800 text-white hover:bg-slate-700">+ New Company</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-5">
+    <div id="header-stats"></div>
+    <div id="facet-bar"></div>
+    <div id="main-panel">
+      <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div id="review-queue-view" class="hidden"></div>
+    </div>
+  </main>
+
+  <!-- Drawer (company detail) -->
+  <div id="drawer-overlay" class="hidden fixed inset-0 bg-black/30 z-40"></div>
+  <aside id="drawer" class="hidden fixed top-0 right-0 h-full w-full sm:w-[520px] bg-white shadow-xl z-50"></aside>
+
+  <!-- Generic centered modal (ingest / observations / health-check / ai-review / export) -->
+  <div id="modal-overlay" class="hidden fixed inset-0 bg-black/30 z-40 flex items-center justify-center p-4">
+    <div id="modal-panel" class="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col"></div>
+  </div>
+
+  <div id="toast" class="hidden fixed bottom-4 right-4 z-50 rounded-md px-4 py-2 text-sm text-white shadow-lg"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

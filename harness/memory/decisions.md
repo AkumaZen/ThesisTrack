@@ -154,3 +154,55 @@ Verified live: an unconfigured `/ai-review` fails with a 500 naming the
 missing env var, not a fabricated verdict.
 Evidence: `app/llm/client.py::get_llm_client`;
 `tests/test_ai_reviewer.py::test_get_llm_client_raises_clearly_when_unconfigured`.
+
+## ADR-013: GET /companies/{id} expanded to match §6 fully, while building P5
+P1's original `get_company` only returned `current_thesis` + `versions`.
+BUILD_PLAN.md §6 always specified more: "current thesis, last 8 periods of
+observations, health check history, pending proposals, active overrides" —
+a gap that wasn't caught by P1's tests because nothing in P1-P4 needed that
+data yet. P5's drawer (redlines with observed-vs-threshold, health-check
+timeline, override badge — §8 point 3, §5 rule 2) is the first thing that
+actually needs it, so it's fixed now rather than carried forward. Added:
+`observations` (last 8 periods), `health_checks`, `pending_proposals`,
+`kill_triggers` (with each trigger's latest observed/breached/fired from
+`trigger_evaluations`), and `active_override` (the company's most recent
+`status_events` row, if `override=TRUE`) — plus `has_active_override` on the
+card-level `CompanyOut` too, since §5 rule 2 requires the badge on the card,
+not just the drawer. "Active override" is defined as: the single most
+recent `status_events` row for the company has `override=TRUE` (a later
+non-override resolution clears it) — computed via `DISTINCT ON
+(company_id) ... ORDER BY created_at DESC` for the list view, so it stays
+one query per page rather than N+1.
+Evidence: `app/routers/companies.py::get_company`, `_latest_override_flags`;
+`app/schemas/company.py::CompanyDetail`;
+`tests/test_api_companies.py::test_company_detail_includes_observations_triggers_and_override_flag`.
+
+## ADR-014: P5 frontend scope trims — header stats page-capped, no sparkline charts, custom lightweight schema validator
+Three deliberate v1 simplifications against §8's full description:
+1. **Header stats** are computed client-side from one `GET /companies?page_size=200`
+   call rather than a dedicated aggregate endpoint. Correct up to 200
+   companies; a real aggregate endpoint is the right fix once portfolios
+   exceed that, not before.
+2. **Cards show `core_metrics` values (§1.2's denormalized snapshot from
+   `thesis_data`), not sparklines.** A real trend line needs a
+   per-company-per-metric time series fetch at list-render time, which is a
+   genuine N+1 risk; the delta/trend affordance §8 asks for is deferred
+   until there's a batched trend endpoint to drive it.
+3. **The JSON tab's client-side validator (`frontend/app.js::validateNode`)
+   is a small hand-written recursive checker** (required fields, types,
+   enums, `$ref`/`$defs` resolution) against the real
+   `contracts/thesis.schema.json` — not a full JSON Schema engine (no
+   `anyOf`/`pattern`/`format`). Business-rule validation (revenue split
+   sums, metric-registry membership, Premise/Conclusion counts) only exists
+   server-side in Pydantic and is surfaced via the 422 error list on submit.
+All three are scope trims to ship a genuinely working v1, not silent gaps —
+verified end-to-end in a real browser (chrome-devtools-axi): create company
+(JSON tab against the actual golden fixture), dynamic metrics field proven
+by inserting a live `metric_definitions` row and watching it appear with
+zero frontend changes, post a breaching observation, resolve the resulting
+proposal through the override-requires-a-note path, and confirm the
+override badge on both the header stat and the card.
+Evidence: `frontend/app.js`, `frontend/components/*.js`; this session's
+browser verification (no automated test suite covers static frontend
+assets — verification here is the browser trace itself, per the project's
+UI-change rule).

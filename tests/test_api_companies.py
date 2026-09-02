@@ -87,6 +87,58 @@ def test_create_company_rejects_unknown_taxonomy(client, golden_payload):
     assert resp.status_code == 422, resp.text
 
 
+def test_company_detail_includes_observations_triggers_and_override_flag(client, golden_payload):
+    """BUILD_PLAN.md §6: GET /companies/{id} returns 'last 8 periods of
+    observations, health check history, pending proposals, active overrides'
+    — this closes a P1 gap where the endpoint only returned thesis+versions."""
+    client.post("/api/companies", json=golden_payload)
+    client.post(
+        "/api/companies/BALU_FORGE/observations",
+        json={
+            "period": "FY26Q1",
+            "period_end": "2026-06-30",
+            "observations": [{"metric_key": "operating_margin_pct", "numeric_value": 15.0}],  # breaches
+        },
+    )
+
+    resp = client.get("/api/companies/BALU_FORGE")
+    detail = resp.json()
+    assert any(o["metric_key"] == "operating_margin_pct" for o in detail["observations"])
+    assert len(detail["pending_proposals"]) == 1
+    assert detail["pending_proposals"][0]["proposed_status"] == "broken"
+    kill_trigger = next(t for t in detail["kill_triggers"] if t["metric_key"] == "operating_margin_pct")
+    assert kill_trigger["latest_breached"] is True
+    assert detail["active_override"] is None  # nothing resolved/overridden yet
+    assert detail["has_active_override"] is False
+
+    proposal_id = detail["pending_proposals"][0]["id"]
+    client.post(f"/api/proposals/{proposal_id}/resolve", json={"action": "reject", "note": "transient"})
+
+    resp = client.get("/api/companies/BALU_FORGE")
+    detail = resp.json()
+    assert detail["active_override"] is not None
+    assert detail["active_override"]["to_status"] == "on_track"
+    assert detail["has_active_override"] is True
+
+    # and the card-list view carries the same flag (used for the badge, §5 rule 2)
+    resp = client.get("/api/companies")
+    card = next(c for c in resp.json()["items"] if c["company_id"] == "BALU_FORGE")
+    assert card["has_active_override"] is True
+
+
+def test_company_card_list_includes_core_metrics_snapshot(client, golden_payload):
+    """§1.2: thesis_data's model_specific_metrics is the denormalized copy for
+    the card render — core metrics should appear without opening the drawer."""
+    client.post("/api/companies", json=golden_payload)
+    resp = client.get("/api/companies")
+    card = next(c for c in resp.json()["items"] if c["company_id"] == "BALU_FORGE")
+    # operating_margin_pct and capacity_utilization_pct are is_core for 'factory'
+    assert card["core_metrics"]["operating_margin_pct"] == 21.4
+    assert card["core_metrics"]["capacity_utilization_pct"] == 68.0
+    # working_capital_days is also is_core=true in the §3 registry
+    assert "working_capital_days" in card["core_metrics"]
+
+
 def test_create_company_requires_api_key(golden_payload):
     with TestClient(app) as anon_client:
         resp = anon_client.post("/api/companies", json=golden_payload)

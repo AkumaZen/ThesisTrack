@@ -1,15 +1,20 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from app.routers import ai_review, companies, health, observations, taxonomy
+from app.routers import ai_review, companies, health as health_router, observations, taxonomy
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="Investment Thesis Platform")
 
 app.include_router(companies.router)
 app.include_router(observations.router)
 app.include_router(taxonomy.router)
-app.include_router(health.router)
+app.include_router(health_router.router)
 app.include_router(ai_review.router)
 
 
@@ -23,5 +28,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.get("/health")
-def health() -> dict:
+def health_check() -> dict:
     return {"status": "ok"}
+
+
+# Registered last: /api/*, /health, and /contracts/* above all keep precedence
+# over this catch-all. The frontend (P5) validates client-side against the
+# same contracts/thesis.schema.json the backend generates (P0).
+app.mount("/contracts", StaticFiles(directory=REPO_ROOT / "contracts"), name="contracts")
+app.mount("/", StaticFiles(directory=REPO_ROOT / "frontend", html=True), name="frontend")
