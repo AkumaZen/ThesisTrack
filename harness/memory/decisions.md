@@ -58,3 +58,35 @@ anyway. The migration pastes BUILD_PLAN.md §2's DDL near-verbatim via
 against real Postgres 16 — no tsvector fallback was needed.
 Evidence: `migrations/versions/6964238e12f2_p0_schema.py`;
 `tests/test_schema_migration.py` passing against a real database.
+
+## ADR-005: taxonomy resolution on company creation is lookup-only, never auto-create
+BUILD_PLAN.md §1.5 controls taxonomy specifically to stop free text; silently
+creating a `broad_industries`/`specific_niches` row on an unrecognized name at
+company-creation time would defeat that. `POST /companies` looks up both by
+name and returns 422 naming the missing one if either isn't found.
+`broad_industries` is seed-managed (`seeds/taxonomy.sql` — no create endpoint
+exists in §6); `specific_niches` has the explicit propose path,
+`POST /taxonomy/niches`.
+Evidence: `app/services/versioning.py::_resolve_taxonomy`;
+`tests/test_api_companies.py::test_create_company_rejects_unknown_taxonomy`.
+
+## ADR-006: rule-engine hook on POST /observations deferred to P2
+BUILD_PLAN.md §6's endpoint table says this route "triggers rule engine
+synchronously; returns any new proposals" — but §10 explicitly scopes the
+rule engine itself to P2, and P1's acceptance criterion only requires posting
+observations via HTTP, not proposal generation. P1's implementation persists
+observations (upsert per `(company_id, period, metric_key)`) and validates
+`metric_key` against the registry; P2 adds the synchronous rule-engine call
+into this same endpoint without changing its request/response shape for the
+fields already used by P1's tests.
+Evidence: `app/routers/observations.py` (comment at the return statement).
+
+## ADR-007: thesis amendment payload is {thesis_data, change_note} only — classification isn't re-submitted per version
+`classification` (broad_industry, specific_niche, operating_model, currency)
+lives on the `companies` row, set once at creation; only `thesis_data` (the
+pillars) is versioned in `thesis_versions`. `PUT /companies/{id}/thesis`
+therefore takes `ThesisAmend {thesis_data, change_note}`, not a full
+`ThesisCreate` — there's no schema table column for classification-per-version,
+and BUILD_PLAN.md never describes reclassifying a company mid-thesis.
+Evidence: `app/schemas/company.py::ThesisAmend`;
+`app/routers/companies.py::put_thesis`.

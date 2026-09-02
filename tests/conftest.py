@@ -17,6 +17,9 @@ def _psycopg_conninfo(sqlalchemy_url: str) -> str:
     return sqlalchemy_url.replace("postgresql+psycopg://", "postgresql://")
 
 
+SEED_TAXONOMY_SQL = (ROOT / "seeds" / "taxonomy.sql").read_text(encoding="utf-8")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _test_database():
     """Creates thesis_test (if missing) and runs migrations against it."""
@@ -37,6 +40,10 @@ def _test_database():
         capture_output=True,
         text=True,
     )
+
+    with psycopg.connect(_psycopg_conninfo(TEST_DB_URL), autocommit=True) as conn:
+        conn.execute(SEED_TAXONOMY_SQL)
+
     yield
 
 
@@ -44,9 +51,12 @@ def _test_database():
 def db_conn():
     with psycopg.connect(_psycopg_conninfo(TEST_DB_URL), autocommit=True) as conn:
         yield conn
+        # Reset to the seeded baseline (taxonomy present, everything else empty)
+        # so tests stay independent of run order and repeatable across sessions.
         conn.execute(
             "TRUNCATE thesis_versions, companies, specific_niches, broad_industries RESTART IDENTITY CASCADE"
         )
+        conn.execute(SEED_TAXONOMY_SQL)
 
 
 @pytest.fixture
