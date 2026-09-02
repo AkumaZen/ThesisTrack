@@ -8,6 +8,7 @@ from app.config import ANALYST_NAME
 from app.db import get_db
 from app.models import Company, MetricDefinition, Observation
 from app.schemas.observation import ObservationBulkIn
+from app.services.rule_engine import evaluate_observations
 
 router = APIRouter(prefix="/api", tags=["observations"], dependencies=[Depends(require_api_key)])
 
@@ -62,6 +63,21 @@ def post_observations(company_id: str, payload: ObservationBulkIn, db: Session =
         written.append(result.scalar_one())
 
     db.commit()
-    # Rule engine evaluation (kill_triggers -> trigger_evaluations -> status_proposals)
-    # is a P2 deliverable (BUILD_PLAN.md §10); this endpoint persists observations only.
-    return {"period": payload.period, "observation_ids": written, "count": len(written)}
+
+    proposals = evaluate_observations(db, company_id, payload.period)
+
+    return {
+        "period": payload.period,
+        "observation_ids": written,
+        "count": len(written),
+        "proposals": [
+            {
+                "id": p.id,
+                "proposed_status": p.proposed_status,
+                "source": p.source,
+                "rationale": p.rationale,
+                "evidence": p.evidence,
+            }
+            for p in proposals
+        ],
+    }

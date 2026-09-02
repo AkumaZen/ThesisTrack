@@ -90,3 +90,28 @@ therefore takes `ThesisAmend {thesis_data, change_note}`, not a full
 and BUILD_PLAN.md never describes reclassifying a company mid-thesis.
 Evidence: `app/schemas/company.py::ThesisAmend`;
 `app/routers/companies.py::put_thesis`.
+
+## ADR-008: grace-period continuity is scoped to kill_triggers.id, not the redline's meaning across amendments
+BUILD_PLAN.md §5 rule 4 says to track consecutive breaches "by reading back
+trigger_evaluations ordered by period_end" but doesn't say what happens when
+a thesis amendment changes a trigger's threshold or removes/re-adds it.
+Since `kill_triggers` rows belong to a specific `version_id` (a new row with
+a new `id` is written on every amendment per §1.3's append-only versioning),
+a breach streak naturally resets to zero when the thesis is amended — there
+is no prior `trigger_evaluations` row for the new trigger `id` to read back.
+This is the conservative reading: an amended redline (possibly a different
+threshold) shouldn't inherit breach history accumulated under the old one.
+Evidence: `app/services/rule_engine.py::_consecutive_breach_streak` (keyed
+on `trigger.id`, which changes every amendment).
+
+## ADR-009: status_proposals has no trigger_id column — dedup by evidence.trigger_id instead
+BUILD_PLAN.md §2's `status_proposals` table has no FK back to
+`kill_triggers`. To stop the rule engine from spamming a new pending
+proposal every time the same already-fired trigger re-evaluates for the same
+period (e.g., re-posting corrected data for a period that already breached),
+`evaluate_observations` checks existing pending `rule_engine` proposals for
+this company+period and reads `evidence->trigger_id` (a field the rule
+engine itself writes into the JSONB) rather than adding a schema column not
+in BUILD_PLAN.md §2.
+Evidence: `app/services/rule_engine.py::_existing_pending_trigger_ids`;
+`tests/test_rule_engine.py::test_repeated_post_same_period_does_not_duplicate_pending_proposal`.
