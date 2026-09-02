@@ -33,3 +33,14 @@ rejects it first with a generic 422 RequestValidationError. Use
 function body to get the 401 BUILD_PLAN.md §6 calls for.
 Evidence: `app/auth.py::require_api_key`;
 `tests/test_api_companies.py::test_create_company_requires_api_key`.
+
+## Dockerfile COPY list doesn't auto-track new served directories
+Adding `frontend/` (P5) and mounting `contracts/` as static dirs in
+`app/main.py` isn't enough — the Docker image only contains what
+`Dockerfile`'s `COPY` lines list. First rebuild after adding the static
+mounts served 404s for every frontend asset because `frontend/` and
+`contracts/` weren't copied in. Caught immediately by the routine
+live-container curl checks (each path checked individually), not by
+anything more systematic — worth remembering for P6 if `eval/` or `seeds/`
+ever need to be present at runtime rather than just at build/migration time.
+Evidence: `Dockerfile` (P5 commit e8b5235 added `COPY frontend`, `COPY contracts`).
