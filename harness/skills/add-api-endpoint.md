@@ -25,13 +25,19 @@ directly instead of re-deriving it.
    `CompanyOut.broad_industry` is a name, not `Company.broad_industry_id`).
 5. **Register in `app/main.py`** via `app.include_router(...)`.
 6. **Test both layers**: a service-level test with a real DB session (no
-   HTTP), and an HTTP-level test through `TestClient` with the DB dependency
-   overridden to the test database (see `tests/test_api_companies.py`'s
-   `_override_get_db` pattern) — not both for every endpoint, but the
+   HTTP), and an HTTP-level test through `TestClient` (use the `client`
+   fixture from `tests/conftest.py` — it already carries the API key header
+   and the DB dependency override) — not both for every endpoint, but the
    read-modify-verify-via-HTTP flows (BUILD_PLAN.md's phase "done when"
    criteria) need the HTTP layer, and anything with tricky concurrency/retry
    logic (versioning) needs the direct-service layer where threading is
    straightforward.
+7. **For a direct DB session in a service-level test, import
+   `tests.conftest.TestSession`** — don't create a new engine/sessionmaker
+   in the test file. Three P1/P2 test files each independently redefined one
+   before this was noticed and consolidated at the P3 evolve cycle (see
+   `harness/journal/evolutions/2026-09-02T-p3.md`); it's a plain re-derivation,
+   not a case where the duplication bought anything.
 
 ## Evidence
 `app/routers/companies.py`, `app/routers/observations.py`,
