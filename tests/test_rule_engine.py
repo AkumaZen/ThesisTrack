@@ -7,21 +7,16 @@ import json
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import sessionmaker
 
 from app.models import Observation
 from app.schemas.thesis import ThesisCreate
 from app.services.rule_engine import evaluate_observations
 from app.services.versioning import create_company
-from tests.conftest import TEST_DB_URL, _psycopg_conninfo
+from tests.conftest import TestSession as _Session
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "balu_forge.json"
 _BASE_PAYLOAD = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
-
-_engine = create_engine(_psycopg_conninfo(TEST_DB_URL).replace("postgresql://", "postgresql+psycopg://"))
-_Session = sessionmaker(bind=_engine, autoflush=False, expire_on_commit=False)
 
 
 def _make_company(company_id, metric_key, operator, threshold, severity, grace_periods):

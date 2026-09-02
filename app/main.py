@@ -2,13 +2,14 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.routers import companies, observations, taxonomy
+from app.routers import companies, health, observations, taxonomy
 
 app = FastAPI(title="Investment Thesis Platform")
 
 app.include_router(companies.router)
 app.include_router(observations.router)
 app.include_router(taxonomy.router)
+app.include_router(health.router)
 
 
 @app.exception_handler(RequestValidationError)

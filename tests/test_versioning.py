@@ -5,17 +5,11 @@ import json
 import threading
 from pathlib import Path
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from app.schemas.thesis import ThesisCreate
 from app.services.versioning import amend_thesis, create_company
-from tests.conftest import TEST_DB_URL, _psycopg_conninfo
+from tests.conftest import TestSession as _Session
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "balu_forge.json"
-
-_engine = create_engine(_psycopg_conninfo(TEST_DB_URL).replace("postgresql://", "postgresql+psycopg://"))
-_Session = sessionmaker(bind=_engine, autoflush=False, expire_on_commit=False)
 
 
 def test_concurrent_amend_does_not_duplicate_version_no(db_conn):

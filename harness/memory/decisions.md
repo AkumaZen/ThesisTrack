@@ -115,3 +115,27 @@ engine itself writes into the JSONB) rather than adding a schema column not
 in BUILD_PLAN.md §2.
 Evidence: `app/services/rule_engine.py::_existing_pending_trigger_ids`;
 `tests/test_rule_engine.py::test_repeated_post_same_period_does_not_duplicate_pending_proposal`.
+
+## ADR-010: outcome-close retrospective note has no dedicated column — stored as a status_events row
+`POST /companies/{id}/outcome` (§6) takes an outcome + "retrospective note,"
+but `companies` (§2) has no free-text column for it and `outcome` isn't
+itself a status transition. Recorded as a `status_events` row with
+`from_status == to_status` (status is genuinely unchanged by closing the
+outcome) and the note as `rationale` — keeps the note durable and queryable
+without adding a column BUILD_PLAN.md's schema doesn't have.
+Evidence: `app/services/audit.py::close_outcome`.
+
+## ADR-011: "override" is defined as (fired-kill proposal) AND (final status != 'broken')
+BUILD_PLAN.md §5 rule 2 says overriding a fired kill needs a note and an
+`override=TRUE` status_events row, but doesn't give the exact predicate for
+"this resolution is an override." Implemented as: the proposal being
+resolved came from the rule engine with `proposed_status='broken'` (i.e., a
+kill, not a warn — P2 never proposes 'broken' any other way), AND the
+resolution's resulting status is anything other than 'broken' (a reject, or
+an accept with a human-supplied `verdict` that isn't 'broken'). Accepting a
+fired kill's own recommendation (verdict left unset, defaults to 'broken')
+is compliance, not an override. The same predicate is reused for direct
+`POST /health-check` entries by checking for any pending fired-kill
+proposal on the company.
+Evidence: `app/services/audit.py::resolve_proposal`, `_find_active_fired_kill`;
+`tests/test_audit.py` (override vs. non-override cases).

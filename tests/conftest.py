@@ -6,6 +6,9 @@ from pathlib import Path
 import psycopg
 import pytest
 from dotenv import load_dotenv
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
@@ -15,6 +18,30 @@ TEST_DB_URL = os.environ["DATABASE_URL_TEST"]
 
 def _psycopg_conninfo(sqlalchemy_url: str) -> str:
     return sqlalchemy_url.replace("postgresql+psycopg://", "postgresql://")
+
+
+# Shared test engine/session + FastAPI dependency override. Defined here (not
+# in a test module) so the override is registered before any test runs,
+# regardless of test collection/import order.
+TestSession = sessionmaker(
+    bind=create_engine(_psycopg_conninfo(TEST_DB_URL).replace("postgresql://", "postgresql+psycopg://")),
+    autoflush=False,
+    expire_on_commit=False,
+)
+
+
+def _override_get_db():
+    db = TestSession()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+from app.db import get_db  # noqa: E402 - after path/env setup above
+from app.main import app  # noqa: E402
+
+app.dependency_overrides[get_db] = _override_get_db
 
 
 SEED_TAXONOMY_SQL = (ROOT / "seeds" / "taxonomy.sql").read_text(encoding="utf-8")
@@ -63,3 +90,10 @@ def db_conn():
 def metric_registry(db_conn):
     rows = db_conn.execute("SELECT metric_key, operating_model FROM metric_definitions").fetchall()
     return {key: model for key, model in rows}
+
+
+@pytest.fixture
+def client(db_conn):
+    from app.config import API_KEY
+
+    return TestClient(app, headers={"X-API-Key": API_KEY})

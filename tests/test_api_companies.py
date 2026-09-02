@@ -8,34 +8,10 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from app.config import API_KEY
-from app.db import get_db
 from app.main import app
-from tests.conftest import TEST_DB_URL, _psycopg_conninfo
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "balu_forge.json"
-
-_test_engine = create_engine(_psycopg_conninfo(TEST_DB_URL).replace("postgresql://", "postgresql+psycopg://"))
-_TestSession = sessionmaker(bind=_test_engine, autoflush=False, expire_on_commit=False)
-
-
-def _override_get_db():
-    db = _TestSession()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = _override_get_db
-
-
-@pytest.fixture
-def client(db_conn):
-    return TestClient(app, headers={"X-API-Key": API_KEY})
 
 
 @pytest.fixture
