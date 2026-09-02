@@ -1,0 +1,357 @@
+{
+  "$defs": {
+    "Classification": {
+      "properties": {
+        "broad_industry": {
+          "title": "Broad Industry",
+          "type": "string"
+        },
+        "specific_niche": {
+          "title": "Specific Niche",
+          "type": "string"
+        },
+        "operating_model": {
+          "title": "Operating Model",
+          "type": "string"
+        },
+        "currency": {
+          "default": "INR",
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "broad_industry",
+        "specific_niche",
+        "operating_model"
+      ],
+      "title": "Classification",
+      "type": "object"
+    },
+    "HealthCheckHistoryItem": {
+      "properties": {
+        "quarter": {
+          "title": "Quarter",
+          "type": "string"
+        },
+        "verdict": {
+          "title": "Verdict",
+          "type": "string"
+        },
+        "note": {
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "quarter",
+        "verdict",
+        "note"
+      ],
+      "title": "HealthCheckHistoryItem",
+      "type": "object"
+    },
+    "HealthCheckPillar": {
+      "properties": {
+        "latest_quarter_review": {
+          "title": "Latest Quarter Review",
+          "type": "string"
+        },
+        "historical_checks": {
+          "items": {
+            "$ref": "#/$defs/HealthCheckHistoryItem"
+          },
+          "title": "Historical Checks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "latest_quarter_review"
+      ],
+      "title": "HealthCheckPillar",
+      "type": "object"
+    },
+    "KillTrigger": {
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "metric_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metric Key"
+        },
+        "operator": {
+          "anyOf": [
+            {
+              "enum": [
+                "<",
+                "<=",
+                ">",
+                ">=",
+                "==",
+                "!="
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operator"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "action": {
+          "title": "Action",
+          "type": "string"
+        },
+        "severity": {
+          "default": "kill",
+          "enum": [
+            "warn",
+            "kill"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "grace_periods": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Grace Periods",
+          "type": "integer"
+        },
+        "manual_check": {
+          "default": false,
+          "title": "Manual Check",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label",
+        "action"
+      ],
+      "title": "KillTrigger",
+      "type": "object"
+    },
+    "ProofPoints": {
+      "properties": {
+        "hard_evidence": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hard Evidence",
+          "type": "array"
+        },
+        "model_specific_metrics": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Model Specific Metrics",
+          "type": "object"
+        }
+      },
+      "title": "ProofPoints",
+      "type": "object"
+    },
+    "ReferenceItem": {
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "url"
+      ],
+      "title": "ReferenceItem",
+      "type": "object"
+    },
+    "RevenueSplitItem": {
+      "properties": {
+        "segment": {
+          "title": "Segment",
+          "type": "string"
+        },
+        "share_pct": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Share Pct",
+          "type": "number"
+        }
+      },
+      "required": [
+        "segment",
+        "share_pct"
+      ],
+      "title": "RevenueSplitItem",
+      "type": "object"
+    },
+    "TheBigChange": {
+      "properties": {
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "expected_completion": {
+          "title": "Expected Completion",
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary",
+        "expected_completion"
+      ],
+      "title": "TheBigChange",
+      "type": "object"
+    },
+    "TheBusiness": {
+      "properties": {
+        "what_it_does": {
+          "title": "What It Does",
+          "type": "string"
+        },
+        "revenue_split": {
+          "items": {
+            "$ref": "#/$defs/RevenueSplitItem"
+          },
+          "title": "Revenue Split",
+          "type": "array"
+        }
+      },
+      "required": [
+        "what_it_does",
+        "revenue_split"
+      ],
+      "title": "TheBusiness",
+      "type": "object"
+    },
+    "ThesisData": {
+      "properties": {
+        "the_business": {
+          "$ref": "#/$defs/TheBusiness"
+        },
+        "the_growth_engine": {
+          "items": {
+            "type": "string"
+          },
+          "title": "The Growth Engine",
+          "type": "array"
+        },
+        "the_big_change": {
+          "$ref": "#/$defs/TheBigChange"
+        },
+        "proof_points": {
+          "$ref": "#/$defs/ProofPoints"
+        },
+        "what_can_kill_it": {
+          "items": {
+            "$ref": "#/$defs/KillTrigger"
+          },
+          "title": "What Can Kill It",
+          "type": "array"
+        },
+        "why_we_believe_it": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Why We Believe It",
+          "type": "array"
+        },
+        "health_check": {
+          "$ref": "#/$defs/HealthCheckPillar"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/ReferenceItem"
+          },
+          "title": "References",
+          "type": "array"
+        }
+      },
+      "required": [
+        "the_business",
+        "the_big_change",
+        "proof_points",
+        "what_can_kill_it",
+        "why_we_believe_it",
+        "health_check"
+      ],
+      "title": "ThesisData",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "company_id": {
+      "pattern": "^[A-Z0-9_]{2,50}$",
+      "title": "Company Id",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "classification": {
+      "$ref": "#/$defs/Classification"
+    },
+    "status": {
+      "default": "on_track",
+      "title": "Status",
+      "type": "string"
+    },
+    "last_reviewed": {
+      "format": "date",
+      "title": "Last Reviewed",
+      "type": "string"
+    },
+    "thesis_data": {
+      "$ref": "#/$defs/ThesisData"
+    }
+  },
+  "required": [
+    "company_id",
+    "name",
+    "classification",
+    "last_reviewed",
+    "thesis_data"
+  ],
+  "title": "ThesisCreate",
+  "type": "object"
+}
