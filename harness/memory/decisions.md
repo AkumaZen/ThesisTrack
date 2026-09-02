@@ -139,3 +139,18 @@ is compliance, not an override. The same predicate is reused for direct
 proposal on the company.
 Evidence: `app/services/audit.py::resolve_proposal`, `_find_active_fired_kill`;
 `tests/test_audit.py` (override vs. non-override cases).
+
+## ADR-012: get_llm_client() raises when unconfigured, never silently degrades
+BUILD_PLAN.md §5 doesn't say what to do when no LLM provider is configured.
+The tempting default — fall back to a canned/neutral response — would mean
+`/ai-review` could return what looks like a real AI opinion when none was
+actually formed, which is precisely the "unreviewed model output becomes
+ground truth" failure constitution rule 3 and BUILD_PLAN.md §7.3 exist to
+prevent (the difference here is *fabricated* rather than *unreviewed*, but
+the harm is the same shape). `get_llm_client()` raises `RuntimeError`
+clearly instead; tests inject `FakeLLMClient` via FastAPI's
+`dependency_overrides`, the same mechanism already used for `get_db`.
+Verified live: an unconfigured `/ai-review` fails with a 500 naming the
+missing env var, not a fabricated verdict.
+Evidence: `app/llm/client.py::get_llm_client`;
+`tests/test_ai_reviewer.py::test_get_llm_client_raises_clearly_when_unconfigured`.
