@@ -15,6 +15,7 @@ from app.routers import (
     guidance,
     health as health_router,
     observations,
+    price,
     taxonomy,
 )
 
@@ -32,6 +33,7 @@ app.include_router(export.router)
 app.include_router(guidance.router)
 app.include_router(custom_tables.router)
 app.include_router(decisions.router)
+app.include_router(price.router)
 
 
 @app.exception_handler(RequestValidationError)

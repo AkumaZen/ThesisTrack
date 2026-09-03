@@ -28,15 +28,20 @@ Done:
   - Buy/sell decision tracking (ADR-024) - part 1 of a 3-part "track real
     investing behavior" request, sequenced one part at a time per the
     user's explicit ask (review between each, don't build all three at once)
-  - 103 tests total, all green
-  - 24 ADRs + 5 gotchas in harness/memory/, all evidence-cited
+  - Price tracking + customizable thesis-performance baseline (ADR-025) -
+    part 2. Toggle between "since thesis review" and "since first buy",
+    manual price entry only (screener auto-pull explicitly deferred, not
+    built - price_observations.source reserves the value for later)
+  - 114 tests total, all green
+  - 25 ADRs + 5 gotchas in harness/memory/, all evidence-cited
 
 In flight: the "track real investing behavior" 3-part sequence
   1. Buy/sell decision tracking - DONE (ADR-024).
-  2. Thesis performance vs. real stock price - NOT STARTED. User wants
-     manual price entry to start, with an option to pull from the
-     `screener` MCP tools (Indian equities, screener.in-backed) later -
-     that automated-pull path is explicitly deferred, not scoped yet.
+  2. Thesis performance vs. real stock price - DONE (ADR-025). Manual
+     price entry only; pulling from the `screener` MCP tools (Indian
+     equities, screener.in-backed) is explicitly deferred, not scoped yet
+     - price_observations.source already reserves 'screener' as a value
+     for whenever that gets built.
   3. Per-user parallel thesis "scenarios" - NOT STARTED, and the biggest
      of the three: needs a new layer between company and thesis-version
      history, with kill_triggers/health_checks/status_events re-scoped to
@@ -59,5 +64,6 @@ verify it, then let the user actually try it before it goes anywhere.
 Every commit this session has stayed local; nothing has been pushed to
 GitHub or redeployed since the Vercel setup itself.
 
-Next action: part 2 of the investing-behavior sequence (manual stock price
-entry + a thesis-performance view), when the user is ready to continue.
+Next action: part 3 of the investing-behavior sequence (per-user parallel
+thesis "scenarios") - the biggest of the three, needs scope re-confirmed
+with the user before starting, per the standing "don't rush" preference.

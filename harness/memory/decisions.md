@@ -1,5 +1,47 @@
 # Decisions (append-only ADR log)
 
+## ADR-025: Price tracking + customizable thesis-performance baseline - part 2 of 3
+User asked for both baseline options, explicitly "make it customizable"
+rather than picking one - a toggle, not a fixed choice. New `price_observations`
+table (migration `d4e7b2c1f309`): company_id, observed_on, price, source
+(defaults 'manual', reserves 'screener' for the auto-pull path the user
+asked to keep open but explicitly deferred - not built this pass), actor.
+Deliberately a separate table from `observations` rather than reusing it -
+observations is quarter-cadence financial fundamentals keyed by
+(company_id, period, metric_key); a price checkpoint is a plain
+(company_id, date) fact at whatever cadence someone checks, and forcing it
+through the period/metric-registry machinery would conflate two different
+concepts. Not append-only (unlike thesis_versions/position_decisions) -
+a price point is a correctable fact, not a decision or an audit record;
+UNIQUE(company_id, observed_on) + upsert-on-conflict (same
+`on_conflict_do_update` pattern already used by `app/routers/observations.py`)
+means logging the same date again corrects that day rather than erroring.
+
+Two baseline modes for "is the thesis performing," both real and
+selectable via `GET .../performance?baseline=thesis|decision`:
+  - **thesis**: nearest logged price on/after the thesis's `last_reviewed`
+    date, falling back to the closest price available at all if nothing
+    was logged on/after it - with an honest note disclosing the fallback
+    happened, never silently comparing against a stale or misleading point.
+  - **decision**: the price from the *first buy decision itself* (not a
+    price_observations lookup) - ground truth of what was actually paid,
+    simpler and more honest than trying to match a buy date against
+    separately-logged price ticks. Deliberately scoped to the first buy
+    only, not a weighted-average cost basis across multiple buys/sells -
+    real position accounting (FIFO/LIFO/average cost) is a different,
+    harder problem than what was asked for here; noted as a real
+    simplification rather than silently building partial accounting logic.
+
+Frontend: drawer gained a "Thesis Performance" panel (placed right after
+the action buttons, ahead of the jump-nav - a headline metric, not buried
+in a section) with a live toggle between the two modes and a "+ Log
+Price" action. 11 new tests (both baselines, the fallback path, upsert
+correction, 403 enforcement) - 114 total, all pass. Verified live via
+Playwright: logged a buy decision then a price, toggled between "Since
+Thesis" (correctly showed the fallback disclaimer, since no price existed
+on/after the review date) and "Since Purchase" (correctly computed
++25.0% from the actual 220->275 price move).
+
 ## ADR-024: Buy/sell decision tracking - part 1 of 3, "track real investing behavior"
 User asked for three things at once: (1) per-user parallel theses on the
 same company with similarity/difference comparison, (2) buy/sell decision

@@ -229,6 +229,19 @@ class PositionDecision(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
 
+class PriceObservation(Base):
+    __tablename__ = "price_observations"
+    __table_args__ = (UniqueConstraint("company_id", "observed_on"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    observed_on: Mapped[date] = mapped_column(Date, nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric, nullable=False)
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="manual")
+    actor: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+
 class StatusProposal(Base):
     __tablename__ = "status_proposals"
 

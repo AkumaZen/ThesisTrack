@@ -14,7 +14,7 @@ import { readFiltersFromUrl, writeFiltersToUrl, toQueryParams } from "./state.js
 import { escapeHtml } from "./components/format.js";
 import { renderHeaderStats, renderCards } from "./components/cards.js";
 import { renderFacetBar } from "./components/facets.js";
-import { renderDrawer, renderDecisionsList } from "./components/drawer.js";
+import { renderDrawer, renderDecisionsList, renderPerformancePanel } from "./components/drawer.js";
 import {
   INGEST_SECTIONS,
   PILLAR_FIELD_KEY,
@@ -170,6 +170,29 @@ async function openDrawer(companyId) {
   wireAddTableSectionButtons(document.getElementById("drawer"), companyId, () => loadTablesIntoDrawer(companyId));
   loadTablesIntoDrawer(companyId);
   loadDecisionsIntoDrawer(companyId);
+
+  let perfBaseline = "thesis";
+  function setPerfBaselineButtons() {
+    document.querySelectorAll(".perf-baseline-btn").forEach((btn) => {
+      const active = btn.dataset.baseline === perfBaseline;
+      btn.classList.toggle("bg-surface-3", active);
+      btn.classList.toggle("text-fg", active);
+      btn.classList.toggle("text-muted-fg", !active);
+    });
+  }
+  document.querySelectorAll(".perf-baseline-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      perfBaseline = btn.dataset.baseline;
+      setPerfBaselineButtons();
+      loadPerformanceIntoDrawer(companyId, perfBaseline);
+    });
+  });
+  setPerfBaselineButtons();
+  document.getElementById("drawer-log-price").addEventListener("click", () =>
+    openPriceModal(detail, () => loadPerformanceIntoDrawer(companyId, perfBaseline))
+  );
+  loadPerformanceIntoDrawer(companyId, perfBaseline);
+
   gateWriteUI();
 }
 
@@ -182,6 +205,59 @@ async function loadDecisionsIntoDrawer(companyId) {
   } catch (e) {
     container.innerHTML = `<div class="text-xs text-danger">Failed to load decisions.</div>`;
   }
+}
+
+// ---------- thesis performance vs. real price ----------
+async function loadPerformanceIntoDrawer(companyId, baseline) {
+  const container = document.getElementById("drawer-performance");
+  if (!container) return;
+  try {
+    const perf = await api.getPerformance(companyId, baseline);
+    container.innerHTML = renderPerformancePanel(perf);
+  } catch (e) {
+    container.innerHTML = `<div class="text-xs text-danger">Failed to load performance.</div>`;
+  }
+}
+
+function openPriceModal(detail, onLogged) {
+  showModal(`
+    <div class="flex items-center justify-between px-5 py-3 border-b border-border">
+      <h2 class="font-semibold">Log Price - ${escapeHtml(detail.name)}</h2>
+      <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <label class="text-sm">Date
+          <input id="price-date" type="date" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+        </label>
+        <label class="text-sm">Price (${escapeHtml(detail.currency)})
+          <input id="price-value" type="number" step="any" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+        </label>
+      </div>
+      <p class="text-xs text-muted-fg">Logging the same date again corrects that day's price rather than adding a duplicate.</p>
+      <div id="price-errors" class="hidden rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger"></div>
+    </div>
+    <div class="px-5 py-3 border-t border-border flex justify-end gap-2">
+      <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
+      <button id="price-submit" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">Log Price</button>
+    </div>`);
+  document.getElementById("modal-close-x").addEventListener("click", closeModal);
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  document.getElementById("price-submit").addEventListener("click", async () => {
+    try {
+      await api.postPrice(detail.company_id, {
+        observed_on: document.getElementById("price-date").value,
+        price: Number(document.getElementById("price-value").value),
+      });
+      closeModal();
+      toast("Price logged");
+      if (onLogged) await onLogged();
+    } catch (e) {
+      const box = document.getElementById("price-errors");
+      box.textContent = errorMessage(e);
+      box.classList.remove("hidden");
+    }
+  });
 }
 
 function openDecisionModal(detail) {

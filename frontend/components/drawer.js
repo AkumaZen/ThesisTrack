@@ -55,6 +55,26 @@ function healthCheckTimeline(healthChecks) {
     .join("");
 }
 
+// Renders into #drawer-performance, filled/refreshed async by app.js
+// (loadPerformanceIntoDrawer) whenever the baseline toggle changes or a
+// new price is logged. `perf` is a PerformanceOut from GET .../performance.
+export function renderPerformancePanel(perf) {
+  if (perf.pct_change === null || perf.pct_change === undefined) {
+    return `<div class="text-xs text-muted-fg">${escapeHtml(perf.note || "Not enough data yet.")}</div>`;
+  }
+  const up = perf.pct_change >= 0;
+  const baselineLabel = perf.baseline_mode === "thesis" ? "since thesis review" : "since first buy";
+  return `
+    <div class="flex items-baseline gap-2">
+      <span class="text-2xl font-semibold ${up ? "text-good" : "text-danger"}">${up ? "+" : ""}${perf.pct_change.toFixed(1)}%</span>
+      <span class="text-xs text-muted-fg">${baselineLabel}</span>
+    </div>
+    <div class="text-xs text-muted-fg mt-1">
+      ${perf.currency} ${perf.baseline_price} (${perf.baseline_date}) &rarr; ${perf.currency} ${perf.current_price} (${perf.current_date})
+    </div>
+    ${perf.note ? `<div class="text-xs text-muted-fg italic mt-1">${escapeHtml(perf.note)}</div>` : ""}`;
+}
+
 function decisionRow(d) {
   const isBuy = d.action === "buy";
   return `
@@ -142,6 +162,22 @@ export function renderDrawer(detail) {
         <button id="drawer-log-decision" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Log Buy/Sell</button>
         <button id="drawer-ai-review" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Run AI Review</button>
         <button id="drawer-guidance" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Guidance</button>
+      </div>
+
+      <div class="mt-4 rounded-md border border-border p-3">
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-medium text-muted-fg uppercase tracking-wide">Thesis Performance</span>
+            <div class="flex border border-border rounded-md overflow-hidden">
+              <button id="perf-baseline-thesis" data-baseline="thesis" class="perf-baseline-btn text-xs px-2.5 py-1">Since Thesis</button>
+              <button id="perf-baseline-decision" data-baseline="decision" class="perf-baseline-btn text-xs px-2.5 py-1 text-muted-fg">Since Purchase</button>
+            </div>
+          </div>
+          <button id="drawer-log-price" class="text-xs text-ok">+ Log Price</button>
+        </div>
+        <div id="drawer-performance">
+          <div class="text-xs text-muted-fg">Loading...</div>
+        </div>
       </div>
 
       <nav class="drawer-jumpnav sticky top-0 z-10 -mx-5 mt-4 px-5 py-2 bg-bg-ink border-y border-border flex gap-4 text-xs overflow-x-auto">
