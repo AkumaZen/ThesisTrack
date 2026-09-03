@@ -1,5 +1,47 @@
 # Decisions (append-only ADR log)
 
+## ADR-022: Playwright installed for real browser verification; caught a drawer/modal z-index stacking bug invisible to pytest
+No browser-automation tool was available this session (the chrome-devtools
+MCP used in earlier sessions per STATE.md wasn't present). User asked for
+one to be installed. Chose Playwright (Python), `pip install playwright`
+into the existing project `.venv` plus `playwright install chromium` -
+fits the project's existing Python tooling rather than adding a Node
+dependency, and a Chromium-only install keeps it fast.
+
+Immediately caught a real bug that 92 passing pytest tests and the earlier
+static/API-only verification both missed entirely, because it only exists
+in rendered layout: `#drawer` (`z-50`) visually overlaps `#modal-overlay`
+(previously `z-40`) and `#ingest-page` (previously `z-[35]`) wherever their
+on-screen regions intersect, and CSS gives the higher z-index element
+priority regardless of DOM order - so the drawer intercepted clicks on any
+modal (table builder, row form, observations, health check, AI review) or
+the full-page editor opened while the drawer was still showing behind it.
+Confirmed via an actual failed Playwright click (`TimeoutError` naming the
+drawer's own paragraph text as the element "intercepting pointer events"),
+not by reading the CSS and guessing. This was latent since custom_tables
+was first built (`drawer-new-table` already opened the same modal while the
+drawer was open) - normal screen widths just made it easy to click outside
+the ~100px overlap zone by luck.
+
+Fixed two ways: (1) `#modal-overlay` bumped to `z-50`, same as `#drawer` -
+since it's declared later in the DOM, equal z-index ties resolve in its
+favor, so any modal now correctly renders above an open drawer; (2)
+`#ingest-page` bumped to `z-[55]` (a full-page takeover has no reason to
+ever sit under the drawer) and `openIngestPage()` now calls `closeDrawer()`
+unconditionally at the top - the semantically correct fix, with the
+z-index bump as defense in depth rather than the only fix.
+
+Verified visually end-to-end with Playwright screenshots (not just pytest)
+after the fix: created a company via the full-page editor's JSON tab,
+confirmed pillar_notes render under the correct pillars in the drawer,
+attached a Data Table to Proof Points via "+ Add Table Here" from inside
+the (now-unblocked) modal, added a second column via "Edit Columns" and
+confirmed both columns appear, and opened "Amend Thesis" from the drawer to
+confirm the full-page editor now fully covers it with fields correctly
+pre-populated (including the pillar note). All 92 automated tests still
+pass; this was a pure rendering/layout bug, not a logic bug pytest could
+ever have caught.
+
 ## ADR-021: Three tiers of "more customization" - Excel-like table columns, pillar-attached tables, and per-pillar free-text notes
 User asked for deeper customization: dynamically add/remove columns and
 rows in Data Tables "like Excel", the ability to add new sections, and more

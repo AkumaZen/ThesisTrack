@@ -573,6 +573,7 @@ function closeIngestPage() {
 
 async function openIngestPage(mode, existing) {
   const isAmend = mode === "amend" && existing;
+  closeDrawer(); // full-page takeover - leaving the drawer open behind it serves no purpose
   showIngestPage(
     renderIngestPage(
       state.taxonomy,
