@@ -5,12 +5,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import ai_review, companies, export, health as health_router, observations, taxonomy
+from app.routers import ai_review, auth, companies, export, health as health_router, observations, taxonomy
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="Investment Thesis Platform")
 
+app.include_router(auth.router)
 app.include_router(companies.router)
 app.include_router(observations.router)
 app.include_router(taxonomy.router)

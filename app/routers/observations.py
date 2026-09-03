@@ -3,18 +3,22 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from app.auth import require_api_key
-from app.config import ANALYST_NAME
+from app.auth import Actor, require_write
 from app.db import get_db
 from app.models import Company, MetricDefinition, Observation
 from app.schemas.observation import ObservationBulkIn
 from app.services.rule_engine import evaluate_observations
 
-router = APIRouter(prefix="/api", tags=["observations"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/api", tags=["observations"])
 
 
 @router.post("/companies/{company_id}/observations", status_code=status.HTTP_201_CREATED)
-def post_observations(company_id: str, payload: ObservationBulkIn, db: Session = Depends(get_db)):
+def post_observations(
+    company_id: str,
+    payload: ObservationBulkIn,
+    db: Session = Depends(get_db),
+    actor: Actor = Depends(require_write),
+):
     company = db.get(Company, company_id)
     if company is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"company '{company_id}' not found")
@@ -44,7 +48,7 @@ def post_observations(company_id: str, payload: ObservationBulkIn, db: Session =
                 source_type=obs.source_type,
                 source_url=obs.source_url,
                 note=obs.note,
-                ingested_by=ANALYST_NAME,
+                ingested_by=actor.identity,
             )
             .on_conflict_do_update(
                 index_elements=["company_id", "period", "metric_key"],
@@ -54,7 +58,7 @@ def post_observations(company_id: str, payload: ObservationBulkIn, db: Session =
                     "source_type": obs.source_type,
                     "source_url": obs.source_url,
                     "note": obs.note,
-                    "ingested_by": ANALYST_NAME,
+                    "ingested_by": actor.identity,
                 },
             )
             .returning(Observation.id)

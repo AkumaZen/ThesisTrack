@@ -249,3 +249,46 @@ produces well-formed rows in all three formats, and exercised the frontend
 export panel end-to-end in a real browser.
 Evidence: `app/services/exporter.py`; `tests/test_exporter.py`;
 `tests/test_eval.py`.
+
+## ADR-016: multi-user login with RBAC, deliberately beyond BUILD_PLAN.md v1
+BUILD_PLAN.md §0 scopes v1 auth to a single-analyst static API key,
+"scoped up in P6 if needed, not before." The user explicitly asked for
+named-user login with read/write permissions, outside that plan, during
+this session (2026-09-03). Constitution rule 1 governs this agent silently
+redesigning the spec when reality contradicts it - it does not block the
+human deliberately extending the spec themselves, so this is built as a
+real ADR-documented addition, not a silent rewrite of BUILD_PLAN.md
+(which stays untouched, as required).
+
+Design:
+- `users` table (new migration, beyond BUILD_PLAN.md §2's schema): email,
+  PBKDF2-SHA256 password hash (no new dependency - Python's stdlib
+  `hashlib.pbkdf2_hmac`, salted per-user), role (`read_write`/`read_only`),
+  active flag, login timestamp.
+- JWT session tokens (pyjwt, the one new dependency) issued by
+  `POST /api/auth/login`, 24h expiry. `app/auth.py::get_current_actor`
+  accepts EITHER a valid `Authorization: Bearer` token OR the original
+  `X-API-Key` (grandfathered, full read_write, identity=ANALYST_NAME) - the
+  pre-existing machine-access path keeps working completely unchanged,
+  verified by a dedicated test (`test_api_key_still_works_unchanged`).
+- `require_write` (403 for `read_only` actors) added per-route on every
+  mutating endpoint across all six routers; `authored_by`/`ingested_by`/
+  `actor` fields that used to hardcode `ANALYST_NAME` now thread the real
+  logged-in user's email through via a new optional `actor` parameter on
+  the affected service functions (defaulting to `ANALYST_NAME`, so
+  API-key/test callers are unaffected).
+- Frontend: a login gate (email/password, with API-key entry kept as a
+  fallback under a details/summary disclosure) storing the JWT in
+  localStorage, a session badge, and read_only UI gating on the main write
+  entry points (New Company nav button, the four drawer action buttons,
+  review-queue resolve buttons) - a UX affordance only; the backend 403 is
+  the real boundary, proven by `test_read_only_user_cannot_create_company`.
+- Two named users (rohit.negi@rdc.in, siddhesh.dige@rdc.in) seeded via
+  `seeds/create_users.py`, each with a randomly generated password printed
+  once and never stored anywhere in this codebase or its git history -
+  written to a local, gitignored `creds.md` instead of being committed,
+  since credentials never belong in version control regardless of a
+  repo's visibility setting.
+Evidence: `app/services/user_auth.py`, `app/auth.py`, `app/routers/auth.py`,
+`migrations/versions/3f656576d076_users_auth.py`, `frontend/app.js`
+(login/session/gating), `tests/test_auth.py` (12 tests).

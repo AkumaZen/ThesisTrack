@@ -81,7 +81,7 @@ def db_conn():
         # Reset to the seeded baseline (taxonomy present, everything else empty)
         # so tests stay independent of run order and repeatable across sessions.
         conn.execute(
-            "TRUNCATE thesis_versions, companies, specific_niches, broad_industries RESTART IDENTITY CASCADE"
+            "TRUNCATE thesis_versions, companies, specific_niches, broad_industries, users RESTART IDENTITY CASCADE"
         )
         conn.execute(SEED_TAXONOMY_SQL)
 

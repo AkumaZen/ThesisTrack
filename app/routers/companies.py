@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.auth import require_api_key
+from app.auth import Actor, get_current_actor, require_write
 from app.db import get_db
 from app.models import (
     BroadIndustry,
@@ -44,7 +44,7 @@ from app.services.versioning import (
     diff_versions,
 )
 
-router = APIRouter(prefix="/api", tags=["companies"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/api", tags=["companies"], dependencies=[Depends(get_current_actor)])
 
 
 def _company_row_to_out(
@@ -108,9 +108,9 @@ def _latest_override_flags(db: Session, company_ids: list[str]) -> dict[str, boo
 
 
 @router.post("/companies", response_model=CompanyOut, status_code=status.HTTP_201_CREATED)
-def post_company(payload: ThesisCreate, db: Session = Depends(get_db)):
+def post_company(payload: ThesisCreate, db: Session = Depends(get_db), actor: Actor = Depends(require_write)):
     try:
-        company = create_company(db, payload)
+        company = create_company(db, payload, actor=actor.identity)
     except AlreadyExistsError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     except TaxonomyError as exc:
@@ -334,9 +334,14 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/companies/{company_id}/thesis", response_model=VersionDetail)
-def put_thesis(company_id: str, payload: ThesisAmend, db: Session = Depends(get_db)):
+def put_thesis(
+    company_id: str,
+    payload: ThesisAmend,
+    db: Session = Depends(get_db),
+    actor: Actor = Depends(require_write),
+):
     try:
-        version = amend_thesis(db, company_id, payload.thesis_data, payload.change_note)
+        version = amend_thesis(db, company_id, payload.thesis_data, payload.change_note, actor=actor.identity)
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

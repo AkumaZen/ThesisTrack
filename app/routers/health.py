@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import require_api_key
+from app.auth import Actor, get_current_actor, require_write
 from app.db import get_db
 from app.models import BroadIndustry, SpecificNiche, StatusProposal
 from app.schemas.company import CompanyOut
@@ -24,14 +24,19 @@ from app.services.audit import (
     submit_health_check,
 )
 
-router = APIRouter(prefix="/api", tags=["health"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/api", tags=["health"], dependencies=[Depends(get_current_actor)])
 
 
 @router.post("/companies/{company_id}/health-check", response_model=HealthCheckOut, status_code=status.HTTP_201_CREATED)
 @router.put("/companies/{company_id}/health-check", response_model=HealthCheckOut)
-def post_health_check(company_id: str, payload: HealthCheckIn, db: Session = Depends(get_db)):
+def post_health_check(
+    company_id: str,
+    payload: HealthCheckIn,
+    db: Session = Depends(get_db),
+    actor: Actor = Depends(require_write),
+):
     try:
-        health = submit_health_check(db, company_id, payload.period, payload.verdict, payload.note)
+        health = submit_health_check(db, company_id, payload.period, payload.verdict, payload.note, actor=actor.identity)
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except OverrideRequiresNoteError as exc:
@@ -81,9 +86,14 @@ def list_proposals(
 
 
 @router.post("/proposals/{proposal_id}/resolve", response_model=ProposalOut)
-def resolve_proposal_route(proposal_id: int, payload: ProposalResolveIn, db: Session = Depends(get_db)):
+def resolve_proposal_route(
+    proposal_id: int,
+    payload: ProposalResolveIn,
+    db: Session = Depends(get_db),
+    actor: Actor = Depends(require_write),
+):
     try:
-        proposal = resolve_proposal(db, proposal_id, payload.action, payload.verdict, payload.note)
+        proposal = resolve_proposal(db, proposal_id, payload.action, payload.verdict, payload.note, actor=actor.identity)
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except AlreadyResolvedError as exc:
@@ -106,9 +116,14 @@ def resolve_proposal_route(proposal_id: int, payload: ProposalResolveIn, db: Ses
 
 
 @router.post("/companies/{company_id}/outcome", response_model=CompanyOut)
-def post_outcome(company_id: str, payload: OutcomeIn, db: Session = Depends(get_db)):
+def post_outcome(
+    company_id: str,
+    payload: OutcomeIn,
+    db: Session = Depends(get_db),
+    actor: Actor = Depends(require_write),
+):
     try:
-        company = close_outcome(db, company_id, payload.outcome, payload.note)
+        company = close_outcome(db, company_id, payload.outcome, payload.note, actor=actor.identity)
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

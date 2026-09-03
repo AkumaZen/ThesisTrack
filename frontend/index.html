@@ -7,11 +7,35 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
+  <!-- Login gate: shown until a session (JWT) or dev API key is present -->
+  <div id="login-overlay" class="hidden fixed inset-0 bg-slate-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-md border border-slate-200 w-full max-w-sm p-6">
+      <h1 class="font-semibold text-lg mb-1">Investment Thesis Platform</h1>
+      <p class="text-sm text-slate-500 mb-4">Sign in to continue.</p>
+      <div id="login-error" class="hidden mb-3 rounded-md bg-rose-50 border border-rose-200 p-2 text-sm text-rose-800"></div>
+      <label class="block text-sm mb-2">Email
+        <input id="login-email" type="email" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+      </label>
+      <label class="block text-sm mb-4">Password
+        <input id="login-password" type="password" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+      </label>
+      <button id="login-submit" class="w-full text-sm px-3 py-2 rounded-md bg-slate-800 text-white hover:bg-slate-700">Sign in</button>
+      <details class="mt-4 text-xs text-slate-500">
+        <summary class="cursor-pointer">Use an API key instead</summary>
+        <div class="mt-2 flex gap-2">
+          <input id="login-api-key" placeholder="X-API-Key" class="flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm" />
+          <button id="login-api-key-submit" class="text-xs px-2 py-1 rounded-md border border-slate-300 hover:bg-slate-50">Use key</button>
+        </div>
+      </details>
+    </div>
+  </div>
+
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
       <h1 class="font-semibold text-lg">Investment Thesis Platform</h1>
       <div class="flex items-center gap-2">
-        <input id="api-key-input" placeholder="X-API-Key" class="rounded-md border border-slate-300 px-2 py-1 text-sm w-40" />
+        <span id="session-badge" class="text-xs text-slate-500"></span>
+        <button id="nav-sign-out" class="text-sm px-3 py-1.5 rounded-md hover:bg-slate-100">Sign out</button>
         <button id="nav-companies" class="text-sm px-3 py-1.5 rounded-md hover:bg-slate-100">Companies</button>
         <button id="nav-review-queue" class="text-sm px-3 py-1.5 rounded-md hover:bg-slate-100">Review Queue</button>
         <button id="nav-export" class="text-sm px-3 py-1.5 rounded-md hover:bg-slate-100">Export</button>

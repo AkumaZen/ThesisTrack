@@ -4,13 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.auth import require_api_key
+from app.auth import Actor, require_write
 from app.db import get_db
 from app.llm.client import LLMClient, get_llm_client
 from app.schemas.proposal import ProposalOut
 from app.services.ai_reviewer import AIReviewFailedError, NotFoundError, run_ai_review
 
-router = APIRouter(prefix="/api", tags=["ai-review"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/api", tags=["ai-review"])
 
 
 class AIReviewIn(BaseModel):
@@ -24,6 +24,7 @@ def post_ai_review(
     payload: AIReviewIn,
     db: Session = Depends(get_db),
     llm_client: LLMClient = Depends(get_llm_client),
+    actor: Actor = Depends(require_write),
 ):
     try:
         proposal = run_ai_review(db, company_id, payload.period, payload.narrative, llm_client)

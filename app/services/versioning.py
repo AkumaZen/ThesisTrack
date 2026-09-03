@@ -64,7 +64,7 @@ def _write_kill_triggers(db: Session, version_id: int, thesis_data: ThesisData) 
         )
 
 
-def create_company(db: Session, payload: ThesisCreate) -> Company:
+def create_company(db: Session, payload: ThesisCreate, actor: str = ANALYST_NAME) -> Company:
     if db.get(Company, payload.company_id) is not None:
         raise AlreadyExistsError(f"company '{payload.company_id}' already exists")
 
@@ -91,7 +91,7 @@ def create_company(db: Session, payload: ThesisCreate) -> Company:
         version_no=1,
         thesis_data=payload.thesis_data.model_dump(mode="json"),
         change_note="initial thesis",
-        authored_by=ANALYST_NAME,
+        authored_by=actor,
     )
     db.add(version)
     db.flush()
@@ -104,7 +104,9 @@ def create_company(db: Session, payload: ThesisCreate) -> Company:
     return company
 
 
-def amend_thesis(db: Session, company_id: str, thesis_data: ThesisData, change_note: str) -> ThesisVersion:
+def amend_thesis(
+    db: Session, company_id: str, thesis_data: ThesisData, change_note: str, actor: str = ANALYST_NAME
+) -> ThesisVersion:
     company = db.get(Company, company_id)
     if company is None:
         raise NotFoundError(f"company '{company_id}' not found")
@@ -122,7 +124,7 @@ def amend_thesis(db: Session, company_id: str, thesis_data: ThesisData, change_n
             version_no=next_version_no,
             thesis_data=thesis_data.model_dump(mode="json"),
             change_note=change_note,
-            authored_by=ANALYST_NAME,
+            authored_by=actor,
         )
         db.add(version)
         try:

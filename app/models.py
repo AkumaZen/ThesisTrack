@@ -232,6 +232,21 @@ class StatusProposal(Base):
     resolution_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
+UserRoleEnum = PGEnum("read_write", "read_only", name="user_role", create_type=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(UserRoleEnum, nullable=False, default="read_write")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+    last_login_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+
+
 class TrainingSplit(Base):
     __tablename__ = "training_splits"
 

@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.auth import require_api_key
+from app.auth import get_current_actor
 from app.db import get_db
 from app.schemas.export import ExportFormat, ExportSplit, ExportStatsResponse, ExportTask
 from app.services.exporter import export_rows, export_stats
 
-router = APIRouter(prefix="/api", tags=["export"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/api", tags=["export"], dependencies=[Depends(get_current_actor)])
 
 
 @router.get("/export-training-data/stats", response_model=ExportStatsResponse)

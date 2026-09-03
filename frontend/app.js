@@ -1,4 +1,15 @@
-import { api, getApiKey, setApiKey, ApiError } from "./api.js";
+import {
+  api,
+  ApiError,
+  clearSession,
+  getApiKey,
+  getEmail,
+  getRole,
+  getToken,
+  isReadOnly,
+  setApiKey,
+  setSession,
+} from "./api.js";
 import { readFiltersFromUrl, writeFiltersToUrl, toQueryParams } from "./state.js";
 import { renderHeaderStats, renderCards } from "./components/cards.js";
 import { renderFacetBar } from "./components/facets.js";
@@ -130,6 +141,7 @@ async function openDrawer(companyId) {
   document.getElementById("drawer-observations").addEventListener("click", () => openObservationsModal(detail));
   document.getElementById("drawer-health-check").addEventListener("click", () => openHealthCheckModal(detail));
   document.getElementById("drawer-ai-review").addEventListener("click", () => openAiReviewModal(detail));
+  gateWriteUI();
 }
 
 function closeDrawer() {
@@ -555,6 +567,7 @@ async function loadReviewQueue() {
       }
     });
   });
+  gateWriteUI();
 }
 
 // ---------- export ----------
@@ -590,13 +603,73 @@ function setView(view) {
   if (view === "review") loadReviewQueue().catch((e) => toast(errorMessage(e), "error"));
 }
 
-// ---------- init ----------
-async function init() {
-  document.getElementById("api-key-input").value = getApiKey();
-  document.getElementById("api-key-input").addEventListener("change", (e) => {
-    setApiKey(e.target.value);
-    refreshCompanies().catch((err) => toast(errorMessage(err), "error"));
+// ---------- read-only gating (UX-only; the backend is the real boundary) ----------
+function gateWriteUI() {
+  const readOnly = isReadOnly();
+  document.getElementById("nav-new-company").classList.toggle("hidden", readOnly);
+  for (const id of ["drawer-amend", "drawer-observations", "drawer-health-check", "drawer-ai-review"]) {
+    document.getElementById(id)?.classList.toggle("hidden", readOnly);
+  }
+  if (readOnly) {
+    document.querySelectorAll("[data-resolve]").forEach((btn) => (btn.disabled = true));
+    document.querySelectorAll(".resolve-note").forEach((input) => (input.disabled = true));
+  }
+}
+
+// ---------- login ----------
+function isAuthenticated() {
+  return Boolean(getToken() || getApiKey());
+}
+
+function showLoginScreen() {
+  document.getElementById("login-overlay").classList.remove("hidden");
+
+  const showError = (msg) => {
+    const el = document.getElementById("login-error");
+    el.textContent = msg;
+    el.classList.remove("hidden");
+  };
+
+  document.getElementById("login-submit").addEventListener("click", async () => {
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+    try {
+      const resp = await api.login(email, password);
+      setSession(resp.access_token, resp.email, resp.role);
+      document.getElementById("login-overlay").classList.add("hidden");
+      startApp();
+    } catch (e) {
+      showError(errorMessage(e));
+    }
   });
+
+  document.getElementById("login-api-key-submit").addEventListener("click", () => {
+    const key = document.getElementById("login-api-key").value;
+    if (!key) return;
+    setApiKey(key);
+    document.getElementById("login-overlay").classList.add("hidden");
+    startApp();
+  });
+}
+
+function wireSessionHeader() {
+  const badge = document.getElementById("session-badge");
+  if (getToken()) {
+    badge.textContent = `${getEmail()} (${getRole()})`;
+  } else {
+    badge.textContent = "API key session";
+  }
+  document.getElementById("nav-sign-out").addEventListener("click", () => {
+    clearSession();
+    setApiKey("");
+    location.reload();
+  });
+}
+
+// ---------- init ----------
+async function startApp() {
+  wireSessionHeader();
+  gateWriteUI();
 
   document.getElementById("nav-companies").addEventListener("click", () => setView("cards"));
   document.getElementById("nav-review-queue").addEventListener("click", () => setView("review"));
@@ -615,6 +688,14 @@ async function init() {
     await refreshCompanies();
   } catch (e) {
     toast(errorMessage(e), "error");
+  }
+}
+
+function init() {
+  if (isAuthenticated()) {
+    startApp();
+  } else {
+    showLoginScreen();
   }
 }
 

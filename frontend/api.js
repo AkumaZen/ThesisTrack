@@ -1,11 +1,39 @@
 const API_BASE = "/api";
 
 export function getApiKey() {
-  return localStorage.getItem("thesis_api_key") || "dev-key";
+  return localStorage.getItem("thesis_api_key") || "";
 }
 
 export function setApiKey(key) {
   localStorage.setItem("thesis_api_key", key);
+}
+
+export function getToken() {
+  return localStorage.getItem("thesis_token") || "";
+}
+
+export function getRole() {
+  return localStorage.getItem("thesis_role") || "";
+}
+
+export function getEmail() {
+  return localStorage.getItem("thesis_email") || "";
+}
+
+export function setSession(token, email, role) {
+  localStorage.setItem("thesis_token", token);
+  localStorage.setItem("thesis_email", email);
+  localStorage.setItem("thesis_role", role);
+}
+
+export function clearSession() {
+  localStorage.removeItem("thesis_token");
+  localStorage.removeItem("thesis_email");
+  localStorage.removeItem("thesis_role");
+}
+
+export function isReadOnly() {
+  return getRole() === "read_only";
 }
 
 class ApiError extends Error {
@@ -30,12 +58,16 @@ function buildQuery(params) {
 }
 
 async function request(method, path, body) {
+  const headers = { "Content-Type": "application/json" };
+  const token = getToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  } else if (getApiKey()) {
+    headers["X-API-Key"] = getApiKey();
+  }
   const resp = await fetch(`${API_BASE}${path}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": getApiKey(),
-    },
+    headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const isJson = resp.headers.get("content-type")?.includes("application/json");
@@ -45,6 +77,10 @@ async function request(method, path, body) {
 }
 
 export const api = {
+  login: (email, password) => request("POST", "/auth/login", { email, password }),
+  me: () => request("GET", "/auth/me"),
+  changePassword: (oldPassword, newPassword) =>
+    request("POST", "/auth/change-password", { old_password: oldPassword, new_password: newPassword }),
   listCompanies: (params) => request("GET", `/companies?${buildQuery(params)}`),
   getCompany: (id) => request("GET", `/companies/${encodeURIComponent(id)}`),
   createCompany: (payload) => request("POST", "/companies", payload),

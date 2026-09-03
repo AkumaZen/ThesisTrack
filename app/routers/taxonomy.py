@@ -4,13 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import require_api_key
+from app.auth import Actor, get_current_actor, require_write
 from app.db import get_db
 from app.models import MetricDefinition
 from app.schemas.company import IndustryOut, MetricOut, NicheOut, NicheProposeIn
 from app.services.taxonomy import TaxonomyError, list_taxonomy, propose_niche
 
-router = APIRouter(prefix="/api", tags=["taxonomy"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/api", tags=["taxonomy"], dependencies=[Depends(get_current_actor)])
 
 
 @router.get("/taxonomy", response_model=list[IndustryOut])
@@ -19,7 +19,7 @@ def get_taxonomy(db: Session = Depends(get_db)):
 
 
 @router.post("/taxonomy/niches", response_model=NicheOut, status_code=status.HTTP_201_CREATED)
-def post_niche(payload: NicheProposeIn, db: Session = Depends(get_db)):
+def post_niche(payload: NicheProposeIn, db: Session = Depends(get_db), actor: Actor = Depends(require_write)):
     try:
         niche = propose_niche(db, payload.broad_industry, payload.name)
     except TaxonomyError as exc:
