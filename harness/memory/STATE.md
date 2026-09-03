@@ -32,23 +32,33 @@ Done:
     part 2. Toggle between "since thesis review" and "since first buy",
     manual price entry only (screener auto-pull explicitly deferred, not
     built - price_observations.source reserves the value for later)
-  - 114 tests total, all green
-  - 25 ADRs + 5 gotchas in harness/memory/, all evidence-cited
+  - Per-user parallel thesis "scenarios" (ADR-026) - part 3, the biggest
+    change of the session. companies split into shared identity +
+    thesis_scenarios (one row per company+owner). Actions implicitly
+    apply to the caller's own scenario (no scenario_id in URLs). Rule
+    engine and review queue both made scenario-aware (real mid-design
+    discoveries, not part of the original plan). Comparison/diff view
+    between two users' theses is an explicit fast-follow, not built yet.
+  - 123 tests total, all green
+  - 26 ADRs + 5 gotchas in harness/memory/, all evidence-cited
 
-In flight: the "track real investing behavior" 3-part sequence
+In flight: the "track real investing behavior" 3-part sequence - ALL THREE PARTS DONE.
   1. Buy/sell decision tracking - DONE (ADR-024).
   2. Thesis performance vs. real stock price - DONE (ADR-025). Manual
      price entry only; pulling from the `screener` MCP tools (Indian
      equities, screener.in-backed) is explicitly deferred, not scoped yet
      - price_observations.source already reserves 'screener' as a value
      for whenever that gets built.
-  3. Per-user parallel thesis "scenarios" - NOT STARTED, and the biggest
-     of the three: needs a new layer between company and thesis-version
-     history, with kill_triggers/health_checks/status_events re-scoped to
-     the scenario rather than the company. Do NOT start this without
-     re-confirming scope with the user first - it's a real schema
-     redesign, not an additive feature like everything built so far this
-     session.
+  3. Per-user parallel thesis "scenarios" - DONE (ADR-026). Verified live
+     with two real seeded users (rohit.negi@rdc.in, siddhesh.dige@rdc.in)
+     holding genuinely independent theses on the same company.
+
+Explicit fast-follow, not started: side-by-side "compare theses" view
+(similarities/differences between two users' theses on the same company) -
+deferred by the user's own choice when asked, to keep the scenario schema
+change itself reviewable on its own first. `other_scenarios` on
+CompanyDetail (owner/label/status/last_reviewed) is already there to build
+on top of.
 
 Blocked: nothing
 
@@ -64,6 +74,6 @@ verify it, then let the user actually try it before it goes anywhere.
 Every commit this session has stayed local; nothing has been pushed to
 GitHub or redeployed since the Vercel setup itself.
 
-Next action: part 3 of the investing-behavior sequence (per-user parallel
-thesis "scenarios") - the biggest of the three, needs scope re-confirmed
-with the user before starting, per the standing "don't rush" preference.
+Next action: none pending. The 3-part investing-behavior request is
+complete. Natural next step, if the user wants it, is the deferred
+comparison/diff view between two users' theses on the same company.

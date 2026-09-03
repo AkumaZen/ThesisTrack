@@ -93,6 +93,10 @@ class MetricDefinition(Base):
 
 
 class Company(Base):
+    """Pure shared identity now - see ThesisScenario for the per-user thesis
+    opinion (status, kill_triggers, current version, etc.) that used to live
+    here directly, before per-user parallel theses (ADR-026)."""
+
     __tablename__ = "companies"
 
     company_id: Mapped[str] = mapped_column(String(50), primary_key=True)
@@ -101,6 +105,21 @@ class Company(Base):
     specific_niche_id: Mapped[int] = mapped_column(ForeignKey("specific_niches.id"), nullable=False)
     operating_model: Mapped[str] = mapped_column(OperatingModelEnum, nullable=False)
     currency: Mapped[str] = mapped_column(CHAR(3), nullable=False, default="INR")
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+
+class ThesisScenario(Base):
+    """One user's independent thesis on a company - own status, own
+    kill-triggers (via its own thesis_versions), own version history.
+    UNIQUE(company_id, owner): one thesis per user per company."""
+
+    __tablename__ = "thesis_scenarios"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    owner: Mapped[str] = mapped_column(String(80), nullable=False)
+    label: Mapped[str] = mapped_column(String(120), nullable=False, default="Thesis")
     status: Mapped[str] = mapped_column(ThesisStatusEnum, nullable=False, default="on_track")
     status_source: Mapped[str] = mapped_column(VerdictSourceEnum, nullable=False, default="manual")
     outcome: Mapped[str] = mapped_column(ThesisOutcomeEnum, nullable=False, default="open")
@@ -114,19 +133,22 @@ class Company(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
-    __table_args__ = (CheckConstraint("conviction BETWEEN 1 AND 5"),)
+    __table_args__ = (UniqueConstraint("company_id", "owner"), CheckConstraint("conviction BETWEEN 1 AND 5"))
 
     versions: Mapped[list["ThesisVersion"]] = relationship(
-        back_populates="company", foreign_keys="ThesisVersion.company_id"
+        back_populates="scenario", foreign_keys="ThesisVersion.scenario_id"
     )
 
 
 class ThesisVersion(Base):
     __tablename__ = "thesis_versions"
-    __table_args__ = (UniqueConstraint("company_id", "version_no"),)
+    __table_args__ = (UniqueConstraint("scenario_id", "version_no"),)
 
     version_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    scenario_id: Mapped[int] = mapped_column(
+        ForeignKey("thesis_scenarios.id", ondelete="CASCADE"), nullable=False
+    )
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
     thesis_data: Mapped[dict] = mapped_column(JSONB, nullable=False)
     change_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -139,7 +161,7 @@ class ThesisVersion(Base):
         TSVECTOR, Computed("''", persisted=True), nullable=True
     )
 
-    company: Mapped["Company"] = relationship(back_populates="versions", foreign_keys=[company_id])
+    scenario: Mapped["ThesisScenario"] = relationship(back_populates="versions", foreign_keys=[scenario_id])
     kill_triggers: Mapped[list["KillTrigger"]] = relationship(back_populates="version")
 
 
@@ -201,6 +223,7 @@ class HealthCheck(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    scenario_id: Mapped[int] = mapped_column(ForeignKey("thesis_scenarios.id", ondelete="CASCADE"), nullable=False)
     version_id: Mapped[int] = mapped_column(ForeignKey("thesis_versions.version_id"), nullable=False)
     period: Mapped[str] = mapped_column(String(10), nullable=False)
     verdict: Mapped[str] = mapped_column(ThesisStatusEnum, nullable=False)
@@ -219,6 +242,7 @@ class PositionDecision(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    scenario_id: Mapped[int] = mapped_column(ForeignKey("thesis_scenarios.id", ondelete="CASCADE"), nullable=False)
     version_id: Mapped[Optional[int]] = mapped_column(ForeignKey("thesis_versions.version_id"), nullable=True)
     action: Mapped[str] = mapped_column(String(4), nullable=False)
     price: Mapped[Decimal] = mapped_column(Numeric, nullable=False)
@@ -247,6 +271,7 @@ class StatusProposal(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    scenario_id: Mapped[int] = mapped_column(ForeignKey("thesis_scenarios.id", ondelete="CASCADE"), nullable=False)
     period: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     proposed_status: Mapped[str] = mapped_column(ThesisStatusEnum, nullable=False)
     source: Mapped[str] = mapped_column(VerdictSourceEnum, nullable=False)
@@ -335,6 +360,7 @@ class StatusEvent(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    scenario_id: Mapped[int] = mapped_column(ForeignKey("thesis_scenarios.id", ondelete="CASCADE"), nullable=False)
     from_status: Mapped[Optional[str]] = mapped_column(ThesisStatusEnum, nullable=True)
     to_status: Mapped[str] = mapped_column(ThesisStatusEnum, nullable=False)
     source: Mapped[str] = mapped_column(VerdictSourceEnum, nullable=False)

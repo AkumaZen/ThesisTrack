@@ -1,8 +1,9 @@
-"""Company creation, thesis amendment, and version diffing (BUILD_PLAN.md §1.3, §6).
+"""Company/scenario creation, thesis amendment, and version diffing
+(BUILD_PLAN.md §1.3, §6; per-user scenarios per ADR-026).
 
 thesis_versions is append-only (enforced by a DB trigger - see the P0
 migration); this module only ever INSERTs new version rows and repoints
-companies.current_version_id, never UPDATEs an existing version.
+scenario.current_version_id, never UPDATEs an existing version.
 """
 from typing import Any
 
@@ -11,8 +12,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import ANALYST_NAME
-from app.models import BroadIndustry, Company, KillTrigger, SpecificNiche, ThesisVersion
+from app.models import BroadIndustry, Company, KillTrigger, SpecificNiche, ThesisScenario, ThesisVersion
 from app.schemas.thesis import ThesisCreate, ThesisData
+from app.services.scenarios import ScenarioNotFoundError, get_scenario_optional
 
 
 class NotFoundError(Exception):
@@ -64,30 +66,47 @@ def _write_kill_triggers(db: Session, version_id: int, thesis_data: ThesisData) 
         )
 
 
-def create_company(db: Session, payload: ThesisCreate, actor: str = ANALYST_NAME) -> Company:
-    if db.get(Company, payload.company_id) is not None:
-        raise AlreadyExistsError(f"company '{payload.company_id}' already exists")
+def create_company(db: Session, payload: ThesisCreate, actor: str = ANALYST_NAME) -> ThesisScenario:
+    """Creates a brand-new company + the caller's first scenario on it, OR -
+    if the company already exists under someone else's thesis - just starts
+    the caller's own new scenario on that existing company (same endpoint,
+    same payload shape; classification fields are ignored for an existing
+    company since identity is shared and already set). Raises
+    AlreadyExistsError only if the caller already has a scenario here.
+    """
+    company = db.get(Company, payload.company_id)
+    if company is not None and get_scenario_optional(db, payload.company_id, actor) is not None:
+        raise AlreadyExistsError(f"'{actor}' already has a thesis on company '{payload.company_id}'")
 
-    industry, niche = _resolve_taxonomy(
-        db, payload.classification.broad_industry, payload.classification.specific_niche
-    )
+    if company is None:
+        industry, niche = _resolve_taxonomy(
+            db, payload.classification.broad_industry, payload.classification.specific_niche
+        )
+        company = Company(
+            company_id=payload.company_id,
+            name=payload.name,
+            broad_industry_id=industry.id,
+            specific_niche_id=niche.id,
+            operating_model=payload.classification.operating_model,
+            currency=payload.classification.currency,
+        )
+        db.add(company)
+        db.flush()
 
-    company = Company(
-        company_id=payload.company_id,
-        name=payload.name,
-        broad_industry_id=industry.id,
-        specific_niche_id=niche.id,
-        operating_model=payload.classification.operating_model,
-        currency=payload.classification.currency,
+    scenario = ThesisScenario(
+        company_id=company.company_id,
+        owner=actor,
+        label="Thesis",
         status=payload.status,
         status_source="manual",
         last_reviewed=payload.last_reviewed,
     )
-    db.add(company)
+    db.add(scenario)
     db.flush()
 
     version = ThesisVersion(
         company_id=company.company_id,
+        scenario_id=scenario.id,
         version_no=1,
         thesis_data=payload.thesis_data.model_dump(mode="json"),
         change_note="initial thesis",
@@ -98,29 +117,32 @@ def create_company(db: Session, payload: ThesisCreate, actor: str = ANALYST_NAME
 
     _write_kill_triggers(db, version.version_id, payload.thesis_data)
 
-    company.current_version_id = version.version_id
+    scenario.current_version_id = version.version_id
     db.commit()
-    db.refresh(company)
-    return company
+    db.refresh(scenario)
+    return scenario
 
 
 def amend_thesis(
     db: Session, company_id: str, thesis_data: ThesisData, change_note: str, actor: str = ANALYST_NAME
 ) -> ThesisVersion:
-    company = db.get(Company, company_id)
-    if company is None:
-        raise NotFoundError(f"company '{company_id}' not found")
+    scenario = get_scenario_optional(db, company_id, actor)
+    if scenario is None:
+        if db.get(Company, company_id) is None:
+            raise NotFoundError(f"company '{company_id}' not found")
+        raise ScenarioNotFoundError(f"'{actor}' has no thesis on company '{company_id}' yet - start one first")
 
     version: ThesisVersion | None = None
     max_attempts = 5
     for attempt in range(max_attempts):
         next_version_no = (
-            db.scalar(select(func.max(ThesisVersion.version_no)).where(ThesisVersion.company_id == company_id))
+            db.scalar(select(func.max(ThesisVersion.version_no)).where(ThesisVersion.scenario_id == scenario.id))
             or 0
         ) + 1
 
         version = ThesisVersion(
             company_id=company_id,
+            scenario_id=scenario.id,
             version_no=next_version_no,
             thesis_data=thesis_data.model_dump(mode="json"),
             change_note=change_note,
@@ -132,12 +154,12 @@ def amend_thesis(
             break
         except IntegrityError:
             db.rollback()
-            company = db.get(Company, company_id)
+            scenario = get_scenario_optional(db, company_id, actor)
             if attempt == max_attempts - 1:
                 raise
 
     _write_kill_triggers(db, version.version_id, thesis_data)
-    company.current_version_id = version.version_id
+    scenario.current_version_id = version.version_id
     db.commit()
     db.refresh(version)
     return version

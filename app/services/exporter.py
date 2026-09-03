@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.llm.prompts import REVIEWER_PROMPT_VERSION, REVIEWER_SYSTEM_PROMPT
-from app.models import Company, HealthCheck, KillTrigger, Observation, ThesisVersion, TrainingSplit
+from app.models import Company, HealthCheck, KillTrigger, Observation, ThesisScenario, ThesisVersion, TrainingSplit
 from app.schemas.thesis import ThesisData
 
 VALID_TASKS = {"thesis_synthesis", "verdict", "redline_extraction"}
@@ -129,9 +129,10 @@ def _verdict_rows(db: Session, company_ids: set[str], include_open: bool) -> Ite
         if not hc.reasoning_chain or len(hc.reasoning_chain) < 3:
             continue
 
-        company = db.get(Company, hc.company_id)
-        # rule 4: default to resolved-outcome companies only for this task
-        if not include_open and company.outcome == "open":
+        # rule 4: default to resolved-outcome scenarios only for this task -
+        # "outcome" is per-user thesis state now (ADR-026), not company-wide.
+        scenario = db.get(ThesisScenario, hc.scenario_id)
+        if not include_open and scenario.outcome == "open":
             continue
 
         version = db.get(ThesisVersion, hc.version_id)

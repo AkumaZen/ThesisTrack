@@ -1,4 +1,6 @@
-"""Human verdicts and the override audit trail (BUILD_PLAN.md §5 rules 1-3).
+"""Human verdicts and the override audit trail (BUILD_PLAN.md §5 rules 1-3;
+per-user scenarios per ADR-026 - every status mutation here acts on one
+scenario, not the whole company).
 
 Precedence when sources disagree: human > rule engine > AI (§5 rule 3). A
 fired kill-severity proposal (source=rule_engine, proposed_status='broken')
@@ -8,11 +10,11 @@ every resolution - override or not - writes a status_events row.
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import ANALYST_NAME
-from app.models import Company, HealthCheck, StatusEvent, StatusProposal
+from app.models import Company, HealthCheck, StatusEvent, StatusProposal, ThesisScenario
+from app.services.scenarios import ScenarioNotFoundError, get_my_scenario
 
 
 class NotFoundError(Exception):
@@ -27,10 +29,12 @@ class OverrideRequiresNoteError(Exception):
     pass
 
 
-def _find_active_fired_kill(db: Session, company_id: str) -> Optional[StatusProposal]:
+def _find_active_fired_kill(db: Session, scenario_id: int) -> Optional[StatusProposal]:
+    from sqlalchemy import select
+
     return db.scalar(
         select(StatusProposal).where(
-            StatusProposal.company_id == company_id,
+            StatusProposal.scenario_id == scenario_id,
             StatusProposal.source == "rule_engine",
             StatusProposal.proposed_status == "broken",
             StatusProposal.state == "pending",
@@ -52,13 +56,13 @@ def resolve_proposal(
     if proposal.state != "pending":
         raise AlreadyResolvedError(f"proposal {proposal_id} is already {proposal.state}")
 
-    company = db.get(Company, proposal.company_id)
+    scenario = db.get(ThesisScenario, proposal.scenario_id)
     is_fired_kill = proposal.source == "rule_engine" and proposal.proposed_status == "broken"
 
     if action == "accept":
         final_status = verdict or proposal.proposed_status
     elif action == "reject":
-        final_status = company.status
+        final_status = scenario.status
     else:
         raise ValueError(f"action must be 'accept' or 'reject', got {action!r}")
 
@@ -68,7 +72,7 @@ def resolve_proposal(
             "overriding a fired kill trigger requires a non-empty resolution_note"
         )
 
-    from_status = company.status
+    from_status = scenario.status
 
     if action == "accept":
         # Only ai_proposed evidence carries a real reasoning_chain (BUILD_PLAN.md
@@ -79,8 +83,9 @@ def resolve_proposal(
         reasoning_chain = (proposal.evidence or {}).get("reasoning_chain") if proposal.source == "ai_proposed" else None
         db.add(
             HealthCheck(
-                company_id=company.company_id,
-                version_id=company.current_version_id,
+                company_id=scenario.company_id,
+                scenario_id=scenario.id,
+                version_id=scenario.current_version_id,
                 period=proposal.period,
                 verdict=final_status,
                 source="manual",
@@ -91,9 +96,9 @@ def resolve_proposal(
                 author=actor,
             )
         )
-        company.status = final_status
-        company.status_source = "manual"
-        company.last_reviewed = date.today()
+        scenario.status = final_status
+        scenario.status_source = "manual"
+        scenario.last_reviewed = date.today()
 
     proposal.state = "accepted" if action == "accept" else "rejected"
     proposal.resolved_by = actor
@@ -101,7 +106,8 @@ def resolve_proposal(
 
     db.add(
         StatusEvent(
-            company_id=company.company_id,
+            company_id=scenario.company_id,
+            scenario_id=scenario.id,
             from_status=from_status,
             to_status=final_status,
             source="manual",
@@ -120,21 +126,20 @@ def resolve_proposal(
 def submit_health_check(
     db: Session, company_id: str, period: str, verdict: str, note: str, actor: str = ANALYST_NAME
 ) -> HealthCheck:
-    company = db.get(Company, company_id)
-    if company is None:
-        raise NotFoundError(f"company '{company_id}' not found")
+    scenario = get_my_scenario(db, company_id, actor)
 
-    active_kill = _find_active_fired_kill(db, company_id)
+    active_kill = _find_active_fired_kill(db, scenario.id)
     is_override = active_kill is not None and verdict != "broken"
     if is_override and not note:
         raise OverrideRequiresNoteError(
             "overriding an active fired kill trigger requires a non-empty note"
         )
 
-    from_status = company.status
+    from_status = scenario.status
     health = HealthCheck(
         company_id=company_id,
-        version_id=company.current_version_id,
+        scenario_id=scenario.id,
+        version_id=scenario.current_version_id,
         period=period,
         verdict=verdict,
         source="manual",
@@ -143,13 +148,14 @@ def submit_health_check(
         author=actor,
     )
     db.add(health)
-    company.status = verdict
-    company.status_source = "manual"
-    company.last_reviewed = date.today()
+    scenario.status = verdict
+    scenario.status_source = "manual"
+    scenario.last_reviewed = date.today()
 
     db.add(
         StatusEvent(
             company_id=company_id,
+            scenario_id=scenario.id,
             from_status=from_status,
             to_status=verdict,
             source="manual",
@@ -164,21 +170,20 @@ def submit_health_check(
     return health
 
 
-def close_outcome(db: Session, company_id: str, outcome: str, note: str, actor: str = ANALYST_NAME) -> Company:
-    company = db.get(Company, company_id)
-    if company is None:
-        raise NotFoundError(f"company '{company_id}' not found")
+def close_outcome(db: Session, company_id: str, outcome: str, note: str, actor: str = ANALYST_NAME) -> ThesisScenario:
+    scenario = get_my_scenario(db, company_id, actor)
 
-    company.outcome = outcome
-    company.exit_date = date.today()
+    scenario.outcome = outcome
+    scenario.exit_date = date.today()
 
     # No dedicated column for a retrospective note (BUILD_PLAN.md §2) - recorded
     # as a status_events entry (status itself is unchanged by closing the outcome).
     db.add(
         StatusEvent(
             company_id=company_id,
-            from_status=company.status,
-            to_status=company.status,
+            scenario_id=scenario.id,
+            from_status=scenario.status,
+            to_status=scenario.status,
             source="manual",
             proposal_id=None,
             rationale=f"outcome closed as '{outcome}': {note}",
@@ -187,5 +192,5 @@ def close_outcome(db: Session, company_id: str, outcome: str, note: str, actor: 
         )
     )
     db.commit()
-    db.refresh(company)
-    return company
+    db.refresh(scenario)
+    return scenario

@@ -6,6 +6,7 @@ export function renderHeaderStats(companies) {
   let reviewDue = 0;
   let activeOverrides = 0;
   for (const c of companies) {
+    if (!c.has_own_scenario) continue; // no thesis of the viewer's yet - nothing to count
     counts[c.status] = (counts[c.status] || 0) + 1;
     if ((daysSince(c.last_reviewed) ?? 0) > 91) reviewDue += 1;
     if (c.has_active_override) activeOverrides += 1;
@@ -53,6 +54,27 @@ export function renderCards(companies, metricDefsByKey) {
   }
   return companies
     .map((c) => {
+      // Per-user scenarios (ADR-026): status/last_reviewed reflect the
+      // viewing user's OWN thesis, if they have one on this company yet.
+      const scenarioBadge =
+        c.scenario_count > 1
+          ? `<span class="text-[10px] font-medium text-muted-fg bg-surface-3 px-2 py-0.5 rounded-full">${c.scenario_count} theses</span>`
+          : "";
+
+      if (!c.has_own_scenario) {
+        return `
+        <button data-company-id="${escapeHtml(c.company_id)}"
+          class="card-open text-left rounded-xl border border-dashed border-border bg-surface p-4 hover:shadow-md transition-shadow relative">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-ok">+ Start Your Own Thesis</span>
+            ${scenarioBadge}
+          </div>
+          <div class="mt-2 font-semibold text-fg">${escapeHtml(c.name)}</div>
+          <div class="text-xs text-muted-fg">${escapeHtml(c.broad_industry)} &gt; ${escapeHtml(c.specific_niche)}</div>
+          <div class="text-xs text-muted-fg mt-1">${escapeHtml(c.operating_model)}</div>
+        </button>`;
+      }
+
       const style = STATUS_STYLES[c.status] || STATUS_STYLES.on_track;
       const since = daysSince(c.last_reviewed);
       return `
@@ -62,6 +84,7 @@ export function renderCards(companies, metricDefsByKey) {
         <div class="flex items-center gap-2">
           <span class="inline-block h-2 w-2 rounded-full ${style.dot}"></span>
           <span class="text-xs font-medium ${style.pill} px-2 py-0.5 rounded-full ring-1">${style.label}</span>
+          ${scenarioBadge}
         </div>
         <div class="mt-2 font-semibold text-fg">${escapeHtml(c.name)}</div>
         <div class="text-xs text-muted-fg">${escapeHtml(c.broad_industry)} &gt; ${escapeHtml(c.specific_niche)}</div>

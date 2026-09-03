@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from app.auth import Actor, get_current_actor, require_write
 from app.db import get_db
 from app.schemas.decision import DecisionIn, DecisionOut
-from app.services.decisions import NotFoundError, list_decisions, log_decision
+from app.services.decisions import list_decisions, log_decision
+from app.services.scenarios import NotFoundError, ScenarioNotFoundError
 
 router = APIRouter(prefix="/api", tags=["decisions"], dependencies=[Depends(get_current_actor)])
 
@@ -42,7 +43,7 @@ def post_decision(
             payload.rationale,
             actor=actor.identity,
         )
-    except NotFoundError as exc:
+    except (NotFoundError, ScenarioNotFoundError) as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return _to_out(decision)
 

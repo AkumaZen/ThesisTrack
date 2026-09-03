@@ -11,9 +11,11 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import ANALYST_NAME
 from app.llm.client import LLMClient, LLMResponseError
 from app.llm.prompts import REVIEWER_SYSTEM_PROMPT, build_reviewer_user_prompt
 from app.models import BroadIndustry, Company, KillTrigger, Observation, SpecificNiche, StatusProposal, ThesisVersion, TriggerEvaluation
+from app.services.scenarios import get_scenario_optional
 
 VALID_VERDICTS = {"on_track", "watch_closely", "broken"}
 MAX_ATTEMPTS = 2
@@ -77,15 +79,22 @@ def _rule_engine_findings(db: Session, version_id: int, period: str) -> list[dic
 
 
 def run_ai_review(
-    db: Session, company_id: str, period: str, narrative: Optional[str], llm_client: LLMClient
+    db: Session,
+    company_id: str,
+    period: str,
+    narrative: Optional[str],
+    llm_client: LLMClient,
+    actor: str = ANALYST_NAME,
 ) -> StatusProposal:
     company = db.get(Company, company_id)
     if company is None:
         raise NotFoundError(f"company '{company_id}' not found")
-    if company.current_version_id is None:
-        raise NotFoundError(f"company '{company_id}' has no current thesis version")
 
-    version = db.get(ThesisVersion, company.current_version_id)
+    scenario = get_scenario_optional(db, company_id, actor)
+    if scenario is None or scenario.current_version_id is None:
+        raise NotFoundError(f"'{actor}' has no thesis on company '{company_id}' yet")
+
+    version = db.get(ThesisVersion, scenario.current_version_id)
     industry = db.get(BroadIndustry, company.broad_industry_id)
     niche = db.get(SpecificNiche, company.specific_niche_id)
 
@@ -133,6 +142,7 @@ def run_ai_review(
 
     proposal = StatusProposal(
         company_id=company_id,
+        scenario_id=scenario.id,
         period=period,
         proposed_status=verdict,
         source="ai_proposed",

@@ -17,6 +17,7 @@ from app.models import (
     SpecificNiche,
     StatusEvent,
     StatusProposal,
+    ThesisScenario,
     ThesisVersion,
     TriggerEvaluation,
 )
@@ -27,6 +28,7 @@ from app.schemas.company import (
     CompanyOut,
     KillTriggerOut,
     ObservationOut,
+    ScenarioSummary,
     ThesisAmend,
     VersionDetail,
     VersionDiffEntry,
@@ -35,6 +37,7 @@ from app.schemas.company import (
 )
 from app.schemas.proposal import HealthCheckOut, ProposalOut
 from app.schemas.thesis import ThesisCreate
+from app.services.scenarios import ScenarioNotFoundError, get_scenario_optional, list_scenarios
 from app.services.versioning import (
     AlreadyExistsError,
     NotFoundError,
@@ -47,10 +50,12 @@ from app.services.versioning import (
 router = APIRouter(prefix="/api", tags=["companies"], dependencies=[Depends(get_current_actor)])
 
 
-def _company_row_to_out(
+def _scenario_to_out(
     company: Company,
     industry_name: str,
     niche_name: str,
+    scenario: Optional[ThesisScenario],
+    scenario_count: int,
     has_active_override: bool = False,
     core_metrics: Optional[dict[str, float]] = None,
 ) -> CompanyOut:
@@ -61,22 +66,24 @@ def _company_row_to_out(
         specific_niche=niche_name,
         operating_model=company.operating_model,
         currency=company.currency,
-        status=company.status,
-        status_source=company.status_source,
-        outcome=company.outcome,
-        conviction=company.conviction,
-        last_reviewed=company.last_reviewed,
-        current_version_id=company.current_version_id,
+        status=scenario.status if scenario else None,
+        status_source=scenario.status_source if scenario else None,
+        outcome=scenario.outcome if scenario else None,
+        conviction=scenario.conviction if scenario else None,
+        last_reviewed=scenario.last_reviewed if scenario else None,
+        current_version_id=scenario.current_version_id if scenario else None,
+        scenario_id=scenario.id if scenario else None,
+        has_own_scenario=scenario is not None,
+        scenario_count=scenario_count,
         has_active_override=has_active_override,
         core_metrics=core_metrics or {},
     )
 
 
-def _core_metrics_by_company(db: Session, companies: list[Company]) -> dict[str, dict[str, float]]:
-    """company_id -> {metric_key: value} for is_core registry metrics, read from
-    each company's current thesis_data.proof_points.model_specific_metrics - the
-    'denormalized convenience copy for the card render' BUILD_PLAN.md §1.2 describes."""
-    version_ids = [c.current_version_id for c in companies if c.current_version_id]
+def _core_metrics_for_scenarios(db: Session, scenarios: list[ThesisScenario]) -> dict[int, dict[str, float]]:
+    """scenario_id -> {metric_key: value} for is_core registry metrics, read
+    from that scenario's current thesis_data.proof_points.model_specific_metrics."""
+    version_ids = [s.current_version_id for s in scenarios if s.current_version_id]
     if not version_ids:
         return {}
     versions_by_id = {
@@ -85,45 +92,48 @@ def _core_metrics_by_company(db: Session, companies: list[Company]) -> dict[str,
     core_keys = set(db.scalars(select(MetricDefinition.metric_key).where(MetricDefinition.is_core.is_(True))).all())
 
     result = {}
-    for company in companies:
-        version = versions_by_id.get(company.current_version_id)
+    for scenario in scenarios:
+        version = versions_by_id.get(scenario.current_version_id)
         if version is None:
             continue
         snapshot = (version.thesis_data or {}).get("proof_points", {}).get("model_specific_metrics", {})
-        result[company.company_id] = {k: v for k, v in snapshot.items() if k in core_keys}
+        result[scenario.id] = {k: v for k, v in snapshot.items() if k in core_keys}
     return result
 
 
-def _latest_override_flags(db: Session, company_ids: list[str]) -> dict[str, bool]:
-    """company_id -> whether that company's MOST RECENT status_event has override=True."""
-    if not company_ids:
+def _latest_override_flags(db: Session, scenario_ids: list[int]) -> dict[int, bool]:
+    """scenario_id -> whether that scenario's MOST RECENT status_event has override=True."""
+    if not scenario_ids:
         return {}
     rows = db.execute(
-        select(StatusEvent.company_id, StatusEvent.override)
-        .distinct(StatusEvent.company_id)
-        .where(StatusEvent.company_id.in_(company_ids))
-        .order_by(StatusEvent.company_id, StatusEvent.created_at.desc())
+        select(StatusEvent.scenario_id, StatusEvent.override)
+        .distinct(StatusEvent.scenario_id)
+        .where(StatusEvent.scenario_id.in_(scenario_ids))
+        .order_by(StatusEvent.scenario_id, StatusEvent.created_at.desc())
     ).all()
-    return {company_id: bool(override) for company_id, override in rows}
+    return {scenario_id: bool(override) for scenario_id, override in rows}
 
 
 @router.post("/companies", response_model=CompanyOut, status_code=status.HTTP_201_CREATED)
 def post_company(payload: ThesisCreate, db: Session = Depends(get_db), actor: Actor = Depends(require_write)):
     try:
-        company = create_company(db, payload, actor=actor.identity)
+        scenario = create_company(db, payload, actor=actor.identity)
     except AlreadyExistsError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     except TaxonomyError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
+    company = db.get(Company, scenario.company_id)
     industry = db.get(BroadIndustry, company.broad_industry_id)
     niche = db.get(SpecificNiche, company.specific_niche_id)
-    return _company_row_to_out(company, industry.name, niche.name)
+    scenario_count = len(list_scenarios(db, company.company_id))
+    return _scenario_to_out(company, industry.name, niche.name, scenario, scenario_count)
 
 
 @router.get("/companies", response_model=CompanyListResponse)
 def list_companies(
     db: Session = Depends(get_db),
+    actor: Actor = Depends(get_current_actor),
     broad_industry: Optional[list[str]] = Query(default=None),
     niche: Optional[list[str]] = Query(default=None),
     operating_model: Optional[list[str]] = Query(default=None),
@@ -135,9 +145,18 @@ def list_companies(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=25, ge=1, le=200),
 ):
-    stmt = select(Company, BroadIndustry.name, SpecificNiche.name).join(
-        BroadIndustry, Company.broad_industry_id == BroadIndustry.id
-    ).join(SpecificNiche, Company.specific_niche_id == SpecificNiche.id)
+    # Filters/sort that reference thesis state (status, last_reviewed) act on
+    # the CALLING user's own scenario, so this always joins through the
+    # caller's scenario rather than any scenario on the company.
+    stmt = (
+        select(Company, BroadIndustry.name, SpecificNiche.name, ThesisScenario)
+        .join(BroadIndustry, Company.broad_industry_id == BroadIndustry.id)
+        .join(SpecificNiche, Company.specific_niche_id == SpecificNiche.id)
+        .outerjoin(
+            ThesisScenario,
+            (ThesisScenario.company_id == Company.company_id) & (ThesisScenario.owner == actor.identity),
+        )
+    )
 
     if broad_industry:
         stmt = stmt.where(BroadIndustry.name.in_(broad_industry))
@@ -146,39 +165,50 @@ def list_companies(
     if operating_model:
         stmt = stmt.where(Company.operating_model.in_(operating_model))
     if status_:
-        stmt = stmt.where(Company.status.in_(status_))
+        stmt = stmt.where(ThesisScenario.status.in_(status_))
     if outcome:
-        stmt = stmt.where(Company.outcome == outcome)
+        stmt = stmt.where(ThesisScenario.outcome == outcome)
     if q:
         stmt = stmt.where(Company.name.ilike(f"%{q}%"))
     if review_due:
         cutoff = date.today() - timedelta(days=91)
-        stmt = stmt.where(Company.last_reviewed < cutoff)
+        stmt = stmt.where(ThesisScenario.last_reviewed < cutoff)
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    sort_column = {"name": Company.name, "last_reviewed": Company.last_reviewed}.get(sort, Company.name)
+    sort_column = {"name": Company.name, "last_reviewed": ThesisScenario.last_reviewed}.get(sort, Company.name)
     stmt = stmt.order_by(sort_column).offset((page - 1) * page_size).limit(page_size)
 
     rows = db.execute(stmt).all()
-    override_flags = _latest_override_flags(db, [company.company_id for company, _, _ in rows])
-    core_metrics = _core_metrics_by_company(db, [company for company, _, _ in rows])
+    company_ids = [company.company_id for company, _, _, _ in rows]
+    scenario_counts = dict(
+        db.execute(
+            select(ThesisScenario.company_id, func.count())
+            .where(ThesisScenario.company_id.in_(company_ids))
+            .group_by(ThesisScenario.company_id)
+        ).all()
+    )
+    my_scenarios = [scenario for _, _, _, scenario in rows if scenario is not None]
+    override_flags = _latest_override_flags(db, [s.id for s in my_scenarios])
+    core_metrics = _core_metrics_for_scenarios(db, my_scenarios)
     items = [
-        _company_row_to_out(
+        _scenario_to_out(
             company,
             industry_name,
             niche_name,
-            override_flags.get(company.company_id, False),
-            core_metrics.get(company.company_id),
+            scenario,
+            scenario_counts.get(company.company_id, 0),
+            override_flags.get(scenario.id, False) if scenario else False,
+            core_metrics.get(scenario.id) if scenario else None,
         )
-        for company, industry_name, niche_name in rows
+        for company, industry_name, niche_name, scenario in rows
     ]
 
     return CompanyListResponse(items=items, total=total or 0, page=page, page_size=page_size)
 
 
 @router.get("/companies/{company_id}", response_model=CompanyDetail)
-def get_company(company_id: str, db: Session = Depends(get_db)):
+def get_company(company_id: str, db: Session = Depends(get_db), actor: Actor = Depends(get_current_actor)):
     row = db.execute(
         select(Company, BroadIndustry.name, SpecificNiche.name)
         .join(BroadIndustry, Company.broad_industry_id == BroadIndustry.id)
@@ -189,10 +219,22 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"company '{company_id}' not found")
     company, industry_name, niche_name = row
 
-    current_version = db.get(ThesisVersion, company.current_version_id) if company.current_version_id else None
+    all_scenarios = list_scenarios(db, company_id)
+    scenario = next((s for s in all_scenarios if s.owner == actor.identity), None)
+    other_scenarios = [
+        ScenarioSummary(id=s.id, owner=s.owner, label=s.label, status=s.status, last_reviewed=s.last_reviewed)
+        for s in all_scenarios
+        if s.owner != actor.identity
+    ]
+
+    if scenario is None:
+        base = _scenario_to_out(company, industry_name, niche_name, None, len(all_scenarios))
+        return CompanyDetail(**base.model_dump(), other_scenarios=other_scenarios)
+
+    current_version = db.get(ThesisVersion, scenario.current_version_id) if scenario.current_version_id else None
     versions = db.scalars(
         select(ThesisVersion)
-        .where(ThesisVersion.company_id == company_id)
+        .where(ThesisVersion.scenario_id == scenario.id)
         .order_by(ThesisVersion.version_no.desc())
         .limit(8)
     ).all()
@@ -217,12 +259,12 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
     )
 
     health_checks = db.scalars(
-        select(HealthCheck).where(HealthCheck.company_id == company_id).order_by(HealthCheck.created_at.desc())
+        select(HealthCheck).where(HealthCheck.scenario_id == scenario.id).order_by(HealthCheck.created_at.desc())
     ).all()
 
     pending_proposals = db.scalars(
         select(StatusProposal)
-        .where(StatusProposal.company_id == company_id, StatusProposal.state == "pending")
+        .where(StatusProposal.scenario_id == scenario.id, StatusProposal.state == "pending")
         .order_by(StatusProposal.created_at.desc())
     ).all()
 
@@ -259,7 +301,7 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
             )
 
     latest_event = db.scalar(
-        select(StatusEvent).where(StatusEvent.company_id == company_id).order_by(StatusEvent.created_at.desc())
+        select(StatusEvent).where(StatusEvent.scenario_id == scenario.id).order_by(StatusEvent.created_at.desc())
     )
     active_override = (
         ActiveOverrideOut(
@@ -272,7 +314,7 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
         else None
     )
 
-    base = _company_row_to_out(company, industry_name, niche_name, active_override is not None)
+    base = _scenario_to_out(company, industry_name, niche_name, scenario, len(all_scenarios), active_override is not None)
     return CompanyDetail(
         **base.model_dump(),
         current_thesis=current_version.thesis_data if current_version else {},
@@ -330,6 +372,7 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
         ],
         kill_triggers=kill_triggers_out,
         active_override=active_override,
+        other_scenarios=other_scenarios,
     )
 
 
@@ -343,6 +386,8 @@ def put_thesis(
     try:
         version = amend_thesis(db, company_id, payload.thesis_data, payload.change_note, actor=actor.identity)
     except NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ScenarioNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
     return VersionDetail(
@@ -360,12 +405,18 @@ def get_versions(
     company_id: str,
     diff: Optional[str] = Query(default=None, description="'from,to' version_no pair, e.g. '1,3'"),
     db: Session = Depends(get_db),
+    actor: Actor = Depends(get_current_actor),
 ):
+    scenario = get_scenario_optional(db, company_id, actor.identity)
+    if scenario is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"'{actor.identity}' has no thesis on company '{company_id}' yet",
+        )
+
     versions = db.scalars(
-        select(ThesisVersion).where(ThesisVersion.company_id == company_id).order_by(ThesisVersion.version_no)
+        select(ThesisVersion).where(ThesisVersion.scenario_id == scenario.id).order_by(ThesisVersion.version_no)
     ).all()
-    if not versions:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"company '{company_id}' not found")
 
     summaries = [
         VersionSummary(

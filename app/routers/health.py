@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import Actor, get_current_actor, require_write
 from app.db import get_db
-from app.models import BroadIndustry, SpecificNiche, StatusProposal
+from app.models import BroadIndustry, Company, SpecificNiche, StatusProposal, ThesisScenario
 from app.schemas.company import CompanyOut
 from app.schemas.proposal import (
     HealthCheckIn,
@@ -23,6 +23,8 @@ from app.services.audit import (
     resolve_proposal,
     submit_health_check,
 )
+from app.services.scenarios import NotFoundError as CompanyNotFoundError
+from app.services.scenarios import ScenarioNotFoundError, list_scenarios
 
 router = APIRouter(prefix="/api", tags=["health"], dependencies=[Depends(get_current_actor)])
 
@@ -37,7 +39,7 @@ def post_health_check(
 ):
     try:
         health = submit_health_check(db, company_id, payload.period, payload.verdict, payload.note, actor=actor.identity)
-    except NotFoundError as exc:
+    except (NotFoundError, CompanyNotFoundError, ScenarioNotFoundError) as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except OverrideRequiresNoteError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
@@ -60,8 +62,14 @@ def list_proposals(
     state: Optional[str] = Query(default="pending"),
     company_id: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
+    actor: Actor = Depends(get_current_actor),
 ):
-    stmt = select(StatusProposal)
+    # Review queue is per-user (ADR-026): a proposal belongs to one
+    # scenario, and you should only be asked to resolve your own thesis's
+    # proposals, not every user's on every company.
+    stmt = select(StatusProposal).join(ThesisScenario, StatusProposal.scenario_id == ThesisScenario.id).where(
+        ThesisScenario.owner == actor.identity
+    )
     if state:
         stmt = stmt.where(StatusProposal.state == state)
     if company_id:
@@ -123,10 +131,11 @@ def post_outcome(
     actor: Actor = Depends(require_write),
 ):
     try:
-        company = close_outcome(db, company_id, payload.outcome, payload.note, actor=actor.identity)
-    except NotFoundError as exc:
+        scenario = close_outcome(db, company_id, payload.outcome, payload.note, actor=actor.identity)
+    except (NotFoundError, CompanyNotFoundError, ScenarioNotFoundError) as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
+    company = db.get(Company, company_id)
     industry = db.get(BroadIndustry, company.broad_industry_id)
     niche = db.get(SpecificNiche, company.specific_niche_id)
     return CompanyOut(
@@ -136,10 +145,13 @@ def post_outcome(
         specific_niche=niche.name,
         operating_model=company.operating_model,
         currency=company.currency,
-        status=company.status,
-        status_source=company.status_source,
-        outcome=company.outcome,
-        conviction=company.conviction,
-        last_reviewed=company.last_reviewed,
-        current_version_id=company.current_version_id,
+        status=scenario.status,
+        status_source=scenario.status_source,
+        outcome=scenario.outcome,
+        conviction=scenario.conviction,
+        last_reviewed=scenario.last_reviewed,
+        current_version_id=scenario.current_version_id,
+        scenario_id=scenario.id,
+        has_own_scenario=True,
+        scenario_count=len(list_scenarios(db, company_id)),
     )

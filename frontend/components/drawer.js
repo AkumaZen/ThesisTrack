@@ -123,7 +123,42 @@ function pillarExtra(pillarKey, thesis) {
     <div id="drawer-tables-${pillarKey}" class="space-y-2 empty:hidden"></div>`;
 }
 
+// "Also tracked by" - other users' theses on this company (ADR-026). Full
+// side-by-side comparison is a fast-follow; for now this is a lightweight
+// pointer showing who else has a thesis here and where their status stands.
+function otherScenariosBlock(detail) {
+  if (!detail.other_scenarios?.length) return "";
+  return `
+    <div class="mt-3 flex flex-wrap items-center gap-1.5">
+      <span class="text-xs text-muted-fg">Also tracked by:</span>
+      ${detail.other_scenarios
+        .map((s) => {
+          const style = STATUS_STYLES[s.status] || STATUS_STYLES.on_track;
+          return `<span class="text-xs px-2 py-0.5 rounded-full ${style.pill} ring-1">${escapeHtml(s.owner)} &middot; ${style.label}</span>`;
+        })
+        .join("")}
+    </div>`;
+}
+
 export function renderDrawer(detail) {
+  if (!detail.has_own_scenario) {
+    return `
+      <div class="p-5 overflow-y-auto h-full">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-xl font-semibold">${escapeHtml(detail.name)}</h2>
+            <div class="text-sm text-muted-fg">${escapeHtml(detail.broad_industry)} &gt; ${escapeHtml(detail.specific_niche)} &middot; ${escapeHtml(detail.operating_model)} &middot; ${escapeHtml(detail.currency)}</div>
+          </div>
+          <button id="drawer-close" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
+        </div>
+        ${otherScenariosBlock(detail)}
+        <div class="mt-6 rounded-md border border-dashed border-border p-5 text-center">
+          <p class="text-sm text-muted-fg mb-3">You haven't started a thesis on this company yet.</p>
+          <button id="drawer-start-thesis" class="text-sm px-4 py-2 rounded-md bg-accent text-accent-ink hover:brightness-90">+ Start Your Own Thesis</button>
+        </div>
+      </div>`;
+  }
+
   const t = detail.current_thesis || {};
   const style = STATUS_STYLES[detail.status] || STATUS_STYLES.on_track;
   const revenueRows = (t.the_business?.revenue_split || [])
@@ -148,6 +183,7 @@ export function renderDrawer(detail) {
         </div>
         <button id="drawer-close" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
       </div>
+      ${otherScenariosBlock(detail)}
 
       ${detail.active_override ? `
         <div class="mt-3 rounded-md bg-danger/10 border border-danger/30 p-3 text-sm text-danger">

@@ -27,7 +27,7 @@ def post_ai_review(
     actor: Actor = Depends(require_write),
 ):
     try:
-        proposal = run_ai_review(db, company_id, payload.period, payload.narrative, llm_client)
+        proposal = run_ai_review(db, company_id, payload.period, payload.narrative, llm_client, actor=actor.identity)
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except AIReviewFailedError as exc:

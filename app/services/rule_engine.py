@@ -8,6 +8,11 @@ Grace-period continuity is tracked per kill_triggers.id, i.e. per thesis
 version: amending the thesis creates new trigger rows with fresh ids, so a
 streak does not carry across a redline's threshold changing mid-stream. This
 is a judgment call not spelled out in BUILD_PLAN.md - logged as ADR-008.
+
+Per-user scenarios (ADR-026): observations are shared/objective across a
+company, but kill_triggers belong to one scenario's thesis - two users can
+disagree on where the redline is. evaluate_observations now runs once per
+scenario on the company, each against its own current thesis's triggers.
 """
 from typing import Optional
 
@@ -15,7 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from app.models import Company, KillTrigger, Observation, StatusProposal, TriggerEvaluation
+from app.models import Company, KillTrigger, Observation, StatusProposal, ThesisScenario, TriggerEvaluation
 
 _OPERATORS = {
     "<": lambda a, b: a < b,
@@ -55,10 +60,10 @@ def _consecutive_breach_streak(db: Session, trigger: KillTrigger, company_id: st
     return streak
 
 
-def _existing_pending_trigger_ids(db: Session, company_id: str, period: str) -> set[int]:
+def _existing_pending_trigger_ids(db: Session, scenario_id: int, period: str) -> set[int]:
     rows = db.scalars(
         select(StatusProposal).where(
-            StatusProposal.company_id == company_id,
+            StatusProposal.scenario_id == scenario_id,
             StatusProposal.period == period,
             StatusProposal.source == "rule_engine",
             StatusProposal.state == "pending",
@@ -72,29 +77,26 @@ def _existing_pending_trigger_ids(db: Session, company_id: str, period: str) -> 
     return ids
 
 
-def evaluate_observations(db: Session, company_id: str, period: str) -> list[StatusProposal]:
-    company = db.get(Company, company_id)
-    if company is None:
-        raise NotFoundError(f"company '{company_id}' not found")
-    if company.current_version_id is None:
+def _evaluate_scenario(db: Session, scenario: ThesisScenario, period: str) -> list[StatusProposal]:
+    if scenario.current_version_id is None:
         return []
 
     triggers = db.scalars(
         select(KillTrigger).where(
-            KillTrigger.version_id == company.current_version_id,
+            KillTrigger.version_id == scenario.current_version_id,
             KillTrigger.manual_check.is_(False),
         )
     ).all()
     if not triggers:
         return []
 
-    already_pending = _existing_pending_trigger_ids(db, company_id, period)
+    already_pending = _existing_pending_trigger_ids(db, scenario.id, period)
     new_proposals: list[StatusProposal] = []
 
     for trigger in triggers:
         obs = db.scalar(
             select(Observation).where(
-                Observation.company_id == company_id,
+                Observation.company_id == scenario.company_id,
                 Observation.period == period,
                 Observation.metric_key == trigger.metric_key,
             )
@@ -106,7 +108,7 @@ def evaluate_observations(db: Session, company_id: str, period: str) -> list[Sta
         threshold = float(trigger.threshold)
         breached = _OPERATORS[trigger.operator](observed, threshold)
 
-        streak = _consecutive_breach_streak(db, trigger, company_id, breached)
+        streak = _consecutive_breach_streak(db, trigger, scenario.company_id, breached)
         fired = breached and streak >= trigger.grace_periods
 
         stmt = (
@@ -128,7 +130,8 @@ def evaluate_observations(db: Session, company_id: str, period: str) -> list[Sta
         if fired and trigger.id not in already_pending:
             proposed_status = "broken" if trigger.severity == "kill" else "watch_closely"
             proposal = StatusProposal(
-                company_id=company_id,
+                company_id=scenario.company_id,
+                scenario_id=scenario.id,
                 period=period,
                 proposed_status=proposed_status,
                 source="rule_engine",
@@ -151,7 +154,21 @@ def evaluate_observations(db: Session, company_id: str, period: str) -> list[Sta
             db.add(proposal)
             new_proposals.append(proposal)
 
-    db.commit()
-    for p in new_proposals:
-        db.refresh(p)
     return new_proposals
+
+
+def evaluate_observations(db: Session, company_id: str, period: str) -> list[StatusProposal]:
+    company = db.get(Company, company_id)
+    if company is None:
+        raise NotFoundError(f"company '{company_id}' not found")
+
+    scenarios = db.scalars(select(ThesisScenario).where(ThesisScenario.company_id == company_id)).all()
+
+    all_new_proposals: list[StatusProposal] = []
+    for scenario in scenarios:
+        all_new_proposals.extend(_evaluate_scenario(db, scenario, period))
+
+    db.commit()
+    for p in all_new_proposals:
+        db.refresh(p)
+    return all_new_proposals

@@ -157,6 +157,25 @@ async function openDrawer(companyId) {
   document.getElementById("drawer-overlay").classList.remove("hidden");
   document.getElementById("drawer-close").addEventListener("click", closeDrawer);
   document.getElementById("drawer-overlay").addEventListener("click", closeDrawer);
+
+  if (!detail.has_own_scenario) {
+    // ADR-026: nothing else in the drawer applies until the viewer has
+    // started their own thesis on this company - amend/observations/health
+    // checks/decisions/tables all belong to a scenario that doesn't exist yet.
+    document.getElementById("drawer-start-thesis").addEventListener("click", () =>
+      openIngestPage("create", null, {
+        company_id: detail.company_id,
+        name: detail.name,
+        broad_industry: detail.broad_industry,
+        specific_niche: detail.specific_niche,
+        operating_model: detail.operating_model,
+        currency: detail.currency,
+      })
+    );
+    gateWriteUI();
+    return;
+  }
+
   document.getElementById("drawer-amend").addEventListener("click", () => openIngestPage("amend", detail));
   document.getElementById("drawer-observations").addEventListener("click", () => openObservationsModal(detail));
   document.getElementById("drawer-health-check").addEventListener("click", () => openHealthCheckModal(detail));
@@ -734,7 +753,11 @@ function closeIngestPage() {
   page.innerHTML = "";
 }
 
-async function openIngestPage(mode, existing) {
+// prefillCompany: when starting your own thesis on a company that already
+// exists under someone else's (ADR-026), carries that company's identity
+// so Basics doesn't need re-typing - company_id/classification are locked
+// since they're shared, not something a new scenario can redefine.
+async function openIngestPage(mode, existing, prefillCompany) {
   const isAmend = mode === "amend" && existing;
   closeDrawer(); // full-page takeover - leaving the drawer open behind it serves no purpose
   showIngestPage(
@@ -759,6 +782,21 @@ async function openIngestPage(mode, existing) {
   }
   industrySelect.addEventListener("change", refreshNiches);
   refreshNiches();
+
+  if (prefillCompany) {
+    document.getElementById("f-company-id").value = prefillCompany.company_id;
+    document.getElementById("f-company-id").disabled = true;
+    document.getElementById("f-name").value = prefillCompany.name;
+    industrySelect.value = prefillCompany.broad_industry;
+    industrySelect.disabled = true;
+    refreshNiches();
+    nicheSelect.value = prefillCompany.specific_niche;
+    nicheSelect.disabled = true;
+    modelSelect.value = prefillCompany.operating_model;
+    modelSelect.disabled = true;
+    document.getElementById("f-currency").value = prefillCompany.currency;
+    document.getElementById("f-currency").disabled = true;
+  }
 
   async function refreshMetricsSection(existingValues = {}) {
     const metrics = await metricsFor(modelSelect.value);

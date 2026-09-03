@@ -45,8 +45,9 @@ def get_performance(
     company_id: str,
     baseline: BaselineMode = Query(default="thesis"),
     db: Session = Depends(get_db),
+    actor: Actor = Depends(get_current_actor),
 ):
     try:
-        return compute_performance(db, company_id, baseline)
+        return compute_performance(db, company_id, baseline, actor=actor.identity)
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

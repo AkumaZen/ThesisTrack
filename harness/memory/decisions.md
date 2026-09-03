@@ -1,5 +1,91 @@
 # Decisions (append-only ADR log)
 
+## ADR-026: Per-user parallel thesis "scenarios" - part 3 of 3, the big one
+The largest single change of the session - bigger than the P0-P6 build's
+individual phases. Splits `companies` (pure shared identity: name,
+industry/niche, operating_model, currency - objective, same for every
+viewer) from a new `thesis_scenarios` table (one row per (company, owner):
+status, status_source, outcome, conviction, entry/exit dates,
+last_reviewed, current_version_id - everything that used to be "the"
+company's state, now one user's opinion). `thesis_versions`,
+`health_checks`, `status_events`, `status_proposals`, `position_decisions`
+all gained a `scenario_id` (kept alongside their existing `company_id` -
+same denormalization health_checks already used for company_id+version_id,
+avoids forcing a join on every read). `observations`, `price_observations`,
+`custom_tables`, `guidance_notes` deliberately untouched - objective
+company facts or team coordination, shared across every scenario on a
+company, not one user's opinion.
+
+**API design - confirmed with the user before writing code, since it
+determines the whole shape of the change**: actions implicitly apply to
+the caller's own scenario. No explicit scenario_id in any URL - "amend the
+thesis" always means "amend my thesis," resolved via (company_id, actor)
+through a new `app/services/scenarios.py`. A scenario is created exactly
+once (via POST /companies, whether the company is brand-new or already
+exists under someone else's thesis - same endpoint, same payload, company
+identity fields ignored when the company already exists). Every other
+write (amend, health-check, decision, AI review) requires an existing
+scenario and 404s pointing at "start one first" rather than silently
+creating one on the wrong verb. This kept nearly every existing endpoint
+URL and most frontend call sites shape-compatible - the alternative
+(explicit scenario_id everywhere) would have meant rewriting every
+company-scoped URL and call site instead of just their internals.
+
+**Real discovery mid-design, surfaced to the user before writing 15+ files
+of code**: the rule engine used to run once per company; per-user
+kill-triggers mean it now has to run once per *scenario* on a company
+(`evaluate_observations` fans out over every scenario, each evaluated
+against its own current thesis's triggers against the same shared
+observations). Same fan-out logic needed for the review queue
+(`GET /proposals` - now joins through `thesis_scenarios` and filters to
+the caller's own scenario, otherwise one user would resolve/see another's
+pending proposals) - this second one wasn't caught in the initial design
+pass, only when writing `tests/test_scenarios.py`'s rule-engine test
+actually exercised two scenarios disagreeing on a redline threshold.
+
+**GET /companies/{id} shape**: rather than nesting everything under
+`my_scenario`/`other_scenarios` (which would touch every frontend read
+site), `CompanyDetail` keeps its existing flat fields (status,
+current_thesis, health_checks, etc.) now sourced from the caller's own
+scenario, `has_own_scenario: bool` distinguishes "no thesis of mine yet"
+from real values being null, and a new `other_scenarios: list[ScenarioSummary]`
+carries just enough (owner, label, status, last_reviewed) for the "N
+theses on this company" indicator - full side-by-side comparison
+(similarities/differences) is an explicit fast-follow, not built this pass,
+per the user's own choice when asked.
+
+**Migration** (`e5a91c4d7f22`): every existing company gets exactly one
+auto-created scenario, owned by its latest thesis version's author (or
+'analyst' if none), so nothing already in the database is orphaned.
+Downgrade path written and tested round-trip (upgrade -> downgrade ->
+re-upgrade) before any application code touched it, given how destructive
+the column drops on `companies` are.
+
+**Frontend**: cards show a "+ Start Your Own Thesis" dashed-border state
+(instead of a status pill) when the viewer has no scenario yet, plus an
+"N theses" badge when scenario_count > 1; the drawer shows "Also tracked
+by: <owner> · <status>" pills for other users' scenarios and, when the
+viewer has none, a prompt that opens the create flow with the company's
+identity fields prefilled and locked (company_id/classification can't be
+redefined by a second scenario). `openDrawer` now branches early on
+`has_own_scenario` - none of the write-action buttons (Amend, Post
+Observations, etc.) exist in the DOM when it's false, so wiring them
+unconditionally would throw.
+
+**Verification**: 123 tests pass (114 prior - all of them exercising the
+new scenario-aware code paths unchanged, since a fresh company always
+auto-creates exactly one scenario for its creator, so single-scenario
+behavior is provably identical to before - plus 9 new in
+`tests/test_scenarios.py` specifically exercising TWO different owners on
+one company, which nothing before this file ever did). Verified live via
+Playwright with two of the platform's real seeded users (rohit.negi@rdc.in,
+siddhesh.dige@rdc.in): user 1 created a company with an On Track thesis;
+user 2 opened the same company, saw "Start Your Own Thesis" with user 1's
+status cross-referenced, started their own Watch Closely thesis with
+different content, and both theses' independence was confirmed end to end
+- different status, different dashboard counts, different drawer content,
+each visible to the other only as a summary pill.
+
 ## ADR-025: Price tracking + customizable thesis-performance baseline - part 2 of 3
 User asked for both baseline options, explicitly "make it customizable"
 rather than picking one - a toggle, not a fixed choice. New `price_observations`

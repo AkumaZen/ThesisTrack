@@ -10,7 +10,8 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from app.models import Company, Observation, StatusEvent
+from app.config import ANALYST_NAME
+from app.models import Observation, StatusEvent
 from app.schemas.thesis import ThesisCreate
 from app.services.audit import (
     AlreadyResolvedError,
@@ -20,6 +21,7 @@ from app.services.audit import (
     submit_health_check,
 )
 from app.services.rule_engine import evaluate_observations
+from app.services.scenarios import get_my_scenario
 from app.services.versioning import create_company
 from tests.conftest import TestSession as _Session
 
@@ -84,11 +86,11 @@ def test_reject_fired_kill_with_note_is_an_override(db_conn):
 
     db = _Session()
     try:
-        company = db.get(Company, "BALU_FORGE")
+        scenario = get_my_scenario(db, "BALU_FORGE", ANALYST_NAME)
         events = db.scalars(select(StatusEvent).where(StatusEvent.company_id == "BALU_FORGE")).all()
     finally:
         db.close()
-    assert company.status == "on_track"  # unchanged
+    assert scenario.status == "on_track"  # unchanged
     assert len(events) == 1
     assert events[0].override is True
     assert events[0].to_status == "on_track"
@@ -105,11 +107,11 @@ def test_accept_fired_kill_flips_status_without_override(db_conn):
 
     db = _Session()
     try:
-        company = db.get(Company, "BALU_FORGE")
+        scenario = get_my_scenario(db, "BALU_FORGE", ANALYST_NAME)
         events = db.scalars(select(StatusEvent).where(StatusEvent.company_id == "BALU_FORGE")).all()
     finally:
         db.close()
-    assert company.status == "broken"
+    assert scenario.status == "broken"
     assert len(events) == 1
     assert events[0].override is False
 
@@ -154,10 +156,10 @@ def test_direct_health_check_override_with_note_succeeds(db_conn):
 
     db = _Session()
     try:
-        company = db.get(Company, "BALU_FORGE")
+        scenario = get_my_scenario(db, "BALU_FORGE", ANALYST_NAME)
     finally:
         db.close()
-    assert company.status == "on_track"
+    assert scenario.status == "on_track"
 
 
 def test_direct_health_check_without_active_kill_needs_no_special_handling(db_conn):

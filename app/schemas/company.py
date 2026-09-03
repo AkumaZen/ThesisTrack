@@ -12,6 +12,17 @@ class ThesisAmend(BaseModel):
     change_note: str
 
 
+class ScenarioSummary(BaseModel):
+    """One user's thesis on a company, at a glance - used for the "N theses
+    on this company" list/switcher (ADR-026)."""
+
+    id: int
+    owner: str
+    label: str
+    status: str
+    last_reviewed: date
+
+
 class CompanyOut(BaseModel):
     company_id: str
     name: str
@@ -19,12 +30,19 @@ class CompanyOut(BaseModel):
     specific_niche: str
     operating_model: str
     currency: str
-    status: str
-    status_source: str
-    outcome: str
+    # Per-user scenarios (ADR-026): these reflect the CALLING user's own
+    # thesis on this company, not "the" company status - there is no
+    # longer a single shared status. None/has_own_scenario=False means the
+    # caller hasn't started a thesis here yet.
+    status: Optional[str] = None
+    status_source: Optional[str] = None
+    outcome: Optional[str] = None
     conviction: Optional[int] = None
-    last_reviewed: date
+    last_reviewed: Optional[date] = None
     current_version_id: Optional[int] = None
+    scenario_id: Optional[int] = None
+    has_own_scenario: bool = False
+    scenario_count: int = 0
     has_active_override: bool = False
     core_metrics: dict[str, float] = {}
 
@@ -83,13 +101,14 @@ class ActiveOverrideOut(BaseModel):
 
 
 class CompanyDetail(CompanyOut):
-    current_thesis: dict[str, Any]
-    versions: list[VersionSummary]
-    observations: list[ObservationOut]
-    health_checks: list[HealthCheckOut]
-    pending_proposals: list[ProposalOut]
-    kill_triggers: list[KillTriggerOut]
+    current_thesis: dict[str, Any] = {}
+    versions: list[VersionSummary] = []
+    observations: list[ObservationOut] = []
+    health_checks: list[HealthCheckOut] = []
+    pending_proposals: list[ProposalOut] = []
+    kill_triggers: list[KillTriggerOut] = []
     active_override: Optional[ActiveOverrideOut] = None
+    other_scenarios: list[ScenarioSummary] = []
 
 
 class VersionDiffEntry(BaseModel):

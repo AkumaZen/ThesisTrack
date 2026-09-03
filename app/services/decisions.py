@@ -3,9 +3,14 @@ request (harness/memory/decisions.md has the full three-part breakdown).
 
 Decisions are append-only (position_decisions has the same BEFORE UPDATE OR
 DELETE trigger pattern as thesis_versions) since they're a record of a real
-financial action, not editable notes. Each decision captures the company's
-current_version_id at the moment it's logged - mirrors HealthCheck.version_id
-- so "what did we believe when we bought" stays answerable later.
+financial action, not editable notes. Each decision captures the caller's
+own scenario's current_version_id at the moment it's logged - mirrors
+HealthCheck.version_id - so "what did we believe when we bought" stays
+answerable later.
+
+Per-user scenarios (ADR-026): a decision belongs to the actor's own
+thesis - logging one requires the actor already have a scenario on this
+company (same rule as amending a thesis or logging a health check).
 """
 from datetime import date
 from decimal import Decimal
@@ -15,11 +20,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import ANALYST_NAME
-from app.models import Company, PositionDecision
-
-
-class NotFoundError(Exception):
-    pass
+from app.models import PositionDecision
+from app.services.scenarios import get_my_scenario
 
 
 def log_decision(
@@ -32,13 +34,12 @@ def log_decision(
     rationale: str,
     actor: str = ANALYST_NAME,
 ) -> PositionDecision:
-    company = db.get(Company, company_id)
-    if company is None:
-        raise NotFoundError(f"company '{company_id}' not found")
+    scenario = get_my_scenario(db, company_id, actor)
 
     decision = PositionDecision(
         company_id=company_id,
-        version_id=company.current_version_id,
+        scenario_id=scenario.id,
+        version_id=scenario.current_version_id,
         action=action,
         price=Decimal(str(price)),
         quantity=Decimal(str(quantity)) if quantity is not None else None,

@@ -10,10 +10,12 @@ from pathlib import Path
 import pytest
 from sqlalchemy import func, select
 
+from app.config import ANALYST_NAME
 from app.llm.client import FakeLLMClient, LLMResponseError, get_llm_client
-from app.models import Company, StatusProposal
+from app.models import StatusProposal
 from app.schemas.thesis import ThesisCreate
 from app.services.ai_reviewer import AIReviewFailedError, run_ai_review
+from app.services.scenarios import get_my_scenario
 from app.services.versioning import create_company
 from tests.conftest import TestSession as _Session
 
@@ -61,9 +63,11 @@ def test_ai_review_writes_grounded_proposal_and_leaves_status_untouched(db_conn)
     _create_balu_forge()
     db = _Session()
     try:
-        status_before = db.get(Company, "BALU_FORGE").status
-        proposal = run_ai_review(db, "BALU_FORGE", "FY26Q1", "Solid quarter.", FakeLLMClient(response=VALID_RESPONSE))
-        status_after = db.get(Company, "BALU_FORGE").status
+        status_before = get_my_scenario(db, "BALU_FORGE", ANALYST_NAME).status
+        proposal = run_ai_review(
+            db, "BALU_FORGE", "FY26Q1", "Solid quarter.", FakeLLMClient(response=VALID_RESPONSE), actor=ANALYST_NAME
+        )
+        status_after = get_my_scenario(db, "BALU_FORGE", ANALYST_NAME).status
     finally:
         db.close()
 
@@ -79,9 +83,9 @@ def test_ai_review_never_writes_companies_status_even_when_verdict_is_broken(db_
     broken_response = {**VALID_RESPONSE, "verdict": "broken"}
     db = _Session()
     try:
-        status_before = db.get(Company, "BALU_FORGE").status
-        run_ai_review(db, "BALU_FORGE", "FY26Q1", None, FakeLLMClient(response=broken_response))
-        status_after = db.get(Company, "BALU_FORGE").status
+        status_before = get_my_scenario(db, "BALU_FORGE", ANALYST_NAME).status
+        run_ai_review(db, "BALU_FORGE", "FY26Q1", None, FakeLLMClient(response=broken_response), actor=ANALYST_NAME)
+        status_after = get_my_scenario(db, "BALU_FORGE", ANALYST_NAME).status
     finally:
         db.close()
     assert status_before == status_after  # constitution rule 3: proposals only
@@ -93,7 +97,9 @@ def test_malformed_response_fails_safe_no_proposal_written(db_conn):
     try:
         proposal_count_before = db.scalar(select(func.count()).select_from(StatusProposal))
         with pytest.raises(AIReviewFailedError):
-            run_ai_review(db, "BALU_FORGE", "FY26Q1", None, FakeLLMClient(raw_text="not valid json at all"))
+            run_ai_review(
+                db, "BALU_FORGE", "FY26Q1", None, FakeLLMClient(raw_text="not valid json at all"), actor=ANALYST_NAME
+            )
         proposal_count_after = db.scalar(select(func.count()).select_from(StatusProposal))
     finally:
         db.close()
@@ -106,7 +112,7 @@ def test_invalid_verdict_value_fails_safe(db_conn):
     db = _Session()
     try:
         with pytest.raises(AIReviewFailedError):
-            run_ai_review(db, "BALU_FORGE", "FY26Q1", None, FakeLLMClient(response=bad_response))
+            run_ai_review(db, "BALU_FORGE", "FY26Q1", None, FakeLLMClient(response=bad_response), actor=ANALYST_NAME)
     finally:
         db.close()
 
@@ -116,7 +122,7 @@ def test_retries_once_on_malformed_response_then_succeeds(db_conn):
     client = _RetryThenSucceedClient()
     db = _Session()
     try:
-        proposal = run_ai_review(db, "BALU_FORGE", "FY26Q1", None, client)
+        proposal = run_ai_review(db, "BALU_FORGE", "FY26Q1", None, client, actor=ANALYST_NAME)
     finally:
         db.close()
     assert client.call_count == 2
