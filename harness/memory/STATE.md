@@ -1,54 +1,47 @@
 # STATE
-Phase: P6 - Export + eval (not started). P0-P5 complete and verified.
+Phase: BUILD_PLAN.md v1 (P0-P6) COMPLETE. Next work is TODO-driven, outside
+the original harness mandate (see below).
 Done:
-  - Harness bootstrapped (68ffdec); 6 evolve cycles (evolutions/2026-09-02T-p0..p4.md, 2026-09-03T-p5.md)
-  - P0 (2293665/a462e34) 11 tests, P1 (61b67b3/844a09d) +6, P2 (829d473) +18,
-    P3 (6fe172b/7c48065) +11, P4 (6b3594e/5057000) +7, P5 (e8b5235) +2
-    backend regression tests -> 55 tests total, all green
-  - P5 dashboard verified in a real browser end-to-end (chrome-devtools-axi):
-    create via JSON tab, dynamic metrics field proven live (inserted a
-    metric_definitions row, watched it appear with zero frontend edits),
-    observation posting, override-requires-note enforced through the UI,
-    badges on header + card confirmed
-In flight: nothing
-Blocked: nothing for P6 specifically, but see below - two things need the
-  human before this session goes further on anything outside BUILD_PLAN.md's
-  scope
-Last evolution: harness/journal/evolutions/2026-09-03T-p5.md - one gotcha
-  (Dockerfile COPY list didn't track new served dirs), two open questions
-  raised (not resolved)
+  - Harness bootstrapped (68ffdec); 7 evolve cycles (evolutions/2026-09-02T-p0..p4.md,
+    2026-09-03T-p5.md, 2026-09-03T-p6.md)
+  - P0 schema/contracts, P1 core API, P2 rule engine, P3 human verdicts +
+    override audit, P4 AI reviewer, P5 dashboard, P6 export + eval - all
+    verified via automated tests (67 total, all green) AND live against the
+    docker-compose container (curl + a real browser via chrome-devtools-axi
+    for P5/P6's frontend surfaces)
+  - Pushed to GitHub: https://github.com/AkumaZen/ThesisTrack (private).
+    Local history was rewritten once (git filter-branch, safe pre-first-push)
+    to strip em dashes from commit messages per a saved global user
+    preference (commit_message_style.md in this session's user-memory store)
+  - 15 ADRs + 5 gotchas in harness/memory/, all evidence-cited per
+    constitution rule 7
+In flight: nothing from BUILD_PLAN.md's scope
+Blocked: nothing
+Last evolution: harness/journal/evolutions/2026-09-03T-p6.md
 
-## Needs the human (harness/memory/open-questions.md has full detail)
-1. A `TO DO` file appeared in the repo root (untracked, not committed) with
-   new requests: push to GitHub as "ThesisTrack", multi-user login with
-   read/write RBAC for two named users, more form coverage, simpler UI.
-   These go beyond BUILD_PLAN.md §0's v1 scope (single-analyst API key,
-   "not before" multi-user) - not started, needs explicit confirmation.
-2. A `.production.env` file appeared with a live Aiven Postgres credential.
-   Never staged for commit (`.gitignore` hardened to `*.env` regardless).
-   Not used for anything. Needs the human to say whether/when this session
-   should actually deploy against it.
+## Next work: the user's TO DO list (explicitly outside BUILD_PLAN.md v1)
+The user asked (2026-09-03) to also build, in this same session:
+1. GitHub push - DONE (see above).
+2. Multi-user login with read/write RBAC for two named users
+   (rohit.negi@rdc.in, siddhesh.dige@rdc.in) - NOT STARTED. This replaces/
+   extends BUILD_PLAN.md §0's single-analyst API-key auth, which the human
+   has explicitly authorized going beyond (constitution rule 1 governs this
+   agent silently redesigning the spec; it does not block the human
+   deliberately extending it). Needs: a users table (email, password hash,
+   role), a login endpoint issuing a session credential, RBAC middleware
+   replacing/wrapping require_api_key, and frontend login + write-action
+   gating for read-only users. Log as an ADR when built, same as every
+   other deviation in this codebase.
+3. "Proper option to fill data for all sections" - interpreted as: audit
+   the ingestion form for gaps against the full thesis_data shape (e.g.
+   health_check.historical_checks has no form UI yet, JSON tab only) and
+   close them.
+4. Simpler, more user-friendly, easier-to-navigate UI - a polish pass on
+   the existing P5 dashboard, not a rebuild.
 
-Next action: BUILD_PLAN.md §7 + §10 P6 acceptance criterion. Build:
-  - `training_splits` table (new migration - not in the P0 schema; §7.4
-    needs it to keep split assignment stable across export runs)
-  - app/services/exporter.py: three task shapes (thesis_synthesis, verdict,
-    redline_extraction) from one internal representation; three format
-    serializers (anthropic/openai/llama) per §7.5, tagging
-    REVIEWER_PROMPT_VERSION (already exists in app/llm/prompts.py) into
-    each row's metadata
-  - Eligibility filters in code, exactly per §7.3: source != 'ai_proposed'
-    OR human_confirmed; authored_at < period_end (the leakage check);
-    passes schema validation + >= 3 reasoning steps; verdict tasks default
-    include_open=false
-  - Company-disjoint splits (§7.4), stratified by operating_model, stored
-    in training_splits so they're stable across runs
-  - Routers: GET /export-training-data (streams JSONL), GET
-    /export-training-data/stats (row count per task, class balance, by
-    operating_model, leakage check)
-  - eval/ dir: run_eval.py, metrics.py (verdict accuracy + confusion
-    matrix, redline recall, reasoning grounding check), baseline.py
-    (frontier model via the existing app/llm/client.py adapter)
-  Concrete test target (§10 + §11): stats endpoint reports zero leakage
-  violations, split is company-disjoint; property test asserting no
-  exported row has authored_at >= period_end.
+A `.production.env` with a live database credential also appeared in the
+repo (still untouched, gitignored, not used - see harness/memory/open-questions.md).
+The user said to leave it alone for now.
+
+Next action: start on item 2 (multi-user auth/RBAC) since items 3-4 build
+on top of whatever the login/permission model ends up being.
