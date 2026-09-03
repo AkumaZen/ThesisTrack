@@ -110,20 +110,20 @@ export function renderDrawer(detail) {
 
       <div id="drawer-sec-overview" class="mt-5">
         <section>
-          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">The Business</h3>
+          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
           <p class="text-sm mt-1">${escapeHtml(t.the_business?.what_it_does)}</p>
           <div class="mt-2 space-y-0.5">${revenueRows}</div>
         </section>
 
         <section class="mt-4">
-          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">The Growth Engine</h3>
+          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">2. The Growth Engine</h3>
           <ul class="list-disc list-inside text-sm mt-1 space-y-0.5">
             ${(t.the_growth_engine || []).map((g) => `<li>${escapeHtml(g)}</li>`).join("")}
           </ul>
         </section>
 
         <section class="mt-4">
-          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">The Big Change</h3>
+          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">3. The Big Change</h3>
           <p class="text-sm mt-1">${escapeHtml(t.the_big_change?.summary)}</p>
           <div class="text-xs text-muted-fg mt-0.5">Expected completion: ${escapeHtml(t.the_big_change?.expected_completion)}</div>
         </section>
@@ -131,26 +131,26 @@ export function renderDrawer(detail) {
 
       <div id="drawer-sec-evidence" class="mt-8 pt-5 border-t border-border">
         <section>
-          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Proof Points</h3>
+          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">4. Proof Points</h3>
           <ul class="list-disc list-inside text-sm mt-1 space-y-0.5">
             ${(t.proof_points?.hard_evidence || []).map((e) => `<li>${escapeHtml(e)}</li>`).join("")}
           </ul>
         </section>
 
         <section class="mt-4">
-          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Why We Believe It</h3>
+          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">6. Why We Believe It</h3>
           <div class="mt-1">${reasoningList(t.why_we_believe_it)}</div>
         </section>
       </div>
 
       <div id="drawer-sec-risk" class="mt-8 pt-5 border-t border-border">
         <section>
-          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Invalidation Redlines</h3>
+          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">5. What Can Kill It</h3>
           <div class="mt-1">${(detail.kill_triggers || []).map(killTriggerRow).join("") || '<div class="text-xs text-muted-fg">None defined.</div>'}</div>
         </section>
 
         <section class="mt-4">
-          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Health Check Timeline</h3>
+          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Health Check</h3>
           <p class="text-sm mt-1 text-muted-fg">${escapeHtml(t.health_check?.latest_quarter_review)}</p>
           <div class="mt-2">${healthCheckTimeline(detail.health_checks || [])}</div>
         </section>

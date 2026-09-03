@@ -8,3 +8,5 @@ __pycache__/
 logs/
 creds.md
 production-creds.md
+
+.vercel

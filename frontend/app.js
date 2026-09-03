@@ -15,11 +15,16 @@ import { renderHeaderStats, renderCards } from "./components/cards.js";
 import { renderFacetBar } from "./components/facets.js";
 import { renderDrawer } from "./components/drawer.js";
 import {
-  renderIngestModalShell,
+  INGEST_SECTIONS,
+  renderIngestPage,
   renderMetricsFields,
   renderRevenueSplitRow,
   renderReferenceRow,
   renderKillTriggerRow,
+  renderGrowthRow,
+  renderEvidenceRow,
+  renderBelieveRow,
+  splitBelieveEntry,
 } from "./components/ingest.js";
 import { renderReviewQueue } from "./components/reviewQueue.js";
 import { renderExportPanel, renderExportStats } from "./components/exportPanel.js";
@@ -147,7 +152,7 @@ async function openDrawer(companyId) {
   document.getElementById("drawer-overlay").classList.remove("hidden");
   document.getElementById("drawer-close").addEventListener("click", closeDrawer);
   document.getElementById("drawer-overlay").addEventListener("click", closeDrawer);
-  document.getElementById("drawer-amend").addEventListener("click", () => openIngestModal("amend", detail));
+  document.getElementById("drawer-amend").addEventListener("click", () => openIngestPage("amend", detail));
   document.getElementById("drawer-observations").addEventListener("click", () => openObservationsModal(detail));
   document.getElementById("drawer-health-check").addEventListener("click", () => openHealthCheckModal(detail));
   document.getElementById("drawer-ai-review").addEventListener("click", () => openAiReviewModal(detail));
@@ -190,7 +195,7 @@ async function loadTablesIntoDrawer(companyId) {
   }
 }
 
-function openTableBuilder(companyId) {
+function openTableBuilder(companyId, onCreated) {
   showModal(renderTableBuilderForm());
   const columnsContainer = document.getElementById("table-columns");
   function addColumnRow(col) {
@@ -221,13 +226,40 @@ function openTableBuilder(companyId) {
       await api.createTable(companyId, { name, columns });
       toast("Table created");
       closeModal();
-      await loadTablesIntoDrawer(companyId);
+      await (onCreated ? onCreated() : loadTablesIntoDrawer(companyId));
     } catch (e) {
       const box = document.getElementById("table-builder-errors");
       box.textContent = errorMessage(e);
       box.classList.remove("hidden");
     }
   });
+}
+
+// Mirrors loadTablesIntoDrawer but targets the "Custom Sections" list in the
+// full-page company editor's left nav instead of the drawer.
+async function loadCustomSectionsIntoIngestNav(companyId) {
+  const container = document.getElementById("ingest-custom-sections-nav");
+  if (!container) return;
+  try {
+    const tables = await api.listTables(companyId);
+    container.innerHTML = renderTablesInDrawer(tables);
+    container.querySelectorAll("[data-open-table]").forEach((btn) => {
+      btn.addEventListener("click", () => openTableGrid(Number(btn.dataset.openTable)));
+    });
+    if (!isReadOnly()) {
+      container.querySelectorAll("[data-delete-table]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this table and all its rows?")) return;
+          await api.deleteTable(Number(btn.dataset.deleteTable));
+          await loadCustomSectionsIntoIngestNav(companyId);
+        });
+      });
+    } else {
+      container.querySelectorAll("[data-delete-table]").forEach((btn) => btn.classList.add("hidden"));
+    }
+  } catch (e) {
+    container.innerHTML = `<div class="text-xs text-danger">Failed to load custom sections.</div>`;
+  }
 }
 
 async function openTableGrid(tableId) {
@@ -418,9 +450,44 @@ function openAiReviewModal(detail) {
   });
 }
 
-// ---------- ingest modal (create + amend) ----------
-async function openIngestModal(mode, existing) {
-  showModal(renderIngestModalShell(state.taxonomy));
+// ---------- full-page company create/amend editor ----------
+// #ingest-page itself is never removed/recreated across opens (only its
+// innerHTML is swapped), so any delegated listener attached to it must be
+// torn down first - otherwise repeated open/cancel/open cycles stack
+// listeners and every "+Add" click inserts one row per stacked listener.
+let ingestPageClickHandler = null;
+
+function showIngestPage(html) {
+  const page = document.getElementById("ingest-page");
+  if (ingestPageClickHandler) {
+    page.removeEventListener("click", ingestPageClickHandler);
+    ingestPageClickHandler = null;
+  }
+  page.innerHTML = html;
+  page.classList.remove("hidden");
+}
+
+function closeIngestPage() {
+  const page = document.getElementById("ingest-page");
+  if (ingestPageClickHandler) {
+    page.removeEventListener("click", ingestPageClickHandler);
+    ingestPageClickHandler = null;
+  }
+  page.classList.add("hidden");
+  page.innerHTML = "";
+}
+
+async function openIngestPage(mode, existing) {
+  const isAmend = mode === "amend" && existing;
+  showIngestPage(
+    renderIngestPage(
+      state.taxonomy,
+      mode,
+      isAmend ? `Amend Thesis - ${existing.name}` : "New Company / Thesis"
+    )
+  );
+  document.getElementById("ingest-back").addEventListener("click", closeIngestPage);
+  document.getElementById("ingest-cancel").addEventListener("click", closeIngestPage);
 
   const industrySelect = document.getElementById("f-industry");
   const nicheSelect = document.getElementById("f-niche");
@@ -455,13 +522,50 @@ async function openIngestModal(mode, existing) {
   function addKillTriggerRow(trigger) {
     document.getElementById("f-kill-triggers").insertAdjacentHTML("beforeend", renderKillTriggerRow(currentMetrics, trigger || {}));
   }
+  function addGrowthRow(text) {
+    document.getElementById("f-growth-engine").insertAdjacentHTML("beforeend", renderGrowthRow(text));
+  }
+  function addEvidenceRow(text) {
+    document.getElementById("f-hard-evidence").insertAdjacentHTML("beforeend", renderEvidenceRow(text));
+  }
+  function addBelieveRow(kind, text) {
+    document.getElementById("f-why-believe").insertAdjacentHTML("beforeend", renderBelieveRow(kind, text));
+  }
 
-  document.getElementById("modal-panel").addEventListener("click", (e) => {
+  ingestPageClickHandler = (e) => {
     if (e.target.dataset.add === "revenue-split") addRevenueRow();
     if (e.target.dataset.add === "reference") addReferenceRow();
     if (e.target.dataset.add === "kill-trigger") addKillTriggerRow();
+    if (e.target.dataset.add === "growth") addGrowthRow();
+    if (e.target.dataset.add === "evidence") addEvidenceRow();
+    if (e.target.dataset.add === "believe") addBelieveRow();
     if (e.target.hasAttribute("data-remove-row")) e.target.closest("div[class*='-row']")?.remove();
+  };
+  document.getElementById("ingest-page").addEventListener("click", ingestPageClickHandler);
+
+  // section nav (left sidebar inside the Form tab)
+  function setActiveSection(sectionId) {
+    for (const s of INGEST_SECTIONS) {
+      document.getElementById(`ingest-panel-${s.id}`).classList.toggle("hidden", s.id !== sectionId);
+      document
+        .querySelector(`.ingest-section-btn[data-section="${s.id}"]`)
+        .classList.toggle("bg-surface-3", s.id === sectionId);
+      document
+        .querySelector(`.ingest-section-btn[data-section="${s.id}"]`)
+        .classList.toggle("text-fg", s.id === sectionId);
+    }
+  }
+  document.getElementById("ingest-section-nav").addEventListener("click", (e) => {
+    const btn = e.target.closest(".ingest-section-btn");
+    if (btn) setActiveSection(btn.dataset.section);
   });
+  if (isAmend) {
+    document.querySelector('.ingest-section-btn[data-section="basics"]').classList.add("hidden");
+    document.getElementById("ingest-change-note-wrap").classList.remove("hidden");
+    setActiveSection("business");
+  } else {
+    setActiveSection("basics");
+  }
 
   // tabs
   const formTab = document.getElementById("ingest-tab-form");
@@ -469,15 +573,15 @@ async function openIngestModal(mode, existing) {
   const formPanel = document.getElementById("ingest-form-panel");
   const jsonPanel = document.getElementById("ingest-json-panel");
   jsonTab.addEventListener("click", () => {
-    jsonTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-accent";
-    formTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-fg";
+    jsonTab.className = "ingest-tab px-3 py-1.5 text-xs font-medium bg-surface-3";
+    formTab.className = "ingest-tab px-3 py-1.5 text-xs font-medium text-muted-fg";
     formPanel.classList.add("hidden");
     jsonPanel.classList.remove("hidden");
-    document.getElementById("ingest-json-textarea").value = JSON.stringify(collectFormPayload(), null, 2);
+    document.getElementById("ingest-json-textarea").value = JSON.stringify(buildPayload(), null, 2);
   });
   formTab.addEventListener("click", () => {
-    formTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-accent";
-    jsonTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-fg";
+    formTab.className = "ingest-tab px-3 py-1.5 text-xs font-medium bg-surface-3";
+    jsonTab.className = "ingest-tab px-3 py-1.5 text-xs font-medium text-muted-fg";
     jsonPanel.classList.add("hidden");
     formPanel.classList.remove("hidden");
   });
@@ -508,18 +612,50 @@ async function openIngestModal(mode, existing) {
     }
   });
 
-  document.getElementById("ingest-close").addEventListener("click", closeModal);
-  document.getElementById("ingest-cancel").addEventListener("click", closeModal);
-
-  if (mode === "amend" && existing) {
-    document.getElementById("ingest-submit").textContent = "Save Amendment";
-    // amend only needs thesis_data + change_note - jump straight to JSON tab, prefilled
-    jsonTab.click();
-    const payload = { thesis_data: existing.current_thesis, change_note: "" };
-    document.getElementById("ingest-json-textarea").value = JSON.stringify(payload, null, 2);
+  if (isAmend) {
+    populateFormFromThesis(existing.current_thesis);
+    document.getElementById("ingest-custom-sections-block").classList.remove("hidden");
+    document.getElementById("ingest-add-section").addEventListener("click", () =>
+      openTableBuilder(existing.company_id, () => loadCustomSectionsIntoIngestNav(existing.company_id))
+    );
+    loadCustomSectionsIntoIngestNav(existing.company_id);
+  } else {
+    // seed the minimum rows a new thesis needs so the validation rules
+    // (>=3 why_we_believe_it incl. Premise/Conclusion, >=1 kill-severity
+    // redline) are visible affordances, not something the user has to
+    // already know about.
+    addRevenueRow();
+    addBelieveRow("Premise");
+    addBelieveRow("Inference");
+    addBelieveRow("Conclusion");
+    addKillTriggerRow({ severity: "kill" });
   }
 
-  function collectFormPayload() {
+  function populateFormFromThesis(t) {
+    document.getElementById("f-what-it-does").value = t.the_business?.what_it_does || "";
+    for (const r of t.the_business?.revenue_split || []) addRevenueRow(r.segment, r.share_pct);
+
+    for (const g of t.the_growth_engine || []) addGrowthRow(g);
+
+    document.getElementById("f-big-change-summary").value = t.the_big_change?.summary || "";
+    document.getElementById("f-expected-completion").value = t.the_big_change?.expected_completion || "";
+
+    for (const e of t.proof_points?.hard_evidence || []) addEvidenceRow(e);
+    refreshMetricsSection(t.proof_points?.model_specific_metrics || {}).then((m) => (currentMetrics = m));
+
+    for (const kt of t.what_can_kill_it || []) addKillTriggerRow(kt);
+
+    for (const entry of t.why_we_believe_it || []) {
+      const { kind, text } = splitBelieveEntry(entry);
+      addBelieveRow(kind, text);
+    }
+
+    document.getElementById("f-latest-review").value = t.health_check?.latest_quarter_review || "";
+
+    for (const r of t.references || []) addReferenceRow(r.title, r.url);
+  }
+
+  function collectThesisData() {
     const metricValues = {};
     document.querySelectorAll("#f-metrics-fields .metric-input").forEach((i) => {
       if (i.value !== "") metricValues[i.dataset.metricKey] = Number(i.value);
@@ -545,7 +681,46 @@ async function openIngestModal(mode, existing) {
         manual_check: !metricKey,
       };
     });
+    const growthEngine = [...document.querySelectorAll(".growth-row .ge-text")].map((i) => i.value).filter(Boolean);
+    const hardEvidence = [...document.querySelectorAll(".evidence-row .ev-text")].map((i) => i.value).filter(Boolean);
+    const whyBelieve = [...document.querySelectorAll(".believe-row")]
+      .map((row) => {
+        const text = row.querySelector(".bl-text").value.trim();
+        return text ? `${row.querySelector(".bl-kind").value}: ${text}` : null;
+      })
+      .filter(Boolean);
 
+    return {
+      the_business: {
+        what_it_does: document.getElementById("f-what-it-does").value,
+        revenue_split: revenueSplit,
+      },
+      the_growth_engine: growthEngine,
+      the_big_change: {
+        summary: document.getElementById("f-big-change-summary").value,
+        expected_completion: document.getElementById("f-expected-completion").value,
+      },
+      proof_points: {
+        hard_evidence: hardEvidence,
+        model_specific_metrics: metricValues,
+      },
+      what_can_kill_it: killTriggers,
+      why_we_believe_it: whyBelieve,
+      health_check: {
+        latest_quarter_review: document.getElementById("f-latest-review").value,
+        historical_checks: [],
+      },
+      references,
+    };
+  }
+
+  function buildPayload() {
+    if (isAmend) {
+      return {
+        thesis_data: collectThesisData(),
+        change_note: document.getElementById("f-change-note").value,
+      };
+    }
     return {
       company_id: document.getElementById("f-company-id").value.toUpperCase(),
       name: document.getElementById("f-name").value,
@@ -557,28 +732,7 @@ async function openIngestModal(mode, existing) {
       },
       status: document.getElementById("f-status").value,
       last_reviewed: document.getElementById("f-last-reviewed").value,
-      thesis_data: {
-        the_business: {
-          what_it_does: document.getElementById("f-what-it-does").value,
-          revenue_split: revenueSplit,
-        },
-        the_growth_engine: document.getElementById("f-growth-engine").value.split("\n").filter(Boolean),
-        the_big_change: {
-          summary: document.getElementById("f-big-change-summary").value,
-          expected_completion: document.getElementById("f-expected-completion").value,
-        },
-        proof_points: {
-          hard_evidence: document.getElementById("f-hard-evidence").value.split("\n").filter(Boolean),
-          model_specific_metrics: metricValues,
-        },
-        what_can_kill_it: killTriggers,
-        why_we_believe_it: document.getElementById("f-why-believe").value.split("\n").filter(Boolean),
-        health_check: {
-          latest_quarter_review: document.getElementById("f-latest-review").value,
-          historical_checks: [],
-        },
-        references,
-      },
+      thesis_data: collectThesisData(),
     };
   }
 
@@ -586,23 +740,25 @@ async function openIngestModal(mode, existing) {
     const usingJson = !jsonPanel.classList.contains("hidden");
     let payload;
     try {
-      payload = usingJson ? JSON.parse(document.getElementById("ingest-json-textarea").value) : collectFormPayload();
+      payload = usingJson ? JSON.parse(document.getElementById("ingest-json-textarea").value) : buildPayload();
     } catch (e) {
       showErrors([`Invalid JSON: ${e.message}`]);
       return;
     }
     try {
-      if (mode === "amend" && existing) {
+      let createdCompanyId = null;
+      if (isAmend) {
         await api.amendThesis(existing.company_id, payload);
         toast("Thesis amended");
       } else {
         await api.createCompany(payload);
-        toast("Company created");
+        createdCompanyId = payload.company_id;
+        toast("Company created - add custom sections from here if you need any");
       }
-      closeModal();
+      closeIngestPage();
       closeDrawer();
-      state.metricDefsByKey = state.metricDefsByKey; // unchanged, but refresh cards for new/updated data
       await refreshCompanies();
+      if (createdCompanyId) await openDrawer(createdCompanyId);
     } catch (e) {
       if (e instanceof ApiError && e.body?.errors) {
         showErrors(e.body.errors.map((err) => `${err.field}: ${err.message}`));
@@ -958,7 +1114,7 @@ async function startApp() {
   document.getElementById("nav-review-queue").addEventListener("click", () => setView("review"));
   document.getElementById("nav-guidance").addEventListener("click", () => setView("guidance"));
   document.getElementById("nav-export").addEventListener("click", openExportPanel);
-  document.getElementById("nav-new-company").addEventListener("click", () => openIngestModal("create", null));
+  document.getElementById("nav-new-company").addEventListener("click", () => openIngestPage("create", null));
   setView("cards");
 
   document.getElementById("cards-grid").addEventListener("click", (e) => {

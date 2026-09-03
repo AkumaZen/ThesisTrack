@@ -1,5 +1,51 @@
 # Decisions (append-only ADR log)
 
+## ADR-020: Company create/amend moved from a small centered modal to a full-page editor with a left-nav of the 7 pillars
+User feedback: "just a form" - wanted the ingest UI restructured around the
+7 standard thesis pillars (Business, Growth Engine, Big Change, Proof
+Points, What Can Kill It, Why We Believe It, Health Check) plus Basics and
+References, each browsable from a persistent left sidebar, every list-type
+field (growth drivers, hard evidence, why-believe reasoning steps) upgraded
+from bare "one per line" textareas to proper +Add/x-remove rows matching how
+Revenue Split/Kill Triggers/References already worked, and finally moved out
+of a small popup into a full-viewport page (confirmed via AskUserQuestion:
+full-window view reusing the existing single-page-app, not a new URL router
+- this app has no router today and didn't need one for this).
+
+For "add new sections": the backend's `ThesisData` Pydantic model validates
+`thesis_data` against exactly these 7 pillars - it has no slot for an
+arbitrary new top-level field, and loosening that would undermine the export
+pipeline and rule engine that depend on the pillar shape (both index into
+`thesis_data` by these exact keys). The existing "Data Tables" feature
+(`custom_tables`/`custom_table_rows`, ADR-018) already is the mechanism for
+open-ended per-company data, so "+ Add Section" in the new editor's sidebar
+creates one of these instead of bending the thesis contract. Since a table
+is keyed by `company_id`, this is only available once a company exists -
+for a brand-new company, submitting the 7 pillars now immediately opens
+that company's drawer (which already surfaces Data Tables) rather than
+just closing back to the dashboard, so the very next click is available.
+
+Amend mode also newly populates the Form tab from `existing.current_thesis`
+(previously it force-jumped straight to the raw JSON tab, prefilled but
+unedited via form fields) via a new `populateFormFromThesis()` - the JSON
+tab remains available as an escape hatch for bulk edits. `why_we_believe_it`
+entries are edited as (kind dropdown: Premise/Inference/Conclusion, free
+text) row pairs and reassembled as `"Kind: text"` strings on submit,
+matching the existing case-insensitive-prefix validator in
+`app/schemas/thesis.py`; a `splitBelieveEntry()` helper parses stored
+strings back into that shape for editing, falling back to Premise/whole-
+string for older freeform entries without a recognized prefix.
+
+Bug caught and fixed before commit: `#ingest-page` is a persistent DOM node
+(only its innerHTML is swapped between opens, mirroring the pre-existing
+`#modal-panel` pattern this codebase already used elsewhere), so attaching
+a fresh delegated click listener on every `openIngestPage()` call without
+removing the previous one would stack listeners across repeated
+open/cancel/open cycles - each "+Add" click would then insert one row per
+stacked listener. Fixed by tracking the current handler in a module-level
+variable and removing it before attaching a new one, in both
+`showIngestPage()` and `closeIngestPage()`.
+
 ## ADR-019: Vercel deployment target - serverless ASGI entrypoint, DATABASE_URL scheme normalization, pool sizing
 User asked to host on Vercel against the Aiven-hosted Postgres already sitting
 in `.production.env`. Three real bugs would have surfaced only in production,
