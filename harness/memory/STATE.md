@@ -98,6 +98,21 @@ realistically messy, non-toy dataset. No code changed by this
 exercise; company/data kept in the running dev DB, not committed
 anywhere (this is real usage, not a fixture).
 
+Production DB gotcha found and fixed live (2026-09-04): the Vercel
+deployment's Aiven Postgres only ever got migrated once, at initial
+Vercel setup. Every migration built since then locally (position_decisions,
+price_observations, thesis_scenarios) was never applied to production -
+`GET /api/companies` was 500ing there with `UndefinedTable:
+thesis_scenarios does not exist`. Fixed by running
+`alembic upgrade head` against `.production.env`'s DATABASE_URL (confirmed
+with the user first, since it's a live prod DB - user confirmed no real
+data at stake, effectively seed-only). Production is now at head
+(e5a91c4d7f22); verified live via curl that /api/companies returns a clean
+401 (auth-gated) instead of a 500. No migration script or CI step exists
+yet to keep prod in sync automatically going forward - every local
+migration from here needs a manual reminder to also run against prod, or
+this will recur.
+
 A real deployment gotcha worth remembering: the `api` service's Dockerfile
 COPYs `frontend/` in at image build time - it is NOT bind-mounted. Any
 frontend edit (app.js, drawer.js, index.html, etc.) needs
