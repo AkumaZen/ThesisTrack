@@ -44,3 +44,19 @@ live-container curl checks (each path checked individually), not by
 anything more systematic — worth remembering for P6 if `eval/` or `seeds/`
 ever need to be present at runtime rather than just at build/migration time.
 Evidence: `Dockerfile` (P5 commit e8b5235 added `COPY frontend`, `COPY contracts`).
+
+## Windows/Hyper-V can dynamically exclude the exact host port docker-compose uses
+After a Docker Desktop restart, `docker compose up` failed to bind host port
+55432 with `bind: An attempt was made to access a socket in a way forbidden
+by its access permissions` even though nothing was listening on it
+(`netstat` showed it free). Cause: `netsh interface ipv4 show
+excludedportrange protocol=tcp` showed Hyper-V/WSL2 had reserved
+55400-55499 as an excluded range this time (these ranges shift across
+Docker/WSL restarts) — 55432 fell inside it. Fix: moved the mapping to
+45432 (`docker-compose.yml`, `.env`, `.env.example`), which isn't in any
+current excluded range. If this happens again, run that `netsh` command
+first and pick a host port outside all listed ranges, rather than assuming
+a real port conflict (see the other gotcha above about port 5432 — this is
+a different failure mode with the same symptom shape: bind fails, nothing
+obviously listening).
+Evidence: `docker-compose.yml`, `.env`, `.env.example` (host port 45432).
