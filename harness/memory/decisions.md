@@ -1,5 +1,158 @@
 # Decisions (append-only ADR log)
 
+## ADR-018: Guidance tracker, generic custom-data tables, and an LLM-conversion import prompt - built beyond BUILD_PLAN.md's frozen v1 scope
+Three features requested directly by the user, none of which BUILD_PLAN.md
+anticipates (confirmed by a full read of it - see the exploration notes this
+session; nothing in §0-§11 mentions guidance/notes, user-defined tables, or
+an external-conversion import flow). Same posture as ADR-016 (multi-user
+RBAC): built at explicit request, documented here rather than silently
+rewriting the frozen spec. Migration `7b1e4c47bb23_guidance_and_custom_tables`
+follows the established raw-SQL `op.execute()` convention (ADR-004).
+
+**1. Guidance tracker** (`guidance_notes` table, `app/routers/guidance.py`,
+`app/schemas/guidance.py`, `frontend/components/guidance.js`). A simple
+mutable (not append-only - unlike `thesis_versions`, this is closer to
+`status_proposals` in lifecycle) per-company note attached to one of the
+thesis's 8 fixed pillar keys or "general". Deliberately NOT a DB-owned
+registry/enum (block_key is a Pydantic `Literal`, validated at the schema
+layer) since the block set is defined by the thesis JSON contract, not
+something users add to. Simple open/resolved lifecycle only (no priority/
+due-date/assignee) per explicit user preference when asked. Surfaced as a
+genuine new top-level nav view/page (`#guidance-view`, `setView("guidance")`)
+rather than a modal, since it's a cross-company tracker (filterable by
+company/block/status) - not just a per-company action. A `Guidance` button
+on the drawer (`frontend/components/drawer.js`) deep-links into it
+pre-filtered to that company. Resolve endpoint mirrors
+`POST /proposals/{id}/resolve`'s shape exactly (`app/routers/health.py`).
+
+**2. Custom data tables** (`custom_tables` + `custom_table_rows` tables,
+`app/routers/custom_tables.py`, `app/schemas/custom_tables.py`,
+`frontend/components/customTables.js`). Offered the user a choice between
+2-3 concrete domain tables (e.g. shareholding pattern, peer comps - the
+operating-model enum and INR default strongly suggest Indian equity
+research) versus a fully generic user-defined table builder; the user chose
+generic. `custom_tables.columns` is a JSONB array of user-authored
+`{key, label, type: text|number|date|enum, options?}` column defs;
+`custom_table_rows.row_data` is a JSONB object keyed by those column keys,
+type-checked server-side against the column defs on write
+(`_validate_row_data` in the router - unknown keys rejected, blank cells
+skipped, mirrors the unknown-`metric_key` rejection already established in
+`app/routers/observations.py`). Rendered per-company in a new "Data Tables"
+drawer section; row add/edit is a small dynamically-generated form modal
+(same pattern as `renderMetricsFields` in `ingest.js`) rather than live
+inline cell-editing - deliberate scope cut, since this app has no existing
+inline-editing precedent anywhere and modal-based row edit reuses the
+established `showModal`/`closeModal` machinery directly.
+
+**3. Thesis-conversion import prompt** (`frontend/app.js::buildConversionPrompt`,
+wired into the existing JSON tab of `renderIngestModalShell` in
+`frontend/components/ingest.js` behind a `<details>` disclosure, not a new
+tab/flow). No backend surface at all - reuses `POST /companies` /
+`PUT /companies/{id}/thesis` and the existing client-side contract validator
+(`loadContractSchema`/`validateAgainstContract`, ADR-014) unchanged. The
+prompt is built LIVE at modal-open time from `contracts/thesis.schema.json`,
+`state.taxonomy`, and an unfiltered `GET /api/metrics` call (confirmed the
+`operating_model` query param is optional server-side, `app/routers/
+taxonomy.py`) - deliberately not a hardcoded static string, so it can never
+drift out of sync with the real schema/taxonomy/metric registry as they
+evolve. Instructs the external LLM to ask the user clarifying questions
+rather than guess, since the prompt runs in an interactive chat, not a
+one-shot API call.
+
+Evidence: full manual verification this session - all new backend endpoints
+exercised via curl (including 422 error paths: bad enum value, unknown
+column key, unknown taxonomy value) against a locally migrated+seeded DB;
+frontend exercised end-to-end in a live browser (chrome-devtools MCP) -
+guidance add/list/filter/resolve, custom table creation and grid rendering
+with real row data, and the conversion-prompt generation (10.6KB output
+embedding the live schema) all confirmed working in both the dark and
+light theme variants from ADR-017. One real bug found and fixed during
+testing: `POST /guidance/{id}/resolve` set `resolved_by` but not
+`resolved_at` (the column's `DEFAULT NOW()` only fires on INSERT, not
+UPDATE) - fixed in `app/routers/guidance.py`.
+
+## ADR-017: Frontend re-themed to the dashboard-palette dark design system
+The user supplied `docs/dashboard-palette.html`, a reference doc extracted from
+an existing "sales dashboard" (`index.css`), and asked to apply it "exactly"
+across the whole system: a near-black dark theme (`--bg:#050505`,
+`--surface:#121212/#0a0a0a/#1a1a1a`, `--border:#333333`, `--fg:#f0f0f0`,
+`--muted-fg:#888888`) with four brand accents (`--accent:#ccff00` lime,
+`--accent-2:#00f0ff` cyan, `--accent-3:#ff003c` red, `--accent-4:#ffaa00`
+amber) that stay identical between the dark theme and the doc's proposed
+white-ground light theme - only ground/text tokens swap. Typography:
+Space Grotesk (display/headings) + JetBrains Mono (labels/data/code), both
+via Google Fonts.
+Implementation: `frontend/index.html` now defines all tokens as CSS custom
+properties in `:root` (dark, the default) with an `@media
+(prefers-color-scheme: light)` override block carrying the doc's light-theme
+values (`:root:not([data-theme="dark"])` guard, so an explicit
+`data-theme="dark"` attribute - not currently set anywhere - would opt back
+into dark even under a light OS preference). `tailwind.config` (Play CDN,
+inline `<script>`) extends `theme.colors` with named tokens pointing at
+`var(--x)` so the whole app can use ordinary Tailwind utility classes
+(`bg-bg`, `bg-surface`, `bg-surface-3`, `border-border`, `text-fg`,
+`text-muted-fg`, `bg-accent`, `text-accent-ink`, `bg-good/ok/warn/danger`,
+`text-good/ok/warn/danger`) instead of hardcoded hex. `color-scheme: dark`
+(and `light` in the media override) is set on `:root` so native form
+controls, scrollbars, and date pickers follow the theme without per-element
+overrides; a global `input, select, textarea` rule sets their background/text
+to `--surface-2`/`--fg` since Tailwind utility classes alone don't reach
+native control chrome.
+Semantic reuse: the app's existing three-state thesis status
+(`on_track`/`watch_closely`/`broken`) mapped 1:1 onto the palette's
+`good`/`warn`/`danger` semantic tokens (`frontend/components/format.js`
+`STATUS_STYLES`, used by cards/drawer/health-check-timeline). The three
+review-queue source badges (`rule_engine`/`ai_proposed`/`manual`,
+`frontend/components/reviewQueue.js`) needed a judgment call since the doc
+has no direct equivalent: `rule_engine` -> neutral (`bg-surface-3`),
+`ai_proposed` -> `accent` (lime), `manual` -> `ok` (cyan) - reserves `good`
+for actual status semantics.
+Contrast rule applied throughout: buttons/badges on a bright accent fill
+(`accent`, `good`, `warn`) pair with `text-accent-ink` (`#050505`, dark ink)
+per the doc's own note about this; only `danger` (a saturated but darker
+red) pairs with `text-white`. This mattered for the toast helper
+(`frontend/app.js::toast`), which previously hardcoded `text-white` for both
+its ok/error branches - now the two branches set their own text color
+along with their background.
+Evidence: mechanical Tailwind-class migration applied via a one-off script
+(`scripts/repalette.py` equivalent, run from scratch and not committed) across
+`frontend/index.html`, `frontend/app.js`, and all of `frontend/components/*.js`;
+verified zero remaining `slate-`/`rose-`/`amber-`/`emerald-`/`blue-`/`violet-`
+Tailwind classes via grep afterward.
+
+Follow-up: the user asked for a real toggle (initially only OS-preference-driven
+auto switching existed). Added `#theme-toggle` button in the header
+(`frontend/index.html`), a blocking inline `<script>` in `<head>` that applies
+a saved `localStorage["theme"]` value to `<html data-theme>` before first
+paint (avoids a flash of the wrong theme), and `:root[data-theme="light"]`
+/`:root[data-theme="dark"]` CSS blocks (outside the media query, so they win
+regardless of OS preference) alongside the existing
+`@media (prefers-color-scheme: light)` auto-detect. `frontend/app.js`'s new
+`wireThemeToggle()` (called from `startApp()`) reads/writes that attribute
+and localStorage on click. No default is forced - first visit follows the OS
+preference via the media query; only clicking the toggle pins an explicit
+choice.
+
+Follow-up 2: the user asked for a token-usage audit against the doc's own
+group labels ("Ground: Page background / Modal-header-panel fill / Card fill
+/ Nested panel fill / Table row hover / Hairline dividers"). Two tokens were
+defined but not actually applied where the doc assigns them: `--bg-ink`
+("Modal / header-panel fill") was dead - header, login card, drawer, and
+`#modal-panel` were all using `--surface` ("Card fill") instead. Fixed:
+those four now use `bg-bg-ink`; actual card/panel surfaces (company cards,
+stat tiles, facet bar, review-queue rows) correctly stay on `bg-surface`.
+`--surface-2` ("Nested panel fill") was only reached via the global
+input/select/textarea rule (not in the doc's assignment for that token,
+added separately for native-control theming); the one real nested panel,
+`#export-stats` inside the export modal (`frontend/components/exportPanel.js`),
+was using `bg-bg` (page background) instead - fixed to `bg-surface-2`.
+`--accent-2` (cyan) and `--white` are only reached through their aliases
+(`ok`=accent-2, and Tailwind's default `white` key overridden to
+`var(--white)`) rather than being referenced by their own class names
+anywhere - not a bug, since the doc defines them as identical values, but
+worth knowing if a future change wants a visually distinct "secondary
+accent" callout that isn't reusing the `ok` semantic.
+
 ## ADR-001: Balu Forge golden fixture is an adapted payload, not the raw original-spec sample
 BUILD_PLAN.md's P0 acceptance criterion requires "the Balu Forge sample payload
 from the spec" to validate clean, but the platform's own deviations (§1) change

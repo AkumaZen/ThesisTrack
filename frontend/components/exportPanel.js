@@ -1,26 +1,26 @@
 export function renderExportPanel() {
   return `
-    <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-border">
       <h2 class="font-semibold">Export Training Data</h2>
-      <button id="export-close" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
+      <button id="export-close" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
     </div>
     <div class="p-5 space-y-3">
       <label class="block text-sm">Task
-        <select id="export-task" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        <select id="export-task" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
           <option value="verdict">verdict</option>
           <option value="thesis_synthesis">thesis_synthesis</option>
           <option value="redline_extraction">redline_extraction</option>
         </select>
       </label>
       <label class="block text-sm">Format
-        <select id="export-format" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        <select id="export-format" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
           <option value="anthropic">anthropic</option>
           <option value="openai">openai</option>
           <option value="llama">llama</option>
         </select>
       </label>
       <label class="block text-sm">Split
-        <select id="export-split" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        <select id="export-split" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
           <option value="train">train</option>
           <option value="eval">eval</option>
           <option value="all">all</option>
@@ -30,9 +30,9 @@ export function renderExportPanel() {
         <input type="checkbox" id="export-include-open" />
         Include open (unresolved-outcome) companies
       </label>
-      <button id="export-load-stats" class="text-sm px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50">Load Dataset Summary</button>
-      <div id="export-stats" class="text-sm bg-slate-50 rounded-md p-3 hidden"></div>
-      <a id="export-download" class="hidden text-sm px-3 py-1.5 rounded-md bg-slate-800 text-white hover:bg-slate-700 inline-block text-center"
+      <button id="export-load-stats" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Load Dataset Summary</button>
+      <div id="export-stats" class="text-sm bg-surface-2 rounded-md p-3 hidden"></div>
+      <a id="export-download" class="hidden text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 inline-block text-center"
          href="#" target="_blank" rel="noopener">Download JSONL</a>
     </div>`;
 }

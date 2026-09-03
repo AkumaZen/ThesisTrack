@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-03T15:30:00Z",
+  "title": "Design System: Investment Thesis Platform",
+  "extensions": {
+    "colorMeta": {
+      "void-black": { "role": "neutral", "displayName": "Void Black", "canonical": "#050505", "tonalRamp": ["#000000", "#0a0a0a", "#141414", "#1f1f1f", "#2e2e2e", "#494949", "#7a7a7a", "#c2c2c2"] },
+      "true-black": { "role": "neutral", "displayName": "True Black", "canonical": "#000000", "tonalRamp": ["#000000", "#0a0a0a", "#141414", "#1f1f1f", "#2e2e2e", "#494949", "#7a7a7a", "#c2c2c2"] },
+      "panel-graphite": { "role": "neutral", "displayName": "Panel Graphite", "canonical": "#121212", "tonalRamp": ["#000000", "#0a0a0a", "#121212", "#1e1e1e", "#2e2e2e", "#4a4a4a", "#7c7c7c", "#c4c4c4"] },
+      "deep-graphite": { "role": "neutral", "displayName": "Deep Graphite", "canonical": "#0a0a0a", "tonalRamp": ["#000000", "#050505", "#0a0a0a", "#171717", "#282828", "#454545", "#787878", "#c1c1c1"] },
+      "hover-graphite": { "role": "neutral", "displayName": "Hover Graphite", "canonical": "#1a1a1a", "tonalRamp": ["#000000", "#0d0d0d", "#1a1a1a", "#272727", "#383838", "#545454", "#868686", "#cccccc"] },
+      "hairline-grey": { "role": "neutral", "displayName": "Hairline Grey", "canonical": "#333333", "tonalRamp": ["#0d0d0d", "#1a1a1a", "#262626", "#333333", "#4d4d4d", "#6b6b6b", "#999999", "#d6d6d6"] },
+      "console-white": { "role": "neutral", "displayName": "Console White", "canonical": "#f0f0f0", "tonalRamp": ["#1a1a1a", "#333333", "#565656", "#7a7a7a", "#9e9e9e", "#c2c2c2", "#e0e0e0", "#f0f0f0"] },
+      "instrument-grey": { "role": "neutral", "displayName": "Instrument Grey", "canonical": "#888888", "tonalRamp": ["#1e1e1e", "#333333", "#4a4a4a", "#616161", "#787878", "#909090", "#a8a8a8", "#c4c4c4"] },
+      "pure-white": { "role": "neutral", "displayName": "Pure White", "canonical": "#ffffff", "tonalRamp": ["#1a1a1a", "#404040", "#666666", "#8c8c8c", "#b3b3b3", "#d9d9d9", "#f0f0f0", "#ffffff"] },
+      "signal-lime": { "role": "primary", "displayName": "Signal Lime", "canonical": "#ccff00", "tonalRamp": ["#1a2200", "#2c3900", "#425600", "#5c7800", "#7a9e00", "#9fce00", "#b9ea00", "#ccff00"] },
+      "console-cyan": { "role": "secondary", "displayName": "Console Cyan", "canonical": "#00f0ff", "tonalRamp": ["#001f24", "#00333b", "#004d59", "#006e7d", "#0095a8", "#00c0d6", "#00ddf0", "#00f0ff"] },
+      "kill-red": { "role": "tertiary", "displayName": "Kill Red", "canonical": "#ff003c", "tonalRamp": ["#26000b", "#400013", "#63001e", "#8f002b", "#c2003b", "#e8004a", "#ff2c5e", "#ff6b8c"] },
+      "warning-amber": { "role": "tertiary", "displayName": "Warning Amber", "canonical": "#ffaa00", "tonalRamp": ["#291b00", "#452d00", "#6b4600", "#946100", "#c17f00", "#e69900", "#ffb733", "#ffcc66"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Large stat-tile counts on the dashboard header - always mono because they're counts, not headlines." },
+      "headline": { "displayName": "Headline", "purpose": "Drawer/modal titles - a company name, a new-table title." },
+      "title": { "displayName": "Title", "purpose": "Page header and modal section headers." },
+      "body": { "displayName": "Body", "purpose": "The default UI voice - buttons, labels, descriptions, list content." },
+      "label": { "displayName": "Label", "purpose": "Uppercase section eyebrows and muted metadata captions." }
+    },
+    "shadows": [
+      { "name": "overlay", "value": "0 20px 25px -5px rgba(0,0,0,0.4), 0 8px 10px -6px rgba(0,0,0,0.4)", "purpose": "Marks a surface as floating above the page: the modal panel, the detail drawer, the login card. Never used on an at-rest card." }
+    ],
+    "motion": [
+      { "name": "hover-brightness", "value": "filter: brightness(0.9); transition: filter 0.15s ease", "purpose": "The only hover treatment on filled buttons (primary/danger) - a brightness dip, never a color swap or scale transform." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one committing action per view (Sign in, + New Company, Amend Thesis).",
+      "html": "<button class=\"ds-btn-primary\">+ New Company</button>",
+      "css": ".ds-btn-primary { background: #ccff00; color: #050505; padding: 6px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 0.875rem; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; transition: filter 0.15s ease; } .ds-btn-primary:hover { filter: brightness(0.9); } .ds-btn-primary:focus-visible { outline: 2px solid #ccff00; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The default for every non-primary action (Cancel, nav items, Post Observations).",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { background: transparent; color: #f0f0f0; padding: 6px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 0.875rem; border: 1px solid #333333; border-radius: 6px; cursor: pointer; transition: background 0.15s ease; } .ds-btn-secondary:hover { background: #1a1a1a; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive or alarm-toned actions (Reject).",
+      "html": "<button class=\"ds-btn-danger\">Reject</button>",
+      "css": ".ds-btn-danger { background: #ff003c; color: #ffffff; padding: 6px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 0.75rem; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; transition: filter 0.15s ease; } .ds-btn-danger:hover { filter: brightness(0.9); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Nested-panel-toned form field with a lime focus glow.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"TICKER_OR_SLUG\" />",
+      "css": ".ds-input { background: #0a0a0a; color: #f0f0f0; border: 1px solid #333333; border-radius: 6px; padding: 6px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 0.875rem; width: 100%; box-sizing: border-box; } .ds-input::placeholder { color: #888888; } .ds-input:focus { outline: none; border-color: #ccff00; box-shadow: 0 0 0 2px rgba(204,255,0,0.25); }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "badge-status",
+      "description": "on_track/watch_closely/broken status indicator - 10% tint fill, full-strength text, thin same-color ring.",
+      "html": "<span class=\"ds-pill-good\">On Track</span>",
+      "css": ".ds-pill-good { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; background: rgba(204,255,0,0.1); color: #ccff00; box-shadow: inset 0 0 0 1px rgba(204,255,0,0.2); font-family: 'Space Grotesk', sans-serif; font-size: 0.75rem; font-weight: 500; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Company card / stat tile - flat, hairline border, no shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-value\">12</div><div class=\"ds-card-label\">On Track</div></div>",
+      "css": ".ds-card { background: #121212; border: 1px solid #333333; border-radius: 8px; padding: 16px; } .ds-card-value { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 600; color: #f0f0f0; } .ds-card-label { font-family: 'Space Grotesk', sans-serif; font-size: 0.75rem; color: #888888; margin-top: 4px; }"
+    },
+    {
+      "name": "Data Table Row",
+      "kind": "custom",
+      "refersTo": "data-table",
+      "description": "The generic custom-table grid - mono numeric cells, pill-badge enum cells, no zebra striping.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Quarter</th><th>Promoter %</th><th>Pledged?</th></tr></thead><tbody><tr><td>Q1FY26</td><td class=\"ds-table-num\">55.5</td><td><span class=\"ds-table-badge\">no</span></td></tr></tbody></table>",
+      "css": ".ds-table { width: 100%; border-collapse: collapse; font-family: 'Space Grotesk', sans-serif; font-size: 0.875rem; } .ds-table thead tr { background: #0a0a0a; } .ds-table th { text-align: left; padding: 8px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #888888; } .ds-table td { padding: 8px 12px; border-top: 1px solid #333333; color: #f0f0f0; } .ds-table-num { font-family: 'JetBrains Mono', monospace; } .ds-table-badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; background: #1a1a1a; font-size: 0.75rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kill-Switch Console",
+    "overview": "This is instrumentation for a decision that costs real money if it's wrong. The console metaphor comes from the product's own defining mechanism, kill triggers: pre-committed, quantified conditions that invalidate a thesis before the analyst gets emotionally invested in being right. The interface should feel like it belongs to that discipline - built for someone who has already decided that clarity beats comfort.\n\nBut the execution stays quiet, not loud. This is not a garish trading-floor wall of blinking tickers. It's near-black and mostly silent, with exactly one accent color (Signal Lime) reserved for the things that actually matter: primary commit actions, on-track status, the thing you must not miss. Everything else recedes into graphite and grey so that when color appears, it means something. Numbers and keys render in a distinct monospaced voice, because in this product a number is evidence, not decoration - it should look like it came from an instrument, not from prose.\n\nThe palette and every accent are shared, unchanged, between a near-black default theme and a white-ground light theme, only the ground and text tokens swap. A screen that only works in one theme is a bug, not a variant.",
+    "keyCharacteristics": [
+      "Near-black ground by default, white-ground light theme with the exact same accents - never redesign per theme, only re-ground it.",
+      "One accent (Signal Lime) carries primary action and 'good' status; three siblings (Cyan, Red, Amber) are reserved for secondary/info, danger, and warning respectively - never freelanced for decoration.",
+      "Flat at rest; shadow is reserved for things that float above the page.",
+      "Numbers, keys, and code are always monospaced (JetBrains Mono), regardless of size - prose is always Space Grotesk.",
+      "Refined and quiet in execution: rectangular controls, no gradients, generous quiet space, restraint over spectacle."
+    ],
+    "rules": [
+      { "name": "The One Signal Rule", "body": "Signal Lime is the only color that ever means \"primary action\" or \"this is good.\" If a screen has more than one lime element competing for attention, something is wrong - dilute to Cyan, Amber, or plain Graphite instead of adding a second hero color.", "section": "colors" },
+      { "name": "The Dark-Ink Pairing Rule", "body": "Text on any bright accent fill (Lime, Cyan, Amber) is Void Black, never white. Kill Red is the sole exception, used for the one truly urgent, alarm-toned action.", "section": "colors" },
+      { "name": "The Data Voice Rule", "body": "Any number, key, code snippet, or machine-shaped value renders in JetBrains Mono, at whatever size the context calls for. Any word a human composed renders in Space Grotesk. Never mix the two within a single value.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "No card, tile, badge, or button carries a shadow at rest or on hover. Shadow exists solely to mark a surface as floating above the page (modal, drawer, login card).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep Signal Lime to primary actions and 'good' status only - it is a signal, not a brand wash.",
+      "Do render every number, key, and code value in JetBrains Mono regardless of its size or context.",
+      "Do use Void Black text on bright accent fills (Lime, Cyan, Amber); reserve white text for Kill Red only.",
+      "Do keep cards and panels flat with a hairline border; reserve shadow-xl for modals, the drawer, and the login card only.",
+      "Do carry the same four accent hues, unchanged, across both the dark and light theme - only ground and text tokens may swap."
+    ],
+    "donts": [
+      "Don't add a second 'hero' accent color competing with Signal Lime on the same screen.",
+      "Don't use rounded-full or soft pill shapes on buttons or cards - full rounding is reserved for status dots, pills, and badges.",
+      "Don't add a shadow to an at-rest card, tile, or button; shadow means 'floating above the page,' nothing else.",
+      "Don't mix Space Grotesk into a data value or JetBrains Mono into prose - the two fonts are a semantic split, not a stylistic one.",
+      "Don't introduce a second border color; Hairline Grey (or its light-theme counterpart) is the only one."
+    ]
+  }
+}

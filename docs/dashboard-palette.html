@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Palette</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --page-bg: #f6f6f4;
+    --page-surface: #ffffff;
+    --page-ink: #111214;
+    --page-muted: #6b6d66;
+    --page-line: #dcdcd7;
+    --page-accent: #8fac00;
+    --page-accent-ink: #050505;
+    --code-bg: #eef0e6;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg: #0b0b0b;
+      --page-surface: #141414;
+      --page-ink: #f0f0f0;
+      --page-muted: #8a8a8a;
+      --page-line: #2a2a2a;
+      --page-accent: #ccff00;
+      --page-accent-ink: #050505;
+      --code-bg: #1a1c14;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --page-bg: #0b0b0b;
+    --page-surface: #141414;
+    --page-ink: #f0f0f0;
+    --page-muted: #8a8a8a;
+    --page-line: #2a2a2a;
+    --page-accent: #ccff00;
+    --page-accent-ink: #050505;
+    --code-bg: #1a1c14;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    background: var(--page-bg);
+    color: var(--page-ink);
+    font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+    line-height: 1.5;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+  }
+
+  .wrap {
+    max-width: 78rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3.2rem) clamp(1.2rem, 4vw, 2.4rem) 4rem;
+  }
+
+  .intro {
+    display: grid;
+    gap: 0.6rem;
+    padding-bottom: 1.8rem;
+    margin-bottom: 2.4rem;
+    border-bottom: 1px solid var(--page-line);
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--page-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--page-accent);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2rem, 4.4vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .intro p {
+    max-width: 62ch;
+    margin: 0;
+    color: var(--page-muted);
+    font-size: 0.98rem;
+  }
+
+  .intro .source {
+    margin-top: 0.4rem;
+    color: var(--page-muted);
+    font-size: 0.78rem;
+  }
+
+  .intro .source code {
+    padding: 0.1rem 0.4rem;
+    color: var(--page-ink);
+    background: var(--code-bg);
+    border-radius: 3px;
+  }
+
+  .panels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.6rem;
+  }
+
+  .panel {
+    background: var(--page-surface);
+    border: 1px solid var(--page-line);
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.3rem;
+    border-bottom: 1px solid var(--page-line);
+  }
+
+  .panel-head h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .panel-head span {
+    color: var(--page-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .panel-body {
+    padding: 1.3rem;
+  }
+
+  .theme-dark .panel-body {
+    background: #050505;
+  }
+
+  .theme-light .panel-body {
+    background: #ffffff;
+  }
+
+  .group {
+    margin-bottom: 1.4rem;
+  }
+
+  .group:last-child {
+    margin-bottom: 0;
+  }
+
+  .group-label {
+    margin: 0 0 0.6rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .theme-dark .group-label { color: #888888; }
+  .theme-light .group-label { color: #5c5c5c; }
+
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: 0.6rem;
+  }
+
+  .swatch {
+    position: relative;
+    border: 1px solid;
+  }
+
+  .theme-dark .swatch { border-color: #2a2a2a; }
+  .theme-light .swatch { border-color: #d8d8d8; }
+
+  .swatch-fill {
+    height: 3.4rem;
+    border-bottom: 1px solid;
+  }
+
+  .theme-dark .swatch-fill { border-color: #2a2a2a; }
+  .theme-light .swatch-fill { border-color: #d8d8d8; }
+
+  .swatch-meta {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.5rem 0.55rem 0.6rem;
+  }
+
+  .swatch-var {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .theme-dark .swatch-var { color: #f0f0f0; }
+  .theme-light .swatch-var { color: #0a0a0a; }
+
+  .swatch-hex {
+    font-size: 0.66rem;
+  }
+
+  .theme-dark .swatch-hex { color: #888888; }
+  .theme-light .swatch-hex { color: #5c5c5c; }
+
+  .swatch-note {
+    margin-top: 0.15rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.66rem;
+    line-height: 1.35;
+  }
+
+  .theme-dark .swatch-note { color: #6f6f6f; }
+  .theme-light .swatch-note { color: #82847c; }
+
+  .new-tag {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    padding: 0.12rem 0.36rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.56rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+  }
+
+  .theme-dark .new-tag { color: #050505; background: #ccff00; }
+  .theme-light .new-tag { color: #050505; background: #ccff00; }
+
+  .type-panel {
+    margin-top: 1.6rem;
+    background: var(--page-surface);
+    border: 1px solid var(--page-line);
+  }
+
+  .type-head {
+    padding: 1.1rem 1.3rem;
+    border-bottom: 1px solid var(--page-line);
+  }
+
+  .type-head h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+  .type-body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.3rem;
+    padding: 1.3rem;
+  }
+
+  .type-sample {
+    padding: 1rem;
+    border: 1px solid var(--page-line);
+  }
+
+  .type-sample .label {
+    margin-bottom: 0.6rem;
+    color: var(--page-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .display-sample {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  .mono-sample {
+    margin: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+  }
+
+  .foot-note {
+    margin-top: 1.6rem;
+    padding: 1rem 1.3rem;
+    color: var(--page-muted);
+    font-size: 0.84rem;
+    background: var(--page-surface);
+    border: 1px solid var(--page-line);
+  }
+
+  .foot-note strong {
+    color: var(--page-ink);
+  }
+
+  @media (max-width: 900px) {
+    .panels,
+    .type-body {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="intro">
+    <span class="eyebrow">Color tokens</span>
+    <h1>Dashboard Palette</h1>
+    <p>Every CSS custom property from the sales dashboard's dark theme, plus a new <strong>white</strong> token and a white‑ground light theme built from the same brand accents.</p>
+    <p class="source">Extracted from <code class="mono">index.css</code> &middot; <code class="mono">:root</code> block</p>
+  </div>
+
+  <div class="panels">
+    <section class="panel theme-dark">
+      <div class="panel-head">
+        <h2>Dark Theme</h2>
+        <span>Current, +white</span>
+      </div>
+      <div class="panel-body">
+
+        <div class="group">
+          <p class="group-label">Ground</p>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-fill" style="background:#050505"></div><div class="swatch-meta"><span class="swatch-var mono">--bg</span><span class="swatch-hex mono">#050505</span><span class="swatch-note">Page background</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#000000"></div><div class="swatch-meta"><span class="swatch-var mono">--bg-ink</span><span class="swatch-hex mono">#000000</span><span class="swatch-note">Modal / header-panel fill</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#121212"></div><div class="swatch-meta"><span class="swatch-var mono">--surface</span><span class="swatch-hex mono">#121212</span><span class="swatch-note">Card & panel fill</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#0a0a0a"></div><div class="swatch-meta"><span class="swatch-var mono">--surface-2</span><span class="swatch-hex mono">#0a0a0a</span><span class="swatch-note">Nested panel fill</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#1a1a1a"></div><div class="swatch-meta"><span class="swatch-var mono">--surface-3</span><span class="swatch-hex mono">#1a1a1a</span><span class="swatch-note">Table row hover</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#333333"></div><div class="swatch-meta"><span class="swatch-var mono">--border</span><span class="swatch-hex mono">#333333</span><span class="swatch-note">Hairline dividers</span></div></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="group-label">Text</p>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-fill" style="background:#f0f0f0"></div><div class="swatch-meta"><span class="swatch-var mono">--fg</span><span class="swatch-hex mono">#f0f0f0</span><span class="swatch-note">Primary text</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#888888"></div><div class="swatch-meta"><span class="swatch-var mono">--muted-fg</span><span class="swatch-hex mono">#888888</span><span class="swatch-note">Secondary text</span></div></div>
+            <div class="swatch"><span class="new-tag">NEW</span><div class="swatch-fill" style="background:#ffffff;border-bottom:1px solid #2a2a2a"></div><div class="swatch-meta"><span class="swatch-var mono">--white</span><span class="swatch-hex mono">#ffffff</span><span class="swatch-note">Max-contrast highlight, not the same as --fg</span></div></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="group-label">Accent</p>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-fill" style="background:#ccff00"></div><div class="swatch-meta"><span class="swatch-var mono">--accent</span><span class="swatch-hex mono">#ccff00</span><span class="swatch-note">Primary CTA / lime</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#00f0ff"></div><div class="swatch-meta"><span class="swatch-var mono">--accent-2</span><span class="swatch-hex mono">#00f0ff</span><span class="swatch-note">Secondary / cyan</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ff003c"></div><div class="swatch-meta"><span class="swatch-var mono">--accent-3</span><span class="swatch-hex mono">#ff003c</span><span class="swatch-note">Danger / plum-red</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ffaa00"></div><div class="swatch-meta"><span class="swatch-var mono">--accent-4</span><span class="swatch-hex mono">#ffaa00</span><span class="swatch-note">Warn / amber</span></div></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="group-label">Semantic</p>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-fill" style="background:#ccff00"></div><div class="swatch-meta"><span class="swatch-var mono">--good</span><span class="swatch-hex mono">#ccff00</span><span class="swatch-note">= accent</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#00f0ff"></div><div class="swatch-meta"><span class="swatch-var mono">--ok</span><span class="swatch-hex mono">#00f0ff</span><span class="swatch-note">= accent-2</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ffaa00"></div><div class="swatch-meta"><span class="swatch-var mono">--warn</span><span class="swatch-hex mono">#ffaa00</span><span class="swatch-note">= accent-4</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ff003c"></div><div class="swatch-meta"><span class="swatch-var mono">--danger</span><span class="swatch-hex mono">#ff003c</span><span class="swatch-note">= accent-3</span></div></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="panel theme-light">
+      <div class="panel-head">
+        <h2>Light Theme</h2>
+        <span>Proposed, white ground</span>
+      </div>
+      <div class="panel-body">
+
+        <div class="group">
+          <p class="group-label">Ground</p>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-fill" style="background:#ffffff"></div><div class="swatch-meta"><span class="swatch-var mono">--bg</span><span class="swatch-hex mono">#ffffff</span><span class="swatch-note">Page background, pure white</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ffffff"></div><div class="swatch-meta"><span class="swatch-var mono">--bg-ink</span><span class="swatch-hex mono">#ffffff</span><span class="swatch-note">Modal / header-panel fill</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ffffff"></div><div class="swatch-meta"><span class="swatch-var mono">--surface</span><span class="swatch-hex mono">#ffffff</span><span class="swatch-note">Card fill, separated by border only</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#f7f7f7"></div><div class="swatch-meta"><span class="swatch-var mono">--surface-2</span><span class="swatch-hex mono">#f7f7f7</span><span class="swatch-note">Nested panel fill</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#eeeeee"></div><div class="swatch-meta"><span class="swatch-var mono">--surface-3</span><span class="swatch-hex mono">#eeeeee</span><span class="swatch-note">Table row hover</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#d8d8d8"></div><div class="swatch-meta"><span class="swatch-var mono">--border</span><span class="swatch-hex mono">#d8d8d8</span><span class="swatch-note">Hairline dividers</span></div></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="group-label">Text</p>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-fill" style="background:#0a0a0a"></div><div class="swatch-meta"><span class="swatch-var mono">--fg</span><span class="swatch-hex mono">#0a0a0a</span><span class="swatch-note">Primary text</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#5c5c5c"></div><div class="swatch-meta"><span class="swatch-var mono">--muted-fg</span><span class="swatch-hex mono">#5c5c5c</span><span class="swatch-note">Secondary text</span></div></div>
+            <div class="swatch"><span class="new-tag">NEW</span><div class="swatch-fill" style="background:#ffffff;border-bottom:1px solid #d8d8d8"></div><div class="swatch-meta"><span class="swatch-var mono">--white</span><span class="swatch-hex mono">#ffffff</span><span class="swatch-note">Same token, used on dark fills only</span></div></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="group-label">Accent (unchanged from dark)</p>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-fill" style="background:#ccff00"></div><div class="swatch-meta"><span class="swatch-var mono">--accent</span><span class="swatch-hex mono">#ccff00</span><span class="swatch-note">Pair with #050505 ink text</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#00f0ff"></div><div class="swatch-meta"><span class="swatch-var mono">--accent-2</span><span class="swatch-hex mono">#00f0ff</span><span class="swatch-note">Pair with #050505 ink text</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ff003c"></div><div class="swatch-meta"><span class="swatch-var mono">--accent-3</span><span class="swatch-hex mono">#ff003c</span><span class="swatch-note">Danger, use on white directly</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ffaa00"></div><div class="swatch-meta"><span class="swatch-var mono">--accent-4</span><span class="swatch-hex mono">#ffaa00</span><span class="swatch-note">Pair with #050505 ink text</span></div></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <p class="group-label">Semantic</p>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-fill" style="background:#ccff00"></div><div class="swatch-meta"><span class="swatch-var mono">--good</span><span class="swatch-hex mono">#ccff00</span><span class="swatch-note">= accent</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#00f0ff"></div><div class="swatch-meta"><span class="swatch-var mono">--ok</span><span class="swatch-hex mono">#00f0ff</span><span class="swatch-note">= accent-2</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ffaa00"></div><div class="swatch-meta"><span class="swatch-var mono">--warn</span><span class="swatch-hex mono">#ffaa00</span><span class="swatch-note">= accent-4</span></div></div>
+            <div class="swatch"><div class="swatch-fill" style="background:#ff003c"></div><div class="swatch-meta"><span class="swatch-var mono">--danger</span><span class="swatch-hex mono">#ff003c</span><span class="swatch-note">= accent-3</span></div></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <div class="type-panel">
+    <div class="type-head">
+      <h2>Typography</h2>
+    </div>
+    <div class="type-body">
+      <div class="type-sample">
+        <p class="label">Space Grotesk &middot; display / headings</p>
+        <p class="display-sample">Sales Analysis Dashboard</p>
+      </div>
+      <div class="type-sample">
+        <p class="label">JetBrains Mono &middot; labels / data / code</p>
+        <p class="mono-sample">--accent: #ccff00; /* VIEW DATA */</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot-note">
+    <strong>How the two themes relate:</strong> only the ground and text tokens change between themes &mdash; <code class="mono">--bg</code>, <code class="mono">--surface*</code>, <code class="mono">--border</code>, <code class="mono">--fg</code>, <code class="mono">--muted-fg</code>. The four accent hues and the new <code class="mono">--white</code> token stay identical in both, which is what keeps the brand recognizable when switching. Buttons and pills that currently hardcode <code class="mono">color:#050505</code> on an accent fill already work unchanged on the white ground.
+  </p>
+</div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 export const STATUS_STYLES = {
-  on_track: { label: "On Track", dot: "bg-emerald-500", pill: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
-  watch_closely: { label: "Watch Closely", dot: "bg-amber-500", pill: "bg-amber-50 text-amber-700 ring-amber-600/20" },
-  broken: { label: "Broken", dot: "bg-rose-500", pill: "bg-rose-50 text-rose-700 ring-rose-600/20" },
+  on_track: { label: "On Track", dot: "bg-good", pill: "bg-good/10 text-good ring-good/20" },
+  watch_closely: { label: "Watch Closely", dot: "bg-warn", pill: "bg-warn/10 text-warn ring-warn/20" },
+  broken: { label: "Broken", dot: "bg-danger", pill: "bg-danger/10 text-danger ring-danger/20" },
 };
 
 export function formatMetricValue(value, unit, decimals = 1) {
