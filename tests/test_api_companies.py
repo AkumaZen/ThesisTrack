@@ -1,6 +1,6 @@
 """P1 acceptance criterion (BUILD_PLAN.md §10): create a company, post three
 quarters of observations, amend the thesis twice, and retrieve a version
-diff — all via HTTP, all covered by tests.
+diff - all via HTTP, all covered by tests.
 """
 import copy
 import json
@@ -90,7 +90,7 @@ def test_create_company_rejects_unknown_taxonomy(client, golden_payload):
 def test_company_detail_includes_observations_triggers_and_override_flag(client, golden_payload):
     """BUILD_PLAN.md §6: GET /companies/{id} returns 'last 8 periods of
     observations, health check history, pending proposals, active overrides'
-    — this closes a P1 gap where the endpoint only returned thesis+versions."""
+    - this closes a P1 gap where the endpoint only returned thesis+versions."""
     client.post("/api/companies", json=golden_payload)
     client.post(
         "/api/companies/BALU_FORGE/observations",
@@ -128,7 +128,7 @@ def test_company_detail_includes_observations_triggers_and_override_flag(client,
 
 def test_company_card_list_includes_core_metrics_snapshot(client, golden_payload):
     """§1.2: thesis_data's model_specific_metrics is the denormalized copy for
-    the card render — core metrics should appear without opening the drawer."""
+    the card render - core metrics should appear without opening the drawer."""
     client.post("/api/companies", json=golden_payload)
     resp = client.get("/api/companies")
     card = next(c for c in resp.json()["items"] if c["company_id"] == "BALU_FORGE")

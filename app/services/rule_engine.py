@@ -1,13 +1,13 @@
 """Deterministic kill-trigger evaluation (BUILD_PLAN.md §5 [1], §11).
 
-Runs synchronously on every observation ingest (see ADR-006 — this used to be
+Runs synchronously on every observation ingest (see ADR-006 - this used to be
 deferred; P2 implements the hook). A missing observation is a data gap, not a
-breach — it must never fire a trigger.
+breach - it must never fire a trigger.
 
 Grace-period continuity is tracked per kill_triggers.id, i.e. per thesis
 version: amending the thesis creates new trigger rows with fresh ids, so a
 streak does not carry across a redline's threshold changing mid-stream. This
-is a judgment call not spelled out in BUILD_PLAN.md — logged as ADR-008.
+is a judgment call not spelled out in BUILD_PLAN.md - logged as ADR-008.
 """
 from typing import Optional
 
@@ -100,7 +100,7 @@ def evaluate_observations(db: Session, company_id: str, period: str) -> list[Sta
             )
         )
         if obs is None or obs.numeric_value is None:
-            continue  # data gap, not a breach — surfaces in the review queue (P3), not here
+            continue  # data gap, not a breach - surfaces in the review queue (P3), not here
 
         observed = float(obs.numeric_value)
         threshold = float(trigger.threshold)

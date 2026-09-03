@@ -1,4 +1,4 @@
-"""AI reviewer prompt (BUILD_PLAN.md §5), as a constant with a version tag —
+"""AI reviewer prompt (BUILD_PLAN.md §5), as a constant with a version tag -
 the same tag gets written into every export row's metadata in P6 (§7.5)."""
 import json
 from typing import Any, Optional

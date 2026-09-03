@@ -3,7 +3,7 @@
 Precedence when sources disagree: human > rule engine > AI (§5 rule 3). A
 fired kill-severity proposal (source=rule_engine, proposed_status='broken')
 cannot be dismissed or overridden without a non-empty resolution note, and
-every resolution — override or not — writes a status_events row.
+every resolution - override or not - writes a status_events row.
 """
 from datetime import date
 from typing import Optional
@@ -71,6 +71,12 @@ def resolve_proposal(
     from_status = company.status
 
     if action == "accept":
+        # Only ai_proposed evidence carries a real reasoning_chain (BUILD_PLAN.md
+        # §5's AI reviewer output); a rule-engine firing is arithmetic, not
+        # reasoning, so it's left null here rather than synthesized - P6's
+        # export eligibility filter (>= 3 reasoning steps) then naturally
+        # excludes rows without one instead of exporting a fabricated chain.
+        reasoning_chain = (proposal.evidence or {}).get("reasoning_chain") if proposal.source == "ai_proposed" else None
         db.add(
             HealthCheck(
                 company_id=company.company_id,
@@ -79,6 +85,8 @@ def resolve_proposal(
                 verdict=final_status,
                 source="manual",
                 note=note or proposal.rationale,
+                reasoning_chain=reasoning_chain,
+                evidence=proposal.evidence,
                 human_confirmed=True,
                 author=actor,
             )
@@ -164,7 +172,7 @@ def close_outcome(db: Session, company_id: str, outcome: str, note: str, actor: 
     company.outcome = outcome
     company.exit_date = date.today()
 
-    # No dedicated column for a retrospective note (BUILD_PLAN.md §2) — recorded
+    # No dedicated column for a retrospective note (BUILD_PLAN.md §2) - recorded
     # as a status_events entry (status itself is unchanged by closing the outcome).
     db.add(
         StatusEvent(

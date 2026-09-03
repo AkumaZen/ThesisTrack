@@ -5,7 +5,7 @@ export const STATUS_STYLES = {
 };
 
 export function formatMetricValue(value, unit, decimals = 1) {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "-";
   const n = Number(value);
   switch (unit) {
     case "pct":

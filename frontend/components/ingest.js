@@ -68,7 +68,7 @@ export function renderIngestModalShell(taxonomy) {
         </label>
 
         <div class="grid grid-cols-2 gap-3 mt-3">
-          <label class="text-sm">The Big Change — Summary
+          <label class="text-sm">The Big Change - Summary
             <textarea id="f-big-change-summary" rows="2" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"></textarea>
           </label>
           <label class="text-sm">Expected Completion
@@ -82,7 +82,7 @@ export function renderIngestModalShell(taxonomy) {
 
         <div class="mt-4">
           <div class="text-sm font-medium">Model-Specific Metrics
-            <span class="text-slate-400 font-normal">— from the metric registry for the selected operating model</span>
+            <span class="text-slate-400 font-normal">- from the metric registry for the selected operating model</span>
           </div>
           <div id="f-metrics-fields" class="grid grid-cols-2 gap-3 mt-1"></div>
         </div>
@@ -93,7 +93,7 @@ export function renderIngestModalShell(taxonomy) {
           <button type="button" data-add="kill-trigger" class="text-xs text-blue-600 mt-1">+ Add redline</button>
         </div>
 
-        <label class="block text-sm mt-4">Why We Believe It <span class="text-slate-400">(one per line, &ge;3 entries, start lines with "Premise" / "Inference" / "Conclusion" — exactly one Conclusion)</span>
+        <label class="block text-sm mt-4">Why We Believe It <span class="text-slate-400">(one per line, &ge;3 entries, start lines with "Premise" / "Inference" / "Conclusion" - exactly one Conclusion)</span>
           <textarea id="f-why-believe" rows="4" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"></textarea>
         </label>
 

@@ -1,5 +1,5 @@
 # STATE
-Phase: P6 — Export + eval (not started). P0-P5 complete and verified.
+Phase: P6 - Export + eval (not started). P0-P5 complete and verified.
 Done:
   - Harness bootstrapped (68ffdec); 6 evolve cycles (evolutions/2026-09-02T-p0..p4.md, 2026-09-03T-p5.md)
   - P0 (2293665/a462e34) 11 tests, P1 (61b67b3/844a09d) +6, P2 (829d473) +18,
@@ -11,10 +11,10 @@ Done:
     observation posting, override-requires-note enforced through the UI,
     badges on header + card confirmed
 In flight: nothing
-Blocked: nothing for P6 specifically, but see below — two things need the
+Blocked: nothing for P6 specifically, but see below - two things need the
   human before this session goes further on anything outside BUILD_PLAN.md's
   scope
-Last evolution: harness/journal/evolutions/2026-09-03T-p5.md — one gotcha
+Last evolution: harness/journal/evolutions/2026-09-03T-p5.md - one gotcha
   (Dockerfile COPY list didn't track new served dirs), two open questions
   raised (not resolved)
 
@@ -23,14 +23,14 @@ Last evolution: harness/journal/evolutions/2026-09-03T-p5.md — one gotcha
    new requests: push to GitHub as "ThesisTrack", multi-user login with
    read/write RBAC for two named users, more form coverage, simpler UI.
    These go beyond BUILD_PLAN.md §0's v1 scope (single-analyst API key,
-   "not before" multi-user) — not started, needs explicit confirmation.
+   "not before" multi-user) - not started, needs explicit confirmation.
 2. A `.production.env` file appeared with a live Aiven Postgres credential.
    Never staged for commit (`.gitignore` hardened to `*.env` regardless).
    Not used for anything. Needs the human to say whether/when this session
    should actually deploy against it.
 
 Next action: BUILD_PLAN.md §7 + §10 P6 acceptance criterion. Build:
-  - `training_splits` table (new migration — not in the P0 schema; §7.4
+  - `training_splits` table (new migration - not in the P0 schema; §7.4
     needs it to keep split assignment stable across export runs)
   - app/services/exporter.py: three task shapes (thesis_synthesis, verdict,
     redline_extraction) from one internal representation; three format

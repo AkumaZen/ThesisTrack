@@ -2,7 +2,7 @@
 provider is swappable"). Every call is logged to disk (model name, prompt
 hash, raw response) per §5's instrumentation requirement.
 
-No default silently degrades to a canned answer — get_llm_client() raises
+No default silently degrades to a canned answer - get_llm_client() raises
 clearly if unconfigured. A silently-fabricated "review" would be exactly the
 kind of unverified content the constitution (rule 7) exists to keep out of
 the system; tests inject FakeLLMClient explicitly instead.
@@ -55,7 +55,7 @@ def _parse_json_response(model_name: str, system: str, user: str, raw: str) -> d
 
 
 class FakeLLMClient(LLMClient):
-    """Deterministic client for tests — no network, no API key required."""
+    """Deterministic client for tests - no network, no API key required."""
 
     def __init__(
         self,
@@ -101,7 +101,7 @@ class AnthropicLLMClient(LLMClient):
 
 
 def get_llm_client() -> LLMClient:
-    """FastAPI dependency — override with a FakeLLMClient in tests."""
+    """FastAPI dependency - override with a FakeLLMClient in tests."""
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise RuntimeError(

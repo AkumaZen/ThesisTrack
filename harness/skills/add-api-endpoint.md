@@ -1,7 +1,7 @@
 # Skill: add a new API endpoint group
 
 Recurred 3x with a stable shape in P1 (companies, observations, taxonomy
-routers) — codified at the P1 evolve cycle so P2 (rule-engine-triggered
+routers) - codified at the P1 evolve cycle so P2 (rule-engine-triggered
 routes), P3 (health-check), P4 (ai-review), and P6 (export) follow this
 directly instead of re-deriving it.
 
@@ -9,7 +9,7 @@ directly instead of re-deriving it.
 
 1. **Domain exceptions in the service, not the router.** `app/services/*.py`
    functions raise plain exception classes (`NotFoundError`, `TaxonomyError`,
-   `AlreadyExistsError`, ...) — never `HTTPException`. Keeps the service
+   `AlreadyExistsError`, ...) - never `HTTPException`. Keeps the service
    layer testable without FastAPI/HTTP in the loop (see
    `tests/test_versioning.py`, which calls services directly).
 2. **The router translates exceptions to status codes.** One `try/except` per
@@ -17,23 +17,23 @@ directly instead of re-deriving it.
    `TaxonomyError`/validation → 422, `AlreadyExistsError` → 409). Never let a
    raw exception surface as a 500 for something the service already named.
 3. **`dependencies=[Depends(require_api_key)]` on the `APIRouter(...)`**, not
-   per-route — BUILD_PLAN.md §6 requires the key on every route under `/api`.
+   per-route - BUILD_PLAN.md §6 requires the key on every route under `/api`.
 4. **Response shape lives in `app/schemas/`, not built ad hoc in the router.**
    The router constructs the Pydantic response model explicitly from ORM rows
-   (no `from_attributes`/`model_validate(orm_obj)` shortcut used so far —
+   (no `from_attributes`/`model_validate(orm_obj)` shortcut used so far -
    ORM column names don't always match the response shape, e.g.
    `CompanyOut.broad_industry` is a name, not `Company.broad_industry_id`).
 5. **Register in `app/main.py`** via `app.include_router(...)`.
 6. **Test both layers**: a service-level test with a real DB session (no
    HTTP), and an HTTP-level test through `TestClient` (use the `client`
-   fixture from `tests/conftest.py` — it already carries the API key header
-   and the DB dependency override) — not both for every endpoint, but the
+   fixture from `tests/conftest.py` - it already carries the API key header
+   and the DB dependency override) - not both for every endpoint, but the
    read-modify-verify-via-HTTP flows (BUILD_PLAN.md's phase "done when"
    criteria) need the HTTP layer, and anything with tricky concurrency/retry
    logic (versioning) needs the direct-service layer where threading is
    straightforward.
 7. **For a direct DB session in a service-level test, import
-   `tests.conftest.TestSession`** — don't create a new engine/sessionmaker
+   `tests.conftest.TestSession`** - don't create a new engine/sessionmaker
    in the test file. Three P1/P2 test files each independently redefined one
    before this was noticed and consolidated at the P3 evolve cycle (see
    `harness/journal/evolutions/2026-09-02T-p3.md`); it's a plain re-derivation,
@@ -41,6 +41,6 @@ directly instead of re-deriving it.
 
 ## Evidence
 `app/routers/companies.py`, `app/routers/observations.py`,
-`app/routers/taxonomy.py` — all three follow this shape;
+`app/routers/taxonomy.py` - all three follow this shape;
 `app/services/versioning.py`, `app/services/taxonomy.py` for the exception
 convention.

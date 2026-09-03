@@ -74,7 +74,7 @@ def _company_row_to_out(
 
 def _core_metrics_by_company(db: Session, companies: list[Company]) -> dict[str, dict[str, float]]:
     """company_id -> {metric_key: value} for is_core registry metrics, read from
-    each company's current thesis_data.proof_points.model_specific_metrics — the
+    each company's current thesis_data.proof_points.model_specific_metrics - the
     'denormalized convenience copy for the card render' BUILD_PLAN.md §1.2 describes."""
     version_ids = [c.current_version_id for c in companies if c.current_version_id]
     if not version_ids:

@@ -11,8 +11,8 @@ mapped with `mapped_column(TYPE, Computed("<placeholder>", persisted=True), null
 Without it, SQLAlchemy includes the column (as `NULL`) in every INSERT, and
 Postgres rejects it: `psycopg.errors.GeneratedAlways: cannot insert a
 non-DEFAULT value into column "..."`. The `Computed(...)` text argument is
-only used if SQLAlchemy ever issues CREATE TABLE DDL for the model — which we
-never do here (all tables are migration-owned, raw SQL) — so a placeholder
+only used if SQLAlchemy ever issues CREATE TABLE DDL for the model - which we
+never do here (all tables are migration-owned, raw SQL) - so a placeholder
 string is safe. It exists purely to tell the ORM "omit this column from
 INSERT/UPDATE."
 Evidence: `app/models.py::ThesisVersion.search_tsv`;
@@ -31,7 +31,7 @@ Evidence: `app/auth.py::require_api_key`;
 
 ## Enum columns backed by an existing Postgres type
 Every `ENUM` column here is declared `PGEnum(..., name="...", create_type=False)`
-because the P0 migration already ran `CREATE TYPE` — letting SQLAlchemy think
+because the P0 migration already ran `CREATE TYPE` - letting SQLAlchemy think
 it owns the type's lifecycle would make it try (and fail, or silently
 diverge) to manage `CREATE`/`DROP TYPE` on `create_all`/`drop_all`, which we
 never call anyway (migration-owned schema), but the flag also suppresses

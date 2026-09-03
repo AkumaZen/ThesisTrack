@@ -43,7 +43,7 @@ def test_fired_kill_cannot_be_dismissed_without_a_note(client):
     # dismiss with a note -> succeeds, recorded as an override
     resp = client.post(
         f"/api/proposals/{proposal_id}/resolve",
-        json={"action": "reject", "note": "One-off input cost spike, thesis intact — staying on_track."},
+        json={"action": "reject", "note": "One-off input cost spike, thesis intact - staying on_track."},
     )
     assert resp.status_code == 200, resp.text
     assert resp.json()["state"] == "rejected"

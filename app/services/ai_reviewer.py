@@ -1,7 +1,7 @@
 """AI reviewer (BUILD_PLAN.md §5 [2], constitution rule 3): advisory only.
 
 Writes a status_proposals row (source='ai_proposed') and NEVER touches
-companies.status — that would let an unreviewed model verdict become the
+companies.status - that would let an unreviewed model verdict become the
 ground truth this platform later fine-tunes on (BUILD_PLAN.md §7.3).
 A malformed/unparseable response, even after one retry, fails safe: no
 proposal row is written at all, rather than a garbage one.
@@ -24,7 +24,7 @@ class NotFoundError(Exception):
 
 
 class AIReviewFailedError(Exception):
-    """The model's response could not be used — fails safe, no proposal written."""
+    """The model's response could not be used - fails safe, no proposal written."""
 
 
 def _last_n_periods_observations(db: Session, company_id: str, n: int = 4) -> list[dict]:

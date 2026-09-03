@@ -2,7 +2,7 @@ import { STATUS_STYLES, escapeHtml, formatMetricValue } from "./format.js";
 
 function redlineBar(trigger) {
   if (trigger.manual_check || trigger.metric_key === null) {
-    return `<div class="text-xs text-slate-500 italic">Manual check — not quantifiable.</div>`;
+    return `<div class="text-xs text-slate-500 italic">Manual check - not quantifiable.</div>`;
   }
   const observed = trigger.latest_observed_value;
   const threshold = trigger.threshold;
@@ -47,7 +47,7 @@ function healthCheckTimeline(healthChecks) {
       return `<div class="flex gap-2 py-1.5 border-b border-slate-100 last:border-0">
         <span class="inline-block h-2 w-2 mt-1.5 rounded-full ${style.dot} shrink-0"></span>
         <div>
-          <div class="text-xs font-medium">${escapeHtml(h.period)} — ${style.label} <span class="text-slate-400 font-normal">(${h.source}${h.human_confirmed ? ", confirmed" : ""})</span></div>
+          <div class="text-xs font-medium">${escapeHtml(h.period)} - ${style.label} <span class="text-slate-400 font-normal">(${h.source}${h.human_confirmed ? ", confirmed" : ""})</span></div>
           <div class="text-xs text-slate-500">${escapeHtml(h.note)}</div>
         </div>
       </div>`;
@@ -145,7 +145,7 @@ export function renderDrawer(detail) {
       ${detail.pending_proposals?.length ? `
         <section class="mt-5">
           <h3 class="font-medium text-sm text-slate-500 uppercase tracking-wide">Pending Proposals</h3>
-          <div class="text-xs text-slate-500 mt-1">${detail.pending_proposals.length} pending — resolve them from the Review Queue.</div>
+          <div class="text-xs text-slate-500 mt-1">${detail.pending_proposals.length} pending - resolve them from the Review Queue.</div>
         </section>` : ""}
 
       <section class="mt-5 mb-8">

@@ -1,6 +1,6 @@
 """Company creation, thesis amendment, and version diffing (BUILD_PLAN.md §1.3, §6).
 
-thesis_versions is append-only (enforced by a DB trigger — see the P0
+thesis_versions is append-only (enforced by a DB trigger - see the P0
 migration); this module only ever INSERTs new version rows and repoints
 companies.current_version_id, never UPDATEs an existing version.
 """

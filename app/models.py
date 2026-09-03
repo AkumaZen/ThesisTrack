@@ -1,6 +1,6 @@
 """SQLAlchemy ORM models mirroring the P0 migration (BUILD_PLAN.md §2).
 
-The schema itself lives in the migration (raw SQL — see ADR-004 in
+The schema itself lives in the migration (raw SQL - see ADR-004 in
 harness/memory/decisions.md); these models describe that already-created
 schema for the application layer. All Postgres enum types are declared with
 create_type=False since the migration owns their lifecycle.
@@ -132,7 +132,7 @@ class ThesisVersion(Base):
     change_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     authored_by: Mapped[str] = mapped_column(String(80), nullable=False)
     authored_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
-    # Generated in the DB (P0 migration); Computed(...) here is a marker only —
+    # Generated in the DB (P0 migration); Computed(...) here is a marker only -
     # it tells the ORM to omit this column from INSERT/UPDATE, never to (re)issue
     # DDL for it (we never run create_all against tables the migration owns).
     search_tsv: Mapped[Optional[str]] = mapped_column(
@@ -230,6 +230,16 @@ class StatusProposal(Base):
     resolved_by: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     resolution_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+
+class TrainingSplit(Base):
+    __tablename__ = "training_splits"
+
+    company_id: Mapped[str] = mapped_column(
+        ForeignKey("companies.company_id", ondelete="CASCADE"), primary_key=True
+    )
+    split: Mapped[str] = mapped_column(String(10), nullable=False)
+    assigned_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
 
 class StatusEvent(Base):

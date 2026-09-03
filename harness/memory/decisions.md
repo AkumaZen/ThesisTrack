@@ -13,7 +13,7 @@ and §4: `classification.currency: "INR"` added; `model_specific_metrics`
 re-keyed to the `metric_definitions` registry's canonical keys
 (`capacity_utilization_pct`, `operating_margin_pct`, `working_capital_days`)
 with numeric values; `what_can_kill_it` restructured into §1.1's normalized
-shape — the margin trigger got full structured fields (this is almost
+shape - the margin trigger got full structured fields (this is almost
 verbatim BUILD_PLAN.md §1.1's own worked example), the facility-delay trigger
 became `manual_check: true` since "delayed > 6 months" isn't a registry
 metric; `operating_model`/`status` lowercased to the DB enum values.
@@ -28,7 +28,7 @@ this adapted fixture.
 ## ADR-002: `why_we_believe_it` stays a plain string array; Premise/Conclusion is a prefix check
 BUILD_PLAN.md §1 lists five specific structural deviations from the original
 spec (kill triggers, metrics-as-time-series, versioning, metric registry,
-taxonomy/units) — `why_we_believe_it` isn't among them, and the original
+taxonomy/units) - `why_we_believe_it` isn't among them, and the original
 sample already ships it as prose strings prefixed "Premise 1:", "Inference:",
 "Conclusion:". §4's validation rule ("contains at least one Premise and
 exactly one Conclusion") is implemented as a case-insensitive prefix check on
@@ -42,7 +42,7 @@ The original sample's `health_check` pillar (`latest_quarter_review` +
 the `health_checks` DB table from BUILD_PLAN.md §2/§5, which is the
 rule-engine/AI/human verdict ledger populated over time via
 `POST /companies/{id}/health-check` (P3). The two aren't reconciled or
-deduplicated — this matches §1.2's general pattern of JSONB holding an
+deduplicated - this matches §1.2's general pattern of JSONB holding an
 authored/denormalized view while a normalized table is the operational
 source of truth.
 Evidence: `app/schemas/thesis.py::HealthCheckPillar`; BUILD_PLAN.md §2
@@ -50,12 +50,12 @@ Evidence: `app/schemas/thesis.py::HealthCheckPillar`; BUILD_PLAN.md §2
 
 ## ADR-004: P0 migration is raw SQL via op.execute(), not SQLAlchemy ORM models
 `app/models.py` (SQLAlchemy ORM) is deferred to P1. BUILD_PLAN.md §10 lists P0
-as "migrations, seeds, Pydantic models, exported JSON Schema" — it does not
+as "migrations, seeds, Pydantic models, exported JSON Schema" - it does not
 require an ORM layer, and the generated `search_tsv` column plus the
 append-only trigger/function aren't well-served by Alembic's `op.*` DSL
 anyway. The migration pastes BUILD_PLAN.md §2's DDL near-verbatim via
 `op.execute()`, verified to actually apply (including the generated column)
-against real Postgres 16 — no tsvector fallback was needed.
+against real Postgres 16 - no tsvector fallback was needed.
 Evidence: `migrations/versions/6964238e12f2_p0_schema.py`;
 `tests/test_schema_migration.py` passing against a real database.
 
@@ -64,7 +64,7 @@ BUILD_PLAN.md §1.5 controls taxonomy specifically to stop free text; silently
 creating a `broad_industries`/`specific_niches` row on an unrecognized name at
 company-creation time would defeat that. `POST /companies` looks up both by
 name and returns 422 naming the missing one if either isn't found.
-`broad_industries` is seed-managed (`seeds/taxonomy.sql` — no create endpoint
+`broad_industries` is seed-managed (`seeds/taxonomy.sql` - no create endpoint
 exists in §6); `specific_niches` has the explicit propose path,
 `POST /taxonomy/niches`.
 Evidence: `app/services/versioning.py::_resolve_taxonomy`;
@@ -72,7 +72,7 @@ Evidence: `app/services/versioning.py::_resolve_taxonomy`;
 
 ## ADR-006: rule-engine hook on POST /observations deferred to P2
 BUILD_PLAN.md §6's endpoint table says this route "triggers rule engine
-synchronously; returns any new proposals" — but §10 explicitly scopes the
+synchronously; returns any new proposals" - but §10 explicitly scopes the
 rule engine itself to P2, and P1's acceptance criterion only requires posting
 observations via HTTP, not proposal generation. P1's implementation persists
 observations (upsert per `(company_id, period, metric_key)`) and validates
@@ -81,12 +81,12 @@ into this same endpoint without changing its request/response shape for the
 fields already used by P1's tests.
 Evidence: `app/routers/observations.py` (comment at the return statement).
 
-## ADR-007: thesis amendment payload is {thesis_data, change_note} only — classification isn't re-submitted per version
+## ADR-007: thesis amendment payload is {thesis_data, change_note} only - classification isn't re-submitted per version
 `classification` (broad_industry, specific_niche, operating_model, currency)
 lives on the `companies` row, set once at creation; only `thesis_data` (the
 pillars) is versioned in `thesis_versions`. `PUT /companies/{id}/thesis`
 therefore takes `ThesisAmend {thesis_data, change_note}`, not a full
-`ThesisCreate` — there's no schema table column for classification-per-version,
+`ThesisCreate` - there's no schema table column for classification-per-version,
 and BUILD_PLAN.md never describes reclassifying a company mid-thesis.
 Evidence: `app/schemas/company.py::ThesisAmend`;
 `app/routers/companies.py::put_thesis`.
@@ -97,14 +97,14 @@ trigger_evaluations ordered by period_end" but doesn't say what happens when
 a thesis amendment changes a trigger's threshold or removes/re-adds it.
 Since `kill_triggers` rows belong to a specific `version_id` (a new row with
 a new `id` is written on every amendment per §1.3's append-only versioning),
-a breach streak naturally resets to zero when the thesis is amended — there
+a breach streak naturally resets to zero when the thesis is amended - there
 is no prior `trigger_evaluations` row for the new trigger `id` to read back.
 This is the conservative reading: an amended redline (possibly a different
 threshold) shouldn't inherit breach history accumulated under the old one.
 Evidence: `app/services/rule_engine.py::_consecutive_breach_streak` (keyed
 on `trigger.id`, which changes every amendment).
 
-## ADR-009: status_proposals has no trigger_id column — dedup by evidence.trigger_id instead
+## ADR-009: status_proposals has no trigger_id column - dedup by evidence.trigger_id instead
 BUILD_PLAN.md §2's `status_proposals` table has no FK back to
 `kill_triggers`. To stop the rule engine from spamming a new pending
 proposal every time the same already-fired trigger re-evaluates for the same
@@ -116,12 +116,12 @@ in BUILD_PLAN.md §2.
 Evidence: `app/services/rule_engine.py::_existing_pending_trigger_ids`;
 `tests/test_rule_engine.py::test_repeated_post_same_period_does_not_duplicate_pending_proposal`.
 
-## ADR-010: outcome-close retrospective note has no dedicated column — stored as a status_events row
+## ADR-010: outcome-close retrospective note has no dedicated column - stored as a status_events row
 `POST /companies/{id}/outcome` (§6) takes an outcome + "retrospective note,"
 but `companies` (§2) has no free-text column for it and `outcome` isn't
 itself a status transition. Recorded as a `status_events` row with
 `from_status == to_status` (status is genuinely unchanged by closing the
-outcome) and the note as `rationale` — keeps the note durable and queryable
+outcome) and the note as `rationale` - keeps the note durable and queryable
 without adding a column BUILD_PLAN.md's schema doesn't have.
 Evidence: `app/services/audit.py::close_outcome`.
 
@@ -130,7 +130,7 @@ BUILD_PLAN.md §5 rule 2 says overriding a fired kill needs a note and an
 `override=TRUE` status_events row, but doesn't give the exact predicate for
 "this resolution is an override." Implemented as: the proposal being
 resolved came from the rule engine with `proposed_status='broken'` (i.e., a
-kill, not a warn — P2 never proposes 'broken' any other way), AND the
+kill, not a warn - P2 never proposes 'broken' any other way), AND the
 resolution's resulting status is anything other than 'broken' (a reject, or
 an accept with a human-supplied `verdict` that isn't 'broken'). Accepting a
 fired kill's own recommendation (verdict left unset, defaults to 'broken')
@@ -142,7 +142,7 @@ Evidence: `app/services/audit.py::resolve_proposal`, `_find_active_fired_kill`;
 
 ## ADR-012: get_llm_client() raises when unconfigured, never silently degrades
 BUILD_PLAN.md §5 doesn't say what to do when no LLM provider is configured.
-The tempting default — fall back to a canned/neutral response — would mean
+The tempting default - fall back to a canned/neutral response - would mean
 `/ai-review` could return what looks like a real AI opinion when none was
 actually formed, which is precisely the "unreviewed model output becomes
 ground truth" failure constitution rule 3 and BUILD_PLAN.md §7.3 exist to
@@ -158,26 +158,26 @@ Evidence: `app/llm/client.py::get_llm_client`;
 ## ADR-013: GET /companies/{id} expanded to match §6 fully, while building P5
 P1's original `get_company` only returned `current_thesis` + `versions`.
 BUILD_PLAN.md §6 always specified more: "current thesis, last 8 periods of
-observations, health check history, pending proposals, active overrides" —
+observations, health check history, pending proposals, active overrides" -
 a gap that wasn't caught by P1's tests because nothing in P1-P4 needed that
 data yet. P5's drawer (redlines with observed-vs-threshold, health-check
-timeline, override badge — §8 point 3, §5 rule 2) is the first thing that
+timeline, override badge - §8 point 3, §5 rule 2) is the first thing that
 actually needs it, so it's fixed now rather than carried forward. Added:
 `observations` (last 8 periods), `health_checks`, `pending_proposals`,
 `kill_triggers` (with each trigger's latest observed/breached/fired from
 `trigger_evaluations`), and `active_override` (the company's most recent
-`status_events` row, if `override=TRUE`) — plus `has_active_override` on the
+`status_events` row, if `override=TRUE`) - plus `has_active_override` on the
 card-level `CompanyOut` too, since §5 rule 2 requires the badge on the card,
 not just the drawer. "Active override" is defined as: the single most
 recent `status_events` row for the company has `override=TRUE` (a later
-non-override resolution clears it) — computed via `DISTINCT ON
+non-override resolution clears it) - computed via `DISTINCT ON
 (company_id) ... ORDER BY created_at DESC` for the list view, so it stays
 one query per page rather than N+1.
 Evidence: `app/routers/companies.py::get_company`, `_latest_override_flags`;
 `app/schemas/company.py::CompanyDetail`;
 `tests/test_api_companies.py::test_company_detail_includes_observations_triggers_and_override_flag`.
 
-## ADR-014: P5 frontend scope trims — header stats page-capped, no sparkline charts, custom lightweight schema validator
+## ADR-014: P5 frontend scope trims - header stats page-capped, no sparkline charts, custom lightweight schema validator
 Three deliberate v1 simplifications against §8's full description:
 1. **Header stats** are computed client-side from one `GET /companies?page_size=200`
    call rather than a dedicated aggregate endpoint. Correct up to 200
@@ -191,11 +191,11 @@ Three deliberate v1 simplifications against §8's full description:
 3. **The JSON tab's client-side validator (`frontend/app.js::validateNode`)
    is a small hand-written recursive checker** (required fields, types,
    enums, `$ref`/`$defs` resolution) against the real
-   `contracts/thesis.schema.json` — not a full JSON Schema engine (no
+   `contracts/thesis.schema.json` - not a full JSON Schema engine (no
    `anyOf`/`pattern`/`format`). Business-rule validation (revenue split
    sums, metric-registry membership, Premise/Conclusion counts) only exists
    server-side in Pydantic and is surfaced via the 422 error list on submit.
-All three are scope trims to ship a genuinely working v1, not silent gaps —
+All three are scope trims to ship a genuinely working v1, not silent gaps -
 verified end-to-end in a real browser (chrome-devtools-axi): create company
 (JSON tab against the actual golden fixture), dynamic metrics field proven
 by inserting a live `metric_definitions` row and watching it appear with
@@ -204,5 +204,48 @@ proposal through the override-requires-a-note path, and confirm the
 override badge on both the header stat and the card.
 Evidence: `frontend/app.js`, `frontend/components/*.js`; this session's
 browser verification (no automated test suite covers static frontend
-assets — verification here is the browser trace itself, per the project's
+assets - verification here is the browser trace itself, per the project's
 UI-change rule).
+
+## ADR-015: P6 export scope and eligibility interpretation
+Several judgment calls implementing §7 precisely:
+1. **"Raw company data" for thesis_synthesis** is classification plus prior
+   observations (period_end before the version's authored_at). This schema
+   has no filings/concall text store, so it's a real but limited proxy, not
+   a stand-in for one - documented in code, not silently treated as complete.
+2. **Rule 1 (never train on unreviewed AI output) is structurally
+   guaranteed, not just filtered.** `health_checks` rows only ever get
+   written by human action (`resolve_proposal` on accept, or
+   `submit_health_check`) - `human_confirmed=True` on every single row by
+   construction (`app/services/audit.py`). The filter is kept anyway as a
+   defensive, self-documenting check, per constitution rule 4's "correctness
+   requirement, not preference."
+3. **Reasoning chains only exist for verdict rows that came from an
+   accepted ai_proposed proposal.** A rule-engine firing has no multi-step
+   reasoning to export, so its resulting health check gets
+   reasoning_chain=None rather than a synthesized one, and is naturally
+   excluded by rule 3's >= 3 steps requirement (fixed in
+   app/services/audit.py::resolve_proposal while building this phase - the
+   P3 code never populated this field because nothing needed it until now).
+4. **Split assignment is a deterministic hash on first sight, then a real
+   stored row** (training_splits) - not stratified per operating_model in
+   the strict sense (each company is assigned independently via
+   sha256(company_id) % 10000 < 1500), which is a reasonable approximation
+   of "~15% held out, stratified" at the dataset sizes this schema
+   realistically produces from a single analyst's tracked companies, without
+   needing to rebalance existing assignments as new companies are added
+   (§7.4's "stable across runs" requirement takes priority over exact
+   stratification precision).
+5. **The stats endpoint's leakage check re-scans already-filtered rows and
+   is expected to always read 0.** `_verdict_rows` hard-excludes leaking
+   rows before yielding them, so leakage_violations is a live regression
+   guard on the filter itself (would only go nonzero if a future change
+   weakened it), not a discovery mechanism over already-exported data.
+Verified live (docker-compose): created a company, confirmed
+thesis_synthesis/redline_extraction export immediately, confirmed a
+backdated observation plus accepted AI review is correctly excluded from
+verdict export until outcome is closed, confirmed the JSONL endpoint
+produces well-formed rows in all three formats, and exercised the frontend
+export panel end-to-end in a real browser.
+Evidence: `app/services/exporter.py`; `tests/test_exporter.py`;
+`tests/test_eval.py`.

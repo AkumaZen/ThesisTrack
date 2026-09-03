@@ -157,7 +157,7 @@ async function openObservationsModal(detail) {
   const metrics = await metricsFor(detail.operating_model);
   showModal(`
     <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
-      <h2 class="font-semibold">Post Observations — ${detail.name}</h2>
+      <h2 class="font-semibold">Post Observations - ${detail.name}</h2>
       <button id="modal-close-x" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
     </div>
     <div class="p-5 space-y-3">
@@ -191,7 +191,7 @@ async function openObservationsModal(detail) {
       closeDrawer();
       await refreshCompanies();
       const newProposals = resp.proposals?.length || 0;
-      toast(newProposals ? `Posted — ${newProposals} new proposal(s) raised` : "Observations posted");
+      toast(newProposals ? `Posted - ${newProposals} new proposal(s) raised` : "Observations posted");
     } catch (e) {
       toast(errorMessage(e), "error");
     }
@@ -202,7 +202,7 @@ async function openObservationsModal(detail) {
 function openHealthCheckModal(detail) {
   showModal(`
     <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
-      <h2 class="font-semibold">Log Health Check — ${detail.name}</h2>
+      <h2 class="font-semibold">Log Health Check - ${detail.name}</h2>
       <button id="modal-close-x" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
     </div>
     <div class="p-5 space-y-3">
@@ -216,7 +216,7 @@ function openHealthCheckModal(detail) {
           <option value="broken">broken</option>
         </select>
       </label>
-      <label class="text-sm block">Note ${detail.active_override ? '<span class="text-rose-600">(required — an override is active)</span>' : ""}
+      <label class="text-sm block">Note ${detail.active_override ? '<span class="text-rose-600">(required - an override is active)</span>' : ""}
         <textarea id="hc-note" rows="3" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"></textarea>
       </label>
     </div>
@@ -247,7 +247,7 @@ function openHealthCheckModal(detail) {
 function openAiReviewModal(detail) {
   showModal(`
     <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
-      <h2 class="font-semibold">Run AI Review — ${detail.name}</h2>
+      <h2 class="font-semibold">Run AI Review - ${detail.name}</h2>
       <button id="modal-close-x" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
     </div>
     <div class="p-5 space-y-3">
@@ -257,7 +257,7 @@ function openAiReviewModal(detail) {
       <label class="text-sm block">Narrative (optional)
         <textarea id="air-narrative" rows="3" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"></textarea>
       </label>
-      <p class="text-xs text-slate-500">This only creates a proposal for the review queue — it never changes the company's status directly.</p>
+      <p class="text-xs text-slate-500">This only creates a proposal for the review queue - it never changes the company's status directly.</p>
     </div>
     <div class="px-5 py-3 border-t border-slate-200 flex justify-end gap-2">
       <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50">Cancel</button>
@@ -273,7 +273,7 @@ function openAiReviewModal(detail) {
       });
       closeModal();
       closeDrawer();
-      toast("AI review proposal created — see Review Queue");
+      toast("AI review proposal created - see Review Queue");
     } catch (e) {
       toast(errorMessage(e), "error");
     }
@@ -348,7 +348,7 @@ async function openIngestModal(mode, existing) {
       const payload = JSON.parse(document.getElementById("ingest-json-textarea").value);
       const errors = await validateAgainstContract(payload);
       showErrors(errors);
-      if (!errors.length) toast("Structurally valid against contracts/thesis.schema.json — full business-rule validation happens on submit.");
+      if (!errors.length) toast("Structurally valid against contracts/thesis.schema.json - full business-rule validation happens on submit.");
     } catch (e) {
       showErrors([`Invalid JSON: ${e.message}`]);
     }
@@ -359,7 +359,7 @@ async function openIngestModal(mode, existing) {
 
   if (mode === "amend" && existing) {
     document.getElementById("ingest-submit").textContent = "Save Amendment";
-    // amend only needs thesis_data + change_note — jump straight to JSON tab, prefilled
+    // amend only needs thesis_data + change_note - jump straight to JSON tab, prefilled
     jsonTab.click();
     const payload = { thesis_data: existing.current_thesis, change_note: "" };
     document.getElementById("ingest-json-textarea").value = JSON.stringify(payload, null, 2);
@@ -460,7 +460,7 @@ async function openIngestModal(mode, existing) {
 }
 
 // ---------- lightweight client-side contract validation ----------
-// Not a full JSON Schema engine (no anyOf/pattern/format support) — checks
+// Not a full JSON Schema engine (no anyOf/pattern/format support) - checks
 // required fields, types, and enums recursively via $ref/$defs. Real
 // business-rule validation (revenue split sums, metric registry membership,
 // etc.) is server-side; this exists to catch obvious shape errors before

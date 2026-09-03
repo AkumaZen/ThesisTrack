@@ -11,7 +11,7 @@ function sourceBadge(source) {
 
 export function renderReviewQueue(proposals) {
   if (!proposals.length) {
-    return `<div class="text-center text-slate-400 py-16">Nothing pending — review queue is empty.</div>`;
+    return `<div class="text-center text-slate-400 py-16">Nothing pending - review queue is empty.</div>`;
   }
   return `<div class="space-y-3">
     ${proposals

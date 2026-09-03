@@ -140,7 +140,7 @@ class ThesisData(BaseModel):
         registry = context.get("metric_registry")
         operating_model = context.get("operating_model")
         if registry is None:
-            return self  # registry not supplied — caller (service layer / test) opted out
+            return self  # registry not supplied - caller (service layer / test) opted out
 
         used_keys: list[str] = list(self.proof_points.model_specific_metrics.keys())
         used_keys += [t.metric_key for t in self.what_can_kill_it if t.metric_key]
