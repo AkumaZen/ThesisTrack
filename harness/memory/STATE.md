@@ -74,6 +74,24 @@ verify it, then let the user actually try it before it goes anywhere.
 Every commit this session has stayed local; nothing has been pushed to
 GitHub or redeployed since the Vercel setup itself.
 
+Real-world validation (2026-09-03): built a full live thesis for
+BALU_FORGE (Auto & Mobility > Precision Forged & Machined Components,
+factory model) sourced from an actual third-party sell-side report
+(Nuvama Wealth Research, "Balu Forge Industries", initiating coverage
+May 21 2025) - not synthetic test data. Created end-to-end as
+rohit.negi@rdc.in via the real browser UI: full 7-pillar thesis
+(4 kill triggers incl. 2 manual-check, 6-entry why-we-believe-it chain,
+pillar_notes documenting where a metric was estimated vs. reported),
+entry price log, a Buy decision, an FY25 health check, then a real
+amendment adding peer-valuation evidence and explicitly-deferred
+optionality (aerospace/rail/oil&gas) - proving the JSON-paste ingest
+path, the full drawer render (Overview/Evidence/Risk & Monitoring/
+Reference), health checks, decisions, price performance, and the
+append-only version history all work correctly against a
+realistically messy, non-toy dataset. No code changed by this
+exercise; company/data kept in the running dev DB, not committed
+anywhere (this is real usage, not a fixture).
+
 Next action: none pending. The 3-part investing-behavior request is
 complete. Natural next step, if the user wants it, is the deferred
 comparison/diff view between two users' theses on the same company.
