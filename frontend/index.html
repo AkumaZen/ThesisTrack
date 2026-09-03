@@ -201,6 +201,17 @@
     </div>
   </main>
 
+  <!-- Full-page thesis viewer - opened in a brand-new browser tab (window.open
+       on #company=<id>) rather than the slide-over drawer, with its own
+       proper section-by-section left nav. z-30, same tier as the dashboard's
+       own sticky header and #ingest-page - it must fully cover the header
+       (a lower z-index left the header's sticky nav intercepting clicks on
+       this page's own top bar), and sits before #ingest-page in DOM order
+       so the ingest editor (opened for Amend, from within this page) still
+       stacks above it at equal z-index. Below drawer/modal (z-40/50), which
+       can also be opened from within it and must render above it. -->
+  <div id="company-page" class="hidden fixed inset-0 z-30 bg-bg flex flex-col overflow-hidden"></div>
+
   <!-- Full-page company create/amend editor - not a popup, replaces the whole viewport -->
   <!-- Deliberately below #modal-overlay (z-50) - modals (table builder, edit
        columns, etc.) are opened from within this page and must render above

@@ -14,7 +14,7 @@ import { readFiltersFromUrl, writeFiltersToUrl, toQueryParams } from "./state.js
 import { escapeHtml } from "./components/format.js";
 import { renderHeaderStats, renderCards } from "./components/cards.js";
 import { renderFacetBar } from "./components/facets.js";
-import { renderDrawer, renderDecisionsList, renderPerformancePanel } from "./components/drawer.js";
+import { renderDrawer, renderCompanyPage, renderDecisionsList, renderPerformancePanel } from "./components/drawer.js";
 import {
   INGEST_SECTIONS,
   PILLAR_FIELD_KEY,
@@ -149,17 +149,18 @@ function applyFilters() {
   loadCards().catch((e) => toast(errorMessage(e), "error"));
 }
 
-// ---------- drawer ----------
-async function openDrawer(companyId) {
-  const detail = await api.getCompany(companyId);
-  document.getElementById("drawer").innerHTML = renderDrawer(detail);
-  document.getElementById("drawer").classList.remove("hidden");
-  document.getElementById("drawer-overlay").classList.remove("hidden");
-  document.getElementById("drawer-close").addEventListener("click", closeDrawer);
-  document.getElementById("drawer-overlay").addEventListener("click", closeDrawer);
-
+// ---------- drawer / full-page detail view ----------
+// Shared by both the slide-over drawer and the full-page company-view tab:
+// both renderDrawer() and renderCompanyPage() emit the exact same
+// interactive element ids (drawer-amend, drawer-performance, drawer-tables,
+// etc.), so this wiring works unchanged against either container - safe
+// because only one of #drawer/#company-page is ever populated with real
+// content in a given browser tab. `root` is only needed for the one
+// querySelectorAll("[data-add-table-section]") scan, since that has to be
+// scoped to whichever container actually holds the content.
+async function wireDetailView(detail, companyId, root) {
   if (!detail.has_own_scenario) {
-    // ADR-026: nothing else in the drawer applies until the viewer has
+    // ADR-026: nothing else in the view applies until the viewer has
     // started their own thesis on this company - amend/observations/health
     // checks/decisions/tables all belong to a scenario that doesn't exist yet.
     document.getElementById("drawer-start-thesis").addEventListener("click", () =>
@@ -182,11 +183,15 @@ async function openDrawer(companyId) {
   document.getElementById("drawer-log-decision").addEventListener("click", () => openDecisionModal(detail));
   document.getElementById("drawer-ai-review").addEventListener("click", () => openAiReviewModal(detail));
   document.getElementById("drawer-guidance").addEventListener("click", () => {
+    // The full-page view is a fixed full-viewport overlay - leaving it up
+    // would hide the dashboard's guidance view underneath entirely. Hiding
+    // it here is a no-op when this wiring belongs to the drawer instead.
+    document.getElementById("company-page")?.classList.add("hidden");
     state.guidanceFilters = { company_id: companyId, block_key: "", status: "open" };
     setView("guidance");
   });
   document.getElementById("drawer-new-table").addEventListener("click", () => openTableBuilder(companyId, () => loadTablesIntoDrawer(companyId)));
-  wireAddTableSectionButtons(document.getElementById("drawer"), companyId, () => loadTablesIntoDrawer(companyId));
+  wireAddTableSectionButtons(root, companyId, () => loadTablesIntoDrawer(companyId));
   loadTablesIntoDrawer(companyId);
   loadDecisionsIntoDrawer(companyId);
 
@@ -213,6 +218,63 @@ async function openDrawer(companyId) {
   loadPerformanceIntoDrawer(companyId, perfBaseline);
 
   gateWriteUI();
+}
+
+async function openDrawer(companyId) {
+  const detail = await api.getCompany(companyId);
+  document.getElementById("drawer").innerHTML = renderDrawer(detail);
+  document.getElementById("drawer").classList.remove("hidden");
+  document.getElementById("drawer-overlay").classList.remove("hidden");
+  document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+  document.getElementById("drawer-overlay").addEventListener("click", closeDrawer);
+  await wireDetailView(detail, companyId, document.getElementById("drawer"));
+}
+
+// Full-page equivalent of openDrawer, opened in a brand-new browser tab
+// (see openCompanyTab) with its own bookmarkable/shareable URL
+// (#company=<id>) rather than the slide-over - same detail payload, same
+// action wiring, just a proper section-by-section layout instead of a
+// narrow panel.
+async function openCompanyPage(companyId) {
+  const detail = await api.getCompany(companyId);
+  const page = document.getElementById("company-page");
+  page.innerHTML = renderCompanyPage(detail);
+  page.classList.remove("hidden");
+  document.title = `${detail.name} - Investment Thesis Platform`;
+  document.getElementById("cp-back").addEventListener("click", closeCompanyPage);
+  await wireDetailView(detail, companyId, page);
+}
+
+function closeCompanyPage() {
+  const page = document.getElementById("company-page");
+  page.classList.add("hidden");
+  page.innerHTML = "";
+  document.title = "Investment Thesis Platform";
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+}
+
+function isCompanyPageOpen() {
+  return !document.getElementById("company-page").classList.contains("hidden");
+}
+
+// Primary "view a thesis" entry point from the dashboard cards: opens a
+// genuinely new browser tab with its own bookmarkable/shareable URL,
+// rather than the slide-over drawer.
+function openCompanyTab(companyId) {
+  const url = `${location.pathname}${location.search}#company=${encodeURIComponent(companyId)}`;
+  window.open(url, "_blank");
+}
+
+// After a write action completes from a detail view: the full-page tab has
+// no "background dashboard" to fall back to visibly (it's a fixed
+// full-viewport overlay), so refresh it in place instead of closing it the
+// way the drawer does.
+async function refreshDetailView(companyId) {
+  if (isCompanyPageOpen()) {
+    await openCompanyPage(companyId);
+  } else {
+    closeDrawer();
+  }
 }
 
 // ---------- buy/sell decisions ----------
@@ -634,7 +696,7 @@ async function openObservationsModal(detail) {
         observations,
       });
       closeModal();
-      closeDrawer();
+      await refreshDetailView(detail.company_id);
       await refreshCompanies();
       const newProposals = resp.proposals?.length || 0;
       toast(newProposals ? `Posted - ${newProposals} new proposal(s) raised` : "Observations posted");
@@ -680,7 +742,7 @@ function openHealthCheckModal(detail) {
         note: document.getElementById("hc-note").value,
       });
       closeModal();
-      closeDrawer();
+      await refreshDetailView(detail.company_id);
       await refreshCompanies();
       toast("Health check logged");
     } catch (e) {
@@ -718,7 +780,7 @@ function openAiReviewModal(detail) {
         narrative: document.getElementById("air-narrative").value || null,
       });
       closeModal();
-      closeDrawer();
+      await refreshDetailView(detail.company_id);
       toast("AI review proposal created - see Review Queue");
     } catch (e) {
       toast(errorMessage(e), "error");
@@ -1072,7 +1134,11 @@ async function openIngestPage(mode, existing, prefillCompany) {
         toast("Company created - add custom sections from here if you need any");
       }
       closeIngestPage();
-      closeDrawer();
+      if (isAmend && isCompanyPageOpen()) {
+        await openCompanyPage(existing.company_id);
+      } else {
+        closeDrawer();
+      }
       await refreshCompanies();
       if (createdCompanyId) await openDrawer(createdCompanyId);
     } catch (e) {
@@ -1435,7 +1501,7 @@ async function startApp() {
 
   document.getElementById("cards-grid").addEventListener("click", (e) => {
     const btn = e.target.closest(".card-open");
-    if (btn) openDrawer(btn.dataset.companyId).catch((err) => toast(errorMessage(err), "error"));
+    if (btn) openCompanyTab(btn.dataset.companyId);
   });
 
   try {
@@ -1445,6 +1511,14 @@ async function startApp() {
     await refreshCompanies();
   } catch (e) {
     toast(errorMessage(e), "error");
+  }
+
+  // A tab opened via openCompanyTab() (or a bookmarked/shared link) carries
+  // the company id in the hash so it survives a fresh page load - open the
+  // full-page view on top of the (still-loaded) dashboard.
+  const hashMatch = location.hash.match(/^#company=(.+)$/);
+  if (hashMatch) {
+    openCompanyPage(decodeURIComponent(hashMatch[1])).catch((e) => toast(errorMessage(e), "error"));
   }
 }
 

@@ -39,8 +39,14 @@ Done:
     engine and review queue both made scenario-aware (real mid-design
     discoveries, not part of the original plan). Comparison/diff view
     between two users' theses is an explicit fast-follow, not built yet.
-  - 123 tests total, all green
-  - 26 ADRs + 5 gotchas in harness/memory/, all evidence-cited
+  - Full-page thesis view in a real new browser tab (ADR-027), replacing
+    the drawer as the primary "view a thesis" entry point from the
+    dashboard: `#company=<id>` URL, proper left-nav sections, write actions
+    refresh the tab in place. Deepened the live Balu Forge thesis (v2-v4
+    amendments + 7 structured comparison tables) in response to "too weak,
+    add more detail" feedback on the same content.
+  - 123 tests total, all green (backend untouched by ADR-027, frontend-only)
+  - 27 ADRs + 6 gotchas in harness/memory/, all evidence-cited
 
 In flight: the "track real investing behavior" 3-part sequence - ALL THREE PARTS DONE.
   1. Buy/sell decision tracking - DONE (ADR-024).
@@ -92,6 +98,16 @@ realistically messy, non-toy dataset. No code changed by this
 exercise; company/data kept in the running dev DB, not committed
 anywhere (this is real usage, not a fixture).
 
+A real deployment gotcha worth remembering: the `api` service's Dockerfile
+COPYs `frontend/` in at image build time - it is NOT bind-mounted. Any
+frontend edit (app.js, drawer.js, index.html, etc.) needs
+`docker compose build api && docker compose up -d api` before it's live in
+the running container, or you'll be debugging a phantom "my JS change did
+nothing" against stale served code (see ADR-027 for the debugging trail
+this actually caused).
+
 Next action: none pending. The 3-part investing-behavior request is
-complete. Natural next step, if the user wants it, is the deferred
-comparison/diff view between two users' theses on the same company.
+complete, and the full-page thesis view + deeper Balu Forge content
+(ADR-027) is done and live-verified. Natural next step, if the user wants
+it, is the deferred comparison/diff view between two users' theses on the
+same company.

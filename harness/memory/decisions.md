@@ -1,5 +1,67 @@
 # Decisions (append-only ADR log)
 
+## ADR-027: Full-page thesis view in a real new browser tab, plus deeper Balu Forge content
+User feedback on the live-tested Balu Forge thesis: "too weak, add more
+points/tables/comparisons/detailing" and "open in a complete new window
+with proper section-wise data". Two separate pieces of work.
+
+**Content**: amended the thesis twice more (v2->v4) adding peer-valuation
+evidence, governance/RPT/shareholding diligence, the SAFA Otomotiv FZ
+subsidiary as a second growth leg, and an industry-wide capacity-glut risk
+- plus 7 structured custom tables (machining capability vs peers, hammer/
+press forging capability, machines procured, capacity ramp, key financials,
+peer valuation comps, target-price sensitivity), all sourced directly from
+Nuvama's exhibits and created via the real authenticated API (not the DB
+directly), then verified rendering correctly in the browser.
+
+**Full-page view, asked for as "a complete new window"**: clarified via
+AskUserQuestion into two decisions - (a) a genuine new browser tab with its
+own bookmarkable/shareable URL, not a same-tab full-screen takeover, and
+(b) richer left-nav section structure only, not independently-editable
+sections (amend stays a single full-document operation, unchanged).
+
+Implementation: `#company=<id>` hash on the existing `index.html` (no
+backend routing change - StaticFiles already serves it, and a fresh tab
+re-runs the same app.js module, so `location.hash` is checked once at boot
+in `startApp()`). `renderCompanyPage()` (drawer.js) is a new full-page
+layout - left sidebar nav + wide content pane - that deliberately reuses
+the *exact same* element ids as `renderDrawer()` (`drawer-amend`,
+`drawer-performance`, `drawer-tables`, etc.), so the ~90 lines of existing
+action-wiring code (amend/observations/health-check/decisions/AI-review/
+tables/performance) was extracted once into `wireDetailView()` and used
+unchanged by both `openDrawer()` and the new `openCompanyPage()` - safe
+because only one of #drawer/#company-page is ever populated with real
+content in a given tab, so there's no id collision risk despite both
+existing (empty) in every page's DOM. Primary "view a thesis" entry point
+(dashboard card click) now calls `openCompanyTab()` (`window.open`) instead
+of `openDrawer()`; the drawer itself is kept for the few remaining quick-
+peek call sites (guidance jump, post-create preview).
+
+Two real bugs found and fixed during live verification (both via Playwright
+against the actual running stack, not assumed):
+1. Container caches a baked-in copy of `frontend/` at image build time (no
+   bind mount) - edits to `frontend/*.js`/`index.html` do nothing until
+   `docker compose build api && docker compose up -d api`. Cost significant
+   debugging time chasing a phantom "window.open does nothing" before
+   realizing the running container was serving stale JS.
+2. `#company-page` was given z-20, below the dashboard's own sticky header
+   (z-30) - the header intercepted every click on the full-page view's own
+   top action bar. Fixed by matching the header/`#ingest-page` tier (z-30),
+   relying on DOM order (company-page precedes ingest-page in index.html)
+   for the two to stack correctly relative to each other.
+
+Write actions (health-check, observations, AI-review, amend) used to
+unconditionally `closeDrawer()` on success - fine for the slide-over (falls
+back to the dashboard), wrong for a full-page tab with no dashboard to fall
+back to visibly. Added `refreshDetailView()`/the `isCompanyPageOpen()`
+check so those paths re-render the full-page tab in place instead.
+
+Verified: 123 backend tests still green (no backend touched); live
+Playwright coverage of new-tab open, left-nav jump links, a write action
+refreshing in place, a bookmarked/shared URL loading the thesis directly
+into a fresh tab, and an amend submitted from inside the tab landing back
+in that same tab rather than the dashboard.
+
 ## ADR-026: Per-user parallel thesis "scenarios" - part 3 of 3, the big one
 The largest single change of the session - bigger than the P0-P6 build's
 individual phases. Splits `companies` (pure shared identity: name,

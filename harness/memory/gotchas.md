@@ -60,3 +60,16 @@ a real port conflict (see the other gotcha above about port 5432 - this is
 a different failure mode with the same symptom shape: bind fails, nothing
 obviously listening).
 Evidence: `docker-compose.yml`, `.env`, `.env.example` (host port 45432).
+
+## Frontend edits don't reach the running container without a rebuild
+`docker-compose.yml`'s `api` service is `build: .` with no volume mount for
+`frontend/` - the Dockerfile `COPY`s it in once at image build time. Editing
+`frontend/app.js`/`drawer.js`/`index.html` on disk changes nothing in the
+already-running container; a plain `docker compose restart api` doesn't
+help either since it reuses the existing image. Burned significant time
+chasing a phantom "window.open does nothing on click" bug (ADR-027) before
+realizing the container was serving a stale pre-refactor app.js the whole
+time. Fix/verify: `docker compose build api && docker compose up -d api`
+after any frontend change, before browser-testing it.
+Evidence: `docker-compose.yml` `api:` service has no `volumes:` entry;
+ADR-027 in decisions.md.
