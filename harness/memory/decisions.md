@@ -1,5 +1,53 @@
 # Decisions (append-only ADR log)
 
+## ADR-023: Unattached custom tables promoted to first-class nav entries, closing the "why can't I add an 8th section" gap
+User asked why there's no option for an 8th/9th/10th section. The honest
+answer: there already was one (an unattached Data Table via the Section
+picker's "(unattached)" option, ADR-021's Tier 2), it just wasn't
+*presented* as a section - it rendered as a compact list row bucketed
+under one generic "Custom Sections" heading rather than its own entry in
+the nav, so it didn't read as equivalent to "1. The Business" etc. even
+though it functionally already was one.
+
+Fixed by promoting each unattached table to its own `.ingest-section-btn`-
+styled nav button, named after the table, sitting under a small "CUSTOM
+SECTIONS" group heading right after the 7 pillars and References -
+`renderTableNavButton()` in customTables.js, wired in
+`loadCustomTablesIntoIngestPage()` (app.js). Clicking one opens the
+existing table-grid modal (same code path "Open" already used) rather than
+a new inline panel, since that's already fully-featured (rows, Edit
+Columns, and now also Delete Table - added to the grid header since the
+promoted nav button no longer carries an inline delete affordance the way
+the old list row did). The Section picker at table-creation time is
+unchanged: pick a pillar to nest inside it (Tier 2 as originally built),
+leave it "(unattached)" to make it a first-class section of its own - the
+same underlying mechanism, the user's choice of presentation.
+
+Caught two more z-index regressions from this same visual-QA pass, both
+self-inflicted by ADR-022's fix:
+1. `#ingest-page` was bumped to `z-[55]` in ADR-022 specifically to beat
+   the drawer - but modals (table builder, table grid) are opened *from
+   within* the ingest page and are `z-50`, so beating the drawer that way
+   also meant beating those modals, breaking every "+Add Section"/"+Add
+   Table Here"/"Edit Columns" click with the exact same click-interception
+   symptom ADR-022 had just fixed elsewhere - caught by a real Playwright
+   click timing out again, this time naming `#ingest-content` (part of the
+   ingest page itself) as the interceptor.
+2. Root-caused: the `closeDrawer()` call ADR-022 added to `openIngestPage()`
+   already makes the z-index bump unnecessary for the drawer case (the two
+   are never simultaneously open), so the fix was to revert `#ingest-page`
+   to a low z-index (`z-30`, below every modal) rather than push it higher.
+   Documented directly in the HTML comment this time, so the reasoning
+   survives the next edit: never bump #ingest-page above #modal-overlay.
+
+Take-away for anywhere else z-index gets touched in this app: a bump meant
+to beat one specific overlapping element can easily break stacking against
+a different element that opens from inside the one just bumped. Re-verify
+every UI path that opens a modal from wherever the z-index change landed,
+not just the one path the bump was meant to fix - this is now two-for-two
+on real bugs pytest could never catch, both found only by actually clicking
+through the rendered page with Playwright.
+
 ## ADR-022: Playwright installed for real browser verification; caught a drawer/modal z-index stacking bug invisible to pytest
 No browser-automation tool was available this session (the chrome-devtools
 MCP used in earlier sessions per STATE.md wasn't present). User asked for

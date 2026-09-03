@@ -14,6 +14,14 @@ export const PILLAR_SECTIONS = [
   { value: "references", label: "References" },
 ];
 
+// An unattached custom table, promoted to a first-class left-nav entry -
+// same visual weight as any of the 7 pillars, named after the table itself,
+// so "make this its own section" (the Section picker's "(unattached)"
+// option) actually reads as a real section rather than a row in a list.
+export function renderTableNavButton(table) {
+  return `<button type="button" data-open-table="${table.id}" class="ingest-section-btn text-left px-2.5 py-1.5 rounded-md text-sm text-muted-fg hover:bg-surface-3 hover:text-fg w-full truncate" title="${escapeHtml(table.name)}">${escapeHtml(table.name)}</button>`;
+}
+
 export function renderTablesInDrawer(tables) {
   if (!tables.length) {
     return `<div class="text-xs text-muted-fg">No custom tables yet.</div>`;
@@ -103,6 +111,7 @@ export function renderTableGrid(table, readOnly) {
       <h2 class="font-semibold">${escapeHtml(table.name)}</h2>
       <div class="flex items-center gap-3">
         ${readOnly ? "" : `<button id="table-edit-columns" class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Edit Columns</button>`}
+        ${readOnly ? "" : `<button id="table-delete" class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger">Delete Table</button>`}
         <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
       </div>
     </div>

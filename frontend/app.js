@@ -34,6 +34,7 @@ import { renderGuidanceFilterBar, renderGuidanceList, renderGuidanceAddForm } fr
 import {
   PILLAR_SECTIONS,
   renderTablesInDrawer,
+  renderTableNavButton,
   renderColumnRow,
   renderTableBuilderForm,
   renderTableGrid,
@@ -297,9 +298,12 @@ function openTableBuilder(companyId, onSaved, existingTable = null, defaultSecti
 }
 
 // Mirrors loadTablesIntoDrawer's section-grouping, but targets the full-page
-// company editor: unattached tables go in the left nav's "Custom Sections"
-// list, tables tagged to a pillar render inline inside that pillar's own
-// panel (via the #ingest-panel-tables-<key> placeholders ingest.js left).
+// company editor: an unattached table is promoted to its own named entry in
+// the left nav - equal visual weight to any of the 7 pillars, so choosing
+// "(unattached)" in the Section picker really does mean "make this its own
+// section" - while a table tagged to a pillar still renders inline inside
+// that pillar's own panel (via the #ingest-panel-tables-<key> placeholders
+// ingest.js left), for "add this inside a particular section" instead.
 async function loadCustomTablesIntoIngestPage(companyId) {
   const navContainer = document.getElementById("ingest-custom-sections-nav");
   if (!navContainer) return;
@@ -312,8 +316,14 @@ async function loadCustomTablesIntoIngestPage(companyId) {
       else unattached.push(t);
     }
 
-    navContainer.innerHTML = renderTablesInDrawer(unattached);
-    wireTableListButtons(navContainer, () => loadCustomTablesIntoIngestPage(companyId));
+    navContainer.innerHTML = unattached.length
+      ? unattached.map(renderTableNavButton).join("")
+      : `<div class="text-xs text-muted-fg px-2.5">None yet.</div>`;
+    navContainer.querySelectorAll("[data-open-table]").forEach((btn) => {
+      btn.addEventListener("click", () =>
+        openTableGrid(Number(btn.dataset.openTable), () => loadCustomTablesIntoIngestPage(companyId))
+      );
+    });
 
     for (const { value: section } of PILLAR_SECTIONS) {
       const target = document.getElementById(`ingest-panel-tables-${section}`);
@@ -343,6 +353,13 @@ async function openTableGrid(tableId, onColumnsSaved) {
       },
       table
     );
+  });
+  document.getElementById("table-delete")?.addEventListener("click", async () => {
+    if (!confirm(`Delete "${table.name}" and all its rows?`)) return;
+    await api.deleteTable(tableId);
+    closeModal();
+    toast("Table deleted");
+    if (onColumnsSaved) await onColumnsSaved();
   });
 
   document.querySelectorAll("[data-edit-row]").forEach((btn) => {

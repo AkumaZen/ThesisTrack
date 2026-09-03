@@ -202,7 +202,11 @@
   </main>
 
   <!-- Full-page company create/amend editor - not a popup, replaces the whole viewport -->
-  <div id="ingest-page" class="hidden fixed inset-0 z-[55] bg-bg flex flex-col"></div>
+  <!-- Deliberately below #modal-overlay (z-50) - modals (table builder, edit
+       columns, etc.) are opened from within this page and must render above
+       it. Never needs to beat #drawer either: openIngestPage() always calls
+       closeDrawer() first, so the two are never simultaneously visible. -->
+  <div id="ingest-page" class="hidden fixed inset-0 z-30 bg-bg flex flex-col"></div>
 
   <!-- Drawer (company detail) -->
   <div id="drawer-overlay" class="hidden fixed inset-0 bg-black/30 z-40"></div>
