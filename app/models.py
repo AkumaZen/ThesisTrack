@@ -257,6 +257,50 @@ class TrainingSplit(Base):
     assigned_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
 
+class GuidanceNote(Base):
+    __tablename__ = "guidance_notes"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    block_key: Mapped[str] = mapped_column(String(40), nullable=False)
+    note: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(10), nullable=False, default="open")
+    created_by: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+    resolved_by: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+
+    __table_args__ = (CheckConstraint("status IN ('open', 'resolved')"),)
+
+
+class CustomTable(Base):
+    __tablename__ = "custom_tables"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    columns: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    created_by: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    rows: Mapped[list["CustomTableRow"]] = relationship(back_populates="table", order_by="CustomTableRow.row_order")
+
+
+class CustomTableRow(Base):
+    __tablename__ = "custom_table_rows"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    table_id: Mapped[int] = mapped_column(ForeignKey("custom_tables.id", ondelete="CASCADE"), nullable=False)
+    row_data: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    row_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_by: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    table: Mapped["CustomTable"] = relationship(back_populates="rows")
+
+
 class StatusEvent(Base):
     __tablename__ = "status_events"
 

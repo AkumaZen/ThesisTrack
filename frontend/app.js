@@ -23,6 +23,14 @@ import {
 } from "./components/ingest.js";
 import { renderReviewQueue } from "./components/reviewQueue.js";
 import { renderExportPanel, renderExportStats } from "./components/exportPanel.js";
+import { renderGuidanceFilterBar, renderGuidanceList, renderGuidanceAddForm } from "./components/guidance.js";
+import {
+  renderTablesInDrawer,
+  renderColumnRow,
+  renderTableBuilderForm,
+  renderTableGrid,
+  renderRowForm,
+} from "./components/customTables.js";
 
 const state = {
   filters: readFiltersFromUrl(),
@@ -30,14 +38,16 @@ const state = {
   metricDefsByKey: {},
   metricsCache: {},
   view: "cards",
+  guidanceFilters: { company_id: "", block_key: "", status: "open" },
+  guidanceCompanies: null,
 };
 
 // ---------- toast ----------
 function toast(message, kind = "ok") {
   const el = document.getElementById("toast");
   el.textContent = message;
-  el.className = `fixed bottom-4 right-4 z-50 rounded-md px-4 py-2 text-sm text-white shadow-lg ${
-    kind === "error" ? "bg-rose-600" : "bg-slate-800"
+  el.className = `fixed bottom-4 right-4 z-50 rounded-md px-4 py-2 text-sm shadow-lg ${
+    kind === "error" ? "bg-danger text-white" : "bg-good text-accent-ink"
   }`;
   el.classList.remove("hidden");
   setTimeout(() => el.classList.add("hidden"), 4000);
@@ -141,12 +151,128 @@ async function openDrawer(companyId) {
   document.getElementById("drawer-observations").addEventListener("click", () => openObservationsModal(detail));
   document.getElementById("drawer-health-check").addEventListener("click", () => openHealthCheckModal(detail));
   document.getElementById("drawer-ai-review").addEventListener("click", () => openAiReviewModal(detail));
+  document.getElementById("drawer-guidance").addEventListener("click", () => {
+    state.guidanceFilters = { company_id: companyId, block_key: "", status: "open" };
+    setView("guidance");
+  });
+  document.getElementById("drawer-new-table").addEventListener("click", () => openTableBuilder(companyId));
+  loadTablesIntoDrawer(companyId);
   gateWriteUI();
 }
 
 function closeDrawer() {
   document.getElementById("drawer").classList.add("hidden");
   document.getElementById("drawer-overlay").classList.add("hidden");
+}
+
+// ---------- custom tables ----------
+async function loadTablesIntoDrawer(companyId) {
+  const container = document.getElementById("drawer-tables");
+  try {
+    const tables = await api.listTables(companyId);
+    container.innerHTML = renderTablesInDrawer(tables);
+    container.querySelectorAll("[data-open-table]").forEach((btn) => {
+      btn.addEventListener("click", () => openTableGrid(Number(btn.dataset.openTable)));
+    });
+    if (!isReadOnly()) {
+      container.querySelectorAll("[data-delete-table]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this table and all its rows?")) return;
+          await api.deleteTable(Number(btn.dataset.deleteTable));
+          await loadTablesIntoDrawer(companyId);
+        });
+      });
+    } else {
+      container.querySelectorAll("[data-delete-table]").forEach((btn) => btn.classList.add("hidden"));
+    }
+  } catch (e) {
+    container.innerHTML = `<div class="text-xs text-danger">Failed to load tables.</div>`;
+  }
+}
+
+function openTableBuilder(companyId) {
+  showModal(renderTableBuilderForm());
+  const columnsContainer = document.getElementById("table-columns");
+  function addColumnRow(col) {
+    columnsContainer.insertAdjacentHTML("beforeend", renderColumnRow(col));
+  }
+  addColumnRow();
+  document.getElementById("modal-panel").addEventListener("click", (e) => {
+    if (e.target.dataset.add === "table-column") addColumnRow();
+    if (e.target.hasAttribute("data-remove-row")) e.target.closest(".table-column-row")?.remove();
+  });
+  document.getElementById("modal-close-x").addEventListener("click", closeModal);
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  document.getElementById("table-builder-submit").addEventListener("click", async () => {
+    const name = document.getElementById("table-name").value.trim();
+    const columns = [...columnsContainer.querySelectorAll(".table-column-row")]
+      .map((row) => {
+        const key = row.querySelector(".col-key").value.trim();
+        const label = row.querySelector(".col-label").value.trim();
+        const type = row.querySelector(".col-type").value;
+        const optionsRaw = row.querySelector(".col-options").value.trim();
+        const options = optionsRaw
+          ? optionsRaw.split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined;
+        return { key, label, type, options };
+      })
+      .filter((c) => c.key && c.label);
+    try {
+      await api.createTable(companyId, { name, columns });
+      toast("Table created");
+      closeModal();
+      await loadTablesIntoDrawer(companyId);
+    } catch (e) {
+      const box = document.getElementById("table-builder-errors");
+      box.textContent = errorMessage(e);
+      box.classList.remove("hidden");
+    }
+  });
+}
+
+async function openTableGrid(tableId) {
+  const table = await api.getTable(tableId);
+  const readOnly = isReadOnly();
+  showModal(renderTableGrid(table, readOnly));
+  document.getElementById("modal-close-x").addEventListener("click", closeModal);
+  if (readOnly) return;
+
+  document.querySelectorAll("[data-edit-row]").forEach((btn) => {
+    btn.addEventListener("click", () => openRowForm(table, Number(btn.dataset.editRow)));
+  });
+  document.querySelectorAll("[data-delete-row]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Delete this row?")) return;
+      await api.deleteRow(tableId, Number(btn.dataset.deleteRow));
+      await openTableGrid(tableId);
+    });
+  });
+  document.getElementById("table-add-row")?.addEventListener("click", () => openRowForm(table, null));
+}
+
+function openRowForm(table, rowId) {
+  const existingRow = rowId ? table.rows.find((r) => r.id === rowId) : null;
+  showModal(renderRowForm(table.columns, existingRow?.row_data || {}, rowId));
+  document.getElementById("modal-close-x").addEventListener("click", closeModal);
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  document.getElementById("row-form-submit").addEventListener("click", async () => {
+    const rowData = {};
+    document.querySelectorAll("[data-row-field]").forEach((field) => {
+      if (field.value !== "") rowData[field.dataset.rowField] = field.value;
+    });
+    try {
+      if (rowId) {
+        await api.updateRow(table.id, rowId, { row_data: rowData });
+      } else {
+        await api.createRow(table.id, { row_data: rowData });
+      }
+      await openTableGrid(table.id);
+    } catch (e) {
+      const box = document.getElementById("row-form-errors");
+      box.textContent = errorMessage(e);
+      box.classList.remove("hidden");
+    }
+  });
 }
 
 // ---------- generic modal ----------
@@ -168,24 +294,24 @@ document.getElementById("modal-overlay").addEventListener("click", (e) => {
 async function openObservationsModal(detail) {
   const metrics = await metricsFor(detail.operating_model);
   showModal(`
-    <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-border">
       <h2 class="font-semibold">Post Observations - ${detail.name}</h2>
-      <button id="modal-close-x" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
+      <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
     </div>
     <div class="p-5 space-y-3">
       <div class="grid grid-cols-2 gap-3">
         <label class="text-sm">Period (e.g. FY26Q1)
-          <input id="obs-period" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+          <input id="obs-period" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
         </label>
         <label class="text-sm">Period End
-          <input id="obs-period-end" type="date" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+          <input id="obs-period-end" type="date" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
         </label>
       </div>
       <div id="obs-metrics" class="grid grid-cols-2 gap-3">${renderMetricsFields(metrics)}</div>
     </div>
-    <div class="px-5 py-3 border-t border-slate-200 flex justify-end gap-2">
-      <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50">Cancel</button>
-      <button id="obs-submit" class="text-sm px-3 py-1.5 rounded-md bg-slate-800 text-white hover:bg-slate-700">Post</button>
+    <div class="px-5 py-3 border-t border-border flex justify-end gap-2">
+      <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
+      <button id="obs-submit" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">Post</button>
     </div>`);
   document.getElementById("modal-close-x").addEventListener("click", closeModal);
   document.getElementById("modal-cancel").addEventListener("click", closeModal);
@@ -213,28 +339,28 @@ async function openObservationsModal(detail) {
 // ---------- health check quick modal ----------
 function openHealthCheckModal(detail) {
   showModal(`
-    <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-border">
       <h2 class="font-semibold">Log Health Check - ${detail.name}</h2>
-      <button id="modal-close-x" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
+      <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
     </div>
     <div class="p-5 space-y-3">
       <label class="text-sm block">Period
-        <input id="hc-period" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+        <input id="hc-period" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
       </label>
       <label class="text-sm block">Verdict
-        <select id="hc-verdict" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        <select id="hc-verdict" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
           <option value="on_track">on_track</option>
           <option value="watch_closely">watch_closely</option>
           <option value="broken">broken</option>
         </select>
       </label>
-      <label class="text-sm block">Note ${detail.active_override ? '<span class="text-rose-600">(required - an override is active)</span>' : ""}
-        <textarea id="hc-note" rows="3" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"></textarea>
+      <label class="text-sm block">Note ${detail.active_override ? '<span class="text-danger">(required - an override is active)</span>' : ""}
+        <textarea id="hc-note" rows="3" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"></textarea>
       </label>
     </div>
-    <div class="px-5 py-3 border-t border-slate-200 flex justify-end gap-2">
-      <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50">Cancel</button>
-      <button id="hc-submit" class="text-sm px-3 py-1.5 rounded-md bg-slate-800 text-white hover:bg-slate-700">Submit</button>
+    <div class="px-5 py-3 border-t border-border flex justify-end gap-2">
+      <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
+      <button id="hc-submit" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">Submit</button>
     </div>`);
   document.getElementById("modal-close-x").addEventListener("click", closeModal);
   document.getElementById("modal-cancel").addEventListener("click", closeModal);
@@ -258,22 +384,22 @@ function openHealthCheckModal(detail) {
 // ---------- AI review quick modal ----------
 function openAiReviewModal(detail) {
   showModal(`
-    <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-border">
       <h2 class="font-semibold">Run AI Review - ${detail.name}</h2>
-      <button id="modal-close-x" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
+      <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
     </div>
     <div class="p-5 space-y-3">
       <label class="text-sm block">Period
-        <input id="air-period" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+        <input id="air-period" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
       </label>
       <label class="text-sm block">Narrative (optional)
-        <textarea id="air-narrative" rows="3" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"></textarea>
+        <textarea id="air-narrative" rows="3" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"></textarea>
       </label>
-      <p class="text-xs text-slate-500">This only creates a proposal for the review queue - it never changes the company's status directly.</p>
+      <p class="text-xs text-muted-fg">This only creates a proposal for the review queue - it never changes the company's status directly.</p>
     </div>
-    <div class="px-5 py-3 border-t border-slate-200 flex justify-end gap-2">
-      <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50">Cancel</button>
-      <button id="air-submit" class="text-sm px-3 py-1.5 rounded-md bg-slate-800 text-white hover:bg-slate-700">Run Review</button>
+    <div class="px-5 py-3 border-t border-border flex justify-end gap-2">
+      <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
+      <button id="air-submit" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">Run Review</button>
     </div>`);
   document.getElementById("modal-close-x").addEventListener("click", closeModal);
   document.getElementById("modal-cancel").addEventListener("click", closeModal);
@@ -343,18 +469,34 @@ async function openIngestModal(mode, existing) {
   const formPanel = document.getElementById("ingest-form-panel");
   const jsonPanel = document.getElementById("ingest-json-panel");
   jsonTab.addEventListener("click", () => {
-    jsonTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-slate-800";
-    formTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500";
+    jsonTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-accent";
+    formTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-fg";
     formPanel.classList.add("hidden");
     jsonPanel.classList.remove("hidden");
     document.getElementById("ingest-json-textarea").value = JSON.stringify(collectFormPayload(), null, 2);
   });
   formTab.addEventListener("click", () => {
-    formTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-slate-800";
-    jsonTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500";
+    formTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-accent";
+    jsonTab.className = "ingest-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-fg";
     jsonPanel.classList.add("hidden");
     formPanel.classList.remove("hidden");
   });
+  buildConversionPrompt()
+    .then((text) => {
+      document.getElementById("conversion-prompt").value = text;
+    })
+    .catch(() => {
+      document.getElementById("conversion-prompt").value = "Could not build the prompt (failed to load schema/metrics).";
+    });
+  document.getElementById("copy-conversion-prompt").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById("conversion-prompt").value);
+      toast("Prompt copied");
+    } catch (e) {
+      toast("Copy failed - select the text manually", "error");
+    }
+  });
+
   document.getElementById("json-validate").addEventListener("click", async () => {
     try {
       const payload = JSON.parse(document.getElementById("ingest-json-textarea").value);
@@ -484,6 +626,42 @@ async function loadContractSchema() {
   return _schemaCache;
 }
 
+// Builds the "convert an existing thesis externally" prompt live from the
+// same schema/taxonomy/metric-registry endpoints json-validate already uses,
+// so it can never drift out of sync with what the server actually accepts.
+async function buildConversionPrompt() {
+  const [schema, allMetrics] = await Promise.all([loadContractSchema(), api.getMetrics()]);
+  const industries = state.taxonomy
+    .map((i) => `${i.name}: ${(i.niches || []).map((n) => n.name).join(", ")}`)
+    .join("\n");
+  const metricsByModel = {};
+  for (const m of allMetrics) {
+    const key = m.operating_model || "universal (any operating model)";
+    (metricsByModel[key] ||= []).push(`${m.metric_key} (${m.label}, unit=${m.unit})`);
+  }
+  const metricsText = Object.entries(metricsByModel)
+    .map(([model, keys]) => `  ${model}:\n    ${keys.join("\n    ")}`)
+    .join("\n");
+
+  return `You are converting an existing, free-form investment thesis write-up into a structured JSON object for an internal thesis-tracking system.
+
+I will paste my existing notes/write-up in this conversation. Read them and produce a single JSON object that matches the JSON Schema below EXACTLY - field names, nesting, and types must match. If anything required is missing or ambiguous from my notes, ASK ME before guessing.
+
+Rules to follow:
+- classification.broad_industry and classification.specific_niche must be chosen from this controlled list (ask me to pick if my notes don't map cleanly):
+${industries}
+- classification.operating_model must be one of: factory, subscription, money_lending, retail_stores, services.
+- proof_points.model_specific_metrics and what_can_kill_it[].metric_key, if used, must use metric_key values from this registry (only keys valid for my chosen operating_model, or listed under "universal"):
+${metricsText}
+- why_we_believe_it must be an array of strings, at least 3 entries, at least one starting with "Premise" and exactly one starting with "Conclusion".
+- what_can_kill_it needs at least one entry with severity="kill"; each entry either sets manual_check=true or provides metric_key+operator+threshold.
+- the_business.revenue_split shares must sum to ~100.
+
+Once you have everything, output ONLY the JSON object (no markdown code fences, no commentary) matching this schema:
+
+${JSON.stringify(schema, null, 2)}`;
+}
+
 function resolveRef(schema, root) {
   if (schema?.$ref) {
     const name = schema.$ref.replace("#/$defs/", "");
@@ -570,6 +748,82 @@ async function loadReviewQueue() {
   gateWriteUI();
 }
 
+// ---------- guidance tracker ----------
+async function loadGuidanceView() {
+  if (!state.guidanceCompanies) {
+    const res = await api.listCompanies({ page_size: 200, sort: "name" });
+    state.guidanceCompanies = res.items;
+  }
+  const items = await api.listGuidance({
+    company_id: state.guidanceFilters.company_id || undefined,
+    block_key: state.guidanceFilters.block_key || undefined,
+    status: state.guidanceFilters.status || undefined,
+  });
+  const readOnly = isReadOnly();
+  const container = document.getElementById("guidance-view");
+  container.innerHTML = renderGuidanceFilterBar(state.guidanceCompanies, state.guidanceFilters) + renderGuidanceList(items, readOnly);
+
+  document.getElementById("guidance-filter-company").addEventListener("change", (e) => {
+    state.guidanceFilters.company_id = e.target.value;
+    loadGuidanceView();
+  });
+  document.getElementById("guidance-filter-block").addEventListener("change", (e) => {
+    state.guidanceFilters.block_key = e.target.value;
+    loadGuidanceView();
+  });
+  document.getElementById("guidance-filter-status").addEventListener("change", (e) => {
+    state.guidanceFilters.status = e.target.value;
+    loadGuidanceView();
+  });
+
+  if (readOnly) {
+    document.getElementById("guidance-add")?.classList.add("hidden");
+  } else {
+    document.getElementById("guidance-add").addEventListener("click", openGuidanceAddForm);
+    container.querySelectorAll("[data-resolve]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await api.resolveGuidance(Number(btn.dataset.resolve));
+        toast("Marked resolved");
+        await loadGuidanceView();
+      });
+    });
+    container.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this guidance note?")) return;
+        await api.deleteGuidance(Number(btn.dataset.delete));
+        await loadGuidanceView();
+      });
+    });
+  }
+
+  container.querySelectorAll("[data-open-company]").forEach((btn) => {
+    btn.addEventListener("click", () => openDrawer(btn.dataset.openCompany));
+  });
+}
+
+function openGuidanceAddForm() {
+  showModal(renderGuidanceAddForm(state.guidanceCompanies, state.guidanceFilters.company_id));
+  document.getElementById("modal-close-x").addEventListener("click", closeModal);
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  document.getElementById("guidance-submit").addEventListener("click", async () => {
+    const companyId = document.getElementById("guidance-company").value;
+    const blockKey = document.getElementById("guidance-block").value;
+    const note = document.getElementById("guidance-note").value.trim();
+    if (!companyId || !note) {
+      toast("Pick a company and write a note", "error");
+      return;
+    }
+    try {
+      await api.createGuidance(companyId, { block_key: blockKey, note });
+      toast("Guidance added");
+      closeModal();
+      await loadGuidanceView();
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    }
+  });
+}
+
 // ---------- export ----------
 function openExportPanel() {
   showModal(renderExportPanel());
@@ -600,14 +854,19 @@ function setView(view) {
   document.getElementById("cards-grid").classList.toggle("hidden", view !== "cards");
   document.getElementById("facet-bar").classList.toggle("hidden", view !== "cards");
   document.getElementById("review-queue-view").classList.toggle("hidden", view !== "review");
+  document.getElementById("guidance-view").classList.toggle("hidden", view !== "guidance");
+  document.querySelectorAll(".nav-tab").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.nav === view);
+  });
   if (view === "review") loadReviewQueue().catch((e) => toast(errorMessage(e), "error"));
+  if (view === "guidance") loadGuidanceView().catch((e) => toast(errorMessage(e), "error"));
 }
 
 // ---------- read-only gating (UX-only; the backend is the real boundary) ----------
 function gateWriteUI() {
   const readOnly = isReadOnly();
   document.getElementById("nav-new-company").classList.toggle("hidden", readOnly);
-  for (const id of ["drawer-amend", "drawer-observations", "drawer-health-check", "drawer-ai-review"]) {
+  for (const id of ["drawer-amend", "drawer-observations", "drawer-health-check", "drawer-ai-review", "drawer-new-table"]) {
     document.getElementById(id)?.classList.toggle("hidden", readOnly);
   }
   if (readOnly) {
@@ -666,15 +925,41 @@ function wireSessionHeader() {
   });
 }
 
+// ---------- theme ----------
+function currentTheme() {
+  const attr = document.documentElement.getAttribute("data-theme");
+  if (attr === "light" || attr === "dark") return attr;
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
+function wireThemeToggle() {
+  const btn = document.getElementById("theme-toggle");
+  const applyLabel = () => {
+    btn.textContent = currentTheme() === "dark" ? "Light mode" : "Dark mode";
+  };
+  applyLabel();
+  btn.addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem("theme", next);
+    } catch (e) {}
+    applyLabel();
+  });
+}
+
 // ---------- init ----------
 async function startApp() {
+  wireThemeToggle();
   wireSessionHeader();
   gateWriteUI();
 
   document.getElementById("nav-companies").addEventListener("click", () => setView("cards"));
   document.getElementById("nav-review-queue").addEventListener("click", () => setView("review"));
+  document.getElementById("nav-guidance").addEventListener("click", () => setView("guidance"));
   document.getElementById("nav-export").addEventListener("click", openExportPanel);
   document.getElementById("nav-new-company").addEventListener("click", () => openIngestModal("create", null));
+  setView("cards");
 
   document.getElementById("cards-grid").addEventListener("click", (e) => {
     const btn = e.target.closest(".card-open");

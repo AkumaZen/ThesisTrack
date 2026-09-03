@@ -17,6 +17,18 @@ Done:
   - 79 tests total, all green (67 from P0-P6 + 12 from the auth feature)
   - 16 ADRs + 5 gotchas in harness/memory/, all evidence-cited
 In flight: TO DO items 3-4 (form completeness audit, UX polish)
+  - Frontend re-themed to the dashboard-palette dark design system (ADR-017),
+    plus a manual light/dark toggle (#theme-toggle, localStorage-persisted).
+    Verified live in a browser in both themes.
+  - Three new features beyond BUILD_PLAN.md (ADR-018), all built and verified
+    end-to-end (curl + live browser via chrome-devtools MCP) this session:
+    guidance tracker (guidance_notes table + /api/guidance* routes + a new
+    "Guidance" nav page), a fully generic per-company custom-table builder
+    (custom_tables/custom_table_rows tables + /api/tables* routes + a "Data
+    Tables" drawer section), and a live-generated LLM-conversion prompt in
+    the New Company JSON tab for importing an existing free-form thesis.
+    Migration 7b1e4c47bb23 applied. One bug found+fixed during testing:
+    guidance resolve wasn't setting resolved_at.
 Blocked: nothing
 Last evolution: harness/journal/evolutions/2026-09-03T-p6.md (auth feature
   built after this evolution; no dedicated evolve cycle run for it yet -

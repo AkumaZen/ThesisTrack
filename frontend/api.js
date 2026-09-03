@@ -99,6 +99,20 @@ export const api = {
     request("GET", `/metrics${operatingModel ? `?operating_model=${operatingModel}` : ""}`),
   exportStats: (params) => request("GET", `/export-training-data/stats?${new URLSearchParams(params)}`),
   exportUrl: (params) => `${API_BASE}/export-training-data?${new URLSearchParams(params)}`,
+  listGuidance: (params) => request("GET", `/guidance?${buildQuery(params)}`),
+  createGuidance: (companyId, payload) =>
+    request("POST", `/companies/${encodeURIComponent(companyId)}/guidance`, payload),
+  resolveGuidance: (id) => request("POST", `/guidance/${id}/resolve`),
+  deleteGuidance: (id) => request("DELETE", `/guidance/${id}`),
+  listTables: (companyId) => request("GET", `/companies/${encodeURIComponent(companyId)}/tables`),
+  createTable: (companyId, payload) =>
+    request("POST", `/companies/${encodeURIComponent(companyId)}/tables`, payload),
+  getTable: (tableId) => request("GET", `/tables/${tableId}`),
+  updateTable: (tableId, payload) => request("PATCH", `/tables/${tableId}`, payload),
+  deleteTable: (tableId) => request("DELETE", `/tables/${tableId}`),
+  createRow: (tableId, payload) => request("POST", `/tables/${tableId}/rows`, payload),
+  updateRow: (tableId, rowId, payload) => request("PUT", `/tables/${tableId}/rows/${rowId}`, payload),
+  deleteRow: (tableId, rowId) => request("DELETE", `/tables/${tableId}/rows/${rowId}`),
 };
 
 export { ApiError };
