@@ -1,5 +1,49 @@
 # Decisions (append-only ADR log)
 
+## ADR-024: Buy/sell decision tracking - part 1 of 3, "track real investing behavior"
+User asked for three things at once: (1) per-user parallel theses on the
+same company with similarity/difference comparison, (2) buy/sell decision
+tracking, (3) thesis-performance-vs-real-stock-price tracking. Explained
+via chat why (1) is the big one - almost every existing table
+(kill_triggers, health_checks, status_events) is scoped to `company_id` on
+the assumption of one shared thesis; making theses genuinely per-user means
+inserting a new "scenario" layer and re-pointing those tables at it, not an
+incremental add. User agreed to sequence: decisions first (smallest,
+self-contained), then price tracking (manual entry now, screener-pull
+later - not built yet), then the scenario remodel last, reviewing between
+each rather than building all three in one pass.
+
+This ADR covers part 1 only. New `position_decisions` table (migration
+`c3d8f1a92e56`): company_id, optional version_id (the thesis version
+current at the moment of the decision - mirrors `health_checks.version_id`,
+"what did we believe when we bought" should stay answerable), action
+(buy/sell), price, optional quantity, decided_on, rationale, actor.
+Append-only via the same BEFORE UPDATE OR DELETE trigger pattern as
+`thesis_versions` (a real financial action isn't something you quietly
+edit after the fact) - a new `forbid_decision_update()` function rather
+than reusing `forbid_version_update()`, since its error message is
+hardcoded to name "thesis_versions" and reusing it would misname the table
+in the error a user actually sees.
+
+Deliberately NOT scoped to a scenario_id (scenarios don't exist yet) - just
+company_id + actor, so every decision from every user on a company shows
+in one shared timeline for now. When the scenario remodel (part 3) lands,
+this table gains a nullable scenario_id FK rather than being redesigned -
+today's decisions backfill as "no scenario" or get attributed by actor,
+a decision deferred to when scenarios' exact shape is actually settled.
+
+New `app/services/decisions.py` (log_decision/list_decisions) +
+`app/routers/decisions.py`, following this codebase's established
+router/service split. Frontend: drawer gains a "Log Buy/Sell" action
+button and a "Buy / Sell Decisions (all users)" timeline section (its
+"(all users)" label is deliberate - flags to the user now that this is
+company-wide, not filtered to them, ahead of scenarios eventually making
+per-user filtering meaningful). 11 new tests (append-only enforcement,
+validation, 403/401, ordering) - 103 total, all pass. Verified live via
+Playwright: logged a buy decision through the actual modal, confirmed it
+renders in the timeline with the correct actor, price × quantity, and
+rationale.
+
 ## ADR-023: Unattached custom tables promoted to first-class nav entries, closing the "why can't I add an 8th section" gap
 User asked why there's no option for an 8th/9th/10th section. The honest
 answer: there already was one (an unattached Data Table via the Section

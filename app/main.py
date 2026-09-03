@@ -10,6 +10,7 @@ from app.routers import (
     auth,
     companies,
     custom_tables,
+    decisions,
     export,
     guidance,
     health as health_router,
@@ -30,6 +31,7 @@ app.include_router(ai_review.router)
 app.include_router(export.router)
 app.include_router(guidance.router)
 app.include_router(custom_tables.router)
+app.include_router(decisions.router)
 
 
 @app.exception_handler(RequestValidationError)

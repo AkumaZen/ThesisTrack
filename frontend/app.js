@@ -11,9 +11,10 @@ import {
   setSession,
 } from "./api.js";
 import { readFiltersFromUrl, writeFiltersToUrl, toQueryParams } from "./state.js";
+import { escapeHtml } from "./components/format.js";
 import { renderHeaderStats, renderCards } from "./components/cards.js";
 import { renderFacetBar } from "./components/facets.js";
-import { renderDrawer } from "./components/drawer.js";
+import { renderDrawer, renderDecisionsList } from "./components/drawer.js";
 import {
   INGEST_SECTIONS,
   PILLAR_FIELD_KEY,
@@ -159,6 +160,7 @@ async function openDrawer(companyId) {
   document.getElementById("drawer-amend").addEventListener("click", () => openIngestPage("amend", detail));
   document.getElementById("drawer-observations").addEventListener("click", () => openObservationsModal(detail));
   document.getElementById("drawer-health-check").addEventListener("click", () => openHealthCheckModal(detail));
+  document.getElementById("drawer-log-decision").addEventListener("click", () => openDecisionModal(detail));
   document.getElementById("drawer-ai-review").addEventListener("click", () => openAiReviewModal(detail));
   document.getElementById("drawer-guidance").addEventListener("click", () => {
     state.guidanceFilters = { company_id: companyId, block_key: "", status: "open" };
@@ -167,7 +169,75 @@ async function openDrawer(companyId) {
   document.getElementById("drawer-new-table").addEventListener("click", () => openTableBuilder(companyId, () => loadTablesIntoDrawer(companyId)));
   wireAddTableSectionButtons(document.getElementById("drawer"), companyId, () => loadTablesIntoDrawer(companyId));
   loadTablesIntoDrawer(companyId);
+  loadDecisionsIntoDrawer(companyId);
   gateWriteUI();
+}
+
+// ---------- buy/sell decisions ----------
+async function loadDecisionsIntoDrawer(companyId) {
+  const container = document.getElementById("drawer-decisions");
+  try {
+    const decisions = await api.listDecisions(companyId);
+    container.innerHTML = renderDecisionsList(decisions);
+  } catch (e) {
+    container.innerHTML = `<div class="text-xs text-danger">Failed to load decisions.</div>`;
+  }
+}
+
+function openDecisionModal(detail) {
+  showModal(`
+    <div class="flex items-center justify-between px-5 py-3 border-b border-border">
+      <h2 class="font-semibold">Log Buy/Sell - ${escapeHtml(detail.name)}</h2>
+      <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <label class="text-sm">Action
+          <select id="dec-action" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+          </select>
+        </label>
+        <label class="text-sm">Date
+          <input id="dec-date" type="date" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+        </label>
+        <label class="text-sm">Price (${escapeHtml(detail.currency)})
+          <input id="dec-price" type="number" step="any" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+        </label>
+        <label class="text-sm">Quantity <span class="text-muted-fg">(optional)</span>
+          <input id="dec-quantity" type="number" step="any" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+        </label>
+      </div>
+      <label class="text-sm block">Rationale
+        <textarea id="dec-rationale" rows="3" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" placeholder="Why this decision, right now?"></textarea>
+      </label>
+      <div id="dec-errors" class="hidden rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger"></div>
+    </div>
+    <div class="px-5 py-3 border-t border-border flex justify-end gap-2">
+      <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
+      <button id="dec-submit" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">Log Decision</button>
+    </div>`);
+  document.getElementById("modal-close-x").addEventListener("click", closeModal);
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  document.getElementById("dec-submit").addEventListener("click", async () => {
+    const quantityRaw = document.getElementById("dec-quantity").value;
+    try {
+      await api.postDecision(detail.company_id, {
+        action: document.getElementById("dec-action").value,
+        price: Number(document.getElementById("dec-price").value),
+        quantity: quantityRaw === "" ? null : Number(quantityRaw),
+        decided_on: document.getElementById("dec-date").value,
+        rationale: document.getElementById("dec-rationale").value,
+      });
+      closeModal();
+      toast("Decision logged");
+      await loadDecisionsIntoDrawer(detail.company_id);
+    } catch (e) {
+      const box = document.getElementById("dec-errors");
+      box.textContent = errorMessage(e);
+      box.classList.remove("hidden");
+    }
+  });
 }
 
 function closeDrawer() {

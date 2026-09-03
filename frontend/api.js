@@ -90,6 +90,8 @@ export const api = {
   postObservations: (id, payload) => request("POST", `/companies/${encodeURIComponent(id)}/observations`, payload),
   postHealthCheck: (id, payload) => request("POST", `/companies/${encodeURIComponent(id)}/health-check`, payload),
   postOutcome: (id, payload) => request("POST", `/companies/${encodeURIComponent(id)}/outcome`, payload),
+  listDecisions: (id) => request("GET", `/companies/${encodeURIComponent(id)}/decisions`),
+  postDecision: (id, payload) => request("POST", `/companies/${encodeURIComponent(id)}/decisions`, payload),
   aiReview: (id, payload) => request("POST", `/companies/${encodeURIComponent(id)}/ai-review`, payload),
   listProposals: (state) => request("GET", `/proposals?state=${state || "pending"}`),
   resolveProposal: (id, payload) => request("POST", `/proposals/${id}/resolve`, payload),

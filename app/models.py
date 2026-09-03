@@ -214,6 +214,21 @@ class HealthCheck(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
 
+class PositionDecision(Base):
+    __tablename__ = "position_decisions"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    version_id: Mapped[Optional[int]] = mapped_column(ForeignKey("thesis_versions.version_id"), nullable=True)
+    action: Mapped[str] = mapped_column(String(4), nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric, nullable=False)
+    quantity: Mapped[Optional[Decimal]] = mapped_column(Numeric, nullable=True)
+    decided_on: Mapped[date] = mapped_column(Date, nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    actor: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+
 class StatusProposal(Base):
     __tablename__ = "status_proposals"
 

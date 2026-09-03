@@ -55,6 +55,29 @@ function healthCheckTimeline(healthChecks) {
     .join("");
 }
 
+function decisionRow(d) {
+  const isBuy = d.action === "buy";
+  return `
+    <div class="flex items-start gap-2 py-1.5 border-b border-border last:border-0">
+      <span class="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${isBuy ? "bg-good/10 text-good" : "bg-danger/10 text-danger"}">${isBuy ? "Buy" : "Sell"}</span>
+      <div class="min-w-0">
+        <div class="text-xs">
+          <span class="font-medium">${escapeHtml(d.decided_on)}</span>
+          <span class="text-muted-fg"> &middot; ${d.price}${d.quantity ? ` &times; ${d.quantity}` : ""} &middot; by ${escapeHtml(d.actor)}</span>
+        </div>
+        <div class="text-xs text-muted-fg mt-0.5">${escapeHtml(d.rationale)}</div>
+      </div>
+    </div>`;
+}
+
+// Filled async by app.js (loadDecisionsIntoDrawer) - decisions belong to
+// the company, not any one pillar, so they get their own top-level section
+// rather than living inside pillarExtra() like notes/tables do.
+export function renderDecisionsList(decisions) {
+  if (!decisions.length) return `<div class="text-xs text-muted-fg">No decisions logged yet.</div>`;
+  return decisions.map(decisionRow).join("");
+}
+
 function reasoningList(items) {
   return `<ol class="list-decimal list-inside text-sm space-y-1 text-fg">
     ${(items || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
@@ -116,6 +139,7 @@ export function renderDrawer(detail) {
         <button id="drawer-amend" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">Amend Thesis</button>
         <button id="drawer-observations" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Post Observations</button>
         <button id="drawer-health-check" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Log Health Check</button>
+        <button id="drawer-log-decision" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Log Buy/Sell</button>
         <button id="drawer-ai-review" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Run AI Review</button>
         <button id="drawer-guidance" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Guidance</button>
       </div>
@@ -179,6 +203,13 @@ export function renderDrawer(detail) {
           <p class="text-sm mt-1 text-muted-fg">${escapeHtml(t.health_check?.latest_quarter_review)}</p>
           <div class="mt-2">${healthCheckTimeline(detail.health_checks || [])}</div>
           ${pillarExtra("health_check", t)}
+        </section>
+
+        <section class="mt-4">
+          <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Buy / Sell Decisions <span class="text-muted-fg font-normal normal-case">(all users)</span></h3>
+          <div id="drawer-decisions" class="mt-1">
+            <div class="text-xs text-muted-fg">Loading...</div>
+          </div>
         </section>
 
         ${detail.pending_proposals?.length ? `
