@@ -14,6 +14,8 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationInfo
 
+from app.pillars import PILLAR_KEYS
+
 OPERATING_MODELS = {"factory", "subscription", "money_lending", "retail_stores", "services"}
 THESIS_STATUSES = {"on_track", "watch_closely", "broken"}
 
@@ -112,6 +114,22 @@ class ThesisData(BaseModel):
     why_we_believe_it: list[str]
     health_check: HealthCheckPillar
     references: list[ReferenceItem] = Field(default_factory=list)
+    # Tier 3 "more customization": a small free-text extension point per
+    # pillar (e.g. {"the_business": ["note one", "note two"]}), for notes
+    # that don't fit the pillar's fixed fields but don't warrant a full
+    # Data Table either. Keyed by the exact pillar field names above so the
+    # export pipeline and rule engine - which both index thesis_data by
+    # those same keys - can ignore this field entirely rather than needing
+    # pillar-specific handling for it.
+    pillar_notes: dict[str, list[str]] = Field(default_factory=dict)
+
+    @field_validator("pillar_notes")
+    @classmethod
+    def _pillar_notes_keys(cls, value: dict[str, list[str]]) -> dict[str, list[str]]:
+        unknown = set(value) - set(PILLAR_KEYS)
+        if unknown:
+            raise ValueError(f"pillar_notes has unknown key(s) {sorted(unknown)}; must be one of {PILLAR_KEYS}")
+        return value
 
     @model_validator(mode="after")
     def _at_least_one_kill_severity(self) -> "ThesisData":

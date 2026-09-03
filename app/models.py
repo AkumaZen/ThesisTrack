@@ -280,6 +280,7 @@ class CustomTable(Base):
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     columns: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    section: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     created_by: Mapped[str] = mapped_column(String(80), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())

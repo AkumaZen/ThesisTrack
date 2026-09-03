@@ -1,9 +1,17 @@
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from app.pillars import PILLAR_KEYS
 
 ColumnType = Literal["text", "number", "date", "enum"]
+
+
+def _validate_section(value: Optional[str]) -> Optional[str]:
+    if value is not None and value not in PILLAR_KEYS:
+        raise ValueError(f"section must be one of {PILLAR_KEYS} or null, got {value!r}")
+    return value
 
 
 class CustomTableColumn(BaseModel):
@@ -24,11 +32,17 @@ class CustomTableColumn(BaseModel):
 class CustomTableCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     columns: list[CustomTableColumn] = Field(default_factory=list)
+    section: Optional[str] = None
+
+    _validate_section = field_validator("section")(_validate_section)
 
 
 class CustomTableUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=120)
     columns: Optional[list[CustomTableColumn]] = None
+    section: Optional[str] = None
+
+    _validate_section = field_validator("section")(_validate_section)
 
 
 class CustomTableRowIn(BaseModel):
@@ -50,6 +64,7 @@ class CustomTableOut(BaseModel):
     company_id: str
     name: str
     columns: list[CustomTableColumn]
+    section: Optional[str] = None
     created_by: str
     created_at: datetime
     updated_at: datetime

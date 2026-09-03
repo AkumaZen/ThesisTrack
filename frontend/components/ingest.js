@@ -24,6 +24,49 @@ function navButton(section) {
   return `<button type="button" data-section="${section.id}" class="ingest-section-btn text-left px-2.5 py-1.5 rounded-md text-sm text-muted-fg hover:bg-surface-3 hover:text-fg">${escapeHtml(section.label)}</button>`;
 }
 
+// Maps this UI's short section ids to the exact ThesisData field names the
+// backend uses (app/pillars.py) - needed wherever a pillar's identity has
+// to leave the browser (pillar_notes keys, a Data Table's `section` tag).
+export const PILLAR_FIELD_KEY = {
+  business: "the_business",
+  growth: "the_growth_engine",
+  change: "the_big_change",
+  proof: "proof_points",
+  kill: "what_can_kill_it",
+  believe: "why_we_believe_it",
+  health: "health_check",
+  references: "references",
+};
+
+// Tier 3 (a small free-text "Additional Notes" list per pillar) + Tier 2 (a
+// placeholder app.js fills with any Data Table tagged to this pillar, plus
+// a button to tag a new one here). Appended inside every pillar panel
+// except Basics, which isn't a pillar and has nothing to attach notes/
+// tables to until the company exists.
+function pillarExtraBlock(shortId) {
+  const fieldKey = PILLAR_FIELD_KEY[shortId];
+  return `
+    <div class="mt-6 pt-4 border-t border-border">
+      <div class="text-sm font-medium">Additional Notes <span class="text-muted-fg font-normal">- free-text extras that don't fit the fields above</span></div>
+      <div id="f-notes-${shortId}" class="space-y-1 mt-1"></div>
+      <button type="button" data-add-note="${shortId}" class="text-xs text-ok mt-1">+ Add note</button>
+    </div>
+    <div class="ingest-pillar-tables-block hidden mt-4">
+      <div class="flex items-center justify-between">
+        <div class="text-sm font-medium">Tables in this section</div>
+        <button type="button" data-add-table-section="${fieldKey}" class="text-xs text-ok">+ Add Table Here</button>
+      </div>
+      <div id="ingest-panel-tables-${fieldKey}" class="mt-1 space-y-2"></div>
+    </div>`;
+}
+
+export function renderNoteRow(text = "") {
+  return `<div class="flex gap-2 items-center note-row">
+    <input placeholder="e.g. Revisit this after Q3 filing" value="${escapeHtml(text)}" class="note-text flex-1 rounded-md border border-border px-2 py-1 text-sm" />
+    <button type="button" data-remove-row class="text-muted-fg hover:text-danger">&times;</button>
+  </div>`;
+}
+
 // Kept for readability at call sites that still say "modal" conceptually -
 // this is a full-page view now, not a small centered dialog.
 export function renderIngestPage(taxonomy, mode = "create", title = "New Company / Thesis") {
@@ -108,12 +151,14 @@ export function renderIngestPage(taxonomy, mode = "create", title = "New Company
               <div id="f-revenue-split" class="space-y-1 mt-1"></div>
               <button type="button" data-add="revenue-split" class="text-xs text-ok mt-1">+ Add segment</button>
             </div>
+            ${pillarExtraBlock("business")}
           </div>
 
           <div id="ingest-panel-growth" class="ingest-section-panel hidden">
             <div class="text-sm font-medium">The Growth Engine <span class="text-muted-fg font-normal">- what's driving forward growth, one driver per row</span></div>
             <div id="f-growth-engine" class="space-y-1 mt-1"></div>
             <button type="button" data-add="growth" class="text-xs text-ok mt-1">+ Add driver</button>
+            ${pillarExtraBlock("growth")}
           </div>
 
           <div id="ingest-panel-change" class="ingest-section-panel hidden">
@@ -123,6 +168,7 @@ export function renderIngestPage(taxonomy, mode = "create", title = "New Company
             <label class="block text-sm mt-3">Expected Completion
               <input id="f-expected-completion" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
             </label>
+            ${pillarExtraBlock("change")}
           </div>
 
           <div id="ingest-panel-proof" class="ingest-section-panel hidden">
@@ -136,30 +182,35 @@ export function renderIngestPage(taxonomy, mode = "create", title = "New Company
               </div>
               <div id="f-metrics-fields" class="grid grid-cols-2 gap-3 mt-1"></div>
             </div>
+            ${pillarExtraBlock("proof")}
           </div>
 
           <div id="ingest-panel-kill" class="ingest-section-panel hidden">
             <div class="text-sm font-medium">What Can Kill It <span class="text-muted-fg font-normal">(needs &ge; 1 severity=kill entry)</span></div>
             <div id="f-kill-triggers" class="space-y-2 mt-1"></div>
             <button type="button" data-add="kill-trigger" class="text-xs text-ok mt-1">+ Add redline</button>
+            ${pillarExtraBlock("kill")}
           </div>
 
           <div id="ingest-panel-believe" class="ingest-section-panel hidden">
             <div class="text-sm font-medium">Why We Believe It <span class="text-muted-fg font-normal">(&ge;3 entries, &ge;1 Premise, exactly 1 Conclusion)</span></div>
             <div id="f-why-believe" class="space-y-1 mt-1"></div>
             <button type="button" data-add="believe" class="text-xs text-ok mt-1">+ Add reasoning step</button>
+            ${pillarExtraBlock("believe")}
           </div>
 
           <div id="ingest-panel-health" class="ingest-section-panel hidden">
             <label class="block text-sm">Latest Quarter Review
               <textarea id="f-latest-review" rows="4" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"></textarea>
             </label>
+            ${pillarExtraBlock("health")}
           </div>
 
           <div id="ingest-panel-references" class="ingest-section-panel hidden">
             <div class="text-sm font-medium">References</div>
             <div id="f-references" class="space-y-1 mt-1"></div>
             <button type="button" data-add="reference" class="text-xs text-ok mt-1">+ Add reference</button>
+            ${pillarExtraBlock("references")}
           </div>
         </div>
 

@@ -16,6 +16,7 @@ import { renderFacetBar } from "./components/facets.js";
 import { renderDrawer } from "./components/drawer.js";
 import {
   INGEST_SECTIONS,
+  PILLAR_FIELD_KEY,
   renderIngestPage,
   renderMetricsFields,
   renderRevenueSplitRow,
@@ -24,12 +25,14 @@ import {
   renderGrowthRow,
   renderEvidenceRow,
   renderBelieveRow,
+  renderNoteRow,
   splitBelieveEntry,
 } from "./components/ingest.js";
 import { renderReviewQueue } from "./components/reviewQueue.js";
 import { renderExportPanel, renderExportStats } from "./components/exportPanel.js";
 import { renderGuidanceFilterBar, renderGuidanceList, renderGuidanceAddForm } from "./components/guidance.js";
 import {
+  PILLAR_SECTIONS,
   renderTablesInDrawer,
   renderColumnRow,
   renderTableBuilderForm,
@@ -160,7 +163,8 @@ async function openDrawer(companyId) {
     state.guidanceFilters = { company_id: companyId, block_key: "", status: "open" };
     setView("guidance");
   });
-  document.getElementById("drawer-new-table").addEventListener("click", () => openTableBuilder(companyId));
+  document.getElementById("drawer-new-table").addEventListener("click", () => openTableBuilder(companyId, () => loadTablesIntoDrawer(companyId)));
+  wireAddTableSectionButtons(document.getElementById("drawer"), companyId, () => loadTablesIntoDrawer(companyId));
   loadTablesIntoDrawer(companyId);
   gateWriteUI();
 }
@@ -171,45 +175,97 @@ function closeDrawer() {
 }
 
 // ---------- custom tables ----------
-async function loadTablesIntoDrawer(companyId) {
-  const container = document.getElementById("drawer-tables");
-  try {
-    const tables = await api.listTables(companyId);
-    container.innerHTML = renderTablesInDrawer(tables);
-    container.querySelectorAll("[data-open-table]").forEach((btn) => {
-      btn.addEventListener("click", () => openTableGrid(Number(btn.dataset.openTable)));
-    });
-    if (!isReadOnly()) {
-      container.querySelectorAll("[data-delete-table]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          if (!confirm("Delete this table and all its rows?")) return;
-          await api.deleteTable(Number(btn.dataset.deleteTable));
-          await loadTablesIntoDrawer(companyId);
-        });
+// Wires the Open/Delete buttons inside any container renderTablesInDrawer
+// produced. Shared by the drawer's flat "Custom Sections" list, each
+// pillar's inline table list, and the ingest page's nav list.
+function wireTableListButtons(container, refreshFn) {
+  container.querySelectorAll("[data-open-table]").forEach((btn) => {
+    btn.addEventListener("click", () => openTableGrid(Number(btn.dataset.openTable), refreshFn));
+  });
+  if (!isReadOnly()) {
+    container.querySelectorAll("[data-delete-table]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this table and all its rows?")) return;
+        await api.deleteTable(Number(btn.dataset.deleteTable));
+        await refreshFn();
       });
-    } else {
-      container.querySelectorAll("[data-delete-table]").forEach((btn) => btn.classList.add("hidden"));
-    }
-  } catch (e) {
-    container.innerHTML = `<div class="text-xs text-danger">Failed to load tables.</div>`;
+    });
+  } else {
+    container.querySelectorAll("[data-delete-table]").forEach((btn) => btn.classList.add("hidden"));
   }
 }
 
-function openTableBuilder(companyId, onCreated) {
-  showModal(renderTableBuilderForm());
+// Tier 2: groups a company's Data Tables by their pillar `section` tag -
+// tables attached to a pillar render inside that pillar's own <section> (via
+// the #drawer-tables-<key> placeholders pillarExtra() left in drawer.js),
+// everything else falls back to the flat "Custom Sections" list at the
+// bottom, same as before Tier 2 existed.
+async function loadTablesIntoDrawer(companyId) {
+  const flatContainer = document.getElementById("drawer-tables");
+  try {
+    const tables = await api.listTables(companyId);
+    const bySection = {};
+    const unattached = [];
+    for (const t of tables) {
+      if (t.section) (bySection[t.section] ||= []).push(t);
+      else unattached.push(t);
+    }
+
+    flatContainer.innerHTML = renderTablesInDrawer(unattached);
+    wireTableListButtons(flatContainer, () => loadTablesIntoDrawer(companyId));
+
+    for (const { value: section } of PILLAR_SECTIONS) {
+      const target = document.getElementById(`drawer-tables-${section}`);
+      if (!target) continue;
+      const sectionTables = bySection[section] || [];
+      target.innerHTML = sectionTables.length ? renderTablesInDrawer(sectionTables) : "";
+      wireTableListButtons(target, () => loadTablesIntoDrawer(companyId));
+    }
+  } catch (e) {
+    flatContainer.innerHTML = `<div class="text-xs text-danger">Failed to load tables.</div>`;
+  }
+}
+
+// Wired exactly once per drawer/ingest-page open (not per table-list
+// refresh - these buttons are static, never replaced by an innerHTML swap
+// within one open session, so re-wiring them on every refresh would stack
+// listeners the same way ingestPageClickHandler had to guard against).
+function wireAddTableSectionButtons(root, companyId, refreshFn) {
+  root.querySelectorAll("[data-add-table-section]").forEach((btn) => {
+    if (isReadOnly()) {
+      btn.classList.add("hidden");
+      return;
+    }
+    btn.addEventListener("click", () => openTableBuilder(companyId, refreshFn, null, btn.dataset.addTableSection));
+  });
+}
+
+// Tier 1: pass an existingTable to edit its name/columns/section in place
+// (columns aren't locked in at creation - PATCH /tables/{id} already
+// supported this server-side, this just wires up the screen for it).
+// Tier 2: defaultSection presets the picker when opened from a specific
+// pillar panel's "+ Add Table Here" button.
+function openTableBuilder(companyId, onSaved, existingTable = null, defaultSection = null) {
+  showModal(renderTableBuilderForm(existingTable, defaultSection));
   const columnsContainer = document.getElementById("table-columns");
   function addColumnRow(col) {
     columnsContainer.insertAdjacentHTML("beforeend", renderColumnRow(col));
   }
-  addColumnRow();
-  document.getElementById("modal-panel").addEventListener("click", (e) => {
+  if (existingTable) {
+    existingTable.columns.forEach(addColumnRow);
+  } else {
+    addColumnRow();
+  }
+  modalPanelClickHandler = (e) => {
     if (e.target.dataset.add === "table-column") addColumnRow();
     if (e.target.hasAttribute("data-remove-row")) e.target.closest(".table-column-row")?.remove();
-  });
+  };
+  document.getElementById("modal-panel").addEventListener("click", modalPanelClickHandler);
   document.getElementById("modal-close-x").addEventListener("click", closeModal);
   document.getElementById("modal-cancel").addEventListener("click", closeModal);
   document.getElementById("table-builder-submit").addEventListener("click", async () => {
     const name = document.getElementById("table-name").value.trim();
+    const section = document.getElementById("table-section").value || null;
     const columns = [...columnsContainer.querySelectorAll(".table-column-row")]
       .map((row) => {
         const key = row.querySelector(".col-key").value.trim();
@@ -223,10 +279,15 @@ function openTableBuilder(companyId, onCreated) {
       })
       .filter((c) => c.key && c.label);
     try {
-      await api.createTable(companyId, { name, columns });
-      toast("Table created");
+      if (existingTable) {
+        await api.updateTable(existingTable.id, { name, columns, section });
+        toast("Table updated");
+      } else {
+        await api.createTable(companyId, { name, columns, section });
+        toast("Table created");
+      }
       closeModal();
-      await (onCreated ? onCreated() : loadTablesIntoDrawer(companyId));
+      await (onSaved ? onSaved() : loadTablesIntoDrawer(companyId));
     } catch (e) {
       const box = document.getElementById("table-builder-errors");
       box.textContent = errorMessage(e);
@@ -235,39 +296,54 @@ function openTableBuilder(companyId, onCreated) {
   });
 }
 
-// Mirrors loadTablesIntoDrawer but targets the "Custom Sections" list in the
-// full-page company editor's left nav instead of the drawer.
-async function loadCustomSectionsIntoIngestNav(companyId) {
-  const container = document.getElementById("ingest-custom-sections-nav");
-  if (!container) return;
+// Mirrors loadTablesIntoDrawer's section-grouping, but targets the full-page
+// company editor: unattached tables go in the left nav's "Custom Sections"
+// list, tables tagged to a pillar render inline inside that pillar's own
+// panel (via the #ingest-panel-tables-<key> placeholders ingest.js left).
+async function loadCustomTablesIntoIngestPage(companyId) {
+  const navContainer = document.getElementById("ingest-custom-sections-nav");
+  if (!navContainer) return;
   try {
     const tables = await api.listTables(companyId);
-    container.innerHTML = renderTablesInDrawer(tables);
-    container.querySelectorAll("[data-open-table]").forEach((btn) => {
-      btn.addEventListener("click", () => openTableGrid(Number(btn.dataset.openTable)));
-    });
-    if (!isReadOnly()) {
-      container.querySelectorAll("[data-delete-table]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          if (!confirm("Delete this table and all its rows?")) return;
-          await api.deleteTable(Number(btn.dataset.deleteTable));
-          await loadCustomSectionsIntoIngestNav(companyId);
-        });
-      });
-    } else {
-      container.querySelectorAll("[data-delete-table]").forEach((btn) => btn.classList.add("hidden"));
+    const bySection = {};
+    const unattached = [];
+    for (const t of tables) {
+      if (t.section) (bySection[t.section] ||= []).push(t);
+      else unattached.push(t);
+    }
+
+    navContainer.innerHTML = renderTablesInDrawer(unattached);
+    wireTableListButtons(navContainer, () => loadCustomTablesIntoIngestPage(companyId));
+
+    for (const { value: section } of PILLAR_SECTIONS) {
+      const target = document.getElementById(`ingest-panel-tables-${section}`);
+      if (!target) continue;
+      const sectionTables = bySection[section] || [];
+      target.innerHTML = sectionTables.length ? renderTablesInDrawer(sectionTables) : "";
+      wireTableListButtons(target, () => loadCustomTablesIntoIngestPage(companyId));
     }
   } catch (e) {
-    container.innerHTML = `<div class="text-xs text-danger">Failed to load custom sections.</div>`;
+    navContainer.innerHTML = `<div class="text-xs text-danger">Failed to load custom sections.</div>`;
   }
 }
 
-async function openTableGrid(tableId) {
+async function openTableGrid(tableId, onColumnsSaved) {
   const table = await api.getTable(tableId);
   const readOnly = isReadOnly();
   showModal(renderTableGrid(table, readOnly));
   document.getElementById("modal-close-x").addEventListener("click", closeModal);
   if (readOnly) return;
+
+  document.getElementById("table-edit-columns")?.addEventListener("click", () => {
+    openTableBuilder(
+      table.company_id,
+      async () => {
+        await openTableGrid(tableId, onColumnsSaved);
+        if (onColumnsSaved) await onColumnsSaved();
+      },
+      table
+    );
+  });
 
   document.querySelectorAll("[data-edit-row]").forEach((btn) => {
     btn.addEventListener("click", () => openRowForm(table, Number(btn.dataset.editRow)));
@@ -308,14 +384,32 @@ function openRowForm(table, rowId) {
 }
 
 // ---------- generic modal ----------
+// #modal-panel is reused across many different modals (table builder, row
+// form, observations, etc.) and is never itself removed - only its
+// innerHTML changes - so any delegated listener on it must be torn down on
+// each show/close, same reasoning as ingestPageClickHandler above. This
+// matters more now that "Edit Columns" (Tier 1) makes open/save/reopen of
+// the table builder a normal, repeated interaction within one session.
+let modalPanelClickHandler = null;
+
 function showModal(html) {
-  document.getElementById("modal-panel").innerHTML = html;
+  const panel = document.getElementById("modal-panel");
+  if (modalPanelClickHandler) {
+    panel.removeEventListener("click", modalPanelClickHandler);
+    modalPanelClickHandler = null;
+  }
+  panel.innerHTML = html;
   document.getElementById("modal-overlay").classList.remove("hidden");
 }
 
 function closeModal() {
+  const panel = document.getElementById("modal-panel");
+  if (modalPanelClickHandler) {
+    panel.removeEventListener("click", modalPanelClickHandler);
+    modalPanelClickHandler = null;
+  }
   document.getElementById("modal-overlay").classList.add("hidden");
-  document.getElementById("modal-panel").innerHTML = "";
+  panel.innerHTML = "";
 }
 
 document.getElementById("modal-overlay").addEventListener("click", (e) => {
@@ -531,6 +625,9 @@ async function openIngestPage(mode, existing) {
   function addBelieveRow(kind, text) {
     document.getElementById("f-why-believe").insertAdjacentHTML("beforeend", renderBelieveRow(kind, text));
   }
+  function addNoteRow(shortId, text) {
+    document.getElementById(`f-notes-${shortId}`).insertAdjacentHTML("beforeend", renderNoteRow(text));
+  }
 
   ingestPageClickHandler = (e) => {
     if (e.target.dataset.add === "revenue-split") addRevenueRow();
@@ -539,6 +636,7 @@ async function openIngestPage(mode, existing) {
     if (e.target.dataset.add === "growth") addGrowthRow();
     if (e.target.dataset.add === "evidence") addEvidenceRow();
     if (e.target.dataset.add === "believe") addBelieveRow();
+    if (e.target.dataset.addNote) addNoteRow(e.target.dataset.addNote);
     if (e.target.hasAttribute("data-remove-row")) e.target.closest("div[class*='-row']")?.remove();
   };
   document.getElementById("ingest-page").addEventListener("click", ingestPageClickHandler);
@@ -615,10 +713,14 @@ async function openIngestPage(mode, existing) {
   if (isAmend) {
     populateFormFromThesis(existing.current_thesis);
     document.getElementById("ingest-custom-sections-block").classList.remove("hidden");
+    document.querySelectorAll(".ingest-pillar-tables-block").forEach((el) => el.classList.remove("hidden"));
     document.getElementById("ingest-add-section").addEventListener("click", () =>
-      openTableBuilder(existing.company_id, () => loadCustomSectionsIntoIngestNav(existing.company_id))
+      openTableBuilder(existing.company_id, () => loadCustomTablesIntoIngestPage(existing.company_id))
     );
-    loadCustomSectionsIntoIngestNav(existing.company_id);
+    wireAddTableSectionButtons(document.getElementById("ingest-page"), existing.company_id, () =>
+      loadCustomTablesIntoIngestPage(existing.company_id)
+    );
+    loadCustomTablesIntoIngestPage(existing.company_id);
   } else {
     // seed the minimum rows a new thesis needs so the validation rules
     // (>=3 why_we_believe_it incl. Premise/Conclusion, >=1 kill-severity
@@ -653,6 +755,10 @@ async function openIngestPage(mode, existing) {
     document.getElementById("f-latest-review").value = t.health_check?.latest_quarter_review || "";
 
     for (const r of t.references || []) addReferenceRow(r.title, r.url);
+
+    for (const [shortId, fieldKey] of Object.entries(PILLAR_FIELD_KEY)) {
+      for (const note of t.pillar_notes?.[fieldKey] || []) addNoteRow(shortId, note);
+    }
   }
 
   function collectThesisData() {
@@ -689,6 +795,13 @@ async function openIngestPage(mode, existing) {
         return text ? `${row.querySelector(".bl-kind").value}: ${text}` : null;
       })
       .filter(Boolean);
+    const pillarNotes = {};
+    for (const [shortId, fieldKey] of Object.entries(PILLAR_FIELD_KEY)) {
+      const notes = [...document.querySelectorAll(`#f-notes-${shortId} .note-row .note-text`)]
+        .map((i) => i.value.trim())
+        .filter(Boolean);
+      if (notes.length) pillarNotes[fieldKey] = notes;
+    }
 
     return {
       the_business: {
@@ -711,6 +824,7 @@ async function openIngestPage(mode, existing) {
         historical_checks: [],
       },
       references,
+      pillar_notes: pillarNotes,
     };
   }
 

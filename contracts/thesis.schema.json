@@ -304,6 +304,16 @@
           },
           "title": "References",
           "type": "array"
+        },
+        "pillar_notes": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Pillar Notes",
+          "type": "object"
         }
       },
       "required": [

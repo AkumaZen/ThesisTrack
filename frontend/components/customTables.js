@@ -1,5 +1,19 @@
 import { escapeHtml } from "./format.js";
 
+// Canonical pillar identifiers as the backend stores them (app/pillars.py),
+// paired with a display label. Shared by the table builder's "Section"
+// picker and by app.js when it groups a company's tables by section.
+export const PILLAR_SECTIONS = [
+  { value: "the_business", label: "1. The Business" },
+  { value: "the_growth_engine", label: "2. The Growth Engine" },
+  { value: "the_big_change", label: "3. The Big Change" },
+  { value: "proof_points", label: "4. Proof Points" },
+  { value: "what_can_kill_it", label: "5. What Can Kill It" },
+  { value: "why_we_believe_it", label: "6. Why We Believe It" },
+  { value: "health_check", label: "7. Health Check" },
+  { value: "references", label: "References" },
+];
+
 export function renderTablesInDrawer(tables) {
   if (!tables.length) {
     return `<div class="text-xs text-muted-fg">No custom tables yet.</div>`;
@@ -35,18 +49,35 @@ export function renderColumnRow(column = {}) {
   </div>`;
 }
 
-export function renderTableBuilderForm() {
+// Tier 1 (Excel-like columns, editable anytime, not just at creation) and
+// Tier 2 (attach the table to one of the 7 pillars) share this one form:
+// pass an existing `table` to edit it in place (name/columns/section can
+// all change after creation - deleting a column just stops showing that
+// key in the grid, existing row data for it is left alone rather than
+// destroyed), or `defaultSection` to preset the picker when opened via a
+// pillar panel's own "+ Add Table Here" button.
+export function renderTableBuilderForm(table = null, defaultSection = null) {
+  const sectionValue = table ? table.section : defaultSection;
+  const sectionOptions = PILLAR_SECTIONS.map(
+    (s) => `<option value="${s.value}" ${sectionValue === s.value ? "selected" : ""}>${escapeHtml(s.label)}</option>`
+  ).join("");
   return `
     <div class="flex items-center justify-between px-5 py-3 border-b border-border">
-      <h2 class="font-semibold">New Data Table</h2>
+      <h2 class="font-semibold">${table ? "Edit Data Table" : "New Data Table"}</h2>
       <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
     </div>
     <div class="p-5 overflow-y-auto" style="max-height: 70vh">
       <label class="block text-sm">Table Name
-        <input id="table-name" placeholder="e.g. Shareholding Pattern" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+        <input id="table-name" value="${escapeHtml(table?.name || "")}" placeholder="e.g. Shareholding Pattern" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+      </label>
+      <label class="block text-sm mt-3">Section <span class="text-muted-fg">(optional - shows this table inside that pillar instead of the flat Custom Sections list)</span>
+        <select id="table-section" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+          <option value="">(unattached)</option>
+          ${sectionOptions}
+        </select>
       </label>
       <div class="mt-4">
-        <div class="text-sm font-medium">Columns</div>
+        <div class="text-sm font-medium">Columns <span class="text-muted-fg font-normal">- add, remove, or rename these anytime, even after rows exist</span></div>
         <div id="table-columns" class="space-y-1 mt-1"></div>
         <button type="button" data-add="table-column" class="text-xs text-ok mt-2">+ Add Column</button>
       </div>
@@ -54,7 +85,7 @@ export function renderTableBuilderForm() {
     </div>
     <div class="px-5 py-3 border-t border-border flex justify-end gap-2">
       <button id="modal-cancel" class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
-      <button id="table-builder-submit" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">Create Table</button>
+      <button id="table-builder-submit" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">${table ? "Save Changes" : "Create Table"}</button>
     </div>`;
 }
 
@@ -70,7 +101,10 @@ export function renderTableGrid(table, readOnly) {
   return `
     <div class="flex items-center justify-between px-5 py-3 border-b border-border">
       <h2 class="font-semibold">${escapeHtml(table.name)}</h2>
-      <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
+      <div class="flex items-center gap-3">
+        ${readOnly ? "" : `<button id="table-edit-columns" class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Edit Columns</button>`}
+        <button id="modal-close-x" class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
+      </div>
     </div>
     <div class="p-5 overflow-y-auto" style="max-height: 70vh">
       <div class="overflow-x-auto rounded-md border border-border">

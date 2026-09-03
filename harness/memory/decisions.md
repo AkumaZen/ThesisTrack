@@ -1,5 +1,79 @@
 # Decisions (append-only ADR log)
 
+## ADR-021: Three tiers of "more customization" - Excel-like table columns, pillar-attached tables, and per-pillar free-text notes
+User asked for deeper customization: dynamically add/remove columns and
+rows in Data Tables "like Excel", the ability to add new sections, and more
+detailed customization within each of the 7 pillars. Explained three tiers
+of increasing schema risk via AskUserQuestion-style discussion in chat
+(not persisted elsewhere, so recorded here); user chose all three.
+
+**Tier 1 - Excel-like columns.** `PATCH /tables/{id}` already accepted a
+new `columns` array (`app/routers/custom_tables.py`) - the gap was purely
+frontend: no screen existed to edit an existing table's columns, only to
+set them once at creation. Added `renderTableBuilderForm(table, defaultSection)`
+supporting an edit mode (customTables.js) and an "Edit Columns" button in
+`renderTableGrid`, wired through a generalized `openTableBuilder(companyId,
+onSaved, existingTable, defaultSection)` in app.js that calls
+`api.updateTable` instead of `api.createTable` when editing. Deleting a
+column only stops displaying that key in the grid - existing row_data for
+it is left alone rather than destroyed (standard spreadsheet behavior, no
+explicit "restore" UI planned since JSONB still has it).
+
+**Tier 2 - tables attached to a pillar.** New nullable `custom_tables.section`
+column (migration `9f2a6c1e4d80`), validated against `app/pillars.py`'s
+`PILLAR_KEYS` (a new shared constant - the 7 pillar field names + references,
+factored out so `app/schemas/thesis.py`'s pillar_notes validator and
+`app/schemas/custom_tables.py`'s section validator can't drift apart;
+deliberately left `app/schemas/guidance.py`'s independent `BlockKey` Literal
+untouched rather than risk refactoring a working, tested file for a `general`
+member overlap of a normal size). NULL means unattached (pre-existing
+behavior, still the default). Frontend: `drawer.js`'s `pillarExtra()` and
+`ingest.js`'s `pillarExtraBlock()` each leave a placeholder
+(`#drawer-tables-<key>` / `#ingest-panel-tables-<key>`) inside every pillar
+section plus a "+ Add Table Here" button; `app.js` groups a company's tables
+by `section` and distributes them, falling back to the pre-existing flat
+list for unattached ones.
+
+**Tier 3 - pillar_notes.** New `ThesisData.pillar_notes: dict[str,
+list[str]]` field (default `{}`), keys validated against the same
+`PILLAR_KEYS`. Chosen as a dict-of-field-name rather than nesting a notes
+field inside each pillar's own sub-model, since 3 of the 8 "pillars"
+(`the_growth_engine`, `why_we_believe_it`, and `references` are bare lists,
+not objects - a single flat extension point avoids an inconsistent shape
+across pillars. Additive and default-empty, so every existing stored thesis
+and all 79 pre-existing tests needed zero changes. `contracts/thesis.schema.json`
+regenerated via the existing `app/schemas/export_contract.py` script (not
+hand-edited) to keep `test_exported_json_schema_is_current` honest.
+
+**Bugs caught before commit, same root cause each time:** `#drawer` and
+`#ingest-page` are persistent DOM nodes (only their innerHTML is swapped on
+each open/refresh) - the first pass wired the new "+Add Table Here" buttons
+by re-querying and re-attaching a listener inside `loadTablesIntoDrawer`/
+`loadCustomTablesIntoIngestPage`, both of which can run multiple times
+within one open (after every table create/edit/delete) without those
+buttons themselves being replaced, so listeners would have stacked with
+every refresh. Same root cause as the ingestPageClickHandler leak from the
+full-page-editor ADR, and it also surfaced in `openTableBuilder`'s existing
+(pre-existing, not introduced this session) delegated listener on
+`#modal-panel` - Tier 1 makes edit/save/reopen of that same modal a normal
+repeated action, where before it was normally opened once per drawer visit.
+Fixed all three the same way: track the current handler in a variable,
+remove it before attaching a new one (`ingestPageClickHandler`,
+`modalPanelClickHandler`), and move any listener attached to elements that
+truly are static across refreshes (the "+Add Table Here" buttons) into the
+one-time open-time setup (`openDrawer`/`openIngestPage`'s isAmend branch)
+via a new `wireAddTableSectionButtons()` helper, rather than the
+per-refresh loader functions.
+
+Verified end-to-end against the live docker-compose API (not just
+pytest): created a company with `pillar_notes` set, confirmed it round-trips
+through GET after create; created a Data Table with `section="proof_points"`,
+confirmed it round-trips; PATCHed a second column onto that table after
+creation and confirmed the grid reflects both columns. 92 automated tests
+pass (79 prior + 13 new: `tests/test_custom_tables.py` - new file, this
+feature had no tests at all before this session - plus 3 pillar_notes cases
+in `tests/test_contract.py`).
+
 ## ADR-020: Company create/amend moved from a small centered modal to a full-page editor with a left-nav of the 7 pillars
 User feedback: "just a form" - wanted the ingest UI restructured around the
 7 standard thesis pillars (Business, Growth Engine, Big Change, Proof

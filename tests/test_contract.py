@@ -84,3 +84,25 @@ def test_markdown_wrapped_url_is_stripped(golden_payload):
 def test_exported_json_schema_is_current():
     on_disk = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
     assert on_disk == ThesisCreate.model_json_schema()
+
+
+def test_pillar_notes_defaults_empty(golden_payload):
+    thesis = ThesisCreate.model_validate(golden_payload)
+    assert thesis.thesis_data.pillar_notes == {}
+
+
+def test_pillar_notes_accepts_known_pillar_keys(golden_payload):
+    good = copy.deepcopy(golden_payload)
+    good["thesis_data"]["pillar_notes"] = {
+        "the_business": ["Margin profile worth revisiting next quarter"],
+        "proof_points": [],
+    }
+    thesis = ThesisCreate.model_validate(good)
+    assert thesis.thesis_data.pillar_notes["the_business"] == ["Margin profile worth revisiting next quarter"]
+
+
+def test_pillar_notes_rejects_unknown_key(golden_payload):
+    bad = copy.deepcopy(golden_payload)
+    bad["thesis_data"]["pillar_notes"] = {"not_a_real_pillar": ["x"]}
+    with pytest.raises(ValidationError, match="not_a_real_pillar"):
+        ThesisCreate.model_validate(bad)

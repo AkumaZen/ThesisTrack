@@ -63,6 +63,7 @@ def _table_to_out(table: CustomTable, row_count: int = 0) -> CustomTableOut:
         company_id=table.company_id,
         name=table.name,
         columns=[CustomTableColumn(**c) for c in table.columns],
+        section=table.section,
         created_by=table.created_by,
         created_at=table.created_at,
         updated_at=table.updated_at,
@@ -101,6 +102,7 @@ def post_table(
         company_id=company_id,
         name=payload.name,
         columns=[c.model_dump() for c in payload.columns],
+        section=payload.section,
         created_by=actor.identity,
     )
     db.add(table)
@@ -138,10 +140,17 @@ def patch_table(
     if table is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"table {table_id} not found")
 
-    if payload.name is not None:
+    # model_fields_set (not "is not None") distinguishes "field omitted" from
+    # "field explicitly sent as null" - needed for section, since null is a
+    # meaningful value here (unattach the table from its pillar), not just
+    # "don't touch this field".
+    fields_set = payload.model_fields_set
+    if "name" in fields_set and payload.name is not None:
         table.name = payload.name
-    if payload.columns is not None:
+    if "columns" in fields_set and payload.columns is not None:
         table.columns = [c.model_dump() for c in payload.columns]
+    if "section" in fields_set:
+        table.section = payload.section
     db.commit()
     db.refresh(table)
     return _table_to_out(table, len(table.rows))

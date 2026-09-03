@@ -61,6 +61,25 @@ function reasoningList(items) {
   </ol>`;
 }
 
+// Tier 3 (pillar_notes, read-only here - edited via Amend Thesis like every
+// other pillar field) + Tier 2 (a placeholder app.js fills in with any Data
+// Tables tagged to this pillar, plus a button to tag a new one here).
+function pillarExtra(pillarKey, thesis) {
+  const notes = thesis.pillar_notes?.[pillarKey] || [];
+  return `
+    ${
+      notes.length
+        ? `<div class="mt-2"><div class="text-xs font-medium text-muted-fg">Notes</div>
+            <ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">${notes.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul>
+          </div>`
+        : ""
+    }
+    <div class="mt-2 flex items-center justify-end">
+      <button data-add-table-section="${pillarKey}" class="text-xs text-ok">+ Add Table</button>
+    </div>
+    <div id="drawer-tables-${pillarKey}" class="space-y-2 empty:hidden"></div>`;
+}
+
 export function renderDrawer(detail) {
   const t = detail.current_thesis || {};
   const style = STATUS_STYLES[detail.status] || STATUS_STYLES.on_track;
@@ -113,6 +132,7 @@ export function renderDrawer(detail) {
           <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
           <p class="text-sm mt-1">${escapeHtml(t.the_business?.what_it_does)}</p>
           <div class="mt-2 space-y-0.5">${revenueRows}</div>
+          ${pillarExtra("the_business", t)}
         </section>
 
         <section class="mt-4">
@@ -120,12 +140,14 @@ export function renderDrawer(detail) {
           <ul class="list-disc list-inside text-sm mt-1 space-y-0.5">
             ${(t.the_growth_engine || []).map((g) => `<li>${escapeHtml(g)}</li>`).join("")}
           </ul>
+          ${pillarExtra("the_growth_engine", t)}
         </section>
 
         <section class="mt-4">
           <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">3. The Big Change</h3>
           <p class="text-sm mt-1">${escapeHtml(t.the_big_change?.summary)}</p>
           <div class="text-xs text-muted-fg mt-0.5">Expected completion: ${escapeHtml(t.the_big_change?.expected_completion)}</div>
+          ${pillarExtra("the_big_change", t)}
         </section>
       </div>
 
@@ -135,11 +157,13 @@ export function renderDrawer(detail) {
           <ul class="list-disc list-inside text-sm mt-1 space-y-0.5">
             ${(t.proof_points?.hard_evidence || []).map((e) => `<li>${escapeHtml(e)}</li>`).join("")}
           </ul>
+          ${pillarExtra("proof_points", t)}
         </section>
 
         <section class="mt-4">
           <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">6. Why We Believe It</h3>
           <div class="mt-1">${reasoningList(t.why_we_believe_it)}</div>
+          ${pillarExtra("why_we_believe_it", t)}
         </section>
       </div>
 
@@ -147,12 +171,14 @@ export function renderDrawer(detail) {
         <section>
           <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">5. What Can Kill It</h3>
           <div class="mt-1">${(detail.kill_triggers || []).map(killTriggerRow).join("") || '<div class="text-xs text-muted-fg">None defined.</div>'}</div>
+          ${pillarExtra("what_can_kill_it", t)}
         </section>
 
         <section class="mt-4">
           <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Health Check</h3>
           <p class="text-sm mt-1 text-muted-fg">${escapeHtml(t.health_check?.latest_quarter_review)}</p>
           <div class="mt-2">${healthCheckTimeline(detail.health_checks || [])}</div>
+          ${pillarExtra("health_check", t)}
         </section>
 
         ${detail.pending_proposals?.length ? `
@@ -166,11 +192,12 @@ export function renderDrawer(detail) {
         <section>
           <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">References</h3>
           <div class="mt-1 space-y-0.5">${references || '<div class="text-xs text-muted-fg">None added.</div>'}</div>
+          ${pillarExtra("references", t)}
         </section>
 
         <section class="mt-4">
           <div class="flex items-center justify-between">
-            <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Data Tables</h3>
+            <h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Custom Sections <span class="text-muted-fg font-normal normal-case">(not tied to a pillar)</span></h3>
             <button id="drawer-new-table" class="text-xs text-ok">+ New Table</button>
           </div>
           <div id="drawer-tables" class="mt-2 space-y-2">
