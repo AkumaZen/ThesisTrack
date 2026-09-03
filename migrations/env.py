@@ -15,6 +15,12 @@ config = context.config
 
 db_url = os.environ.get("DATABASE_URL")
 if db_url:
+    # Aiven (and most managed Postgres hosts) hand out "postgres://" URLs;
+    # SQLAlchemy needs an explicit dialect+driver for psycopg3.
+    if db_url.startswith("postgres://"):
+        db_url = "postgresql+psycopg://" + db_url[len("postgres://"):]
+    elif db_url.startswith("postgresql://"):
+        db_url = "postgresql+psycopg://" + db_url[len("postgresql://"):]
     config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.
