@@ -17,7 +17,14 @@ from typing import Optional
 
 import httpx
 
-LOG_DIR = Path(__file__).resolve().parent.parent.parent / "logs" / "llm_calls"
+def _default_log_dir() -> Path:
+    # Vercel's deployed function filesystem is read-only outside /tmp.
+    if os.environ.get("VERCEL"):
+        return Path("/tmp/logs/llm_calls")
+    return Path(__file__).resolve().parent.parent.parent / "logs" / "llm_calls"
+
+
+LOG_DIR = _default_log_dir()
 
 
 class LLMResponseError(Exception):
@@ -33,7 +40,6 @@ class LLMClient(ABC):
 
 
 def _log_call(model_name: str, system: str, user: str, raw_response: str) -> None:
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
     prompt_hash = hashlib.sha256((system + "\n" + user).encode("utf-8")).hexdigest()[:16]
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
     record = {
@@ -43,7 +49,12 @@ def _log_call(model_name: str, system: str, user: str, raw_response: str) -> Non
         "user": user,
         "raw_response": raw_response,
     }
-    (LOG_DIR / f"{timestamp}-{prompt_hash}.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        (LOG_DIR / f"{timestamp}-{prompt_hash}.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
+    except OSError:
+        # Best-effort instrumentation only - never fail a real review over a log write.
+        pass
 
 
 def _parse_json_response(model_name: str, system: str, user: str, raw: str) -> dict:

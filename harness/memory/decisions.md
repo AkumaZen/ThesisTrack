@@ -1,5 +1,34 @@
 # Decisions (append-only ADR log)
 
+## ADR-019: Vercel deployment target - serverless ASGI entrypoint, DATABASE_URL scheme normalization, pool sizing
+User asked to host on Vercel against the Aiven-hosted Postgres already sitting
+in `.production.env`. Three real bugs would have surfaced only in production,
+none caught by the existing test suite since it never runs against a
+serverless filesystem or a `postgres://`-scheme URL:
+  1. Aiven hands out `postgres://...` - SQLAlchemy + psycopg3 requires an
+     explicit `postgresql+psycopg://` dialect+driver prefix, or `create_engine`
+     fails outright. Fixed in `app/db.py` with a scheme rewrite.
+  2. `app/llm/client.py` unconditionally wrote review logs to a repo-relative
+     `logs/llm_calls/` path. Vercel's deployed function filesystem is
+     read-only outside `/tmp`, so every `/ai-review` call would have thrown
+     on the first `mkdir`. Fixed: log dir switches to `/tmp/logs/llm_calls`
+     when `VERCEL` is set, and the write is now best-effort (wrapped in
+     try/except) since instrumentation must never break a real review -
+     consistent with constitution rule 7 being about not fabricating
+     content, not about logging succeeding.
+  3. Default SQLAlchemy pool (5 + 10 overflow) is sized for one long-lived
+     process. Serverless fans out to many short-lived instances, each with
+     its own pool, against Aiven's low connection cap on smaller tiers.
+     Reduced to `pool_size=3, max_overflow=2`.
+Added `api/index.py` (ASGI entrypoint Vercel's Python runtime auto-detects),
+`vercel.json` (routes everything to it, `includeFiles` so `frontend/` and
+`contracts/` - read via relative path in `app/main.py`'s StaticFiles mounts -
+ship inside the function bundle), and `.vercelignore` (excludes `.venv`,
+`tests`, `harness`, `migrations`, `logs`, and both `.env`/`creds.md` files
+from the deployed bundle; migrations still run locally against the Aiven URL,
+never inside the function). All 79 existing tests still pass unchanged -
+these were latent bugs, not behavior changes for the docker-compose path.
+
 ## ADR-018: Guidance tracker, generic custom-data tables, and an LLM-conversion import prompt - built beyond BUILD_PLAN.md's frozen v1 scope
 Three features requested directly by the user, none of which BUILD_PLAN.md
 anticipates (confirmed by a full read of it - see the exploration notes this

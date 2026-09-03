@@ -1,0 +1,12 @@
+.venv
+__pycache__
+logs
+tests
+harness
+migrations
+seeds
+eval
+.pytest_cache
+creds.md
+.production.env
+.env
