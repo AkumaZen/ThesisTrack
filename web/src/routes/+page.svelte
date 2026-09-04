@@ -57,13 +57,18 @@
 	}
 
 	onMount(async () => {
-		const [tax, metrics] = await Promise.all([
-			api.getTaxonomy() as Promise<{ name: string; niches: { name: string }[] }[]>,
-			api.getMetrics() as Promise<MetricDef[]>
-		]);
-		taxonomy = tax;
-		metricDefsByKey = Object.fromEntries(metrics.map((m) => [m.metric_key, m]));
-		await refresh();
+		try {
+			const [tax, metrics] = await Promise.all([
+				api.getTaxonomy() as Promise<{ name: string; niches: { name: string }[] }[]>,
+				api.getMetrics() as Promise<MetricDef[]>
+			]);
+			taxonomy = tax;
+			metricDefsByKey = Object.fromEntries(metrics.map((m) => [m.metric_key, m]));
+			await refresh();
+		} catch (e) {
+			error = String(e);
+			loading = false;
+		}
 	});
 
 	$effect(() => {

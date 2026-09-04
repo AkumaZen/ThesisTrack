@@ -41,6 +41,11 @@ async function request(method: string, path: string, body?: unknown) {
 	});
 	const isJson = resp.headers.get('content-type')?.includes('application/json');
 	const data = isJson ? await resp.json() : await resp.text();
+	if (resp.status === 401 && (session.token || session.apiKey)) {
+		// Stale/expired credentials - drop back to the login screen instead of
+		// leaving pages stuck mid-fetch with no way to recover.
+		session.clear();
+	}
 	if (!resp.ok) throw new ApiError(resp.status, data);
 	return data;
 }
