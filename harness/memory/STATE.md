@@ -121,8 +121,31 @@ the running container, or you'll be debugging a phantom "my JS change did
 nothing" against stale served code (see ADR-027 for the debugging trail
 this actually caused).
 
+Production data sync (2026-09-04): after the migration fix, production's
+`companies`/`broad_industries`/`specific_niches` were still empty -
+`seeds/taxonomy.sql` had also never been run against prod (separately from
+the migration gap). Seeded it, then replayed the full BALU_FORGE thesis,
+price/decision/health-check history, and all 7 comparison tables onto
+production via the real API (not raw DB row copies - avoids FK/id
+mismatches between the two separate databases). Owner identity mattered
+(ADR-026 scenario ownership) so this had to run as the real
+rohit.negi@rdc.in user, not the X-API-Key fallback (which resolves to
+ANALYST_NAME, a different identity).
+
+That surfaced a real auth gap: `seeds/create_users.py` generates a random
+per-run password and deliberately never persists it anywhere - so nobody,
+including this session, actually knew rohit.negi's or siddhesh.dige's
+production password. Reset both directly via `hash_password()` +
+UPDATE users (confirmed with the user first for rohit.negi's), and
+created a third user shishir.bhat@rdc.in (read_write) in both databases.
+All three production passwords now exist ONLY in the chat transcript that
+gave them to the user - not saved anywhere in the repo or this memory
+system. If a fourth session ever needs prod access again, expect to reset
+passwords again rather than finding them recorded.
+
 Next action: none pending. The 3-part investing-behavior request is
-complete, and the full-page thesis view + deeper Balu Forge content
-(ADR-027) is done and live-verified. Natural next step, if the user wants
-it, is the deferred comparison/diff view between two users' theses on the
-same company.
+complete, the full-page thesis view + deeper Balu Forge content (ADR-027)
+is done and live-verified on both local and production, and production
+now has real users/data matching local. Natural next step, if the user
+wants it, is the deferred comparison/diff view between two users' theses
+on the same company.
