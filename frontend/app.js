@@ -218,14 +218,27 @@ async function wireDetailView(detail, companyId, root) {
   gateWriteUI();
 }
 
+// Cold-start on the serverless deploy can make the first request after a
+// while take a couple of seconds - opening the drawer/page immediately with
+// this skeleton (instead of waiting on the fetch before showing anything)
+// is what makes the click feel instant instead of frozen.
+function renderLoadingSkeleton() {
+  return `<div class="p-5 flex items-center justify-center h-40">
+    <div class="text-sm text-muted-fg animate-pulse">Loading...</div>
+  </div>`;
+}
+
 async function openDrawer(companyId) {
-  const detail = await api.getCompany(companyId);
-  document.getElementById("drawer").innerHTML = renderDrawer(detail);
-  document.getElementById("drawer").classList.remove("hidden");
+  const drawer = document.getElementById("drawer");
+  drawer.innerHTML = renderLoadingSkeleton();
+  drawer.classList.remove("hidden");
   document.getElementById("drawer-overlay").classList.remove("hidden");
-  document.getElementById("drawer-close").addEventListener("click", closeDrawer);
   document.getElementById("drawer-overlay").addEventListener("click", closeDrawer);
-  await wireDetailView(detail, companyId, document.getElementById("drawer"));
+
+  const detail = await api.getCompany(companyId);
+  drawer.innerHTML = renderDrawer(detail);
+  document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+  await wireDetailView(detail, companyId, drawer);
 }
 
 // Full-page equivalent of openDrawer, opened in a brand-new browser tab
@@ -234,10 +247,12 @@ async function openDrawer(companyId) {
 // action wiring, just a proper section-by-section layout instead of a
 // narrow panel.
 async function openCompanyPage(companyId) {
-  const detail = await api.getCompany(companyId);
   const page = document.getElementById("company-page");
-  page.innerHTML = renderCompanyPage(detail);
+  page.innerHTML = renderLoadingSkeleton();
   page.classList.remove("hidden");
+
+  const detail = await api.getCompany(companyId);
+  page.innerHTML = renderCompanyPage(detail);
   document.title = `${detail.name} - Investment Thesis Platform`;
   document.getElementById("cp-back").addEventListener("click", closeCompanyPage);
   await wireDetailView(detail, companyId, page);
