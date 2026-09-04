@@ -6,7 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '../src/lib/server/db';
-import { companies, killTriggers, thesisScenarios, thesisVersions } from '../src/lib/server/db/schema';
+import { companies, killTriggers, specificNiches, thesisScenarios, thesisVersions } from '../src/lib/server/db/schema';
 import { evaluateObservations } from '../src/lib/server/services/ruleEngine';
 import { postObservations, UnknownMetricError } from '../src/lib/server/services/observations';
 import { logDecision, listDecisions } from '../src/lib/server/services/decisions';
@@ -215,5 +215,9 @@ describe('taxonomy (ports app/services/taxonomy.py propose_niche)', () => {
 		const first = await proposeNiche('Auto & Mobility', name);
 		const second = await proposeNiche('Auto & Mobility', name);
 		expect(second.id).toBe(first.id);
+		// This niche isn't tied to the throwaway company, so afterAll's cascade
+		// delete never reaches it - clean it up here or it pollutes the real
+		// taxonomy (and the dashboard's facet bar) on every test run.
+		await db.delete(specificNiches).where(eq(specificNiches.id, first.id));
 	});
 });
