@@ -381,10 +381,10 @@
 									<div class="flex items-center justify-between">
 										<span class="text-sm" class:text-danger={trig.latest_fired} class:font-medium={trig.latest_fired}>{trig.label}</span>
 										<span
-											class="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded"
-											class:bg-danger={false}
-											class:text-danger={trig.severity === 'kill'}
-											class:bg-warn={trig.severity !== 'kill'}
+											class="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded-full ring-1 {trig.severity ===
+											'kill'
+												? 'bg-danger/10 text-danger ring-danger/20'
+												: 'bg-warn/10 text-warn ring-warn/20'}"
 										>
 											{trig.severity}
 										</span>
