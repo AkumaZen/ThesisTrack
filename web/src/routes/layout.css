@@ -129,6 +129,18 @@ textarea:focus {
 	color: var(--fg);
 }
 
+/*
+ * Signal Lime/Cyan/Amber/Red are tuned for near-black grounds (DESIGN.md's
+ * "Kill-Switch Console"): full-strength neon on #050505 clears 12-16:1
+ * contrast. The identical hex values on a white ground fall to ~1.1-1.9:1 -
+ * effectively invisible body/pill text, not a stylistic difference. Fills
+ * that pair with dark ink (buttons, dots, the /10 pill tints) are unaffected
+ * either way; only *reading* that hue as text needs a light-safe shade. So
+ * light theme gets its own ink-toned variant of each hue - same identity,
+ * same hue family, actually legible - while --accent/-2/-3/-4 (button fills,
+ * focus glow) stay the pure neon value in both themes since text on those is
+ * always accent-ink, never the hue itself.
+ */
 @media (prefers-color-scheme: light) {
 	:root:not([data-theme='dark']) {
 		--bg: #ffffff;
@@ -139,6 +151,10 @@ textarea:focus {
 		--border: #d8d8d8;
 		--fg: #0a0a0a;
 		--muted-fg: #5c5c5c;
+		--good: #4d6b00;
+		--ok: #007380;
+		--warn: #935e00;
+		--danger: #c9002f;
 		color-scheme: light;
 	}
 }
@@ -151,6 +167,10 @@ textarea:focus {
 	--border: #d8d8d8;
 	--fg: #0a0a0a;
 	--muted-fg: #5c5c5c;
+	--good: #4d6b00;
+	--ok: #007380;
+	--warn: #935e00;
+	--danger: #c9002f;
 	color-scheme: light;
 }
 :root[data-theme='dark'] {
