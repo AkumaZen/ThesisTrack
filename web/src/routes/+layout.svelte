@@ -90,6 +90,7 @@
 				<a href="/review" class="nav-tab" class:active={page.url.pathname.startsWith('/review')}>Review Queue</a>
 				<a href="/guidance" class="nav-tab" class:active={page.url.pathname.startsWith('/guidance')}>Guidance</a>
 				<a href="/ingest" class="nav-tab" class:active={page.url.pathname.startsWith('/ingest')}>Ingest</a>
+				<a href="/export" class="nav-tab" class:active={page.url.pathname.startsWith('/export')}>Export</a>
 			</nav>
 			<div class="flex-1"></div>
 			<div class="flex items-center gap-3 pl-3 ml-1 border-l border-border shrink-0">

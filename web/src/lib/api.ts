@@ -106,7 +106,22 @@ export const api = {
 	submitHealthCheck: (companyId: string, payload: unknown) =>
 		request('POST', `/companies/${encodeURIComponent(companyId)}/health-check`, payload),
 	submitOutcome: (companyId: string, payload: unknown) =>
-		request('POST', `/companies/${encodeURIComponent(companyId)}/outcome`, payload)
+		request('POST', `/companies/${encodeURIComponent(companyId)}/outcome`, payload),
+
+	// AI reviewer (app/routers/ai_review.py)
+	runAiReview: (companyId: string, payload: { period: string; narrative?: string | null }) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/ai-review`, payload),
+
+	// SFT export (app/routers/export.py)
+	getExportStats: (params?: { split?: string; include_open?: boolean }) =>
+		request('GET', `/export-training-data/stats?${buildQuery(params)}`),
+	exportTrainingDataUrl: (params: {
+		task: string;
+		format?: string;
+		split?: string;
+		min_confidence?: number;
+		include_open?: boolean;
+	}) => `${API_BASE}/export-training-data?${buildQuery(params)}`
 };
 
 export { buildQuery, request };
