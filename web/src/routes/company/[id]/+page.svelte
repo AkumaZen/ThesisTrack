@@ -155,8 +155,10 @@
 			<span class="inline-block h-2 w-2 rounded-full {style.dot} shrink-0"></span>
 			<span class="text-xs font-medium {style.pill} px-2 py-0.5 rounded-full ring-1 shrink-0">{style.label}</span>
 			{#if detail.has_active_override}
-				<span class="text-[10px] font-semibold uppercase text-danger bg-danger/10 px-2 py-0.5 rounded-full ring-1 ring-danger/20 shrink-0"
-					>Active Override</span
+				<span
+					class="text-[10px] font-semibold uppercase text-danger bg-danger/10 px-2 py-0.5 rounded-full ring-1 ring-danger/20 shrink-0"
+					title="A sell/exit rule fired here, but you chose to keep holding anyway"
+					>Warning Overridden</span
 				>
 			{/if}
 		{/if}
@@ -282,7 +284,7 @@
 
 				{#if detail.active_override}
 					<div class="mt-3 rounded-md bg-danger/10 border border-danger/30 p-3 text-sm text-danger">
-						<strong>Override active:</strong> status held at {detail.active_override.to_status} by {detail.active_override.actor}.
+						<strong>Warning overridden:</strong> a sell/exit rule fired, but the status is being held at "{detail.active_override.to_status}" by {detail.active_override.actor}.
 						<div class="mt-1">{detail.active_override.rationale}</div>
 					</div>
 				{/if}

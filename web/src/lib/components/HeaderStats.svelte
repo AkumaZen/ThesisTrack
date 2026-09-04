@@ -37,8 +37,11 @@
 		<div class="text-2xl font-mono font-semibold" class:text-warn={counts.reviewDue > 0}>{counts.reviewDue}</div>
 		<div class="text-xs text-muted-fg">Review Due</div>
 	</div>
-	<div class="flex-1 min-w-[120px] rounded-lg border border-border bg-surface px-4 py-3">
+	<div
+		class="flex-1 min-w-[120px] rounded-lg border border-border bg-surface px-4 py-3"
+		title="Companies where a sell/exit rule was triggered but you chose to keep holding anyway"
+	>
 		<div class="text-2xl font-mono font-semibold" class:text-danger={counts.activeOverrides > 0}>{counts.activeOverrides}</div>
-		<div class="text-xs text-muted-fg">Active Overrides</div>
+		<div class="text-xs text-muted-fg">Warnings Overridden</div>
 	</div>
 </div>
