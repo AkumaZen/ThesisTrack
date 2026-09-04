@@ -8,5 +8,6 @@
   ],
   "routes": [
     { "src": "/(.*)", "dest": "api/index.py" }
-  ]
+  ],
+  "regions": ["bom1"]
 }

@@ -101,6 +101,20 @@ def _core_metrics_for_scenarios(db: Session, scenarios: list[ThesisScenario]) ->
     return result
 
 
+def _latest_trigger_evaluations(db: Session, trigger_ids: list[int]) -> dict[int, TriggerEvaluation]:
+    """trigger_id -> its most recent TriggerEvaluation, in one query (avoids
+    a per-trigger round trip, which is expensive on a remote DB connection)."""
+    if not trigger_ids:
+        return {}
+    rows = db.scalars(
+        select(TriggerEvaluation)
+        .distinct(TriggerEvaluation.trigger_id)
+        .where(TriggerEvaluation.trigger_id.in_(trigger_ids))
+        .order_by(TriggerEvaluation.trigger_id, TriggerEvaluation.evaluated_at.desc())
+    ).all()
+    return {e.trigger_id: e for e in rows}
+
+
 def _latest_override_flags(db: Session, scenario_ids: list[int]) -> dict[int, bool]:
     """scenario_id -> whether that scenario's MOST RECENT status_event has override=True."""
     if not scenario_ids:
@@ -273,12 +287,9 @@ def get_company(company_id: str, db: Session = Depends(get_db), actor: Actor = D
         triggers = db.scalars(
             select(KillTrigger).where(KillTrigger.version_id == current_version.version_id)
         ).all()
+        latest_evals = _latest_trigger_evaluations(db, [t.id for t in triggers])
         for t in triggers:
-            latest_eval = db.scalar(
-                select(TriggerEvaluation)
-                .where(TriggerEvaluation.trigger_id == t.id)
-                .order_by(TriggerEvaluation.evaluated_at.desc())
-            )
+            latest_eval = latest_evals.get(t.id)
             kill_triggers_out.append(
                 KillTriggerOut(
                     id=t.id,
