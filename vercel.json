@@ -1,5 +1,4 @@
 {
   "buildCommand": "cd web && npm ci && npm run build",
-  "outputDirectory": "web/.vercel/output",
-  "regions": ["bom1"]
+  "outputDirectory": "web/.vercel/output"
 }
