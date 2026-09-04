@@ -96,6 +96,8 @@ export const api = {
   postPrice: (id, payload) => request("POST", `/companies/${encodeURIComponent(id)}/prices`, payload),
   getPerformance: (id, baseline) =>
     request("GET", `/companies/${encodeURIComponent(id)}/performance?baseline=${baseline}`),
+  getCompanyPanel: (id, baseline) =>
+    request("GET", `/companies/${encodeURIComponent(id)}/panel?baseline=${baseline}`),
   aiReview: (id, payload) => request("POST", `/companies/${encodeURIComponent(id)}/ai-review`, payload),
   listProposals: (state) => request("GET", `/proposals?state=${state || "pending"}`),
   resolveProposal: (id, payload) => request("POST", `/proposals/${id}/resolve`, payload),

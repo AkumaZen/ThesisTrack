@@ -3,8 +3,21 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
+from app.schemas.custom_tables import CustomTableOut
+from app.schemas.decision import DecisionOut
+from app.schemas.price import PerformanceOut
 from app.schemas.proposal import HealthCheckOut, ProposalOut
 from app.schemas.thesis import ThesisData
+
+
+class CompanyPanelOut(BaseModel):
+    """Tables + decisions + performance in one response, replacing 3
+    separate drawer-open requests that each paid their own connection-setup
+    cost on the serverless deploy."""
+
+    tables: list[CustomTableOut]
+    decisions: list[DecisionOut]
+    performance: PerformanceOut
 
 
 class ThesisAmend(BaseModel):

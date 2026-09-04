@@ -10,6 +10,8 @@ from app.db import get_db
 from app.models import (
     BroadIndustry,
     Company,
+    CustomTable,
+    CustomTableRow,
     HealthCheck,
     KillTrigger,
     MetricDefinition,
@@ -26,6 +28,7 @@ from app.schemas.company import (
     CompanyDetail,
     CompanyListResponse,
     CompanyOut,
+    CompanyPanelOut,
     KillTriggerOut,
     ObservationOut,
     ScenarioSummary,
@@ -35,8 +38,14 @@ from app.schemas.company import (
     VersionDiffResponse,
     VersionSummary,
 )
+from app.schemas.custom_tables import CustomTableColumn, CustomTableOut
+from app.schemas.decision import DecisionOut
+from app.schemas.price import BaselineMode
 from app.schemas.proposal import HealthCheckOut, ProposalOut
 from app.schemas.thesis import ThesisCreate
+from app.services.decisions import list_decisions
+from app.services.price_performance import compute_performance
+from app.services.price_performance import NotFoundError as PerformanceNotFoundError
 from app.services.scenarios import ScenarioNotFoundError, get_scenario_optional, list_scenarios
 from app.services.versioning import (
     AlreadyExistsError,
@@ -385,6 +394,67 @@ def get_company(company_id: str, db: Session = Depends(get_db), actor: Actor = D
         active_override=active_override,
         other_scenarios=other_scenarios,
     )
+
+
+@router.get("/companies/{company_id}/panel", response_model=CompanyPanelOut)
+def get_company_panel(
+    company_id: str,
+    baseline: BaselineMode = Query(default="thesis"),
+    db: Session = Depends(get_db),
+    actor: Actor = Depends(get_current_actor),
+):
+    """Tables + decisions + performance in one round trip - the drawer/company
+    page used to fire these as 3 separate requests, each paying its own
+    connection-setup cost on the serverless deploy."""
+    tables = db.scalars(
+        select(CustomTable).where(CustomTable.company_id == company_id).order_by(CustomTable.created_at)
+    ).all()
+    row_counts = dict(
+        db.execute(
+            select(CustomTableRow.table_id, func.count())
+            .where(CustomTableRow.table_id.in_([t.id for t in tables]))
+            .group_by(CustomTableRow.table_id)
+        ).all()
+        if tables
+        else []
+    )
+    tables_out = [
+        CustomTableOut(
+            id=t.id,
+            company_id=t.company_id,
+            name=t.name,
+            columns=[CustomTableColumn(**c) for c in t.columns],
+            section=t.section,
+            created_by=t.created_by,
+            created_at=t.created_at,
+            updated_at=t.updated_at,
+            row_count=row_counts.get(t.id, 0),
+        )
+        for t in tables
+    ]
+
+    decisions_out = [
+        DecisionOut(
+            id=d.id,
+            company_id=d.company_id,
+            version_id=d.version_id,
+            action=d.action,
+            price=float(d.price),
+            quantity=float(d.quantity) if d.quantity is not None else None,
+            decided_on=d.decided_on,
+            rationale=d.rationale,
+            actor=d.actor,
+            created_at=d.created_at,
+        )
+        for d in list_decisions(db, company_id)
+    ]
+
+    try:
+        performance = compute_performance(db, company_id, baseline, actor=actor.identity)
+    except PerformanceNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    return CompanyPanelOut(tables=tables_out, decisions=decisions_out, performance=performance)
 
 
 @router.put("/companies/{company_id}/thesis", response_model=VersionDetail)

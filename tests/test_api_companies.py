@@ -126,6 +126,40 @@ def test_company_detail_includes_observations_triggers_and_override_flag(client,
     assert card["has_active_override"] is True
 
 
+def test_company_panel_bundles_tables_decisions_and_performance(client, golden_payload):
+    """GET /companies/{id}/panel replaces 3 separate drawer-open requests
+    (tables, decisions, performance) with 1 - each request was paying its
+    own connection-setup cost on the serverless deploy."""
+    client.post("/api/companies", json=golden_payload)
+    company_id = golden_payload["company_id"]
+
+    client.post(f"/api/companies/{company_id}/tables", json={"name": "Shareholding", "columns": []})
+    client.post(
+        f"/api/companies/{company_id}/decisions",
+        json={
+            "action": "buy",
+            "price": 245.50,
+            "quantity": 100,
+            "decided_on": "2026-01-15",
+            "rationale": "Initial position.",
+        },
+    )
+
+    resp = client.get(f"/api/companies/{company_id}/panel?baseline=thesis")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert len(body["tables"]) == 1
+    assert body["tables"][0]["name"] == "Shareholding"
+    assert len(body["decisions"]) == 1
+    assert body["decisions"][0]["action"] == "buy"
+    assert "pct_change" in body["performance"]
+
+
+def test_company_panel_unknown_company_404(client):
+    resp = client.get("/api/companies/NOT_REAL/panel?baseline=thesis")
+    assert resp.status_code == 404, resp.text
+
+
 def test_company_card_list_includes_core_metrics_snapshot(client, golden_payload):
     """§1.2: thesis_data's model_specific_metrics is the denormalized copy for
     the card render - core metrics should appear without opening the drawer."""

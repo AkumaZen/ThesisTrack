@@ -192,8 +192,6 @@ async function wireDetailView(detail, companyId, root) {
   });
   document.getElementById("drawer-new-table").addEventListener("click", () => openTableBuilder(companyId, () => loadTablesIntoDrawer(companyId)));
   wireAddTableSectionButtons(root, companyId, () => loadTablesIntoDrawer(companyId));
-  loadTablesIntoDrawer(companyId);
-  loadDecisionsIntoDrawer(companyId);
 
   let perfBaseline = "thesis";
   function setPerfBaselineButtons() {
@@ -215,7 +213,7 @@ async function wireDetailView(detail, companyId, root) {
   document.getElementById("drawer-log-price").addEventListener("click", () =>
     openPriceModal(detail, () => loadPerformanceIntoDrawer(companyId, perfBaseline))
   );
-  loadPerformanceIntoDrawer(companyId, perfBaseline);
+  loadDrawerPanelData(companyId, perfBaseline);
 
   gateWriteUI();
 }
@@ -278,25 +276,54 @@ async function refreshDetailView(companyId) {
 }
 
 // ---------- buy/sell decisions ----------
+function renderDecisionsPanel(decisions) {
+  document.getElementById("drawer-decisions").innerHTML = renderDecisionsList(decisions);
+}
+
 async function loadDecisionsIntoDrawer(companyId) {
   const container = document.getElementById("drawer-decisions");
   try {
     const decisions = await api.listDecisions(companyId);
-    container.innerHTML = renderDecisionsList(decisions);
+    renderDecisionsPanel(decisions);
   } catch (e) {
     container.innerHTML = `<div class="text-xs text-danger">Failed to load decisions.</div>`;
   }
 }
 
 // ---------- thesis performance vs. real price ----------
+function renderPerformancePanelDOM(perf) {
+  const container = document.getElementById("drawer-performance");
+  if (!container) return;
+  container.innerHTML = renderPerformancePanel(perf);
+}
+
 async function loadPerformanceIntoDrawer(companyId, baseline) {
   const container = document.getElementById("drawer-performance");
   if (!container) return;
   try {
     const perf = await api.getPerformance(companyId, baseline);
-    container.innerHTML = renderPerformancePanel(perf);
+    renderPerformancePanelDOM(perf);
   } catch (e) {
     container.innerHTML = `<div class="text-xs text-danger">Failed to load performance.</div>`;
+  }
+}
+
+// Replaces the drawer/company-page's initial burst of 3 independent
+// requests (tables, decisions, performance) with 1 - each of those was
+// paying its own connection-setup cost on the serverless deploy, which
+// showed up as the panels visibly popping in one at a time.
+async function loadDrawerPanelData(companyId, baseline) {
+  try {
+    const panel = await api.getCompanyPanel(companyId, baseline);
+    renderTablesPanel(companyId, panel.tables);
+    renderDecisionsPanel(panel.decisions);
+    renderPerformancePanelDOM(panel.performance);
+  } catch (e) {
+    const msg = `<div class="text-xs text-danger">Failed to load.</div>`;
+    document.getElementById("drawer-tables").innerHTML = msg;
+    document.getElementById("drawer-decisions").innerHTML = msg;
+    const perfContainer = document.getElementById("drawer-performance");
+    if (perfContainer) perfContainer.innerHTML = msg;
   }
 }
 
@@ -428,27 +455,32 @@ function wireTableListButtons(container, refreshFn) {
 // the #drawer-tables-<key> placeholders pillarExtra() left in drawer.js),
 // everything else falls back to the flat "Custom Sections" list at the
 // bottom, same as before Tier 2 existed.
+function renderTablesPanel(companyId, tables) {
+  const flatContainer = document.getElementById("drawer-tables");
+  const bySection = {};
+  const unattached = [];
+  for (const t of tables) {
+    if (t.section) (bySection[t.section] ||= []).push(t);
+    else unattached.push(t);
+  }
+
+  flatContainer.innerHTML = renderTablesInDrawer(unattached);
+  wireTableListButtons(flatContainer, () => loadTablesIntoDrawer(companyId));
+
+  for (const { value: section } of PILLAR_SECTIONS) {
+    const target = document.getElementById(`drawer-tables-${section}`);
+    if (!target) continue;
+    const sectionTables = bySection[section] || [];
+    target.innerHTML = sectionTables.length ? renderTablesInDrawer(sectionTables) : "";
+    wireTableListButtons(target, () => loadTablesIntoDrawer(companyId));
+  }
+}
+
 async function loadTablesIntoDrawer(companyId) {
   const flatContainer = document.getElementById("drawer-tables");
   try {
     const tables = await api.listTables(companyId);
-    const bySection = {};
-    const unattached = [];
-    for (const t of tables) {
-      if (t.section) (bySection[t.section] ||= []).push(t);
-      else unattached.push(t);
-    }
-
-    flatContainer.innerHTML = renderTablesInDrawer(unattached);
-    wireTableListButtons(flatContainer, () => loadTablesIntoDrawer(companyId));
-
-    for (const { value: section } of PILLAR_SECTIONS) {
-      const target = document.getElementById(`drawer-tables-${section}`);
-      if (!target) continue;
-      const sectionTables = bySection[section] || [];
-      target.innerHTML = sectionTables.length ? renderTablesInDrawer(sectionTables) : "";
-      wireTableListButtons(target, () => loadTablesIntoDrawer(companyId));
-    }
+    renderTablesPanel(companyId, tables);
   } catch (e) {
     flatContainer.innerHTML = `<div class="text-xs text-danger">Failed to load tables.</div>`;
   }
