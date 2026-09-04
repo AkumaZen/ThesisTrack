@@ -15,16 +15,6 @@ services:
       timeout: 5s
       retries: 10
 
-  api:
-    build: .
-    environment:
-      DATABASE_URL: postgresql+psycopg://thesis:thesis@postgres:5432/thesis
-    ports:
-      - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   web:
     image: node:22-slim
     working_dir: /app
