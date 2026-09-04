@@ -73,7 +73,10 @@
 	});
 </script>
 
-<HeaderStats {companies} />
+<div class="flex items-center justify-between">
+	<div class="flex-1"><HeaderStats {companies} /></div>
+	<a href="/ingest" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 shrink-0 ml-3">+ New Company</a>
+</div>
 <FacetBar {taxonomy} bind:q bind:reviewDue bind:sort bind:broadIndustry bind:niche bind:operatingModel bind:status />
 
 {#if error}

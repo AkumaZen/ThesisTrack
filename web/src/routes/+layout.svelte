@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import { page } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
 	import { session } from '$lib/session.svelte';
 	import { theme } from '$lib/theme.svelte';
@@ -85,7 +86,10 @@
 		<div class="max-w-7xl mx-auto px-4 h-14 flex items-center gap-6">
 			<h1 class="font-semibold text-base shrink-0">Investment Thesis Platform</h1>
 			<nav class="flex items-center gap-1">
-				<a href="/" class="nav-tab active">Companies</a>
+				<a href="/" class="nav-tab" class:active={page.url.pathname === '/'}>Companies</a>
+				<a href="/review" class="nav-tab" class:active={page.url.pathname.startsWith('/review')}>Review Queue</a>
+				<a href="/guidance" class="nav-tab" class:active={page.url.pathname.startsWith('/guidance')}>Guidance</a>
+				<a href="/ingest" class="nav-tab" class:active={page.url.pathname.startsWith('/ingest')}>Ingest</a>
 			</nav>
 			<div class="flex-1"></div>
 			<div class="flex items-center gap-3 pl-3 ml-1 border-l border-border shrink-0">

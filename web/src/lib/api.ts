@@ -57,8 +57,56 @@ export const api = {
 	getVersions: (id: string, diff?: string) =>
 		request('GET', `/companies/${encodeURIComponent(id)}/versions${diff ? `?diff=${diff}` : ''}`),
 	getTaxonomy: () => request('GET', '/taxonomy'),
+	proposeNiche: (broadIndustry: string, name: string) =>
+		request('POST', '/taxonomy/niches', { broad_industry: broadIndustry, name }),
 	getMetrics: (operatingModel?: string) =>
-		request('GET', `/metrics${operatingModel ? `?operating_model=${operatingModel}` : ''}`)
+		request('GET', `/metrics${operatingModel ? `?operating_model=${operatingModel}` : ''}`),
+
+	// Custom tables (app/routers/custom_tables.py)
+	listTables: (companyId: string) => request('GET', `/companies/${encodeURIComponent(companyId)}/tables`),
+	createTable: (companyId: string, payload: unknown) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/tables`, payload),
+	getTable: (tableId: number) => request('GET', `/tables/${tableId}`),
+	patchTable: (tableId: number, payload: unknown) => request('PATCH', `/tables/${tableId}`, payload),
+	deleteTable: (tableId: number) => request('DELETE', `/tables/${tableId}`),
+	createRow: (tableId: number, rowData: unknown) => request('POST', `/tables/${tableId}/rows`, { row_data: rowData }),
+	updateRow: (tableId: number, rowId: number, rowData: unknown) =>
+		request('PUT', `/tables/${tableId}/rows/${rowId}`, { row_data: rowData }),
+	deleteRow: (tableId: number, rowId: number) => request('DELETE', `/tables/${tableId}/rows/${rowId}`),
+
+	// Status proposals / review queue (app/routers/health.py)
+	listProposals: (state?: string) => request('GET', `/proposals?${buildQuery({ state: state ?? 'pending' })}`),
+	resolveProposal: (id: number, payload: { action: 'accept' | 'reject'; verdict?: string | null; note?: string | null }) =>
+		request('POST', `/proposals/${id}/resolve`, payload),
+
+	// Guidance notes (app/routers/guidance.py)
+	listGuidance: (params?: Record<string, unknown>) => request('GET', `/guidance?${buildQuery(params)}`),
+	createGuidance: (companyId: string, payload: { block_key: string; note: string }) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/guidance`, payload),
+	resolveGuidance: (id: number) => request('POST', `/guidance/${id}/resolve`),
+	deleteGuidance: (id: number) => request('DELETE', `/guidance/${id}`),
+
+	// Observations (app/routers/observations.py)
+	postObservations: (companyId: string, payload: unknown) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/observations`, payload),
+
+	// Decisions (app/routers/decisions.py) - insert-only, position_decisions is append-only via DB trigger
+	listDecisions: (companyId: string) => request('GET', `/companies/${encodeURIComponent(companyId)}/decisions`),
+	logDecision: (companyId: string, payload: unknown) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/decisions`, payload),
+
+	// Prices / performance (app/routers/price.py)
+	listPrices: (companyId: string) => request('GET', `/companies/${encodeURIComponent(companyId)}/prices`),
+	logPrice: (companyId: string, payload: unknown) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/prices`, payload),
+	getPerformance: (companyId: string, baseline?: 'thesis' | 'decision') =>
+		request('GET', `/companies/${encodeURIComponent(companyId)}/performance?${buildQuery({ baseline })}`),
+
+	// Health check / outcome (app/routers/health.py)
+	submitHealthCheck: (companyId: string, payload: unknown) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/health-check`, payload),
+	submitOutcome: (companyId: string, payload: unknown) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/outcome`, payload)
 };
 
 export { buildQuery, request };

@@ -2,12 +2,13 @@
 	// Ports the drawer.js/company-page rendering from the vanilla-JS
 	// frontend into a real route - this is the concrete fix for the
 	// reported "card click should show a separate page, superfast" issue.
-	// Tables/decisions/performance panels (the old combined /panel endpoint)
-	// land in Phase 2 once those backend services are ported.
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { STATUS_STYLES } from '$lib/format';
+	import CustomTables from './CustomTables.svelte';
+	import ActionPanels from './ActionPanels.svelte';
+	// Export panel (app/routers/export.py) has no Phase 2 API route yet - deferred to Phase 4.
 
 	type KillTrigger = {
 		id: number;
@@ -222,5 +223,8 @@
 				</div>
 			</section>
 		{/if}
+
+		<CustomTables {companyId} />
+		<ActionPanels {companyId} />
 	</div>
 {/if}
