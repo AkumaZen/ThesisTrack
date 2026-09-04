@@ -112,6 +112,17 @@ export const api = {
 	runAiReview: (companyId: string, payload: { period: string; narrative?: string | null }) =>
 		request('POST', `/companies/${encodeURIComponent(companyId)}/ai-review`, payload),
 
+	// Sectors (app/routers/sectors.py)
+	getSectors: () => request('GET', '/sectors'),
+	getSector: (id: number) => request('GET', `/sectors/${id}`),
+	createSector: (payload: unknown) => request('POST', '/sectors', payload),
+	updateSector: (id: number, payload: unknown) => request('PATCH', `/sectors/${id}`, payload),
+	deleteSector: (id: number) => request('DELETE', `/sectors/${id}`),
+	addCompaniesToSector: (id: number, companyIds: string[]) =>
+		request('POST', `/sectors/${id}/companies`, { company_ids: companyIds }),
+	removeCompanyFromSector: (id: number, companyId: string) =>
+		request('DELETE', `/sectors/${id}/companies/${encodeURIComponent(companyId)}`),
+
 	// SFT export (app/routers/export.py)
 	getExportStats: (params?: { split?: string; include_open?: boolean }) =>
 		request('GET', `/export-training-data/stats?${buildQuery(params)}`),

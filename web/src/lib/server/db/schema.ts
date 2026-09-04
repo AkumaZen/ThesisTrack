@@ -13,6 +13,7 @@ import {
 	numeric,
 	pgEnum,
 	pgTable,
+	primaryKey,
 	serial,
 	smallint,
 	text,
@@ -346,6 +347,32 @@ export const customTableRows = pgTable('custom_table_rows', {
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
+
+export const sectors = pgTable('sectors', {
+	id: bigserial('id', { mode: 'number' }).primaryKey(),
+	name: varchar('name', { length: 100 }).notNull().unique(),
+	description: text('description'),
+	// Nullable - a sector can span multiple operating models (e.g. a
+	// "Precision Components" sector may hold both factory and services cos).
+	operatingModel: operatingModelEnum('operating_model'),
+	createdBy: varchar('created_by', { length: 80 }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const sectorCompanies = pgTable(
+	'sector_companies',
+	{
+		sectorId: bigint('sector_id', { mode: 'number' })
+			.notNull()
+			.references(() => sectors.id, { onDelete: 'cascade' }),
+		companyId: varchar('company_id', { length: 50 })
+			.notNull()
+			.references(() => companies.companyId, { onDelete: 'cascade' }),
+		addedAt: timestamp('added_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [primaryKey({ columns: [t.sectorId, t.companyId] })]
+);
 
 export const statusEvents = pgTable('status_events', {
 	id: bigserial('id', { mode: 'number' }).primaryKey(),

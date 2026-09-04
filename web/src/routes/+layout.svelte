@@ -87,6 +87,7 @@
 			<h1 class="font-semibold text-base shrink-0">Investment Thesis Platform</h1>
 			<nav class="flex items-center gap-1">
 				<a href="/" class="nav-tab" class:active={page.url.pathname === '/'}>Companies</a>
+				<a href="/sectors" class="nav-tab" class:active={page.url.pathname.startsWith('/sectors')}>Sectors</a>
 				<a href="/review" class="nav-tab" class:active={page.url.pathname.startsWith('/review')}>Review Queue</a>
 				<a href="/guidance" class="nav-tab" class:active={page.url.pathname.startsWith('/guidance')}>Guidance</a>
 				<a href="/ingest" class="nav-tab" class:active={page.url.pathname.startsWith('/ingest')}>Ingest</a>
