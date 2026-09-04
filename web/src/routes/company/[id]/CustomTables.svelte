@@ -4,7 +4,6 @@
 	// Svelte 5), plus row CRUD. Self-contained - the parent company page just
 	// mounts <CustomTables {companyId} />, no shared state with the
 	// observation/decision/price/health-check panels.
-	import { onMount } from 'svelte';
 	import { api, ApiError } from '$lib/api';
 
 	// `section` filters/tags tables to one thesis pillar (e.g. "the_business")
@@ -53,7 +52,6 @@
 		}
 	}
 
-	onMount(load);
 	$effect(() => {
 		companyId;
 		load();

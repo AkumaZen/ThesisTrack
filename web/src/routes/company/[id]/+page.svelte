@@ -7,7 +7,6 @@
 	// wired-up "Run AI Review" action.
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import { api, ApiError } from '$lib/api';
 	import { STATUS_STYLES } from '$lib/format';
 	import CustomTables from './CustomTables.svelte';
@@ -87,7 +86,6 @@
 		}
 	}
 
-	onMount(load);
 	$effect(() => {
 		companyId;
 		load();

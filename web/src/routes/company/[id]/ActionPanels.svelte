@@ -3,7 +3,6 @@
 	// logging, price entry + performance, health-check/outcome submission) into
 	// Svelte 5. position_decisions is append-only via a DB trigger, so the
 	// decision panel is insert-only - no edit/delete UI, matching the backend.
-	import { onMount } from 'svelte';
 	import { api, ApiError } from '$lib/api';
 	import { session } from '$lib/session.svelte';
 	import { STATUS_STYLES } from '$lib/format';
@@ -231,10 +230,6 @@
 		}
 	}
 
-	onMount(() => {
-		loadDecisions();
-		loadPerformance();
-	});
 	$effect(() => {
 		companyId;
 		loadDecisions();
