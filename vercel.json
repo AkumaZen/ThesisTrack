@@ -1,13 +1,5 @@
 {
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": { "includeFiles": ["frontend/**", "contracts/**"] }
-    }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "api/index.py" }
-  ],
+  "buildCommand": "cd web && npm ci && npm run build",
+  "outputDirectory": "web/.vercel/output",
   "regions": ["bom1"]
 }

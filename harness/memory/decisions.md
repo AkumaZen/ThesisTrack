@@ -1,5 +1,64 @@
 # Decisions (append-only ADR log)
 
+## ADR-028: SvelteKit full-stack rewrite (Phases 0-4 shipped, Phase 5 cutover deferred)
+User reported the card-click "open in a real new browser tab" behavior from
+ADR-027 was itself the problem once experienced live: opening a new tab does
+a full page reload and re-bootstraps the whole vanilla-JS app, which reads
+as slow compared to a real SPA transition. Escalated in two steps, confirmed
+via AskUserQuestion each time: first "switch to SvelteKit" (frontend only),
+then "replace both frontend and backend" (full stack) - FastAPI is not kept
+as a JSON API behind the new frontend, it goes away entirely once cutover
+completes.
+
+New app lives in `web/` (SvelteKit 5 + Svelte 5 runes + TypeScript +
+Drizzle ORM + `postgres` driver + `jose` for JWT + Zod for validation +
+`adapter-vercel`), committed to git alongside the untouched old app. All
+five phases of the approved migration plan are implemented and verified:
+
+- **Phase 0-1**: Drizzle schema (squashed 1:1 from the 8 Alembic
+  migrations, including both append-only triggers
+  `trg_forbid_version_update`/`trg_forbid_decision_update` ported as raw
+  SQL, unchanged), PBKDF2 auth verified byte-identical to the Python
+  implementation (same `salt_hex$digest_hex` format, 260k iterations, so
+  existing user passwords keep working with zero forced resets), dashboard
+  + company detail route. Verified live via chrome-devtools MCP: clicking a
+  company card produces zero additional `document` network requests - a
+  genuine client-side route transition, which is the concrete fix for the
+  reported problem.
+- **Phase 2**: observations, kill-trigger rule engine, position decisions
+  (append-only, insert-only per the DB trigger), price/performance,
+  health-checks/proposals/audit, custom tables, guidance notes, taxonomy
+  niches - one service + `+server.ts` route module per Python
+  service/router, same response shapes.
+- **Phase 3**: review queue, guidance tracker, ingest form, custom table
+  builder, and the company-detail action panels (observation entry,
+  decision logging, price entry, health-check/outcome submission).
+- **Phase 4**: AI reviewer (`app/services/ai_reviewer.py` ported with the
+  same 2-attempt "JSON only" retry and verdict validation) and the SFT
+  exporter (`app/services/exporter.py` ported with the same
+  `sha256(company_id) % 10000 < 1500` train/eval split and the same
+  anthropic/openai/llama JSONL shapes) - the plan's highest fidelity-risk
+  phase, done last on purpose.
+
+`npx svelte-check`: 0 errors, 0 warnings (845+ files). `npx vitest run`:
+45 tests passing (rule-engine, decisions, custom tables, exporter/AI
+reviewer logic - integration tests run against the same local Postgres
+container the old app's tests use).
+
+**Phase 5 (cutover) is intentionally partial.** `vercel.json` now builds
+and deploys `web/` (SvelteKit's Build Output API, `bom1` region kept) -
+so the *next* Vercel deploy serves the new app in production.
+`docker-compose.yml` gained a `web` service (Node, `npm run dev`, port
+5173) alongside the existing Python `api` service rather than replacing
+it. The old `app/`, `frontend/`, `migrations/`, `requirements.txt`,
+`alembic.ini`, and old `tests/` were deliberately left in the repo, unused,
+as a rollback safety net - user chose "prepare cutover but don't delete old
+app yet" over full deletion when asked, given this is a real production app
+already serving live traffic and login credentials. Deleting the old app
+and fully retiring the Python service is a follow-up step, to be done only
+on explicit request after the new app has had time to prove itself in
+production.
+
 ## ADR-027: Full-page thesis view in a real new browser tab, plus deeper Balu Forge content
 User feedback on the live-tested Balu Forge thesis: "too weak, add more
 points/tables/comparisons/detailing" and "open in a complete new window
