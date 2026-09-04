@@ -1,4 +1,1 @@
-{
-  "buildCommand": "cd web && npm ci && npm run build",
-  "outputDirectory": "web/.vercel/output"
-}
+{}
