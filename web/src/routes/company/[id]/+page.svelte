@@ -64,7 +64,7 @@
 		{ id: 'proof', label: '4. Proof Points' },
 		{ id: 'kill', label: '5. What Can Kill It' },
 		{ id: 'believe', label: '6. Why We Believe It' },
-		{ id: 'health', label: '7. Health Check' },
+		{ id: 'health', label: '7. Quarterly Review' },
 		{ id: 'decisions', label: 'Buy / Sell Decisions' },
 		{ id: 'references', label: 'References' },
 		{ id: 'custom', label: 'Custom Sections' }
@@ -173,7 +173,7 @@
 					>Post Observations</button
 				>
 				<button type="button" onclick={() => scrollTo('health')} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3"
-					>Log Health Check</button
+					>Log Quarterly Review</button
 				>
 				<button type="button" onclick={() => scrollTo('decisions')} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3"
 					>Log Buy/Sell</button
@@ -214,7 +214,7 @@
 				<div class="mt-3 rounded-md bg-surface-2 p-3">
 					<div class="flex items-center gap-2">
 						<span class="text-xs font-medium {rstyle.pill} px-2 py-0.5 rounded-full ring-1">Proposed: {rstyle.label}</span>
-						<span class="text-xs text-muted-fg">filed as a pending proposal - visible in the Review Queue</span>
+						<span class="text-xs text-muted-fg">filed as a "To Review" item - visible in the Review Queue</span>
 					</div>
 					{#if aiResult.evidence?.reasoning_chain?.length}
 						<ol class="list-decimal list-inside text-sm mt-2 space-y-1">
@@ -453,7 +453,7 @@
 
 				<!-- Thesis Performance / price + 7. Health Check -->
 				<section id="cp-sec-health" class="mt-8 pt-5 border-t border-border scroll-mt-20">
-					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Health Check</h3>
+					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Quarterly Review</h3>
 					<p class="text-sm mt-1 text-muted-fg">{t.health_check?.latest_quarter_review}</p>
 					<div class="mt-2">
 						{#each detail.health_checks as h (h.id)}
@@ -469,7 +469,7 @@
 								</div>
 							</div>
 						{:else}
-							<div class="text-xs text-muted-fg">No health checks recorded yet.</div>
+							<div class="text-xs text-muted-fg">No quarterly reviews recorded yet.</div>
 						{/each}
 					</div>
 					{#if pillarNotesFor('health_check').length}
@@ -489,7 +489,9 @@
 				<section id="cp-sec-decisions" class="mt-8 pt-5 border-t border-border scroll-mt-20">
 					<ActionPanels {companyId} />
 					{#if detail.pending_proposals?.length}
-						<div class="text-xs text-muted-fg mt-3">{detail.pending_proposals.length} pending proposal(s) - resolve them from the Review Queue.</div>
+						<div class="text-xs text-muted-fg mt-3">
+							{detail.pending_proposals.length} item(s) "To Review" - resolve them from the Review Queue.
+						</div>
 					{/if}
 				</section>
 

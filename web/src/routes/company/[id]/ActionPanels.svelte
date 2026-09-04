@@ -196,7 +196,7 @@
 		hcSubmitting = true;
 		try {
 			await api.submitHealthCheck(companyId, { period: hcPeriod.trim(), verdict: hcVerdict, note: hcNote.trim() });
-			hcSuccess = 'Health check recorded.';
+			hcSuccess = 'Quarterly review recorded.';
 			hcNote = '';
 		} catch (e) {
 			hcError = apiErrorMessage(e);
@@ -361,7 +361,7 @@
 
 {#if !session.isReadOnly}
 	<section class="mt-6 border-t border-border pt-5">
-		<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Health Check</h3>
+		<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Quarterly Review</h3>
 		{#if hcError}
 			<div class="mt-2 rounded-md bg-danger/10 border border-danger/30 p-2 text-xs text-danger">{hcError}</div>
 		{/if}
@@ -382,7 +382,7 @@
 			disabled={hcSubmitting}
 			onclick={submitHealthCheck}
 			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50"
-			>{hcSubmitting ? 'Saving...' : 'Submit Health Check'}</button
+			>{hcSubmitting ? 'Saving...' : 'Submit Quarterly Review'}</button
 		>
 	</section>
 

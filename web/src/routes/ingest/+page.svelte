@@ -814,9 +814,9 @@ My notes:
 			</div>
 		</section>
 
-		<!-- Health Check -->
+		<!-- Health Check (pillar 7 / Quarterly Review) -->
 		<section class="mt-5">
-			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Health Check</h2>
+			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Quarterly Review</h2>
 			<label class="block text-sm mt-2"
 				>Latest Quarter Review
 				<textarea bind:value={latestQuarterReview} rows="4" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"></textarea>

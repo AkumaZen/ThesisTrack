@@ -69,7 +69,10 @@
 </script>
 
 <h2 class="text-xl font-semibold mb-1">Review Queue</h2>
-<p class="text-sm text-muted-fg mb-4">Pending status proposals from the rule engine, AI review, or manual entries.</p>
+<p class="text-sm text-muted-fg mb-4">
+	"To Review" items are status changes flagged by the rule engine, AI review, or a manual entry - accept to file it as
+	this quarter's Quarterly Review, or reject to dismiss it.
+</p>
 
 {#if error}
 	<div class="mb-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{error}</div>
