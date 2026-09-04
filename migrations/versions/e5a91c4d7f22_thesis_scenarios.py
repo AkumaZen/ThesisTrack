@@ -78,10 +78,15 @@ def upgrade() -> None:
         FROM companies c;
     """)
 
+    # thesis_versions is append-only (trg_forbid_version_update blocks UPDATE
+    # for real app writes) - this backfill is a one-time schema migration,
+    # not an app write, so the trigger is disabled just for this statement.
     op.execute("""
         ALTER TABLE thesis_versions ADD COLUMN scenario_id BIGINT;
+        ALTER TABLE thesis_versions DISABLE TRIGGER trg_forbid_version_update;
         UPDATE thesis_versions tv SET scenario_id = ts.id
             FROM thesis_scenarios ts WHERE ts.company_id = tv.company_id;
+        ALTER TABLE thesis_versions ENABLE TRIGGER trg_forbid_version_update;
         ALTER TABLE thesis_versions ALTER COLUMN scenario_id SET NOT NULL;
         ALTER TABLE thesis_versions ADD CONSTRAINT fk_thesis_versions_scenario
             FOREIGN KEY (scenario_id) REFERENCES thesis_scenarios(id) ON DELETE CASCADE;
@@ -96,11 +101,21 @@ def upgrade() -> None:
             FOREIGN KEY (current_version_id) REFERENCES thesis_versions(version_id);
     """)
 
+    # position_decisions has its own append-only trigger (trg_forbid_decision_update) -
+    # same reasoning as thesis_versions above.
     for tbl in ("health_checks", "status_events", "status_proposals", "position_decisions"):
+        disable_trigger = (
+            f"ALTER TABLE {tbl} DISABLE TRIGGER trg_forbid_decision_update;" if tbl == "position_decisions" else ""
+        )
+        enable_trigger = (
+            f"ALTER TABLE {tbl} ENABLE TRIGGER trg_forbid_decision_update;" if tbl == "position_decisions" else ""
+        )
         op.execute(f"""
             ALTER TABLE {tbl} ADD COLUMN scenario_id BIGINT;
+            {disable_trigger}
             UPDATE {tbl} t SET scenario_id = ts.id
                 FROM thesis_scenarios ts WHERE ts.company_id = t.company_id;
+            {enable_trigger}
             ALTER TABLE {tbl} ALTER COLUMN scenario_id SET NOT NULL;
             ALTER TABLE {tbl} ADD CONSTRAINT fk_{tbl}_scenario
                 FOREIGN KEY (scenario_id) REFERENCES thesis_scenarios(id) ON DELETE CASCADE;
