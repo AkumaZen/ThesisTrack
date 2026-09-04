@@ -302,21 +302,24 @@
 				<div class="mt-3 pt-3 border-t border-border grid grid-cols-2 sm:grid-cols-3 gap-2">
 					{#each sector.companies as c (c.company_id)}
 						{@const style = STATUS_STYLES[c.status ?? ''] ?? null}
-						<div class="rounded-md border border-border p-2 relative">
+						<div class="rounded-md border border-border p-2.5 relative hover:border-muted-fg transition-colors">
 							{#if !session.isReadOnly}
 								<button
 									onclick={() => removeCompany(sector, c.company_id)}
-									class="absolute top-1 right-1 text-muted-fg hover:text-danger text-xs leading-none"
+									class="absolute top-1.5 right-1.5 text-muted-fg hover:text-danger text-xs leading-none shrink-0"
 									title="Remove from sector">&times;</button
 								>
 							{/if}
-							<a href="/company/{c.company_id}" class="text-xs font-medium hover:text-accent block pr-3 truncate">{c.name}</a>
-							<div class="mt-1 flex items-center gap-1">
+							<a href="/company/{c.company_id}" class="block pr-4 group" title={c.name}>
+								<div class="text-[10px] font-mono text-muted-fg tracking-wide">{c.company_id}</div>
+								<div class="text-xs font-medium leading-snug mt-0.5 line-clamp-2 group-hover:text-accent">{c.name}</div>
+							</a>
+							<div class="mt-1.5 flex items-center gap-1">
 								{#if style}
 									<span class="inline-block h-1.5 w-1.5 rounded-full {style.dot}"></span>
 									<span class="text-[10px] text-muted-fg">{style.label}</span>
 								{:else}
-									<span class="text-[10px] text-muted-fg">No thesis</span>
+									<span class="text-[10px] text-muted-fg italic">No thesis yet</span>
 								{/if}
 							</div>
 						</div>
