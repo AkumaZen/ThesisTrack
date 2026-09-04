@@ -7,7 +7,11 @@
 	import { onMount } from 'svelte';
 	import { api, ApiError } from '$lib/api';
 
-	let { companyId }: { companyId: string } = $props();
+	// `section` filters/tags tables to one thesis pillar (e.g. "the_business")
+	// when set - used when this component is mounted inside a pillar section
+	// on the company page. Leave unset for the top-level "Custom Sections"
+	// block, which only shows/creates untagged tables.
+	let { companyId, section = null, heading = 'Data Tables', compact = false }: { companyId: string; section?: string | null; heading?: string; compact?: boolean } = $props();
 
 	type ColumnDef = { key: string; label: string; type: 'text' | 'number' | 'date' | 'enum'; options?: string[] | null };
 	type TableRow = { id: number; row_data: Record<string, unknown> };
@@ -16,7 +20,8 @@
 
 	const COLUMN_TYPES = ['text', 'number', 'date', 'enum'] as const;
 
-	let tables = $state<TableSummary[]>([]);
+	let allTables = $state<TableSummary[]>([]);
+	let tables = $derived(allTables.filter((t) => (section ? t.section === section : !t.section)));
 	let loading = $state(true);
 	let error = $state('');
 
@@ -40,7 +45,7 @@
 		loading = true;
 		error = '';
 		try {
-			tables = (await api.listTables(companyId)) as TableSummary[];
+			allTables = (await api.listTables(companyId)) as TableSummary[];
 		} catch (e) {
 			error = String(e);
 		} finally {
@@ -101,7 +106,7 @@
 			if (builderEditingId != null) {
 				await api.patchTable(builderEditingId, { name: builderName, columns });
 			} else {
-				await api.createTable(companyId, { name: builderName, columns });
+				await api.createTable(companyId, { name: builderName, columns, section });
 			}
 			builderOpen = false;
 			await load();
@@ -189,11 +194,13 @@
 	}
 </script>
 
-<section class="mt-6">
-	<div class="flex items-center justify-between">
-		<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Data Tables</h3>
-		<button type="button" onclick={() => openBuilder()} class="text-xs text-ok">+ New Table</button>
-	</div>
+<section class={compact ? 'mt-2' : 'mt-6'}>
+	{#if !compact}
+		<div class="flex items-center justify-between">
+			<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">{heading}</h3>
+			<button type="button" onclick={() => openBuilder()} class="text-xs text-ok">+ New Table</button>
+		</div>
+	{/if}
 
 	{#if error}
 		<div class="mt-2 rounded-md bg-danger/10 border border-danger/30 p-2 text-xs text-danger">{error}</div>
@@ -201,15 +208,13 @@
 
 	{#if loading}
 		<div class="text-xs text-muted-fg mt-2">Loading...</div>
-	{:else if !tables.length}
-		<div class="text-xs text-muted-fg mt-2">No custom tables yet.</div>
-	{:else}
+	{:else if tables.length}
 		<div class="mt-2 space-y-2">
 			{#each tables as t (t.id)}
 				<div class="flex items-center justify-between rounded-md border border-border px-3 py-2">
 					<div>
 						<span class="text-sm font-medium">{t.name}</span>
-						<span class="text-xs text-muted-fg ml-2">{t.columns.length} columns &middot; {t.row_count} rows{t.section ? ` · ${t.section}` : ''}</span>
+						<span class="text-xs text-muted-fg ml-2">{t.columns.length} columns &middot; {t.row_count} rows</span>
 					</div>
 					<div class="flex items-center gap-2">
 						<button type="button" onclick={() => openTableGrid(t.id)} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Open</button>
@@ -218,6 +223,14 @@
 					</div>
 				</div>
 			{/each}
+		</div>
+	{:else if !compact}
+		<div class="text-xs text-muted-fg mt-2">No custom tables yet.</div>
+	{/if}
+
+	{#if compact}
+		<div class="mt-1 flex items-center justify-end">
+			<button type="button" onclick={() => openBuilder()} class="text-xs text-ok">+ Add Table</button>
 		</div>
 	{/if}
 </section>
