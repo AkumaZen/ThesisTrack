@@ -1,15 +1,8 @@
 <script lang="ts">
 	// Ports frontend/components/facets.js's renderFacetBar().
-	import { STATUS_STYLES } from '$lib/format';
+	import { OPERATING_MODEL_LABELS, STATUS_STYLES } from '$lib/format';
 
 	const OPERATING_MODELS = ['factory', 'subscription', 'money_lending', 'retail_stores', 'services'];
-	const OPERATING_MODEL_LABELS: Record<string, string> = {
-		factory: 'Factory',
-		subscription: 'Subscription',
-		money_lending: 'Money Lending',
-		retail_stores: 'Retail Stores',
-		services: 'Services'
-	};
 	const STATUSES = ['on_track', 'watch_closely', 'broken'];
 
 	type Industry = { name: string; niches: { name: string }[] };

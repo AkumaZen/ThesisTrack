@@ -1,5 +1,13 @@
 // Ports frontend/components/format.js. escapeHtml is dropped - Svelte
 // templates auto-escape, so it has no equivalent use here.
+export const OPERATING_MODEL_LABELS: Record<string, string> = {
+	factory: 'Factory',
+	subscription: 'Subscription',
+	money_lending: 'Money Lending',
+	retail_stores: 'Retail Stores',
+	services: 'Services'
+};
+
 export const STATUS_STYLES: Record<string, { label: string; dot: string; pill: string }> = {
 	on_track: { label: 'On Track', dot: 'bg-good', pill: 'bg-good/10 text-good ring-good/20' },
 	watch_closely: { label: 'Watch Closely', dot: 'bg-warn', pill: 'bg-warn/10 text-warn ring-warn/20' },
