@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireActor, requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { deleteTable, getTable, patchTable } from '$lib/server/services/customTables';
 import { PILLAR_KEYS } from '$lib/server/pillars';
 
@@ -75,7 +75,7 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 		const tableId = Number(params.tableId);
 		const body = await request.json();
 		const parsed = tableUpdate.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const fieldsSet = new Set(Object.keys(body));
 		const result = await patchTable(tableId, parsed.data, fieldsSet);

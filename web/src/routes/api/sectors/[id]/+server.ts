@@ -1,7 +1,7 @@
 // GET/PATCH/DELETE /api/sectors/{id}
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { errorResponse, requireActor, requireWriteActor, handleAuthError } from '$lib/server/http';
+import { errorResponse, requireActor, requireWriteActor, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { updateSectorSchema } from '$lib/server/schemas/sector';
 import { NotFoundError, deleteSector, getSectorById, updateSector } from '$lib/server/services/sectors';
 
@@ -20,7 +20,7 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 	try {
 		requireWriteActor(locals.actor);
 		const parsed = updateSectorSchema.safeParse(await request.json());
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const sector = await updateSector(Number(params.id), parsed.data);
 		return json(sector);

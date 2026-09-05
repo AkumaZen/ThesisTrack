@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { NotFoundError as ScenarioLookupNotFoundError, ScenarioNotFoundError } from '$lib/server/services/scenarios';
 import { OverrideRequiresNoteError, submitHealthCheck } from '$lib/server/services/audit';
 
@@ -43,7 +43,7 @@ const handle: RequestHandler = async ({ locals, params, request }) => {
 		const actor = requireWriteActor(locals.actor);
 		const body = await request.json();
 		const parsed = healthCheckIn.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const health = await submitHealthCheck(params.id!, parsed.data.period, parsed.data.verdict, parsed.data.note, actor.identity);
 		return json(toOut(health), { status: 201 });

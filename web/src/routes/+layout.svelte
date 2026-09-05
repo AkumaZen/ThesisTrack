@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './layout.css';
-	import { page } from '$app/state';
+	import { page, navigating } from '$app/state';
+	import { onNavigate } from '$app/navigation';
 	import favicon from '$lib/assets/favicon.svg';
 	import { session } from '$lib/session.svelte';
 	import { theme } from '$lib/theme.svelte';
@@ -8,6 +9,23 @@
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
+
+	// A page's data now comes from a load() function (see each route's
+	// +page.ts) rather than an onMount fetch, so SvelteKit itself holds the
+	// outgoing page on screen until the destination's data is ready - no more
+	// blank/"Loading..." flash. `navigating` gives a thin progress bar for
+	// that (brief) wait, and onNavigate cross-fades the swap via the native
+	// View Transitions API where the browser supports it (a no-op fallback
+	// - an instant swap - everywhere else, so nothing breaks without it).
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 
 	let loginEmail = $state('');
 	let loginPassword = $state('');
@@ -64,7 +82,7 @@
 			</label>
 			<button
 				onclick={submitLogin}
-				class="w-full text-sm px-3 py-2 rounded-md bg-accent text-accent-ink hover:brightness-90">Sign in</button
+				class="w-full text-sm px-3 py-2 rounded-md bg-fg text-bg hover:brightness-90">Sign in</button
 			>
 			<details class="mt-4 text-xs text-muted-fg" bind:open={useApiKeyPanel}>
 				<summary class="cursor-pointer">Use an API key instead</summary>
@@ -102,6 +120,11 @@
 				<button onclick={signOut} class="text-xs px-2 py-1 rounded-md hover:bg-surface-3 text-muted-fg hover:text-fg">Sign out</button>
 			</div>
 		</div>
+		{#if navigating.to}
+			<div class="h-0.5 bg-fg/20 overflow-hidden">
+				<div class="h-full w-1/3 bg-fg animate-nav-progress"></div>
+			</div>
+		{/if}
 	</header>
 	<main class="max-w-7xl mx-auto px-4 py-5">
 		{@render children()}

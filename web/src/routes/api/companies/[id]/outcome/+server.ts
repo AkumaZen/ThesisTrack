@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { broadIndustries, companies, specificNiches } from '$lib/server/db/schema';
-import { requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { closeOutcome } from '$lib/server/services/audit';
 import { NotFoundError, ScenarioNotFoundError, listScenarios } from '$lib/server/services/scenarios';
 import { scenarioToOut } from '$lib/server/services/companiesShared';
@@ -20,7 +20,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const actor = requireWriteActor(locals.actor);
 		const body = await request.json();
 		const parsed = outcomeIn.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const scenario = await closeOutcome(params.id!, parsed.data.outcome, parsed.data.note, actor.identity);
 

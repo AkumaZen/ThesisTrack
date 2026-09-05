@@ -13,5 +13,16 @@ export default defineConfig({
 			},
 			adapter: adapter()
 		})
-	]
+	],
+	server: {
+		watch: {
+			// Docker Desktop's Windows bind mount doesn't reliably forward native
+			// filesystem change events into the container, so Vite's default
+			// chokidar watcher silently misses edits made on the host. Polling
+			// works around that at the cost of a bit of CPU - worth it since a
+			// stale dev server was the actual, repeated problem, not a one-off.
+			usePolling: true,
+			interval: 300
+		}
+	}
 });

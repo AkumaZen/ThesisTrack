@@ -1,71 +1,49 @@
 <script lang="ts">
 	// Sectors - groups of companies for a rollup health view across their
-	// theses. Follows the conventions established in +page.svelte (dashboard)
-	// and guidance/+page.svelte: onMount fetch, $effect re-fetch on filters,
-	// a modal for create, a lighter inline panel for add-company.
-	import { onMount } from 'svelte';
+	// theses. Initial data comes from +page.ts's load() (see that file) so
+	// the router waits for it before swapping this page in, instead of the
+	// old onMount fetch that raced the navigation and flashed "Loading...".
+	// Write actions (create/add/remove/delete) still call refresh() directly.
 	import { api, ApiError } from '$lib/api';
 	import { session } from '$lib/session.svelte';
 	import { OPERATING_MODEL_LABELS, STATUS_STYLES } from '$lib/format';
+	import type { PageData } from './$types';
+	import type { Sector, Company } from './+page';
 
-	type SectorCompany = {
-		company_id: string;
-		name: string;
-		operating_model: string;
-		status: string | null;
-		last_reviewed: string | null;
-		core_metrics: Record<string, number>;
-	};
-	type Sector = {
-		id: number;
-		name: string;
-		description: string | null;
-		operating_model: string | null;
-		company_count: number;
-		health_counts: { on_track: number; watch_closely: number; broken: number };
-		companies: SectorCompany[];
-	};
-	type Company = { company_id: string; name: string };
+	let { data }: { data: PageData } = $props();
 
 	const OPERATING_MODEL_OPTIONS = Object.entries(OPERATING_MODEL_LABELS);
 
-	let sectors = $state<Sector[]>([]);
-	let allCompanies = $state<Company[]>([]);
-	let loading = $state(true);
+	let sectors = $derived(data.sectors);
+	let allCompanies = $derived(data.allCompanies);
 	let error = $state('');
 
 	let q = $state('');
 	let view = $state<'cards' | 'table'>('cards');
+	let sectorFilter = $state('');
+	let nicheFilter = $state('');
+
+	let sectorNames = $derived([...new Set(sectors.map((s) => s.name))].sort());
+	let nicheNames = $derived([...new Set(sectors.flatMap((s) => s.companies.map((c) => c.specific_niche)))].sort());
 
 	let filtered = $derived(
-		q.trim()
-			? sectors.filter((s) => s.name.toLowerCase().includes(q.trim().toLowerCase()))
-			: sectors
+		sectors
+			.filter((s) => !q.trim() || s.name.toLowerCase().includes(q.trim().toLowerCase()))
+			.filter((s) => !sectorFilter || s.name === sectorFilter)
+			.filter((s) => !nicheFilter || s.companies.some((c) => c.specific_niche === nicheFilter))
+			.map((s) => (nicheFilter ? { ...s, companies: s.companies.filter((c) => c.specific_niche === nicheFilter) } : s))
 	);
 	let totalCompanies = $derived(sectors.reduce((sum, s) => sum + s.company_count, 0));
 
 	async function refresh() {
-		loading = true;
 		error = '';
 		try {
 			const resp = (await api.getSectors()) as { items: Sector[] };
 			sectors = resp.items;
 		} catch (e) {
 			error = String(e);
-		} finally {
-			loading = false;
 		}
 	}
-
-	onMount(async () => {
-		try {
-			const resp = (await api.listCompanies({ page_size: 500 })) as { items: Company[] };
-			allCompanies = resp.items;
-		} catch (e) {
-			error = String(e);
-		}
-		await refresh();
-	});
 
 	// --- Create sector modal ---
 	let showCreate = $state(false);
@@ -188,7 +166,7 @@
 <div class="flex items-center justify-between mb-1">
 	<h2 class="text-xl font-semibold">Sectors</h2>
 	{#if !session.isReadOnly}
-		<button onclick={openCreate} class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90"
+		<button onclick={openCreate} class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90"
 			>+ Create Sector</button
 		>
 	{/if}
@@ -209,23 +187,33 @@
 		placeholder="Search sectors by name..."
 		class="flex-1 min-w-[200px] rounded-md border border-border px-2 py-1.5 text-sm"
 	/>
+	<select bind:value={sectorFilter} class="rounded-md border border-border px-2 py-1.5 text-sm">
+		<option value="">All sectors</option>
+		{#each sectorNames as n (n)}
+			<option value={n}>{n}</option>
+		{/each}
+	</select>
+	<select bind:value={nicheFilter} class="rounded-md border border-border px-2 py-1.5 text-sm">
+		<option value="">All niches</option>
+		{#each nicheNames as n (n)}
+			<option value={n}>{n}</option>
+		{/each}
+	</select>
 	<div class="flex items-center gap-1 rounded-md border border-border p-0.5">
 		<button
 			onclick={() => (view = 'cards')}
-			class="text-xs px-2 py-1 rounded {view === 'cards' ? 'bg-accent text-accent-ink' : 'hover:bg-surface-3'}"
+			class="text-xs px-2 py-1 rounded {view === 'cards' ? 'bg-fg text-bg' : 'hover:bg-surface-3'}"
 			>Cards</button
 		>
 		<button
 			onclick={() => (view = 'table')}
-			class="text-xs px-2 py-1 rounded {view === 'table' ? 'bg-accent text-accent-ink' : 'hover:bg-surface-3'}"
+			class="text-xs px-2 py-1 rounded {view === 'table' ? 'bg-fg text-bg' : 'hover:bg-surface-3'}"
 			>Table</button
 		>
 	</div>
 </div>
 
-{#if loading}
-	<div class="text-center text-muted-fg py-16">Loading...</div>
-{:else if !filtered.length}
+{#if !filtered.length}
 	<div class="text-center text-muted-fg py-16">No sectors match.</div>
 {:else if view === 'table'}
 	<div class="rounded-lg border border-border bg-surface overflow-x-auto">
@@ -311,15 +299,15 @@
 								>
 							{/if}
 							<a href="/company/{c.company_id}" class="block pr-4 group" title={c.name}>
-								<div class="text-[10px] font-mono text-muted-fg tracking-wide">{c.company_id}</div>
+								<div class="text-[11px] font-mono text-muted-fg tracking-wide">{c.company_id}</div>
 								<div class="text-xs font-medium leading-snug mt-0.5 line-clamp-2 group-hover:text-accent">{c.name}</div>
 							</a>
 							<div class="mt-1.5 flex items-center gap-1">
 								{#if style}
 									<span class="inline-block h-1.5 w-1.5 rounded-full {style.dot}"></span>
-									<span class="text-[10px] text-muted-fg">{style.label}</span>
+									<span class="text-xs text-muted-fg">{style.label}</span>
 								{:else}
-									<span class="text-[10px] text-muted-fg italic">No thesis yet</span>
+									<span class="text-xs text-muted-fg italic">No thesis yet</span>
 								{/if}
 							</div>
 						</div>
@@ -363,7 +351,7 @@
 							<button
 								disabled={adding || !addSelected.length}
 								onclick={submitAdd}
-								class="text-xs px-2 py-1 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50">Add</button
+								class="text-xs px-2 py-1 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50">Add</button
 							>
 						</div>
 					</div>
@@ -441,7 +429,7 @@
 				<button
 					disabled={creating || !createName.trim()}
 					onclick={submitCreate}
-					class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50">Create</button
+					class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50">Create</button
 				>
 			</div>
 		</div>

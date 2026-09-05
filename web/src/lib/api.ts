@@ -58,6 +58,7 @@ export const api = {
 	listCompanies: (params?: Record<string, unknown>) => request('GET', `/companies?${buildQuery(params)}`),
 	getCompany: (id: string) => request('GET', `/companies/${encodeURIComponent(id)}`),
 	createCompany: (payload: unknown) => request('POST', '/companies', payload),
+	updateCompany: (id: string, payload: unknown) => request('PATCH', `/companies/${encodeURIComponent(id)}`, payload),
 	amendThesis: (id: string, payload: unknown) => request('PUT', `/companies/${encodeURIComponent(id)}/thesis`, payload),
 	getVersions: (id: string, diff?: string) =>
 		request('GET', `/companies/${encodeURIComponent(id)}/versions${diff ? `?diff=${diff}` : ''}`),

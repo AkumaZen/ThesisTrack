@@ -102,6 +102,30 @@ export async function createCompany(payload: ThesisCreate, actor: string) {
 	return updated;
 }
 
+export async function updateCompanyDetails(
+	companyId: string,
+	patch: { name?: string; broad_industry?: string; specific_niche?: string; operating_model?: string; currency?: string }
+) {
+	const [company] = await db.select().from(companies).where(eq(companies.companyId, companyId)).limit(1);
+	if (!company) throw new NotFoundError(`company '${companyId}' not found`);
+
+	const values: Partial<typeof companies.$inferInsert> = {};
+	if (patch.name !== undefined) values.name = patch.name;
+	if (patch.operating_model !== undefined) values.operatingModel = patch.operating_model as (typeof companies.$inferInsert)['operatingModel'];
+	if (patch.currency !== undefined) values.currency = patch.currency;
+	if (patch.broad_industry !== undefined || patch.specific_niche !== undefined) {
+		const { industry, niche } = await resolveTaxonomy(
+			patch.broad_industry ?? (await db.select().from(broadIndustries).where(eq(broadIndustries.id, company.broadIndustryId)).limit(1))[0].name,
+			patch.specific_niche ?? (await db.select().from(specificNiches).where(eq(specificNiches.id, company.specificNicheId)).limit(1))[0].name
+		);
+		values.broadIndustryId = industry.id;
+		values.specificNicheId = niche.id;
+	}
+
+	const [updated] = await db.update(companies).set(values).where(eq(companies.companyId, companyId)).returning();
+	return updated;
+}
+
 export async function amendThesis(companyId: string, thesisData: ThesisData, changeNote: string, actor: string) {
 	const scenario = await getScenarioOptional(companyId, actor);
 	if (!scenario) {

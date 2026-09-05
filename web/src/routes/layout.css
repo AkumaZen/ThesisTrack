@@ -1,8 +1,9 @@
 @import 'tailwindcss';
 
 @theme {
-	--font-sans: 'Space Grotesk', 'Segoe UI', sans-serif;
-	--font-mono: 'JetBrains Mono', Consolas, monospace;
+	--font-sans:
+		'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-mono: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
 	--color-bg: var(--bg);
 	--color-bg-ink: var(--bg-ink);
@@ -24,26 +25,36 @@
 	--color-danger: var(--danger);
 }
 
+/*
+ * Exactly three neutrals (paper #faf9f5, ink #141412, cream #f1eee7) plus one
+ * signal accent (lime #ccff00) - no other hues anywhere. Light and dark are
+ * genuine inversions of the same four values, not two separate palettes:
+ * --fg and --bg always swap, --ok/--warn/--danger/--accent-2/-3/-4 track
+ * --fg (so a "status" fill always reads as "the ink stamp," light or dark),
+ * and --good stays lime in both since on-track already owns the one accent.
+ * bg-ink also always equals bg (nav/header/modal never get a separate dark
+ * plate - see the original light-theme convention this restores).
+ */
 :root {
-	--bg: #050505;
-	--bg-ink: #000000;
-	--surface: #121212;
-	--surface-2: #0a0a0a;
-	--surface-3: #1a1a1a;
-	--border: #333333;
-	--fg: #f0f0f0;
-	--muted-fg: #888888;
-	--white: #ffffff;
-	--accent: #ccff00;
-	--accent-2: #00f0ff;
-	--accent-3: #ff003c;
-	--accent-4: #ffaa00;
-	--accent-ink: #050505;
-	--good: #ccff00;
-	--ok: #00f0ff;
-	--warn: #ffaa00;
-	--danger: #ff003c;
-	color-scheme: dark;
+	--bg: #faf9f5;
+	--bg-ink: #faf9f5;
+	--surface: #f1eee7;
+	--surface-2: color-mix(in srgb, #141412 5%, #faf9f5);
+	--surface-3: color-mix(in srgb, #141412 9%, #faf9f5);
+	--border: color-mix(in srgb, #141412 18%, #faf9f5);
+	--fg: #141412;
+	--muted-fg: color-mix(in srgb, #141412 58%, #faf9f5);
+	--white: #f1eee7;
+	--accent: var(--fg);
+	--accent-2: var(--fg);
+	--accent-3: var(--fg);
+	--accent-4: var(--fg);
+	--accent-ink: var(--bg);
+	--good: var(--fg);
+	--ok: var(--fg);
+	--warn: var(--fg);
+	--danger: var(--fg);
+	color-scheme: light;
 }
 
 * {
@@ -65,8 +76,8 @@ input:focus,
 select:focus,
 textarea:focus {
 	outline: none;
-	border-color: var(--accent);
-	box-shadow: 0 0 0 2px rgba(204, 255, 0, 0.25);
+	border-color: var(--fg);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--fg) 25%, transparent);
 }
 
 /*
@@ -78,17 +89,25 @@ textarea:focus {
 select {
 	appearance: none;
 	-webkit-appearance: none;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888888' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23757471' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
 	background-position: right 0.6rem center;
 	background-size: 10px 6px;
 }
 :root[data-theme='light'] select {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235c5c5c' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23757471' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 @media (prefers-color-scheme: light) {
 	:root:not([data-theme='dark']) select {
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235c5c5c' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23757471' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	}
+}
+:root[data-theme='dark'] select {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238e8c87' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) select {
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238e8c87' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 	}
 }
 
@@ -110,9 +129,9 @@ select {
 
 .facet-group-label {
 	font-family: var(--font-sans);
-	font-size: 0.6875rem;
-	font-weight: 700;
-	letter-spacing: 0.05em;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	color: var(--muted-fg);
 	margin-bottom: 0.5rem;
@@ -152,6 +171,23 @@ select {
 	height: 1px;
 }
 
+/*
+ * Thin indeterminate progress bar shown in the header while `navigating.to`
+ * is set (see +layout.svelte) - covers the brief wait for a route's load()
+ * to resolve now that navigation blocks on data instead of racing it.
+ */
+@keyframes nav-progress {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(300%);
+	}
+}
+.animate-nav-progress {
+	animation: nav-progress 1s ease-in-out infinite;
+}
+
 .drawer-jump {
 	color: var(--muted-fg);
 	font-weight: 500;
@@ -163,59 +199,42 @@ select {
 	color: var(--fg);
 }
 
-/*
- * Signal Lime/Cyan/Amber/Red are tuned for near-black grounds (DESIGN.md's
- * "Kill-Switch Console"): full-strength neon on #050505 clears 12-16:1
- * contrast. The identical hex values on a white ground fall to ~1.1-1.9:1 -
- * effectively invisible body/pill text, not a stylistic difference. Fills
- * that pair with dark ink (buttons, dots, the /10 pill tints) are unaffected
- * either way; only *reading* that hue as text needs a light-safe shade. So
- * light theme gets its own ink-toned variant of each hue - same identity,
- * same hue family, actually legible - while --accent/-2/-3/-4 (button fills,
- * focus glow) stay the pure neon value in both themes since text on those is
- * always accent-ink, never the hue itself.
- */
-@media (prefers-color-scheme: light) {
-	:root:not([data-theme='dark']) {
-		--bg: #ffffff;
-		--bg-ink: #ffffff;
-		--surface: #ffffff;
-		--surface-2: #f7f7f7;
-		--surface-3: #eeeeee;
-		--border: #d8d8d8;
-		--fg: #0a0a0a;
-		--muted-fg: #5c5c5c;
-		--good: #4d6b00;
-		--ok: #007380;
-		--warn: #935e00;
-		--danger: #c9002f;
-		color-scheme: light;
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--bg: #141412;
+		--bg-ink: #141412;
+		--surface: color-mix(in srgb, #f1eee7 10%, #141412);
+		--surface-2: color-mix(in srgb, #f1eee7 4%, #141412);
+		--surface-3: color-mix(in srgb, #f1eee7 16%, #141412);
+		--border: color-mix(in srgb, #f1eee7 22%, #141412);
+		--fg: #f1eee7;
+		--muted-fg: color-mix(in srgb, #f1eee7 55%, #141412);
+		--white: #141412;
+		color-scheme: dark;
 	}
 }
 :root[data-theme='light'] {
-	--bg: #ffffff;
-	--bg-ink: #ffffff;
-	--surface: #ffffff;
-	--surface-2: #f7f7f7;
-	--surface-3: #eeeeee;
-	--border: #d8d8d8;
-	--fg: #0a0a0a;
-	--muted-fg: #5c5c5c;
-	--good: #4d6b00;
-	--ok: #007380;
-	--warn: #935e00;
-	--danger: #c9002f;
+	--bg: #faf9f5;
+	--bg-ink: #faf9f5;
+	--surface: #f1eee7;
+	--surface-2: color-mix(in srgb, #141412 5%, #faf9f5);
+	--surface-3: color-mix(in srgb, #141412 9%, #faf9f5);
+	--border: color-mix(in srgb, #141412 18%, #faf9f5);
+	--fg: #141412;
+	--muted-fg: color-mix(in srgb, #141412 58%, #faf9f5);
+	--white: #f1eee7;
 	color-scheme: light;
 }
 :root[data-theme='dark'] {
-	--bg: #050505;
-	--bg-ink: #000000;
-	--surface: #121212;
-	--surface-2: #0a0a0a;
-	--surface-3: #1a1a1a;
-	--border: #333333;
-	--fg: #f0f0f0;
-	--muted-fg: #888888;
+	--bg: #141412;
+	--bg-ink: #141412;
+	--surface: color-mix(in srgb, #f1eee7 10%, #141412);
+	--surface-2: color-mix(in srgb, #f1eee7 4%, #141412);
+	--surface-3: color-mix(in srgb, #f1eee7 16%, #141412);
+	--border: color-mix(in srgb, #f1eee7 22%, #141412);
+	--fg: #f1eee7;
+	--muted-fg: color-mix(in srgb, #f1eee7 55%, #141412);
+	--white: #141412;
 	color-scheme: dark;
 }
 
@@ -224,4 +243,19 @@ body {
 	background: var(--color-bg);
 	color: var(--color-fg);
 	min-height: 100vh;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+}
+
+/*
+ * The Inter/Poppins pairing is a full split, not a font-mono-only accent:
+ * every structural heading (page title, nav brand, section/modal headers,
+ * a company's name) carries the Poppins "headline" voice, while running
+ * prose, labels, and controls stay on Inter. See DESIGN.md's Typography
+ * section for the full role breakdown.
+ */
+h1,
+h2,
+h3 {
+	font-family: var(--font-mono);
 }

@@ -3,7 +3,7 @@
 // customTables.ts.
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
-import { companies, sectorCompanies, sectors, thesisScenarios } from '../db/schema';
+import { broadIndustries, companies, sectorCompanies, sectors, specificNiches, thesisScenarios } from '../db/schema';
 import { coreMetricsForScenarios } from './companiesShared';
 import { NotFoundError } from './scenarios';
 
@@ -29,9 +29,11 @@ function pickRepresentativeScenario<T extends { companyId: string; updatedAt: Da
 
 async function hydrateSector(sector: typeof sectors.$inferSelect) {
 	const rows = await db
-		.select({ company: companies })
+		.select({ company: companies, industryName: broadIndustries.name, nicheName: specificNiches.name })
 		.from(sectorCompanies)
 		.innerJoin(companies, eq(sectorCompanies.companyId, companies.companyId))
+		.innerJoin(broadIndustries, eq(companies.broadIndustryId, broadIndustries.id))
+		.innerJoin(specificNiches, eq(companies.specificNicheId, specificNiches.id))
 		.where(eq(sectorCompanies.sectorId, sector.id))
 		.orderBy(asc(companies.name));
 
@@ -50,6 +52,8 @@ async function hydrateSector(sector: typeof sectors.$inferSelect) {
 			company_id: r.company.companyId,
 			name: r.company.name,
 			operating_model: r.company.operatingModel,
+			broad_industry: r.industryName,
+			specific_niche: r.nicheName,
 			status: scenario?.status ?? null,
 			last_reviewed: scenario?.lastReviewed ?? null,
 			core_metrics: scenario ? (coreMetrics[scenario.id] ?? {}) : {}

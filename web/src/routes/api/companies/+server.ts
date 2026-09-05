@@ -4,7 +4,7 @@ import type { RequestHandler } from './$types';
 import { and, count, eq, ilike, inArray, lt } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { broadIndustries, companies, specificNiches, thesisScenarios } from '$lib/server/db/schema';
-import { errorResponse, requireActor, requireWriteActor, handleAuthError } from '$lib/server/http';
+import { errorResponse, requireActor, requireWriteActor, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { thesisCreate } from '$lib/server/schemas/thesis';
 import { createCompany, AlreadyExistsError, TaxonomyError } from '$lib/server/services/versioning';
 import { listScenarios } from '$lib/server/services/scenarios';
@@ -100,7 +100,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	try {
 		const actor = requireWriteActor(locals.actor);
 		const parsed = thesisCreate.safeParse(await request.json());
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const scenario = await createCompany(parsed.data, actor.identity);
 		const [company] = await db.select().from(companies).where(eq(companies.companyId, scenario.companyId)).limit(1);

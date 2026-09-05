@@ -97,6 +97,65 @@
 	// References
 	let references = $state<{ title: string; url: string }[]>([]);
 
+	// Custom Sections - each becomes its own untagged custom data table on
+	// the company, same shape as the "+ Add Table" builder on the company
+	// page, so it shows up there as its own named card/nav entry. Available
+	// both when creating a company and when amending an existing thesis.
+	type CustomSectionColumn = { key: string; label: string; type: string; optionsCsv: string };
+	// `rows` is JSON-import-only (no UI editor for it yet) - lets a paste
+	// carry actual data values, not just a column layout, since research
+	// often turns up many rows of one shape before the section exists at all.
+	type CustomSectionForm = { name: string; columns: CustomSectionColumn[]; rows?: Record<string, string>[] };
+	let customSections = $state<CustomSectionForm[]>([]);
+
+	function addCustomSection() {
+		customSections = [...customSections, { name: '', columns: [{ key: '', label: '', type: 'text', optionsCsv: '' }] }];
+	}
+	function removeCustomSection(i: number) {
+		customSections = customSections.filter((_, idx) => idx !== i);
+	}
+	function addCustomSectionColumn(sectionIdx: number) {
+		customSections[sectionIdx].columns.push({ key: '', label: '', type: 'text', optionsCsv: '' });
+		customSections = [...customSections];
+	}
+	function removeCustomSectionColumn(sectionIdx: number, colIdx: number) {
+		customSections[sectionIdx].columns = customSections[sectionIdx].columns.filter((_, i) => i !== colIdx);
+		customSections = [...customSections];
+	}
+	function slugifyKey(raw: string): string {
+		return raw
+			.trim()
+			.toLowerCase()
+			.replace(/[^a-z0-9_]+/g, '_')
+			.replace(/^[^a-z]+/, '')
+			.replace(/_+/g, '_')
+			.replace(/_$/, '')
+			.slice(0, 50);
+	}
+	async function createCustomSections(companyId: string) {
+		for (const s of customSections) {
+			const columns = s.columns
+				.filter((c) => c.key.trim() && c.label.trim())
+				.map((c) => ({
+					key: slugifyKey(c.key),
+					label: c.label.trim(),
+					type: c.type,
+					options: c.type === 'enum' ? c.optionsCsv.split(',').map((o) => o.trim()).filter(Boolean) : undefined
+				}));
+			if (!s.name.trim() || !columns.length) continue;
+			const table = (await api.createTable(companyId, { name: s.name.trim(), columns, section: null })) as { id: number };
+			const columnKeys = new Set(columns.map((c) => c.key));
+			for (const row of s.rows ?? []) {
+				const rowData = Object.fromEntries(
+					Object.entries(row)
+						.map(([k, v]) => [slugifyKey(k), v])
+						.filter(([k, v]) => columnKeys.has(k as string) && v !== '' && v != null)
+				);
+				if (Object.keys(rowData).length) await api.createRow(table.id, rowData);
+			}
+		}
+	}
+
 	// Pillar notes (Additional Notes, keyed by ThesisData field name)
 	let pillarNotes = $state<Record<string, string[]>>({});
 
@@ -314,10 +373,12 @@
 					return;
 				}
 				await api.amendThesis(prefillCompanyId, { thesis_data: buildThesisData(), change_note: changeNote.trim() });
+				await createCustomSections(prefillCompanyId);
 				await goto(`/company/${encodeURIComponent(prefillCompanyId)}`);
 			} else {
 				const payload = buildCreatePayload();
 				const created = (await api.createCompany(payload)) as { company_id: string };
+				await createCustomSections(created.company_id);
 				await goto(`/company/${encodeURIComponent(created.company_id)}`);
 			}
 		} catch (e) {
@@ -348,13 +409,42 @@
     "health_check": { "latest_quarter_review": "...", "historical_checks": [] },
     "references": [{ "title": "...", "url": "https://..." }],
     "pillar_notes": {}
-  }
+  },
+  "custom_sections": [
+    {
+      "name": "Any Section Name (e.g. Shareholding Pattern, Peer Valuation, Management Bios)",
+      "columns": [{ "key": "column_key", "label": "Column Label", "type": "text|number|date|enum", "options": ["only for type=enum"] }],
+      "rows": [{ "column_key": "value for row 1" }, { "column_key": "value for row 2" }]
+    }
+  ]
 }
 
-Rules: revenue_split share_pct must sum to ~100. what_can_kill_it needs at least one entry with severity="kill". why_we_believe_it needs at least 3 entries, at least one starting with "Premise:", and exactly one starting with "Conclusion:". Ask me clarifying questions if anything is ambiguous, then output ONLY the JSON.
+Rules: revenue_split share_pct must sum to ~100. what_can_kill_it needs at least one entry with severity="kill". why_we_believe_it needs at least 3 entries, at least one starting with "Premise:", and exactly one starting with "Conclusion:". "custom_sections" is optional and unbounded - use it for ANY data that doesn't fit the 7 fixed pillars above (shareholding, peer comps, management, subsidiaries, capex schedule, anything else my notes contain): add as many sections as needed, each with as many columns and rows as needed. Column "key" must be a short lowercase identifier (spaces/case get normalized automatically, but keep it clean); "type" defaults to "text" if omitted. Ask me clarifying questions if anything is ambiguous, then output ONLY the JSON.
 
 My notes:
 `;
+
+	type ParsedCustomSection = {
+		name?: string;
+		columns?: { key?: string; label?: string; type?: string; options?: string[] }[];
+		rows?: Record<string, string>[];
+	};
+
+	function applyParsedCustomSections(sections: ParsedCustomSection[]) {
+		const mapped = sections
+			.filter((s) => s.name?.trim() && s.columns?.length)
+			.map((s) => ({
+				name: s.name!.trim(),
+				columns: (s.columns ?? []).map((c) => ({
+					key: c.key ?? '',
+					label: c.label ?? c.key ?? '',
+					type: c.type ?? 'text',
+					optionsCsv: (c.options ?? []).join(', ')
+				})),
+				rows: s.rows ?? []
+			}));
+		if (mapped.length) customSections = [...customSections, ...mapped];
+	}
 
 	function applyParsedPayload(parsed: {
 		company_id?: string;
@@ -363,6 +453,7 @@ My notes:
 		status?: string;
 		last_reviewed?: string;
 		thesis_data?: ThesisDataShape;
+		custom_sections?: ParsedCustomSection[];
 	}) {
 		if (parsed.company_id) companyId = parsed.company_id;
 		if (parsed.name) name = parsed.name;
@@ -373,6 +464,7 @@ My notes:
 		if (parsed.status) status = parsed.status;
 		if (parsed.last_reviewed) lastReviewed = parsed.last_reviewed;
 		if (parsed.thesis_data) applyThesisData(parsed.thesis_data);
+		if (parsed.custom_sections?.length) applyParsedCustomSections(parsed.custom_sections);
 	}
 
 	function validateJson() {
@@ -426,7 +518,7 @@ My notes:
 	>&larr; Back</a
 >
 
-<div class="mt-3 max-w-2xl">
+<div class="mt-3 max-w-5xl mx-auto">
 	<div class="flex items-center justify-between gap-3 flex-wrap">
 		<div>
 			<h1 class="text-xl font-semibold">{mode === 'amend' ? `Amend Thesis - ${name || prefillCompanyId}` : isExistingCompany ? `Start Your Own Thesis - ${name || prefillCompanyId}` : 'New Company / Thesis'}</h1>
@@ -499,7 +591,7 @@ My notes:
 		</div>
 	{:else}
 		{#if mode === 'amend'}
-			<section class="mt-5">
+			<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 				<label class="block text-sm"
 					>Change Note <span class="text-muted-fg">(required - why is the thesis being amended?)</span>
 					<textarea bind:value={changeNote} rows="2" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
@@ -510,7 +602,7 @@ My notes:
 
 		{#if mode !== 'amend'}
 			<!-- Basics -->
-			<section class="mt-5">
+			<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 				<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Basics</h2>
 				<div class="grid grid-cols-2 gap-3 mt-2">
 					<label class="text-sm"
@@ -574,7 +666,7 @@ My notes:
 		{/if}
 
 		<!-- The Business -->
-		<section class="mt-5">
+		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h2>
 			<label class="block text-sm mt-2"
 				>What It Does
@@ -610,7 +702,7 @@ My notes:
 		</section>
 
 		<!-- The Growth Engine -->
-		<section class="mt-5">
+		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">2. The Growth Engine</h2>
 			<div class="space-y-1 mt-2">
 				{#each growthEngine as _row, i (i)}
@@ -636,7 +728,7 @@ My notes:
 		</section>
 
 		<!-- The Big Change -->
-		<section class="mt-5">
+		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">3. The Big Change</h2>
 			<label class="block text-sm mt-2"
 				>Summary
@@ -661,7 +753,7 @@ My notes:
 		</section>
 
 		<!-- Proof Points -->
-		<section class="mt-5">
+		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">4. Proof Points</h2>
 			<div class="text-sm font-medium mt-2">Hard Evidence</div>
 			<div class="space-y-1 mt-1">
@@ -708,7 +800,7 @@ My notes:
 		</section>
 
 		<!-- What Can Kill It -->
-		<section class="mt-5">
+		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">5. What Can Kill It <span class="text-muted-fg font-normal normal-case">(needs &ge; 1 severity=kill entry)</span></h2>
 			<div class="space-y-2 mt-2">
 				{#each killTriggers as t, i (i)}
@@ -780,7 +872,7 @@ My notes:
 		</section>
 
 		<!-- Why We Believe It -->
-		<section class="mt-5">
+		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">
 				6. Why We Believe It <span class="text-muted-fg font-normal normal-case">(&ge;3 entries, &ge;1 Premise, exactly 1 Conclusion)</span>
 			</h2>
@@ -815,7 +907,7 @@ My notes:
 		</section>
 
 		<!-- Health Check (pillar 7 / Quarterly Review) -->
-		<section class="mt-5">
+		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Quarterly Review</h2>
 			<label class="block text-sm mt-2"
 				>Latest Quarter Review
@@ -836,7 +928,7 @@ My notes:
 		</section>
 
 		<!-- References -->
-		<section class="mt-5 mb-8">
+		<section class="mt-5 mb-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">References</h2>
 			<div class="space-y-1 mt-2">
 				{#each references as row, i (i)}
@@ -861,6 +953,57 @@ My notes:
 				<button type="button" onclick={() => addNote('references')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
 		</section>
+
+		<!-- Custom Sections -->
+		<section class="mt-5 mb-5 rounded-xl border border-border bg-surface p-5">
+			<div class="flex items-center justify-between">
+				<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Custom Sections</h2>
+				<button type="button" onclick={addCustomSection} class="text-xs text-ok">+ Add Custom Section</button>
+			</div>
+			<p class="text-xs text-muted-fg mt-1">
+				Optional - define your own data tables (name + columns), same as "+ Add Table" on the company page. Each one shows up
+				on the company page as its own named card and nav entry.
+			</p>
+			{#if customSections.length}
+					<div class="space-y-3 mt-3">
+						{#each customSections as sectionForm, si (si)}
+							<div class="rounded-lg border border-border p-3">
+								<div class="flex gap-2 items-center">
+									<input
+										bind:value={sectionForm.name}
+										placeholder="Section name (e.g. Shareholding Pattern)"
+										class="flex-1 rounded-md border border-border px-2 py-1.5 text-sm"
+									/>
+									<button type="button" onclick={() => removeCustomSection(si)} class="text-muted-fg hover:text-danger">&times;</button>
+								</div>
+								<div class="space-y-1 mt-2">
+									{#each sectionForm.columns as col, ci (ci)}
+										<div class="grid grid-cols-12 gap-1 items-center">
+											<input placeholder="key" bind:value={col.key} class="col-span-3 rounded-md border border-border px-2 py-1 text-xs font-mono" />
+											<input placeholder="Label" bind:value={col.label} class="col-span-3 rounded-md border border-border px-2 py-1 text-xs" />
+											<select bind:value={col.type} class="col-span-2 rounded-md border border-border px-1 py-1 text-xs">
+												<option value="text">text</option>
+												<option value="number">number</option>
+												<option value="date">date</option>
+												<option value="enum">enum</option>
+											</select>
+											<input
+												placeholder="Options (enum, comma-sep)"
+												bind:value={col.optionsCsv}
+												class="col-span-3 rounded-md border border-border px-2 py-1 text-xs"
+											/>
+											<button type="button" onclick={() => removeCustomSectionColumn(si, ci)} class="text-muted-fg hover:text-danger text-center"
+												>&times;</button
+											>
+										</div>
+									{/each}
+								</div>
+								<button type="button" onclick={() => addCustomSectionColumn(si)} class="text-xs text-ok mt-1">+ Add Column</button>
+							</div>
+						{/each}
+					</div>
+				{/if}
+		</section>
 	{/if}
 
 	<div class="flex justify-end gap-2 mb-10">
@@ -872,7 +1015,7 @@ My notes:
 			type="button"
 			disabled={submitting}
 			onclick={submit}
-			class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50"
+			class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50"
 		>
 			{submitting ? 'Saving...' : mode === 'amend' ? 'Save Amendment' : isExistingCompany ? 'Start Thesis' : 'Create Company'}
 		</button>

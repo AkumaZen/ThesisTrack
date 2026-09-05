@@ -1,5 +1,26 @@
 # Decisions (append-only ADR log)
 
+## ADR-029: Continuous Application Review agent (`/app-review`)
+User asked for a persistent reviewer, not a one-off audit: continuously
+inspect the app at feature and UI/UX level (missing features, broken
+interactions, inconsistency, missing common patterns, edge cases), fix
+what's safe, and - the key requirement - learn from the user's feedback so
+future reviews stop re-litigating settled preferences and get more
+accurate over time.
+
+Built using this project's own harness conventions rather than an ad hoc
+one-off: `harness/skills/continuous-review.md` is the procedure (inputs,
+review areas, step-by-step loop, hard constraints), invoked via a real
+Claude Code skill at `.claude/skills/app-review/SKILL.md` (`/app-review`).
+Two new persistent memory files carry the "learning" part:
+`harness/memory/review-rules.md` (reusable project rules, each with a
+statement/why/applies-to, seeded from this session's already-confirmed
+feedback - palette, typography, card pattern, feature-parity, process
+rules like local-only testing) and `harness/memory/review-log.md` (per-run
+findings + status, so open/wontfix/deferred items aren't re-flagged).
+Every future run reads both before reviewing, and appends to both after -
+the procedure itself mandates this in its step 8.
+
 ## ADR-028: SvelteKit full-stack rewrite (Phases 0-4 shipped, Phase 5 cutover deferred)
 User reported the card-click "open in a real new browser tab" behavior from
 ADR-027 was itself the problem once experienced live: opening a new tab does

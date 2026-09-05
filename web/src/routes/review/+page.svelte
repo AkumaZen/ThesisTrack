@@ -1,42 +1,19 @@
 <script lang="ts">
 	// Ports frontend/components/reviewQueue.js (renderReviewQueue) + the
-	// review-queue wiring in frontend/app.js into a real route.
-	import { onMount } from 'svelte';
+	// review-queue wiring in frontend/app.js into a real route. Initial data
+	// comes from +page.ts's load() so the router waits for it before
+	// swapping this page in, instead of racing an onMount fetch.
 	import { api, ApiError } from '$lib/api';
 	import { session } from '$lib/session.svelte';
+	import type { PageData } from './$types';
+	import type { Proposal } from './+page';
 
-	type Proposal = {
-		id: number;
-		company_id: string;
-		period: string | null;
-		proposed_status: string;
-		source: string;
-		rationale: string;
-		evidence: { reasoning_chain?: string[] } | null;
-		state: string;
-		model_name: string | null;
-		created_at: string;
-	};
+	let { data }: { data: PageData } = $props();
 
-	let proposals = $state<Proposal[]>([]);
-	let loading = $state(true);
+	let proposals = $derived(data.proposals);
 	let error = $state('');
 	let notes = $state<Record<number, string>>({});
 	let resolving = $state<Record<number, boolean>>({});
-
-	async function refresh() {
-		loading = true;
-		error = '';
-		try {
-			proposals = (await api.listProposals('pending')) as Proposal[];
-		} catch (e) {
-			error = String(e);
-		} finally {
-			loading = false;
-		}
-	}
-
-	onMount(refresh);
 
 	const SOURCE_STYLES: Record<string, string> = {
 		rule_engine: 'bg-surface-3 text-fg',
@@ -78,9 +55,7 @@
 	<div class="mb-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{error}</div>
 {/if}
 
-{#if loading}
-	<div class="text-center text-muted-fg py-16">Loading...</div>
-{:else if !proposals.length}
+{#if !proposals.length}
 	<div class="text-center text-muted-fg py-16">Nothing pending - review queue is empty.</div>
 {:else}
 	<div class="space-y-3">
@@ -119,12 +94,12 @@
 						<button
 							disabled={resolving[p.id]}
 							onclick={() => resolve(p, 'accept')}
-							class="text-xs px-3 py-1.5 rounded-md bg-good text-accent-ink hover:brightness-90 disabled:opacity-50">Accept</button
+							class="text-xs px-3 py-1.5 rounded-md bg-good text-bg hover:brightness-90 disabled:opacity-50">Accept</button
 						>
 						<button
 							disabled={resolving[p.id]}
 							onclick={() => resolve(p, 'reject')}
-							class="text-xs px-3 py-1.5 rounded-md bg-danger text-white hover:brightness-90 disabled:opacity-50">Reject</button
+							class="text-xs px-3 py-1.5 rounded-md bg-danger text-bg hover:brightness-90 disabled:opacity-50">Reject</button
 						>
 					</div>
 				{/if}

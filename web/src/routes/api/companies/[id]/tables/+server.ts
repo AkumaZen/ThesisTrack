@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireActor, requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { createTable, listTables } from '$lib/server/services/customTables';
 import { NotFoundError } from '$lib/server/services/scenarios';
 import { PILLAR_KEYS } from '$lib/server/pillars';
@@ -51,7 +51,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const actor = requireWriteActor(locals.actor);
 		const body = await request.json();
 		const parsed = tableCreate.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const table = await createTable(params.id!, parsed.data.name, parsed.data.columns, parsed.data.section ?? null, actor.identity);
 		return json(tableToOut(table, 0), { status: 201 });

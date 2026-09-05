@@ -1,95 +1,27 @@
 <script lang="ts">
 	// Ports the dashboard portion of frontend/app.js (loadCards/refreshCompanies)
-	// + renderCards/renderFacetBar/renderHeaderStats.
-	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	// + renderCards/renderFacetBar/renderHeaderStats. Initial data now comes
+	// from +page.ts's load() (see that file for why) instead of onMount, so
+	// SvelteKit holds the previous page on screen until this is ready -
+	// no blank "Loading..." flash on navigation.
 	import HeaderStats from '$lib/components/HeaderStats.svelte';
-	import FacetBar from '$lib/components/FacetBar.svelte';
 	import CompanyCard from '$lib/components/CompanyCard.svelte';
+	import type { PageData } from './$types';
+	import type { Company, MetricDef } from './+page';
 
-	type Company = {
-		company_id: string;
-		name: string;
-		broad_industry: string;
-		specific_niche: string;
-		operating_model: string;
-		status: string | null;
-		last_reviewed: string | null;
-		has_active_override: boolean;
-		core_metrics: Record<string, number>;
-	};
-	type MetricDef = { metric_key: string; label: string; unit: string; decimals?: number };
+	let { data }: { data: PageData } = $props();
 
-	let companies = $state<Company[]>([]);
-	let taxonomy = $state<{ name: string; niches: { name: string }[] }[]>([]);
-	let metricDefsByKey = $state<Record<string, MetricDef>>({});
-	let loading = $state(true);
-	let error = $state('');
-
-	let q = $state('');
-	let reviewDue = $state(false);
-	let sort = $state('name');
-	let broadIndustry = $state<string[]>([]);
-	let niche = $state<string[]>([]);
-	let operatingModel = $state<string[]>([]);
-	let status = $state<string[]>([]);
-
-	async function refresh() {
-		loading = true;
-		error = '';
-		try {
-			const resp = (await api.listCompanies({
-				q: q || undefined,
-				review_due: reviewDue || undefined,
-				sort,
-				broad_industry: broadIndustry,
-				niche,
-				operating_model: operatingModel,
-				status,
-				page_size: 200
-			})) as { items: Company[] };
-			companies = resp.items;
-		} catch (e) {
-			error = String(e);
-		} finally {
-			loading = false;
-		}
-	}
-
-	onMount(async () => {
-		try {
-			const [tax, metrics] = await Promise.all([
-				api.getTaxonomy() as Promise<{ name: string; niches: { name: string }[] }[]>,
-				api.getMetrics() as Promise<MetricDef[]>
-			]);
-			taxonomy = tax;
-			metricDefsByKey = Object.fromEntries(metrics.map((m) => [m.metric_key, m]));
-			await refresh();
-		} catch (e) {
-			error = String(e);
-			loading = false;
-		}
-	});
-
-	$effect(() => {
-		// re-fetch whenever any filter changes
-		[q, reviewDue, sort, broadIndustry, niche, operatingModel, status];
-		if (!loading) refresh();
-	});
+	let companies: Company[] = $derived(data.companies);
+	let metricDefsByKey: Record<string, MetricDef> = $derived(data.metricDefsByKey);
 </script>
 
 <div class="flex items-center justify-between">
 	<div class="flex-1"><HeaderStats {companies} /></div>
-	<a href="/ingest" class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 shrink-0 ml-3">+ New Company</a>
+	<a href="/ingest" class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 shrink-0 ml-3">+ New Company</a>
 </div>
-<FacetBar {taxonomy} bind:q bind:reviewDue bind:sort bind:broadIndustry bind:niche bind:operatingModel bind:status />
 
-{#if error}
-	<div class="text-center text-danger py-16">{error}</div>
-{:else if loading && !companies.length}
-	<div class="text-center text-muted-fg py-16">Loading...</div>
-{:else if !companies.length}
-	<div class="text-center text-muted-fg py-16">No companies match these filters.</div>
+{#if !companies.length}
+	<div class="text-center text-muted-fg py-16">No companies yet.</div>
 {:else}
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 		{#each companies as company (company.company_id)}

@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireActor, requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { listDecisions, logDecision } from '$lib/server/services/decisions';
 import { NotFoundError, ScenarioNotFoundError } from '$lib/server/services/scenarios';
 
@@ -45,7 +45,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const actor = requireWriteActor(locals.actor);
 		const body = await request.json();
 		const parsed = decisionIn.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const decision = await logDecision(
 			params.id!,

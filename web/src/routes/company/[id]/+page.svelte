@@ -5,58 +5,20 @@
 	// jump nav, redline meters on kill triggers, per-pillar notes/tables,
 	// multi-scenario ("Also tracked by" / "Start Your Own Thesis"), and a
 	// wired-up "Run AI Review" action.
-	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, ApiError } from '$lib/api';
-	import { STATUS_STYLES } from '$lib/format';
+	import { STATUS_STYLES, OPERATING_MODEL_LABELS } from '$lib/format';
+	import { session } from '$lib/session.svelte';
 	import CustomTables from './CustomTables.svelte';
 	import ActionPanels from './ActionPanels.svelte';
+	import type { PageData } from './$types';
+	import type { CompanyDetail } from './+page';
 
-	type KillTrigger = {
-		id: number;
-		label: string;
-		metric_key: string | null;
-		operator: string | null;
-		threshold: number | null;
-		severity: string;
-		action: string;
-		grace_periods: number;
-		manual_check: boolean;
-		latest_observed_value: number | null;
-		latest_breached: boolean | null;
-		latest_fired: boolean | null;
-	};
-	type HealthCheck = { id: number; period: string; verdict: string; source: string; note: string; human_confirmed: boolean };
-	type OtherScenario = { id: number; owner: string; label: string; status: string; last_reviewed: string };
-	type ThesisData = {
-		the_business?: { what_it_does: string; revenue_split: { segment: string; share_pct: number }[] };
-		the_growth_engine?: string[];
-		the_big_change?: { summary: string; expected_completion: string };
-		proof_points?: { hard_evidence: string[] };
-		why_we_believe_it?: string[];
-		health_check?: { latest_quarter_review: string };
-		references?: { title: string; url: string }[];
-		pillar_notes?: Record<string, string[]>;
-	};
-	type CompanyDetail = {
-		company_id: string;
-		name: string;
-		broad_industry: string;
-		specific_niche: string;
-		operating_model: string;
-		currency: string;
-		status: string | null;
-		has_own_scenario: boolean;
-		has_active_override: boolean;
-		current_thesis?: ThesisData;
-		kill_triggers: KillTrigger[];
-		health_checks: HealthCheck[];
-		active_override: { to_status: string; rationale: string; actor: string } | null;
-		other_scenarios: OtherScenario[];
-		pending_proposals?: unknown[];
-	};
+	let { data }: { data: PageData } = $props();
 
-	const SECTIONS = [
+	const OPERATING_MODELS = Object.keys(OPERATING_MODEL_LABELS);
+
+	const BASE_SECTIONS = [
 		{ id: 'business', label: '1. The Business' },
 		{ id: 'growth', label: '2. The Growth Engine' },
 		{ id: 'change', label: '3. The Big Change' },
@@ -65,33 +27,82 @@
 		{ id: 'believe', label: '6. Why We Believe It' },
 		{ id: 'health', label: '7. Quarterly Review' },
 		{ id: 'decisions', label: 'Buy / Sell Decisions' },
-		{ id: 'references', label: 'References' },
-		{ id: 'custom', label: 'Custom Sections' }
+		{ id: 'references', label: 'References' }
 	];
 
-	let companyId = $derived(page.params.id!);
-	let detail = $state<CompanyDetail | null>(null);
-	let error = $state('');
-	let loading = $state(true);
+	// The untagged custom tables a user has added (via "+ Add Table" here, or
+	// the Custom Sections builder on the ingest/amend page) each get their own
+	// named nav entry instead of one generic "Custom Sections" bucket - they
+	// all live in the same cp-sec-custom card, so every entry scrolls there.
+	let customTables = $state<{ id: number; name: string }[]>([]);
+	let SECTIONS = $derived([
+		...BASE_SECTIONS,
+		...(customTables.length ? customTables.map((t) => ({ id: 'custom', label: t.name })) : [{ id: 'custom', label: 'Custom Sections' }])
+	]);
 
-	async function load() {
-		loading = true;
-		error = '';
-		try {
-			detail = (await api.getCompany(companyId)) as CompanyDetail;
-		} catch (e) {
-			error = String(e);
-		} finally {
-			loading = false;
+	let companyId = $derived(data.detail.company_id);
+	// Writable derived: tracks data.detail (re-derives when load() reruns,
+	// e.g. navigating to a different company), but reload() below can also
+	// assign it directly after a write, without waiting for a re-navigation.
+	let detail = $derived(data.detail);
+
+	async function reload() {
+		detail = (await api.getCompany(companyId)) as CompanyDetail;
+	}
+
+	let style = $derived(STATUS_STYLES[detail?.status ?? ''] ?? STATUS_STYLES.on_track);
+
+	// ---- Edit Details (Basics) ----
+	type Industry = { name: string; niches: { name: string }[] };
+	let editOpen = $state(false);
+	let editTaxonomy = $state<Industry[]>([]);
+	let editName = $state('');
+	let editBroadIndustry = $state('');
+	let editSpecificNiche = $state('');
+	let editOperatingModel = $state('');
+	let editCurrency = $state('');
+	let editSubmitting = $state(false);
+	let editError = $state('');
+	let editNiches = $derived(editTaxonomy.find((i) => i.name === editBroadIndustry)?.niches ?? []);
+
+	async function openEdit() {
+		if (!detail) return;
+		editError = '';
+		editName = detail.name;
+		editBroadIndustry = detail.broad_industry;
+		editSpecificNiche = detail.specific_niche;
+		editOperatingModel = detail.operating_model;
+		editCurrency = detail.currency;
+		editOpen = true;
+		if (!editTaxonomy.length) {
+			try {
+				editTaxonomy = (await api.getTaxonomy()) as Industry[];
+			} catch (e) {
+				editError = String(e);
+			}
 		}
 	}
 
-	$effect(() => {
-		companyId;
-		load();
-	});
-
-	let style = $derived(STATUS_STYLES[detail?.status ?? ''] ?? STATUS_STYLES.on_track);
+	async function submitEdit() {
+		if (!detail) return;
+		editSubmitting = true;
+		editError = '';
+		try {
+			await api.updateCompany(detail.company_id, {
+				name: editName.trim(),
+				broad_industry: editBroadIndustry,
+				specific_niche: editSpecificNiche,
+				operating_model: editOperatingModel,
+				currency: editCurrency.trim().toUpperCase()
+			});
+			editOpen = false;
+			await reload();
+		} catch (e) {
+			editError = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+		} finally {
+			editSubmitting = false;
+		}
+	}
 
 	function scrollTo(id: string) {
 		document.getElementById(`cp-sec-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -141,12 +152,7 @@
 	}
 </script>
 
-{#if loading}
-	<div class="text-center text-muted-fg py-16">Loading...</div>
-{:else if error}
-	<div class="text-center text-danger py-16">{error}</div>
-{:else if detail}
-	<!-- Persistent action header -->
+<!-- Persistent action header -->
 	<div class="flex items-center gap-3 flex-wrap -mx-4 sm:mx-0 px-4 sm:px-0 py-3 border-b border-border sticky top-0 z-10 bg-bg-ink">
 		<a href="/" class="text-sm px-2 py-1.5 rounded-md hover:bg-surface-3 text-muted-fg hover:text-fg shrink-0">&larr; Back</a>
 		{#if detail.has_own_scenario}
@@ -165,7 +171,7 @@
 			<div class="flex flex-wrap gap-2 shrink-0">
 				<a
 					href={`/ingest?mode=amend&companyId=${encodeURIComponent(companyId)}`}
-					class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90">Amend Thesis</a
+					class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90">Amend Thesis</a
 				>
 				<button type="button" onclick={() => scrollTo('decisions')} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3"
 					>Post Observations</button
@@ -181,9 +187,71 @@
 					onclick={() => (aiReviewOpen = !aiReviewOpen)}
 					class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Run AI Review</button
 				>
+				{#if !session.isReadOnly}
+					<button type="button" onclick={openEdit} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Edit Details</button>
+				{/if}
 			</div>
 		{/if}
 	</div>
+
+	{#if editOpen}
+		<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onclick={() => (editOpen = false)} role="presentation">
+			<div class="bg-bg-ink rounded-xl border border-border w-full max-w-md p-5" onclick={(e) => e.stopPropagation()} role="presentation">
+				<div class="flex items-center justify-between">
+					<h2 class="font-semibold">Edit Details</h2>
+					<button type="button" onclick={() => (editOpen = false)} class="text-muted-fg hover:text-fg text-lg leading-none">&times;</button>
+				</div>
+				<p class="text-xs text-muted-fg mt-1">Name and classification - shared across every analyst's thesis on this company.</p>
+				{#if editError}
+					<div class="mt-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{editError}</div>
+				{/if}
+				<div class="mt-3 space-y-2">
+					<label class="block text-sm"
+						>Name
+						<input bind:value={editName} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+					</label>
+					<label class="block text-sm"
+						>Broad Industry
+						<select bind:value={editBroadIndustry} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+							{#each editTaxonomy as i (i.name)}
+								<option value={i.name}>{i.name}</option>
+							{/each}
+						</select>
+					</label>
+					<label class="block text-sm"
+						>Specific Niche
+						<select bind:value={editSpecificNiche} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+							{#each editNiches as n (n.name)}
+								<option value={n.name}>{n.name}</option>
+							{/each}
+						</select>
+					</label>
+					<label class="block text-sm"
+						>Operating Model
+						<select bind:value={editOperatingModel} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+							{#each OPERATING_MODELS as m (m)}
+								<option value={m}>{OPERATING_MODEL_LABELS[m]}</option>
+							{/each}
+						</select>
+					</label>
+					<label class="block text-sm"
+						>Currency
+						<input bind:value={editCurrency} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+					</label>
+				</div>
+				<div class="flex justify-end gap-2 mt-4">
+					<button type="button" onclick={() => (editOpen = false)} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
+					<button
+						type="button"
+						disabled={editSubmitting}
+						onclick={submitEdit}
+						class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50"
+						>{editSubmitting ? 'Saving...' : 'Save Changes'}</button
+					>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	{#if aiReviewOpen}
 		<div class="mt-3 rounded-md border border-border p-3">
@@ -204,7 +272,7 @@
 			<button
 				disabled={aiSubmitting}
 				onclick={runAiReview}
-				class="mt-2 text-xs px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50"
+				class="mt-2 text-xs px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50"
 				>{aiSubmitting ? 'Running...' : 'Run Review'}</button
 			>
 			{#if aiResult}
@@ -247,7 +315,7 @@
 				<button
 					type="button"
 					onclick={() => goto(`/ingest?companyId=${encodeURIComponent(companyId)}`)}
-					class="text-sm px-4 py-2 rounded-md bg-accent text-accent-ink hover:brightness-90">+ Start Your Own Thesis</button
+					class="text-sm px-4 py-2 rounded-md bg-fg text-bg hover:brightness-90">+ Start Your Own Thesis</button
 				>
 			</div>
 		</div>
@@ -256,7 +324,7 @@
 		<div class="mt-3 flex gap-6">
 			<!-- Left section nav -->
 			<nav class="hidden lg:flex flex-col gap-0.5 w-52 shrink-0 sticky top-16 self-start max-h-[calc(100vh-5rem)] overflow-y-auto">
-				{#each SECTIONS as s (s.id)}
+				{#each SECTIONS as s, si (si)}
 					<button
 						type="button"
 						onclick={() => scrollTo(s.id)}
@@ -288,7 +356,7 @@
 				{/if}
 
 				<!-- 1. The Business -->
-				<section id="cp-sec-business" class="mt-8 pt-2 scroll-mt-20">
+				<section id="cp-sec-business" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
 					<p class="text-sm mt-1">{t.the_business?.what_it_does}</p>
 					<div class="mt-2 space-y-0.5">
@@ -310,7 +378,7 @@
 				</section>
 
 				<!-- 2. The Growth Engine -->
-				<section id="cp-sec-growth" class="mt-8 pt-5 border-t border-border scroll-mt-20">
+				<section id="cp-sec-growth" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">2. The Growth Engine</h3>
 					<ul class="list-disc list-inside text-sm mt-1 space-y-0.5">
 						{#each t.the_growth_engine ?? [] as g, i (i)}
@@ -331,7 +399,7 @@
 				</section>
 
 				<!-- 3. The Big Change -->
-				<section id="cp-sec-change" class="mt-8 pt-5 border-t border-border scroll-mt-20">
+				<section id="cp-sec-change" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">3. The Big Change</h3>
 					<p class="text-sm mt-1">{t.the_big_change?.summary}</p>
 					<div class="text-xs text-muted-fg mt-0.5">Expected completion: {t.the_big_change?.expected_completion}</div>
@@ -349,7 +417,7 @@
 				</section>
 
 				<!-- 4. Proof Points -->
-				<section id="cp-sec-proof" class="mt-8 pt-5 border-t border-border scroll-mt-20">
+				<section id="cp-sec-proof" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">4. Proof Points</h3>
 					<ul class="list-disc list-inside text-sm mt-1 space-y-0.5">
 						{#each t.proof_points?.hard_evidence ?? [] as e, i (i)}
@@ -370,7 +438,7 @@
 				</section>
 
 				<!-- 5. What Can Kill It -->
-				<section id="cp-sec-kill" class="mt-8 pt-5 border-t border-border scroll-mt-20">
+				<section id="cp-sec-kill" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">5. What Can Kill It</h3>
 					{#if detail.kill_triggers.length}
 						<div class="mt-1">
@@ -429,7 +497,7 @@
 				</section>
 
 				<!-- 6. Why We Believe It -->
-				<section id="cp-sec-believe" class="mt-8 pt-5 border-t border-border scroll-mt-20">
+				<section id="cp-sec-believe" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">6. Why We Believe It</h3>
 					<ol class="list-decimal list-inside text-sm mt-1 space-y-1">
 						{#each t.why_we_believe_it ?? [] as w, i (i)}
@@ -450,7 +518,7 @@
 				</section>
 
 				<!-- Thesis Performance / price + 7. Health Check -->
-				<section id="cp-sec-health" class="mt-8 pt-5 border-t border-border scroll-mt-20">
+				<section id="cp-sec-health" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Quarterly Review</h3>
 					<p class="text-sm mt-1 text-muted-fg">{t.health_check?.latest_quarter_review}</p>
 					<div class="mt-2">
@@ -484,7 +552,7 @@
 				</section>
 
 				<!-- Buy/Sell Decisions + Observations + Price/Performance + Outcome (ActionPanels) -->
-				<section id="cp-sec-decisions" class="mt-8 pt-5 border-t border-border scroll-mt-20">
+				<section id="cp-sec-decisions" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<ActionPanels {companyId} />
 					{#if detail.pending_proposals?.length}
 						<div class="text-xs text-muted-fg mt-3">
@@ -494,7 +562,7 @@
 				</section>
 
 				<!-- References -->
-				<section id="cp-sec-references" class="mt-8 pt-5 border-t border-border scroll-mt-20">
+				<section id="cp-sec-references" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">References</h3>
 					<div class="mt-1 space-y-0.5">
 						{#each t.references ?? [] as r (r.url)}
@@ -516,11 +584,11 @@
 					<CustomTables {companyId} section="references" compact />
 				</section>
 
-				<!-- Custom Sections (untagged tables) -->
-				<section id="cp-sec-custom" class="mt-8 pt-5 border-t border-border mb-10 scroll-mt-20">
-					<CustomTables {companyId} heading="Custom Sections" />
+				<!-- Custom Sections (untagged tables) - each one also gets its own
+				     named entry in the left nav (see SECTIONS above) -->
+				<section id="cp-sec-custom" class="mt-5 rounded-xl border border-border bg-surface p-5 mb-10 scroll-mt-20">
+					<CustomTables {companyId} heading="Custom Sections" onTablesChange={(t) => (customTables = t)} />
 				</section>
 			</div>
 		</div>
 	{/if}
-{/if}

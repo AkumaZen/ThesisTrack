@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireActor, requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { listPrices, logPrice, NotFoundError } from '$lib/server/services/pricePerformance';
 
 const priceIn = z.object({
@@ -35,7 +35,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const actor = requireWriteActor(locals.actor);
 		const body = await request.json();
 		const parsed = priceIn.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const price = await logPrice(params.id!, parsed.data.observed_on, parsed.data.price, actor.identity);
 		return json(toOut(price), { status: 201 });

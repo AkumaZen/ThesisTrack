@@ -143,6 +143,23 @@ gave them to the user - not saved anywhere in the repo or this memory
 system. If a fourth session ever needs prod access again, expect to reset
 passwords again rather than finding them recorded.
 
+New capability (2026-09-05, ADR-029): `/app-review` - a persistent
+Continuous Application Review agent (`.claude/skills/app-review/SKILL.md`,
+procedure in `harness/skills/continuous-review.md`). Reviews the running
+app for missing features, broken interactions, UI/UX inconsistency,
+missing common patterns, and edge cases; fixes what's safe; learns from
+user feedback into `harness/memory/review-rules.md` (reusable preferences)
+and `harness/memory/review-log.md` (per-run findings/status). Not yet run
+for the first time - next session should expect review-log.md to still
+say "no runs yet" until the user actually invokes `/app-review`.
+
+Note: this STATE.md file substantially predates the SvelteKit rewrite
+(ADR-028) - most of the narrative above (routers, Alembic, `app/`) refers
+to the old FastAPI/vanilla-JS codebase that no longer exists. Treat
+everything above this note as historical background on how the product
+evolved, not as a description of the current repo layout; `web/` is the
+live app now.
+
 Next action: none pending. The 3-part investing-behavior request is
 complete, the full-page thesis view + deeper Balu Forge content (ADR-027)
 is done and live-verified on both local and production, and production

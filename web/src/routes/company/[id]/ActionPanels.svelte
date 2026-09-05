@@ -256,7 +256,7 @@
 		<button
 			disabled={obsSubmitting}
 			onclick={submitObservation}
-			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50"
+			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50"
 			>{obsSubmitting ? 'Saving...' : 'Record Observation'}</button
 		>
 	</section>
@@ -301,7 +301,7 @@
 		<button
 			disabled={decSubmitting}
 			onclick={submitDecision}
-			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50"
+			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50"
 			>{decSubmitting ? 'Saving...' : 'Log Decision'}</button
 		>
 		<p class="text-[11px] text-muted-fg mt-1">Decisions are append-only - there is no edit or delete once logged.</p>
@@ -347,7 +347,7 @@
 			<button
 				disabled={priceSubmitting}
 				onclick={submitPrice}
-				class="text-xs px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50"
+				class="text-xs px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50"
 				>{priceSubmitting ? 'Saving...' : 'Log Price'}</button
 			>
 		</div>
@@ -376,7 +376,7 @@
 		<button
 			disabled={hcSubmitting}
 			onclick={submitHealthCheck}
-			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50"
+			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50"
 			>{hcSubmitting ? 'Saving...' : 'Submit Quarterly Review'}</button
 		>
 	</section>
@@ -403,7 +403,7 @@
 		<button
 			disabled={outcomeSubmitting}
 			onclick={submitOutcome}
-			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-danger text-white hover:brightness-90 disabled:opacity-50"
+			class="mt-2 text-xs px-3 py-1.5 rounded-md bg-danger text-bg hover:brightness-90 disabled:opacity-50"
 			>{outcomeSubmitting ? 'Saving...' : 'Close Out'}</button
 		>
 	</section>

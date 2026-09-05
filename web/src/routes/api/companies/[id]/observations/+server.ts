@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { postObservations, UnknownMetricError } from '$lib/server/services/observations';
 import { NotFoundError } from '$lib/server/services/scenarios';
 
@@ -32,7 +32,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const actor = requireWriteActor(locals.actor);
 		const body = await request.json();
 		const parsed = bulkIn.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const result = await postObservations(
 			params.id!,

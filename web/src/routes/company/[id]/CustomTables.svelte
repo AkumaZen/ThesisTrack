@@ -4,13 +4,30 @@
 	// Svelte 5), plus row CRUD. Self-contained - the parent company page just
 	// mounts <CustomTables {companyId} />, no shared state with the
 	// observation/decision/price/health-check panels.
+	//
+	// Grids render inline (expanded by default) rather than behind an "Open"
+	// button + modal - the data is the point of this section, so it should be
+	// visible without an extra click. A user can still collapse a table they
+	// don't want to see right now via the Hide/Show toggle.
 	import { api, ApiError } from '$lib/api';
 
 	// `section` filters/tags tables to one thesis pillar (e.g. "the_business")
 	// when set - used when this component is mounted inside a pillar section
 	// on the company page. Leave unset for the top-level "Custom Sections"
 	// block, which only shows/creates untagged tables.
-	let { companyId, section = null, heading = 'Data Tables', compact = false }: { companyId: string; section?: string | null; heading?: string; compact?: boolean } = $props();
+	let {
+		companyId,
+		section = null,
+		heading = 'Data Tables',
+		compact = false,
+		onTablesChange
+	}: {
+		companyId: string;
+		section?: string | null;
+		heading?: string;
+		compact?: boolean;
+		onTablesChange?: (tables: { id: number; name: string }[]) => void;
+	} = $props();
 
 	type ColumnDef = { key: string; label: string; type: 'text' | 'number' | 'date' | 'enum'; options?: string[] | null };
 	type TableRow = { id: number; row_data: Record<string, unknown> };
@@ -24,8 +41,11 @@
 	let loading = $state(true);
 	let error = $state('');
 
-	let openTable = $state<TableDetail | null>(null);
-	let openTableError = $state('');
+	// Which tables are expanded (grid visible) and the loaded detail (rows)
+	// for each. New tables default to expanded - collapsing is opt-in.
+	let expandedIds = $state<Set<number>>(new Set());
+	let tableDetails = $state<Record<number, TableDetail>>({});
+	let detailErrors = $state<Record<number, string>>({});
 
 	// Table-builder form state (create or edit)
 	let builderOpen = $state(false);
@@ -34,17 +54,27 @@
 	let builderColumns = $state<{ key: string; label: string; type: string; optionsCsv: string }[]>([]);
 	let builderError = $state('');
 
-	// Row form state (add or edit)
+	// Row form state (add or edit) - targets whichever table's "+ Add Row" /
+	// "Edit" was clicked, not a single globally "open" table anymore.
 	let rowFormOpen = $state(false);
+	let rowFormTableId = $state<number | null>(null);
 	let rowFormEditingId = $state<number | null>(null);
 	let rowFormValues = $state<Record<string, string>>({});
 	let rowFormError = $state('');
+	let rowFormTable = $derived(rowFormTableId != null ? tableDetails[rowFormTableId] : null);
 
 	async function load() {
 		loading = true;
 		error = '';
 		try {
 			allTables = (await api.listTables(companyId)) as TableSummary[];
+			// Expand every table by default the first time it's seen, and
+			// load its rows so the grid is already there to look at.
+			for (const t of tables) {
+				if (!expandedIds.has(t.id)) expandedIds.add(t.id);
+			}
+			expandedIds = new Set(expandedIds);
+			await Promise.all(tables.filter((t) => expandedIds.has(t.id) && !tableDetails[t.id]).map((t) => loadDetail(t.id)));
 		} catch (e) {
 			error = String(e);
 		} finally {
@@ -52,9 +82,33 @@
 		}
 	}
 
+	async function loadDetail(id: number) {
+		detailErrors = { ...detailErrors, [id]: '' };
+		try {
+			tableDetails = { ...tableDetails, [id]: (await api.getTable(id)) as TableDetail };
+		} catch (e) {
+			detailErrors = { ...detailErrors, [id]: apiErrorMessage(e) };
+		}
+	}
+
+	function toggleTable(id: number) {
+		const next = new Set(expandedIds);
+		if (next.has(id)) {
+			next.delete(id);
+		} else {
+			next.add(id);
+			if (!tableDetails[id]) loadDetail(id);
+		}
+		expandedIds = next;
+	}
+
 	$effect(() => {
 		companyId;
 		load();
+	});
+
+	$effect(() => {
+		onTablesChange?.(tables.map((t) => ({ id: t.id, name: t.name })));
 	});
 
 	function apiErrorMessage(e: unknown): string {
@@ -90,65 +144,71 @@
 		builderColumns = builderColumns.filter((_, idx) => idx !== i);
 	}
 
+	// The API requires lowercase snake_case keys (they end up as JSON object
+	// keys read back programmatically for SFT export). Normalize here so
+	// typing a normal label like "Shishir" or "Total Shares" into the key
+	// field just works instead of round-tripping a 422.
+	function slugifyKey(raw: string): string {
+		return raw
+			.trim()
+			.toLowerCase()
+			.replace(/[^a-z0-9_]+/g, '_')
+			.replace(/^[^a-z]+/, '')
+			.replace(/_+/g, '_')
+			.replace(/_$/, '')
+			.slice(0, 50);
+	}
+
 	async function submitBuilder() {
 		builderError = '';
 		const columns = builderColumns
 			.filter((c) => c.key.trim() && c.label.trim())
 			.map((c) => ({
-				key: c.key.trim(),
+				key: slugifyKey(c.key),
 				label: c.label.trim(),
 				type: c.type,
 				options: c.type === 'enum' ? c.optionsCsv.split(',').map((o) => o.trim()).filter(Boolean) : undefined
 			}));
 		try {
-			if (builderEditingId != null) {
-				await api.patchTable(builderEditingId, { name: builderName, columns });
+			let id = builderEditingId;
+			if (id != null) {
+				await api.patchTable(id, { name: builderName, columns });
 			} else {
-				await api.createTable(companyId, { name: builderName, columns, section });
+				const created = (await api.createTable(companyId, { name: builderName, columns, section })) as { id: number };
+				id = created.id;
 			}
 			builderOpen = false;
 			await load();
-			if (openTable && builderEditingId === openTable.id) {
-				openTable = (await api.getTable(openTable.id)) as TableDetail;
-			}
+			expandedIds = new Set(expandedIds).add(id);
+			await loadDetail(id);
 		} catch (e) {
 			builderError = apiErrorMessage(e);
 		}
-	}
-
-	async function openTableGrid(id: number) {
-		openTableError = '';
-		try {
-			openTable = (await api.getTable(id)) as TableDetail;
-		} catch (e) {
-			openTableError = apiErrorMessage(e);
-		}
-	}
-
-	function closeTableGrid() {
-		openTable = null;
 	}
 
 	async function deleteTable(id: number) {
 		if (!confirm('Delete this table and all its rows?')) return;
 		try {
 			await api.deleteTable(id);
-			if (openTable?.id === id) openTable = null;
+			delete tableDetails[id];
+			tableDetails = { ...tableDetails };
 			await load();
 		} catch (e) {
 			error = apiErrorMessage(e);
 		}
 	}
 
-	function openRowForm(row?: TableRow) {
-		if (!openTable) return;
+	function openRowForm(tableId: number, row?: TableRow) {
+		const table = tableDetails[tableId];
+		if (!table) return;
 		rowFormError = '';
+		rowFormTableId = tableId;
 		if (row) {
 			rowFormEditingId = row.id;
-			rowFormValues = Object.fromEntries(openTable.columns.map((c) => [c.key, String(row.row_data[c.key] ?? '')]));
+			rowFormValues = Object.fromEntries(table.columns.map((c) => [c.key, String(row.row_data[c.key] ?? '')]));
 		} else {
 			rowFormEditingId = null;
-			rowFormValues = Object.fromEntries(openTable.columns.map((c) => [c.key, '']));
+			rowFormValues = Object.fromEntries(table.columns.map((c) => [c.key, '']));
 		}
 		rowFormOpen = true;
 	}
@@ -158,28 +218,28 @@
 	}
 
 	async function submitRowForm() {
-		if (!openTable) return;
+		if (rowFormTableId == null) return;
 		rowFormError = '';
 		const rowData = Object.fromEntries(Object.entries(rowFormValues).filter(([, v]) => v !== ''));
 		try {
 			if (rowFormEditingId != null) {
-				await api.updateRow(openTable.id, rowFormEditingId, rowData);
+				await api.updateRow(rowFormTableId, rowFormEditingId, rowData);
 			} else {
-				await api.createRow(openTable.id, rowData);
+				await api.createRow(rowFormTableId, rowData);
 			}
 			rowFormOpen = false;
-			openTable = (await api.getTable(openTable.id)) as TableDetail;
+			await loadDetail(rowFormTableId);
 			await load();
 		} catch (e) {
 			rowFormError = apiErrorMessage(e);
 		}
 	}
 
-	async function deleteRow(rowId: number) {
-		if (!openTable || !confirm('Delete this row?')) return;
+	async function deleteRow(tableId: number, rowId: number) {
+		if (!confirm('Delete this row?')) return;
 		try {
-			await api.deleteRow(openTable.id, rowId);
-			openTable = (await api.getTable(openTable.id)) as TableDetail;
+			await api.deleteRow(tableId, rowId);
+			await loadDetail(tableId);
 			await load();
 		} catch (e) {
 			error = apiErrorMessage(e);
@@ -207,18 +267,74 @@
 	{#if loading}
 		<div class="text-xs text-muted-fg mt-2">Loading...</div>
 	{:else if tables.length}
-		<div class="mt-2 space-y-2">
+		<div class="mt-2 space-y-3">
 			{#each tables as t (t.id)}
-				<div class="flex items-center justify-between rounded-md border border-border px-3 py-2">
-					<div>
-						<span class="text-sm font-medium">{t.name}</span>
-						<span class="text-xs text-muted-fg ml-2">{t.columns.length} columns &middot; {t.row_count} rows</span>
+				{@const expanded = expandedIds.has(t.id)}
+				{@const detail = tableDetails[t.id]}
+				<div class="rounded-md border border-border">
+					<div class="flex items-center justify-between px-3 py-2">
+						<button
+							type="button"
+							onclick={() => toggleTable(t.id)}
+							class="flex items-center gap-2 text-left cursor-pointer"
+							aria-expanded={expanded}
+						>
+							<span class="text-muted-fg text-xs transition-transform" class:rotate-90={expanded}>&#9656;</span>
+							<span class="text-sm font-medium">{t.name}</span>
+							<span class="text-xs text-muted-fg">{t.columns.length} columns &middot; {t.row_count} rows</span>
+						</button>
+						<div class="flex items-center gap-2">
+							<button type="button" onclick={() => toggleTable(t.id)} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3 cursor-pointer">
+								{expanded ? 'Hide' : 'Show'}
+							</button>
+							<button type="button" onclick={() => openBuilder(t)} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3 cursor-pointer">Edit Columns</button>
+							<button type="button" onclick={() => deleteTable(t.id)} class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
+						</div>
 					</div>
-					<div class="flex items-center gap-2">
-						<button type="button" onclick={() => openTableGrid(t.id)} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Open</button>
-						<button type="button" onclick={() => openBuilder(t)} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Edit Columns</button>
-						<button type="button" onclick={() => deleteTable(t.id)} class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger">Delete</button>
-					</div>
+
+					{#if expanded}
+						<div class="border-t border-border p-3">
+							{#if detailErrors[t.id]}
+								<div class="mb-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-xs text-danger">{detailErrors[t.id]}</div>
+							{/if}
+							{#if !detail}
+								<div class="text-xs text-muted-fg">Loading rows...</div>
+							{:else}
+								<div class="overflow-x-auto rounded-md border border-border">
+									<table class="w-full text-sm">
+										<thead>
+											<tr class="bg-surface-2">
+												{#each detail.columns as c (c.key)}
+													<th class="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-fg whitespace-nowrap">{c.label}</th>
+												{/each}
+												<th class="px-3 py-2"></th>
+											</tr>
+										</thead>
+										<tbody>
+											{#each detail.rows as row (row.id)}
+												<tr class="border-t border-border">
+													{#each detail.columns as c (c.key)}
+														<td class="px-3 py-2 whitespace-nowrap">{formatCell(row.row_data[c.key])}</td>
+													{/each}
+													<td class="px-3 py-2 text-right whitespace-nowrap">
+														<button onclick={() => openRowForm(t.id, row)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:bg-surface-3 cursor-pointer">Edit</button>
+														<button onclick={() => deleteRow(t.id, row.id)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
+													</td>
+												</tr>
+											{:else}
+												<tr><td colspan={detail.columns.length + 1} class="px-3 py-6 text-center text-muted-fg">No rows yet.</td></tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+								{#if detail.columns.length}
+									<button onclick={() => openRowForm(t.id)} class="text-xs text-ok mt-3">+ Add Row</button>
+								{:else}
+									<div class="text-xs text-muted-fg mt-3">This table has no columns yet - edit it to add some.</div>
+								{/if}
+							{/if}
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -271,7 +387,7 @@
 			</div>
 			<div class="px-5 py-3 border-t border-border flex justify-end gap-2">
 				<button onclick={closeBuilder} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
-				<button onclick={submitBuilder} class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90"
+				<button onclick={submitBuilder} class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90"
 					>{builderEditingId != null ? 'Save Changes' : 'Create Table'}</button
 				>
 			</div>
@@ -279,57 +395,8 @@
 	</div>
 {/if}
 
-<!-- Table grid modal -->
-{#if openTable}
-	<div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" onclick={closeTableGrid} role="presentation">
-		<div class="bg-bg-ink rounded-xl border border-border w-full max-w-3xl" onclick={(e) => e.stopPropagation()} role="presentation">
-			<div class="flex items-center justify-between px-5 py-3 border-b border-border">
-				<h2 class="font-semibold">{openTable.name}</h2>
-				<button onclick={closeTableGrid} class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
-			</div>
-			<div class="p-5 overflow-y-auto" style="max-height: 65vh">
-				{#if openTableError}
-					<div class="mb-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{openTableError}</div>
-				{/if}
-				<div class="overflow-x-auto rounded-md border border-border">
-					<table class="w-full text-sm">
-						<thead>
-							<tr class="bg-surface-2">
-								{#each openTable.columns as c (c.key)}
-									<th class="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-fg whitespace-nowrap">{c.label}</th>
-								{/each}
-								<th class="px-3 py-2"></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each openTable.rows as row (row.id)}
-								<tr class="border-t border-border">
-									{#each openTable.columns as c (c.key)}
-										<td class="px-3 py-2 whitespace-nowrap">{formatCell(row.row_data[c.key])}</td>
-									{/each}
-									<td class="px-3 py-2 text-right whitespace-nowrap">
-										<button onclick={() => openRowForm(row)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:bg-surface-3">Edit</button>
-										<button onclick={() => deleteRow(row.id)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:text-danger">Delete</button>
-									</td>
-								</tr>
-							{:else}
-								<tr><td colspan={openTable.columns.length + 1} class="px-3 py-6 text-center text-muted-fg">No rows yet.</td></tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-				{#if openTable.columns.length}
-					<button onclick={() => openRowForm()} class="text-xs text-ok mt-3">+ Add Row</button>
-				{:else}
-					<div class="text-xs text-muted-fg mt-3">This table has no columns yet - edit it to add some.</div>
-				{/if}
-			</div>
-		</div>
-	</div>
-{/if}
-
 <!-- Row form modal -->
-{#if rowFormOpen && openTable}
+{#if rowFormOpen && rowFormTable}
 	<div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onclick={closeRowForm} role="presentation">
 		<div class="bg-bg-ink rounded-xl border border-border w-full max-w-md" onclick={(e) => e.stopPropagation()} role="presentation">
 			<div class="flex items-center justify-between px-5 py-3 border-b border-border">
@@ -337,7 +404,7 @@
 				<button onclick={closeRowForm} class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
 			</div>
 			<div class="p-5">
-				{#each openTable.columns as c (c.key)}
+				{#each rowFormTable.columns as c (c.key)}
 					<label class="text-sm block mt-2"
 						>{c.label}
 						{#if c.type === 'enum'}
@@ -363,7 +430,7 @@
 			</div>
 			<div class="px-5 py-3 border-t border-border flex justify-end gap-2">
 				<button onclick={closeRowForm} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Cancel</button>
-				<button onclick={submitRowForm} class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90"
+				<button onclick={submitRowForm} class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90"
 					>{rowFormEditingId != null ? 'Save' : 'Add'}</button
 				>
 			</div>

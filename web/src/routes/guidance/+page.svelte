@@ -2,24 +2,15 @@
 	// Ports frontend/components/guidance.js (renderGuidanceFilterBar/List/AddForm)
 	// + the guidance wiring in frontend/app.js into a real route. Guidance notes
 	// are always company-scoped in this schema (guidance_notes.company_id is
-	// NOT NULL) - there is no "global" guidance concept to port.
-	import { onMount } from 'svelte';
+	// NOT NULL) - there is no "global" guidance concept to port. Initial data
+	// (default filters) comes from +page.ts's load(); changing a filter still
+	// refetches directly via refresh(), same as before.
 	import { api, ApiError } from '$lib/api';
 	import { session } from '$lib/session.svelte';
+	import type { PageData } from './$types';
+	import type { Guidance, Company } from './+page';
 
-	type Guidance = {
-		id: number;
-		company_id: string;
-		company_name: string | null;
-		block_key: string;
-		note: string;
-		status: string;
-		created_by: string;
-		created_at: string;
-		resolved_by: string | null;
-		resolved_at: string | null;
-	};
-	type Company = { company_id: string; name: string };
+	let { data }: { data: PageData } = $props();
 
 	const BLOCK_KEYS = [
 		'general',
@@ -41,9 +32,8 @@
 			.join(' ');
 	}
 
-	let items = $state<Guidance[]>([]);
-	let companies = $state<Company[]>([]);
-	let loading = $state(true);
+	let items = $derived(data.items);
+	let companies = $derived(data.companies);
 	let error = $state('');
 
 	let filterCompany = $state('');
@@ -51,13 +41,12 @@
 	let filterStatus = $state('open');
 
 	let showAddForm = $state(false);
-	let addCompany = $state('');
+	let addCompany = $state(data.companies[0]?.company_id ?? '');
 	let addBlock = $state('general');
 	let addNote = $state('');
 	let adding = $state(false);
 
 	async function refresh() {
-		loading = true;
 		error = '';
 		try {
 			items = (await api.listGuidance({
@@ -67,25 +56,19 @@
 			})) as Guidance[];
 		} catch (e) {
 			error = String(e);
-		} finally {
-			loading = false;
 		}
 	}
 
-	onMount(async () => {
-		try {
-			const resp = (await api.listCompanies({ page_size: 200 })) as { items: Company[] };
-			companies = resp.items;
-			addCompany = companies[0]?.company_id ?? '';
-		} catch (e) {
-			error = String(e);
-		}
-		await refresh();
-	});
-
+	// Skip the first run - load() already fetched the default-filter view,
+	// so only refetch once the user actually changes a filter.
+	let firstFilterRun = true;
 	$effect(() => {
 		[filterCompany, filterBlock, filterStatus];
-		if (!loading) refresh();
+		if (firstFilterRun) {
+			firstFilterRun = false;
+			return;
+		}
+		refresh();
 	});
 
 	function openAddForm() {
@@ -132,7 +115,7 @@
 <div class="flex items-center justify-between mb-1">
 	<h2 class="text-xl font-semibold">Guidance</h2>
 	{#if !session.isReadOnly}
-		<button onclick={openAddForm} class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90"
+		<button onclick={openAddForm} class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90"
 			>+ Add Guidance</button
 		>
 	{/if}
@@ -172,9 +155,7 @@
 	</label>
 </div>
 
-{#if loading}
-	<div class="text-center text-muted-fg py-16">Loading...</div>
-{:else if !items.length}
+{#if !items.length}
 	<div class="text-center text-muted-fg py-16">No guidance notes match these filters.</div>
 {:else}
 	<div class="space-y-3">
@@ -274,7 +255,7 @@
 				<button
 					disabled={adding || !addNote.trim()}
 					onclick={submitAdd}
-					class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50">Add</button
+					class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50">Add</button
 				>
 			</div>
 		</div>

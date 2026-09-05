@@ -1,7 +1,7 @@
 // GET/POST /api/sectors - list sectors with rollup companies, create a sector.
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { errorResponse, requireActor, requireWriteActor, handleAuthError } from '$lib/server/http';
+import { errorResponse, requireActor, requireWriteActor, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { createSectorSchema } from '$lib/server/schemas/sector';
 import { createSector, listSectorsWithCompanies } from '$lib/server/services/sectors';
 
@@ -19,7 +19,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	try {
 		const actor = requireWriteActor(locals.actor);
 		const parsed = createSectorSchema.safeParse(await request.json());
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const sector = await createSector(parsed.data, actor.identity);
 		return json(sector, { status: 201 });

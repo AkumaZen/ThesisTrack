@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { deleteRow, updateRow, ValidationError } from '$lib/server/services/customTables';
 
 const rowIn = z.object({ row_data: z.record(z.string(), z.unknown()).default({}) });
@@ -26,7 +26,7 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
 		const rowId = Number(params.rowId);
 		const body = await request.json();
 		const parsed = rowIn.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const { table, row } = await (async () => {
 			try {

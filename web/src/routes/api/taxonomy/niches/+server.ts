@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { proposeNiche, TaxonomyError } from '$lib/server/services/taxonomy';
 
 const nicheIn = z.object({
@@ -15,7 +15,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		requireWriteActor(locals.actor);
 		const body = await request.json();
 		const parsed = nicheIn.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const niche = await proposeNiche(parsed.data.broad_industry, parsed.data.name);
 		return json({ id: niche.id, name: niche.name, is_active: niche.isActive, company_count: 0 }, { status: 201 });

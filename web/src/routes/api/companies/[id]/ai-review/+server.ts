@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { requireWriteActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { getLlmClient } from '$lib/server/llm/client';
 import { AIReviewFailedError, NotFoundError, runAiReview } from '$lib/server/services/aiReviewer';
 
@@ -42,7 +42,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const actor = requireWriteActor(locals.actor);
 		const body = await request.json();
 		const parsed = aiReviewIn.safeParse(body);
-		if (!parsed.success) return errorResponse(422, parsed.error.message);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
 		const llmClient = getLlmClient();
 		const proposal = await runAiReview(params.id!, parsed.data.period, parsed.data.narrative, llmClient, actor.identity);

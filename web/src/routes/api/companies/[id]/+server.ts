@@ -1,5 +1,6 @@
 // Ports GET /api/companies/{id} from app/routers/companies.py.
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
@@ -14,9 +15,20 @@ import {
 	statusProposals,
 	thesisVersions
 } from '$lib/server/db/schema';
-import { requireActor, errorResponse, handleAuthError } from '$lib/server/http';
+import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { listScenarios } from '$lib/server/services/scenarios';
 import { latestTriggerEvaluations, scenarioToOut } from '$lib/server/services/companiesShared';
+import { updateCompanyDetails, NotFoundError, TaxonomyError } from '$lib/server/services/versioning';
+
+const OPERATING_MODELS = ['factory', 'subscription', 'money_lending', 'retail_stores', 'services'] as const;
+
+const companyPatch = z.object({
+	name: z.string().min(1).max(255).optional(),
+	broad_industry: z.string().min(1).optional(),
+	specific_niche: z.string().min(1).optional(),
+	operating_model: z.enum(OPERATING_MODELS).optional(),
+	currency: z.string().min(1).max(3).optional()
+});
 
 export const GET: RequestHandler = async ({ locals, params }) => {
 	try {
@@ -175,6 +187,22 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 			other_scenarios: otherScenarios
 		});
 	} catch (err) {
+		return handleAuthError(err);
+	}
+};
+
+export const PATCH: RequestHandler = async ({ locals, params, request }) => {
+	try {
+		requireWriteActor(locals.actor);
+		const body = await request.json();
+		const parsed = companyPatch.safeParse(body);
+		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
+
+		const updated = await updateCompanyDetails(params.id!, parsed.data);
+		return json({ company_id: updated.companyId, name: updated.name });
+	} catch (err) {
+		if (err instanceof NotFoundError) return errorResponse(404, err.message);
+		if (err instanceof TaxonomyError) return errorResponse(422, err.message);
 		return handleAuthError(err);
 	}
 };

@@ -121,7 +121,7 @@
 			<button
 				onclick={download}
 				disabled={downloading}
-				class="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-ink hover:brightness-90 disabled:opacity-50"
+				class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 disabled:opacity-50"
 			>
 				{downloading ? 'Downloading...' : 'Download JSONL'}
 			</button>
