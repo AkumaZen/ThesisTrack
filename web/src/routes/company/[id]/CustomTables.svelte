@@ -67,14 +67,20 @@
 		loading = true;
 		error = '';
 		try {
-			allTables = (await api.listTables(companyId)) as TableSummary[];
+			const fetched = (await api.listTables(companyId)) as TableSummary[];
+			allTables = fetched;
 			// Expand every table by default the first time it's seen, and
-			// load its rows so the grid is already there to look at.
-			for (const t of tables) {
+			// load its rows so the grid is already there to look at. Filter
+			// directly off the freshly-fetched array rather than the
+			// `tables` derived, since reading a derived value immediately
+			// after its dependency changes isn't guaranteed to reflect the
+			// update yet within the same synchronous block.
+			const own = fetched.filter((t) => (section ? t.section === section : !t.section));
+			for (const t of own) {
 				if (!expandedIds.has(t.id)) expandedIds.add(t.id);
 			}
 			expandedIds = new Set(expandedIds);
-			await Promise.all(tables.filter((t) => expandedIds.has(t.id) && !tableDetails[t.id]).map((t) => loadDetail(t.id)));
+			await Promise.all(own.filter((t) => expandedIds.has(t.id) && !tableDetails[t.id]).map((t) => loadDetail(t.id)));
 		} catch (e) {
 			error = String(e);
 		} finally {
