@@ -80,7 +80,28 @@
 				if (!expandedIds.has(t.id)) expandedIds.add(t.id);
 			}
 			expandedIds = new Set(expandedIds);
-			await Promise.all(own.filter((t) => expandedIds.has(t.id) && !tableDetails[t.id]).map((t) => loadDetail(t.id)));
+			// Fetch concurrently for speed, but merge into tableDetails/
+			// detailErrors in one assignment each once everything has
+			// settled - N concurrent loadDetail() calls each doing their
+			// own `tableDetails = {...tableDetails, [id]: x}` is a lost-
+			// update race (whichever resolves last wins, silently dropping
+			// the others), which left most tables stuck on "Loading rows..."
+			// forever even though every request succeeded.
+			const toLoad = own.filter((t) => expandedIds.has(t.id) && !tableDetails[t.id]);
+			const results = await Promise.allSettled(toLoad.map((t) => api.getTable(t.id) as Promise<TableDetail>));
+			const newDetails = { ...tableDetails };
+			const newErrors = { ...detailErrors };
+			results.forEach((r, i) => {
+				const id = toLoad[i].id;
+				if (r.status === 'fulfilled') {
+					newDetails[id] = r.value;
+					newErrors[id] = '';
+				} else {
+					newErrors[id] = apiErrorMessage(r.reason);
+				}
+			});
+			tableDetails = newDetails;
+			detailErrors = newErrors;
 		} catch (e) {
 			error = String(e);
 		} finally {
