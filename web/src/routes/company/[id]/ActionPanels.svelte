@@ -7,7 +7,16 @@
 	import { session } from '$lib/session.svelte';
 	import { STATUS_STYLES } from '$lib/format';
 
-	let { companyId }: { companyId: string } = $props();
+	// readOnly defaults to the account-wide read_only role, but the parent
+	// also passes true while viewing another analyst's scenario read-only -
+	// these panels always write against "my scenario" server-side, so
+	// showing them while looking at someone else's thesis would silently
+	// write to the wrong (or a nonexistent) scenario.
+	let {
+		companyId,
+		readOnly = session.isReadOnly,
+		viewedOwner = null
+	}: { companyId: string; readOnly?: boolean; viewedOwner?: string | null } = $props();
 
 	function apiErrorMessage(e: unknown): string {
 		if (e instanceof ApiError) {
@@ -146,7 +155,7 @@
 		performanceLoading = true;
 		performanceError = '';
 		try {
-			performance = (await api.getPerformance(companyId, baselineMode)) as Performance;
+			performance = (await api.getPerformance(companyId, baselineMode, viewedOwner)) as Performance;
 		} catch (e) {
 			performanceError = apiErrorMessage(e);
 		} finally {
@@ -174,6 +183,7 @@
 
 	$effect(() => {
 		baselineMode;
+		viewedOwner;
 		loadPerformance();
 	});
 
@@ -236,7 +246,7 @@
 	});
 </script>
 
-{#if !session.isReadOnly}
+{#if !readOnly}
 	<section class="mt-6 border-t border-border pt-5">
 		<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Log Observation</h3>
 		{#if obsError}
@@ -287,7 +297,7 @@
 			{/each}
 		</div>
 	{/if}
-	{#if !session.isReadOnly}
+	{#if !readOnly}
 		<div class="grid grid-cols-4 gap-2 mt-3">
 			<select bind:value={decAction} class="rounded-md border border-border px-2 py-1.5 text-sm">
 				<option value="buy">Buy</option>
@@ -337,7 +347,7 @@
 			{/if}
 		</div>
 	{/if}
-	{#if !session.isReadOnly}
+	{#if !readOnly}
 		{#if priceError}
 			<div class="mt-2 rounded-md bg-danger/10 border border-danger/30 p-2 text-xs text-danger">{priceError}</div>
 		{/if}
@@ -354,7 +364,7 @@
 	{/if}
 </section>
 
-{#if !session.isReadOnly}
+{#if !readOnly}
 	<section class="mt-6 border-t border-border pt-5">
 		<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Quarterly Review</h3>
 		{#if hcError}

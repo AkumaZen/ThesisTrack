@@ -6,6 +6,26 @@
 import { api } from '$lib/api';
 import type { PageLoad } from './$types';
 
+export type Trackable = {
+	id: number;
+	label: string;
+	severity: string;
+	manual_check: boolean;
+	metric_key: string | null;
+	operator: string | null;
+	threshold: number | null;
+	latest_fired: boolean | null;
+};
+export type GuidanceSummary = { id: number; block_key: string; note: string; created_at: string };
+export type CompanyScenario = {
+	owner: string;
+	status: string | null;
+	last_reviewed: string | null;
+	has_active_override: boolean;
+	core_metrics: Record<string, number>;
+	trackables: Trackable[];
+	guidance: GuidanceSummary[];
+};
 export type Company = {
 	company_id: string;
 	name: string;
@@ -16,6 +36,7 @@ export type Company = {
 	last_reviewed: string | null;
 	has_active_override: boolean;
 	core_metrics: Record<string, number>;
+	scenarios: CompanyScenario[];
 };
 export type MetricDef = { metric_key: string; label: string; unit: string; decimals?: number };
 

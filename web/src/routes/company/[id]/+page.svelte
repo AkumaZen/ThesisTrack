@@ -45,9 +45,34 @@
 	// e.g. navigating to a different company), but reload() below can also
 	// assign it directly after a write, without waiting for a re-navigation.
 	let detail = $derived(data.detail);
+	let viewingOwnScenario = $derived(detail.viewing_own_scenario);
 
 	async function reload() {
-		detail = (await api.getCompany(companyId)) as CompanyDetail;
+		detail = (await api.getCompany(companyId, detail.scenario_owner)) as CompanyDetail;
+	}
+
+	// ---- Multi-scenario nav (view another analyst's thesis read-only) ----
+	// Cycle order: my own scenario first (if I have one), then every other
+	// analyst's, in the order the API returns them. The header's arrow steps
+	// forward through this list and wraps back to mine. "Mine" is tracked by
+	// session.email (not null) so it compares correctly against
+	// detail.scenario_owner, which is always the real owner string of
+	// whichever scenario is currently displayed, including my own.
+	let scenarioCycle = $derived([
+		...(detail.has_own_scenario && session.email ? [session.email] : []),
+		...detail.other_scenarios.map((s) => s.owner)
+	]);
+	let currentCycleIndex = $derived(scenarioCycle.indexOf(detail.scenario_owner ?? ''));
+
+	function viewScenario(owner: string) {
+		const qs = owner === session.email ? '' : `?owner=${encodeURIComponent(owner)}`;
+		goto(`/company/${encodeURIComponent(companyId)}${qs}`);
+	}
+
+	function viewNextScenario() {
+		if (scenarioCycle.length < 2) return;
+		const next = scenarioCycle[(Math.max(currentCycleIndex, 0) + 1) % scenarioCycle.length];
+		viewScenario(next);
 	}
 
 	let style = $derived(STATUS_STYLES[detail?.status ?? ''] ?? STATUS_STYLES.on_track);
@@ -117,6 +142,14 @@
 		return Math.min(100, Math.max(0, (observed / span) * 100));
 	}
 
+	// ---- Header overflow menu ----
+	let moreMenuOpen = $state(false);
+
+	function runFromMenu(fn: () => void) {
+		fn();
+		moreMenuOpen = false;
+	}
+
 	// ---- Run AI Review ----
 	let aiReviewOpen = $state(false);
 	let aiPeriod = $state('');
@@ -155,7 +188,7 @@
 <!-- Persistent action header -->
 	<div class="flex items-center gap-3 flex-wrap -mx-4 sm:mx-0 px-4 sm:px-0 py-3 border-b border-border sticky top-0 z-10 bg-bg-ink">
 		<a href="/" class="text-sm px-2 py-1.5 rounded-md hover:bg-surface-3 text-muted-fg hover:text-fg shrink-0">&larr; Back</a>
-		{#if detail.has_own_scenario}
+		{#if detail.scenario_id}
 			<span class="inline-block h-2 w-2 rounded-full {style.dot} shrink-0"></span>
 			<span class="text-xs font-medium {style.pill} px-2 py-0.5 rounded-full ring-1 shrink-0">{style.label}</span>
 			{#if detail.has_active_override}
@@ -167,28 +200,66 @@
 			{/if}
 		{/if}
 		<h1 class="font-semibold text-base flex-1 min-w-0 truncate">{detail.name}</h1>
-		{#if detail.has_own_scenario}
-			<div class="flex flex-wrap gap-2 shrink-0">
-				<a
-					href={`/ingest?mode=amend&companyId=${encodeURIComponent(companyId)}`}
-					class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90">Amend Thesis</a
-				>
-				<button type="button" onclick={() => scrollTo('decisions')} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3"
-					>Post Observations</button
-				>
-				<button type="button" onclick={() => scrollTo('health')} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3"
-					>Log Quarterly Review</button
-				>
-				<button type="button" onclick={() => scrollTo('decisions')} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3"
-					>Log Buy/Sell</button
-				>
-				<button
-					type="button"
-					onclick={() => (aiReviewOpen = !aiReviewOpen)}
-					class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Run AI Review</button
-				>
-				{#if !session.isReadOnly}
-					<button type="button" onclick={openEdit} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3">Edit Details</button>
+		{#if detail.scenario_id}
+			<div class="flex items-center gap-2 shrink-0 relative">
+				{#if !viewingOwnScenario}
+					<span
+						class="text-xs px-2 py-1.5 rounded-md bg-surface-2 ring-1 ring-border shrink-0"
+						title="Viewing {detail.scenario_owner}'s thesis - read only"
+					>
+						<span class="font-medium text-fg">{detail.scenario_owner}</span>
+						<span class="text-muted-fg">&middot; Read Only</span>
+					</span>
+				{:else}
+					<a
+						href={`/ingest?mode=amend&companyId=${encodeURIComponent(companyId)}`}
+						class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90">Amend Thesis</a
+					>
+					<button
+						type="button"
+						onclick={() => (moreMenuOpen = !moreMenuOpen)}
+						aria-expanded={moreMenuOpen}
+						aria-haspopup="true"
+						class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3 flex items-center gap-1"
+						>More <span class="text-muted-fg">&#9662;</span></button
+					>
+					{#if moreMenuOpen}
+						<div
+							class="absolute right-0 top-full mt-1 w-56 rounded-md border border-border bg-bg-ink shadow-xl z-20 py-1"
+							onmouseleave={() => (moreMenuOpen = false)}
+							role="menu"
+						>
+							<button type="button" onclick={() => runFromMenu(() => scrollTo('decisions'))} class="w-full text-left px-3 py-2 text-sm hover:bg-surface-3" role="menuitem"
+								>Post Observations</button
+							>
+							<button type="button" onclick={() => runFromMenu(() => scrollTo('health'))} class="w-full text-left px-3 py-2 text-sm hover:bg-surface-3" role="menuitem"
+								>Log Quarterly Review</button
+							>
+							<button type="button" onclick={() => runFromMenu(() => scrollTo('decisions'))} class="w-full text-left px-3 py-2 text-sm hover:bg-surface-3" role="menuitem"
+								>Log Buy/Sell</button
+							>
+							<button
+								type="button"
+								onclick={() => runFromMenu(() => (aiReviewOpen = !aiReviewOpen))}
+								class="w-full text-left px-3 py-2 text-sm hover:bg-surface-3"
+								role="menuitem">Run AI Review</button
+							>
+							{#if !session.isReadOnly}
+								<button type="button" onclick={() => runFromMenu(openEdit)} class="w-full text-left px-3 py-2 text-sm hover:bg-surface-3" role="menuitem"
+									>Edit Details</button
+								>
+							{/if}
+						</div>
+					{/if}
+				{/if}
+				{#if scenarioCycle.length > 1}
+					<button
+						type="button"
+						onclick={viewNextScenario}
+						title="View the next analyst's thesis on this company"
+						aria-label="View next analyst's thesis"
+						class="text-sm px-2 py-1.5 rounded-md border border-border hover:bg-surface-3 shrink-0">&rarr;</button
+					>
 				{/if}
 			</div>
 		{/if}
@@ -296,7 +367,7 @@
 		</div>
 	{/if}
 
-	{#if !detail.has_own_scenario}
+	{#if !detail.scenario_id}
 		<div class="mt-3 max-w-2xl">
 			<div class="text-sm text-muted-fg">
 				{detail.broad_industry} &gt; {detail.specific_niche} &middot; {detail.operating_model} &middot; {detail.currency}
@@ -306,7 +377,11 @@
 					<span class="text-xs text-muted-fg">Also tracked by:</span>
 					{#each detail.other_scenarios as s (s.id)}
 						{@const sstyle = STATUS_STYLES[s.status] ?? STATUS_STYLES.on_track}
-						<span class="text-xs px-2 py-0.5 rounded-full {sstyle.pill} ring-1">{s.owner} &middot; {sstyle.label}</span>
+						<button
+							type="button"
+							onclick={() => viewScenario(s.owner)}
+							class="text-xs px-2 py-0.5 rounded-full {sstyle.pill} ring-1 hover:brightness-90 cursor-pointer">{s.owner} &middot; {sstyle.label}</button
+						>
 					{/each}
 				</div>
 			{/if}
@@ -343,8 +418,27 @@
 						<span class="text-xs text-muted-fg">Also tracked by:</span>
 						{#each detail.other_scenarios as s (s.id)}
 							{@const sstyle = STATUS_STYLES[s.status] ?? STATUS_STYLES.on_track}
-							<span class="text-xs px-2 py-0.5 rounded-full {sstyle.pill} ring-1">{s.owner} &middot; {sstyle.label}</span>
+							{@const isActive = s.owner === detail.scenario_owner}
+							<button
+								type="button"
+								onclick={() => viewScenario(s.owner)}
+								disabled={isActive}
+								class="text-xs px-2 py-0.5 rounded-full {sstyle.pill} ring-1 {isActive
+									? 'ring-2 ring-offset-1 ring-offset-bg-ink'
+									: 'hover:brightness-90 cursor-pointer'}">{s.owner} &middot; {sstyle.label}</button
+							>
 						{/each}
+					</div>
+				{/if}
+
+				{#if !viewingOwnScenario && !detail.has_own_scenario}
+					<div class="mt-3 rounded-md border border-dashed border-border p-3 flex items-center justify-between gap-3">
+						<p class="text-xs text-muted-fg">You haven't started your own thesis on this company yet.</p>
+						<button
+							type="button"
+							onclick={() => goto(`/ingest?companyId=${encodeURIComponent(companyId)}`)}
+							class="text-xs px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 shrink-0">+ Start Your Own Thesis</button
+						>
 					</div>
 				{/if}
 
@@ -358,16 +452,16 @@
 				<!-- 1. The Business -->
 				<section id="cp-sec-business" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
-					<p class="text-sm mt-1">{t.the_business?.what_it_does}</p>
-					<div class="mt-2 space-y-0.5">
+					<p class="text-sm mt-3">{t.the_business?.what_it_does}</p>
+					<div class="mt-3 space-y-2">
 						{#each t.the_business?.revenue_split ?? [] as r (r.segment)}
-							<div class="flex justify-between text-sm"><span>{r.segment}</span><span>{r.share_pct}%</span></div>
+							<div class="flex justify-between text-sm"><span>{r.segment}</span><span class="font-mono">{r.share_pct}%</span></div>
 						{/each}
 					</div>
 					{#if pillarNotesFor('the_business').length}
-						<div class="mt-2">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
 								{#each pillarNotesFor('the_business') as n (n)}
 									<li>{n}</li>
 								{/each}
@@ -380,15 +474,15 @@
 				<!-- 2. The Growth Engine -->
 				<section id="cp-sec-growth" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">2. The Growth Engine</h3>
-					<ul class="list-disc list-inside text-sm mt-1 space-y-0.5">
+					<ul class="list-disc list-inside text-sm leading-normal mt-3 space-y-2">
 						{#each t.the_growth_engine ?? [] as g, i (i)}
 							<li>{g}</li>
 						{/each}
 					</ul>
 					{#if pillarNotesFor('the_growth_engine').length}
-						<div class="mt-2">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
 								{#each pillarNotesFor('the_growth_engine') as n (n)}
 									<li>{n}</li>
 								{/each}
@@ -401,12 +495,12 @@
 				<!-- 3. The Big Change -->
 				<section id="cp-sec-change" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">3. The Big Change</h3>
-					<p class="text-sm mt-1">{t.the_big_change?.summary}</p>
-					<div class="text-xs text-muted-fg mt-0.5">Expected completion: {t.the_big_change?.expected_completion}</div>
+					<p class="text-sm mt-3">{t.the_big_change?.summary}</p>
+					<div class="text-xs text-muted-fg mt-3">Expected completion: <span class="font-mono">{t.the_big_change?.expected_completion}</span></div>
 					{#if pillarNotesFor('the_big_change').length}
-						<div class="mt-2">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
 								{#each pillarNotesFor('the_big_change') as n (n)}
 									<li>{n}</li>
 								{/each}
@@ -419,15 +513,15 @@
 				<!-- 4. Proof Points -->
 				<section id="cp-sec-proof" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">4. Proof Points</h3>
-					<ul class="list-disc list-inside text-sm mt-1 space-y-0.5">
+					<ul class="list-disc list-inside text-sm leading-normal mt-3 space-y-2">
 						{#each t.proof_points?.hard_evidence ?? [] as e, i (i)}
 							<li>{e}</li>
 						{/each}
 					</ul>
 					{#if pillarNotesFor('proof_points').length}
-						<div class="mt-2">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
 								{#each pillarNotesFor('proof_points') as n (n)}
 									<li>{n}</li>
 								{/each}
@@ -441,7 +535,7 @@
 				<section id="cp-sec-kill" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">5. What Can Kill It</h3>
 					{#if detail.kill_triggers.length}
-						<div class="mt-1">
+						<div class="mt-3">
 							{#each detail.kill_triggers as trig (trig.id)}
 								<div class="border-b border-border py-2 last:border-0">
 									<div class="flex items-center justify-between">
@@ -455,11 +549,11 @@
 											{trig.severity}
 										</span>
 									</div>
-									<div class="text-xs text-muted-fg">{trig.action} &middot; grace {trig.grace_periods}</div>
+									<div class="text-xs text-muted-fg">{trig.action} &middot; grace <span class="font-mono">{trig.grace_periods}</span></div>
 									{#if trig.manual_check || trig.metric_key === null}
 										<div class="text-xs text-muted-fg italic">Manual check - not quantifiable.</div>
 									{:else if trig.latest_observed_value == null}
-										<div class="text-xs text-muted-fg">No observation yet for {trig.metric_key}.</div>
+										<div class="text-xs text-muted-fg">No observation yet for <span class="font-mono">{trig.metric_key}</span>.</div>
 									{:else}
 										{@const obsPct = redlinePct(trig.latest_observed_value, trig.threshold ?? 0)}
 										{@const thPct = redlinePct(trig.threshold ?? 0, trig.threshold ?? 0)}
@@ -472,8 +566,8 @@
 												<div class="absolute inset-y-0 w-0.5 bg-fg" style="left:{thPct}%"></div>
 											</div>
 											<div class="flex justify-between text-[11px] text-muted-fg mt-0.5">
-												<span>observed {trig.latest_observed_value}</span>
-												<span>threshold {trig.operator ?? ''} {trig.threshold}</span>
+												<span>observed <span class="font-mono">{trig.latest_observed_value}</span></span>
+												<span>threshold <span class="font-mono">{trig.operator ?? ''} {trig.threshold}</span></span>
 											</div>
 										</div>
 									{/if}
@@ -481,12 +575,12 @@
 							{/each}
 						</div>
 					{:else}
-						<div class="text-xs text-muted-fg mt-1">None defined.</div>
+						<div class="text-xs text-muted-fg mt-3">None defined.</div>
 					{/if}
 					{#if pillarNotesFor('what_can_kill_it').length}
-						<div class="mt-2">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
 								{#each pillarNotesFor('what_can_kill_it') as n (n)}
 									<li>{n}</li>
 								{/each}
@@ -499,15 +593,15 @@
 				<!-- 6. Why We Believe It -->
 				<section id="cp-sec-believe" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">6. Why We Believe It</h3>
-					<ol class="list-decimal list-inside text-sm mt-1 space-y-1">
+					<ol class="list-decimal list-inside text-sm leading-normal mt-3 space-y-2">
 						{#each t.why_we_believe_it ?? [] as w, i (i)}
 							<li>{w}</li>
 						{/each}
 					</ol>
 					{#if pillarNotesFor('why_we_believe_it').length}
-						<div class="mt-2">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
 								{#each pillarNotesFor('why_we_believe_it') as n (n)}
 									<li>{n}</li>
 								{/each}
@@ -520,15 +614,15 @@
 				<!-- Thesis Performance / price + 7. Health Check -->
 				<section id="cp-sec-health" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Quarterly Review</h3>
-					<p class="text-sm mt-1 text-muted-fg">{t.health_check?.latest_quarter_review}</p>
-					<div class="mt-2">
+					<p class="text-sm mt-3 text-muted-fg">{t.health_check?.latest_quarter_review}</p>
+					<div class="mt-3">
 						{#each detail.health_checks as h (h.id)}
 							{@const hstyle = STATUS_STYLES[h.verdict] ?? STATUS_STYLES.on_track}
 							<div class="flex gap-2 py-1.5 border-b border-border last:border-0">
 								<span class="inline-block h-2 w-2 mt-1.5 rounded-full {hstyle.dot} shrink-0"></span>
 								<div>
 									<div class="text-xs font-medium">
-										{h.period} - {hstyle.label}
+										<span class="font-mono">{h.period}</span> - {hstyle.label}
 										<span class="text-muted-fg font-normal">({h.source}{h.human_confirmed ? ', confirmed' : ''})</span>
 									</div>
 									<div class="text-xs text-muted-fg">{h.note}</div>
@@ -539,9 +633,9 @@
 						{/each}
 					</div>
 					{#if pillarNotesFor('health_check').length}
-						<div class="mt-2">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
 								{#each pillarNotesFor('health_check') as n (n)}
 									<li>{n}</li>
 								{/each}
@@ -553,7 +647,7 @@
 
 				<!-- Buy/Sell Decisions + Observations + Price/Performance + Outcome (ActionPanels) -->
 				<section id="cp-sec-decisions" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
-					<ActionPanels {companyId} />
+					<ActionPanels {companyId} readOnly={!viewingOwnScenario || session.isReadOnly} viewedOwner={detail.scenario_owner} />
 					{#if detail.pending_proposals?.length}
 						<div class="text-xs text-muted-fg mt-3">
 							{detail.pending_proposals.length} item(s) "To Review" - resolve them from the Review Queue.
@@ -564,7 +658,7 @@
 				<!-- References -->
 				<section id="cp-sec-references" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">References</h3>
-					<div class="mt-1 space-y-0.5">
+					<div class="mt-3 space-y-2">
 						{#each t.references ?? [] as r (r.url)}
 							<a href={r.url} target="_blank" rel="noopener" class="block text-sm text-ok hover:underline">{r.title}</a>
 						{:else}
@@ -572,9 +666,9 @@
 						{/each}
 					</div>
 					{#if pillarNotesFor('references').length}
-						<div class="mt-2">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs mt-0.5 space-y-0.5">
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
 								{#each pillarNotesFor('references') as n (n)}
 									<li>{n}</li>
 								{/each}

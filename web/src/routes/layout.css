@@ -61,6 +61,17 @@
 	scrollbar-color: var(--border) var(--bg);
 }
 
+/*
+ * Reserve the scrollbar's width on every page, not just the ones tall
+ * enough to need it - otherwise the centered max-w-7xl header/content
+ * shifts a few pixels sideways every time navigation lands on a page
+ * short enough that the scrollbar disappears (Ingest) vs one that isn't
+ * (Companies), which reads as the whole navbar jumping between tabs.
+ */
+html {
+	scrollbar-gutter: stable;
+}
+
 input,
 select,
 textarea {

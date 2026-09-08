@@ -11,6 +11,16 @@
 	let { data }: { data: PageData } = $props();
 
 	let proposals = $derived(data.proposals);
+	let trackables = $derived(data.trackables);
+	let trackablesByCompany = $derived.by(() => {
+		const groups = new Map<string, { company_id: string; company_name: string; items: typeof trackables }>();
+		for (const t of trackables) {
+			const group = groups.get(t.company_id) ?? { company_id: t.company_id, company_name: t.company_name, items: [] };
+			group.items.push(t);
+			groups.set(t.company_id, group);
+		}
+		return [...groups.values()];
+	});
 	let error = $state('');
 	let notes = $state<Record<number, string>>({});
 	let resolving = $state<Record<number, boolean>>({});
@@ -54,6 +64,43 @@
 {#if error}
 	<div class="mb-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{error}</div>
 {/if}
+
+<div class="mb-6">
+	<h3 class="text-sm font-semibold mb-1">My Trackables</h3>
+	<p class="text-xs text-muted-fg mb-3">
+		The kill triggers you're actively monitoring across your own theses - a checklist, not an inbox.
+	</p>
+	{#if !trackables.length}
+		<div class="text-sm text-muted-fg py-4 rounded-lg border border-border bg-surface text-center">
+			No trackables defined on your theses yet.
+		</div>
+	{:else}
+		<div class="space-y-3">
+			{#each trackablesByCompany as group (group.company_id)}
+				<div class="rounded-lg border border-border bg-surface p-4">
+					<a href="/company/{group.company_id}" class="text-sm font-medium hover:text-accent">{group.company_name}</a>
+					<ul class="mt-2 space-y-1.5">
+						{#each group.items as t (t.id)}
+							<li class="text-sm flex items-center gap-2">
+								<span
+									class="h-2 w-2 rounded-full shrink-0 {t.latest_fired ? 'bg-danger' : t.severity === 'kill' ? 'bg-warn' : 'bg-muted-fg'}"
+								></span>
+								<span class="min-w-0 flex-1 {t.latest_fired ? 'text-danger' : 'text-fg'}">{t.label}</span>
+								{#if t.latest_fired}
+									<span class="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-danger/10 text-danger shrink-0"
+										>Fired</span
+									>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/each}
+		</div>
+	{/if}
+</div>
+
+<h3 class="text-sm font-semibold mb-2">Pending Decisions</h3>
 
 {#if !proposals.length}
 	<div class="text-center text-muted-fg py-16">Nothing pending - review queue is empty.</div>

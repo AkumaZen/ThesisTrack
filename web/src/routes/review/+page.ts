@@ -18,6 +18,23 @@ export type Proposal = {
 	created_at: string;
 };
 
+export type Trackable = {
+	id: number;
+	label: string;
+	severity: string;
+	manual_check: boolean;
+	metric_key: string | null;
+	operator: string | null;
+	threshold: number | null;
+	latest_fired: boolean | null;
+	company_id: string;
+	company_name: string;
+};
+
 export const load: PageLoad = async () => {
-	return { proposals: (await api.listProposals('pending')) as Proposal[] };
+	const [proposals, trackables] = await Promise.all([
+		api.listProposals('pending') as Promise<Proposal[]>,
+		api.listTrackables() as Promise<Trackable[]>
+	]);
+	return { proposals, trackables };
 };

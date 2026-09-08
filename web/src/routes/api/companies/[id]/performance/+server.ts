@@ -11,7 +11,12 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 		if (baseline !== 'thesis' && baseline !== 'decision') {
 			return errorResponse(422, "baseline must be 'thesis' or 'decision'");
 		}
-		const result = await computePerformance(params.id!, baseline, actor.identity);
+		// Anchor to whichever analyst's scenario the page is currently
+		// viewing, not always the logged-in actor's own - otherwise viewing
+		// another analyst's thesis read-only would silently show your own
+		// price baseline instead of theirs.
+		const owner = url.searchParams.get('owner') || actor.identity;
+		const result = await computePerformance(params.id!, baseline, owner);
 		return json(result);
 	} catch (err) {
 		if (err instanceof NotFoundError) return errorResponse(404, err.message);

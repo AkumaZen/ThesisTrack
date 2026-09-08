@@ -56,7 +56,8 @@ export const api = {
 	changePassword: (oldPassword: string, newPassword: string) =>
 		request('POST', '/auth/change-password', { old_password: oldPassword, new_password: newPassword }),
 	listCompanies: (params?: Record<string, unknown>) => request('GET', `/companies?${buildQuery(params)}`),
-	getCompany: (id: string) => request('GET', `/companies/${encodeURIComponent(id)}`),
+	getCompany: (id: string, owner?: string | null) =>
+		request('GET', `/companies/${encodeURIComponent(id)}${owner ? `?owner=${encodeURIComponent(owner)}` : ''}`),
 	createCompany: (payload: unknown) => request('POST', '/companies', payload),
 	updateCompany: (id: string, payload: unknown) => request('PATCH', `/companies/${encodeURIComponent(id)}`, payload),
 	amendThesis: (id: string, payload: unknown) => request('PUT', `/companies/${encodeURIComponent(id)}/thesis`, payload),
@@ -79,9 +80,18 @@ export const api = {
 	updateRow: (tableId: number, rowId: number, rowData: unknown) =>
 		request('PUT', `/tables/${tableId}/rows/${rowId}`, { row_data: rowData }),
 	deleteRow: (tableId: number, rowId: number) => request('DELETE', `/tables/${tableId}/rows/${rowId}`),
+	createRowsBulk: (tableId: number, rows: Record<string, unknown>[]) => request('POST', `/tables/${tableId}/rows/bulk`, { rows }),
+
+	// Custom notes (mirrors custom tables, no rows/columns of its own)
+	listNotes: (companyId: string) => request('GET', `/companies/${encodeURIComponent(companyId)}/notes`),
+	createNote: (companyId: string, payload: unknown) =>
+		request('POST', `/companies/${encodeURIComponent(companyId)}/notes`, payload),
+	patchNote: (noteId: number, payload: unknown) => request('PATCH', `/notes/${noteId}`, payload),
+	deleteNote: (noteId: number) => request('DELETE', `/notes/${noteId}`),
 
 	// Status proposals / review queue (app/routers/health.py)
 	listProposals: (state?: string) => request('GET', `/proposals?${buildQuery({ state: state ?? 'pending' })}`),
+	listTrackables: () => request('GET', '/trackables'),
 	resolveProposal: (id: number, payload: { action: 'accept' | 'reject'; verdict?: string | null; note?: string | null }) =>
 		request('POST', `/proposals/${id}/resolve`, payload),
 
@@ -105,8 +115,8 @@ export const api = {
 	listPrices: (companyId: string) => request('GET', `/companies/${encodeURIComponent(companyId)}/prices`),
 	logPrice: (companyId: string, payload: unknown) =>
 		request('POST', `/companies/${encodeURIComponent(companyId)}/prices`, payload),
-	getPerformance: (companyId: string, baseline?: 'thesis' | 'decision') =>
-		request('GET', `/companies/${encodeURIComponent(companyId)}/performance?${buildQuery({ baseline })}`),
+	getPerformance: (companyId: string, baseline?: 'thesis' | 'decision', owner?: string | null) =>
+		request('GET', `/companies/${encodeURIComponent(companyId)}/performance?${buildQuery({ baseline, owner })}`),
 
 	// Health check / outcome (app/routers/health.py)
 	submitHealthCheck: (companyId: string, payload: unknown) =>

@@ -125,6 +125,38 @@ export async function createRow(tableId: number, rowData: Record<string, unknown
 	return row;
 }
 
+// Bulk insert, backing both CSV import and paste-from-clipboard on the
+// frontend - one transaction so row_order stays contiguous and a bad row
+// (fails validateRowData) rolls back the whole batch rather than leaving a
+// partially-imported table behind.
+export async function createRowsBulk(tableId: number, rowsData: Record<string, unknown>[], actorIdentity: string) {
+	const [table] = await db.select().from(customTables).where(eq(customTables.id, tableId)).limit(1);
+	if (!table) return null;
+
+	const cleanedRows = rowsData.map((rowData) => validateRowData(table.columns as ColumnDef[], rowData));
+
+	return db.transaction(async (tx) => {
+		const [maxRow] = await tx
+			.select()
+			.from(customTableRows)
+			.where(eq(customTableRows.tableId, tableId))
+			.orderBy(desc(customTableRows.rowOrder))
+			.limit(1);
+		let nextOrder = maxRow ? maxRow.rowOrder + 1 : 0;
+
+		const inserted = [];
+		for (const cleaned of cleanedRows) {
+			const [row] = await tx
+				.insert(customTableRows)
+				.values({ tableId, rowData: cleaned, rowOrder: nextOrder, createdBy: actorIdentity })
+				.returning();
+			inserted.push(row);
+			nextOrder++;
+		}
+		return inserted;
+	});
+}
+
 export async function updateRow(tableId: number, rowId: number, rowData: Record<string, unknown>) {
 	const [table] = await db.select().from(customTables).where(eq(customTables.id, tableId)).limit(1);
 	if (!table) return { table: null, row: null };

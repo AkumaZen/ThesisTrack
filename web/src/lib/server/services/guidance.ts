@@ -15,11 +15,17 @@ export async function createGuidance(companyId: string, blockKey: string, note: 
 	return { note: row, companyName: company.name };
 }
 
-export async function listGuidance(companyId: string | null, blockKey: string | null, status: string | null) {
+export async function listGuidance(
+	companyId: string | null,
+	blockKey: string | null,
+	status: string | null,
+	owner: string | null = null
+) {
 	const conditions = [];
 	if (companyId) conditions.push(eq(guidanceNotes.companyId, companyId));
 	if (blockKey) conditions.push(eq(guidanceNotes.blockKey, blockKey));
 	if (status) conditions.push(eq(guidanceNotes.status, status));
+	if (owner) conditions.push(eq(guidanceNotes.createdBy, owner));
 
 	const rows = await db
 		.select({ note: guidanceNotes, companyName: companies.name })

@@ -30,10 +30,11 @@ const companyPatch = z.object({
 	currency: z.string().min(1).max(3).optional()
 });
 
-export const GET: RequestHandler = async ({ locals, params }) => {
+export const GET: RequestHandler = async ({ locals, params, url }) => {
 	try {
 		const actor = requireActor(locals.actor);
 		const companyId = params.id!;
+		const viewOwner = url.searchParams.get('owner');
 
 		const [row] = await db
 			.select({ company: companies, industryName: broadIndustries.name, nicheName: specificNiches.name })
@@ -46,14 +47,21 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 		const { company, industryName, nicheName } = row;
 
 		const allScenarios = await listScenarios(companyId);
-		const scenario = allScenarios.find((s) => s.owner === actor.identity) ?? null;
+		const mine = allScenarios.find((s) => s.owner === actor.identity) ?? null;
+		// Anyone on the team can view any other analyst's scenario read-only
+		// (shared visibility is the product's whole point) - `?owner=` picks
+		// which one to render as the full detail below. Falls back to the
+		// actor's own scenario when absent or when it doesn't match anyone,
+		// so an unrecognized/stale owner param degrades to today's behavior
+		// instead of erroring.
+		const scenario = (viewOwner ? allScenarios.find((s) => s.owner === viewOwner) : null) ?? mine;
 		const otherScenarios = allScenarios
 			.filter((s) => s.owner !== actor.identity)
 			.map((s) => ({ id: s.id, owner: s.owner, label: s.label, status: s.status, last_reviewed: s.lastReviewed }));
 
 		if (!scenario) {
-			const base = scenarioToOut(company, industryName, nicheName, null, allScenarios.length);
-			return json({ ...base, other_scenarios: otherScenarios });
+			const base = scenarioToOut(company, industryName, nicheName, null, allScenarios.length, false, null, mine != null);
+			return json({ ...base, other_scenarios: otherScenarios, scenario_owner: null, viewing_own_scenario: false });
 		}
 
 		const currentVersion = scenario.currentVersionId
@@ -137,10 +145,21 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 					}
 				: null;
 
-		const base = scenarioToOut(company, industryName, nicheName, scenario, allScenarios.length, activeOverride != null);
+		const base = scenarioToOut(
+			company,
+			industryName,
+			nicheName,
+			scenario,
+			allScenarios.length,
+			activeOverride != null,
+			null,
+			mine != null
+		);
 
 		return json({
 			...base,
+			scenario_owner: scenario.owner,
+			viewing_own_scenario: scenario.owner === actor.identity,
 			current_thesis: currentVersion?.thesisData ?? {},
 			versions: versions.map((v) => ({
 				version_id: v.versionId,

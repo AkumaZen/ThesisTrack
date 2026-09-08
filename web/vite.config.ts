@@ -19,10 +19,14 @@ export default defineConfig({
 			// Docker Desktop's Windows bind mount doesn't reliably forward native
 			// filesystem change events into the container, so Vite's default
 			// chokidar watcher silently misses edits made on the host. Polling
-			// works around that at the cost of a bit of CPU - worth it since a
-			// stale dev server was the actual, repeated problem, not a one-off.
+			// works around that, but a short interval across the whole bind
+			// mount (including node_modules) can starve the event loop badly
+			// enough that the dev server never answers a single request - a
+			// longer interval and explicit node_modules/.git ignores keep it
+			// working without that cost.
 			usePolling: true,
-			interval: 300
+			interval: 1000,
+			ignored: ['**/node_modules/**', '**/.git/**']
 		}
 	}
 });

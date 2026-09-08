@@ -6,11 +6,16 @@ import { listGuidance } from '$lib/server/services/guidance';
 
 export const GET: RequestHandler = async ({ locals, url }) => {
 	try {
-		requireActor(locals.actor);
+		const actor = requireActor(locals.actor);
 		const companyId = url.searchParams.get('company_id');
 		const blockKey = url.searchParams.get('block_key');
 		const status = url.searchParams.get('status');
-		const rows = await listGuidance(companyId, blockKey, status);
+		// This is the shared /guidance tab's feed - guidance notes are
+		// per-analyst, so it only ever shows the actor's own notes (never
+		// another teammate's), regardless of what filters are applied. Seeing
+		// someone else's guidance happens on their company card/detail view
+		// instead, via /api/companies and /api/companies/:id.
+		const rows = await listGuidance(companyId, blockKey, status, actor.identity);
 		return json(
 			rows.map(({ note, companyName }) => ({
 				id: note.id,

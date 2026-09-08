@@ -8,7 +8,13 @@ import { errorResponse, requireActor, requireWriteActor, handleAuthError, zodErr
 import { thesisCreate } from '$lib/server/schemas/thesis';
 import { createCompany, AlreadyExistsError, TaxonomyError } from '$lib/server/services/versioning';
 import { listScenarios } from '$lib/server/services/scenarios';
-import { coreMetricsForScenarios, latestOverrideFlags, scenarioToOut } from '$lib/server/services/companiesShared';
+import {
+	coreMetricsForScenarios,
+	latestOverrideFlags,
+	openGuidanceForScenarios,
+	scenarioToOut,
+	trackablesForScenarios
+} from '$lib/server/services/companiesShared';
 
 export const GET: RequestHandler = async ({ locals, url }) => {
 	try {
@@ -64,31 +70,56 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			.where(conditions.length ? and(...conditions) : undefined);
 
 		const companyIds = rows.map((r) => r.company.companyId);
+		// Every scenario for every company on this page - not just the
+		// actor's own - so each card can carry a small "scenarios" list and
+		// let the dashboard tile itself cycle through analysts without a
+		// page navigation. Powers the top-level per-actor fields too
+		// (scenarioCounts) so this replaces the old count-only query.
+		const allScenariosOnPage = companyIds.length
+			? await db.select().from(thesisScenarios).where(inArray(thesisScenarios.companyId, companyIds))
+			: [];
 		const scenarioCounts: Record<string, number> = {};
-		if (companyIds.length) {
-			const scenarioRows = await db
-				.select({ companyId: thesisScenarios.companyId, value: count() })
-				.from(thesisScenarios)
-				.where(inArray(thesisScenarios.companyId, companyIds))
-				.groupBy(thesisScenarios.companyId);
-			for (const r of scenarioRows) scenarioCounts[r.companyId] = r.value;
+		const scenariosByCompany: Record<string, (typeof allScenariosOnPage)[number][]> = {};
+		for (const s of allScenariosOnPage) {
+			scenarioCounts[s.companyId] = (scenarioCounts[s.companyId] ?? 0) + 1;
+			(scenariosByCompany[s.companyId] ??= []).push(s);
 		}
 
-		const myScenarios = rows.map((r) => r.scenario).filter((s): s is NonNullable<typeof s> => s != null);
-		const overrideFlags = await latestOverrideFlags(myScenarios.map((s) => s.id));
-		const coreMetrics = await coreMetricsForScenarios(myScenarios);
+		const overrideFlags = await latestOverrideFlags(allScenariosOnPage.map((s) => s.id));
+		const coreMetrics = await coreMetricsForScenarios(allScenariosOnPage);
+		const trackables = await trackablesForScenarios(allScenariosOnPage);
+		const guidance = await openGuidanceForScenarios(companyIds, allScenariosOnPage);
 
-		const items = rows.map((r) =>
-			scenarioToOut(
-				r.company,
-				r.industryName,
-				r.nicheName,
-				r.scenario,
-				scenarioCounts[r.company.companyId] ?? 0,
-				r.scenario ? (overrideFlags[r.scenario.id] ?? false) : false,
-				r.scenario ? (coreMetrics[r.scenario.id] ?? null) : null
-			)
-		);
+		const items = rows.map((r) => {
+			// My own scenario first (so the card defaults to "your" view same
+			// as today), then every other analyst's, in creation order -
+			// mirrors the company-detail page's cycle order.
+			const scenarios = (scenariosByCompany[r.company.companyId] ?? [])
+				.slice()
+				.sort((a, b) => (a.owner === actor.identity ? -1 : b.owner === actor.identity ? 1 : a.id - b.id))
+				.map((s) => ({
+					owner: s.owner,
+					status: s.status,
+					last_reviewed: s.lastReviewed,
+					has_active_override: overrideFlags[s.id] ?? false,
+					core_metrics: coreMetrics[s.id] ?? {},
+					trackables: trackables[s.id] ?? [],
+					guidance: guidance[s.id] ?? []
+				}));
+
+			return {
+				...scenarioToOut(
+					r.company,
+					r.industryName,
+					r.nicheName,
+					r.scenario,
+					scenarioCounts[r.company.companyId] ?? 0,
+					r.scenario ? (overrideFlags[r.scenario.id] ?? false) : false,
+					r.scenario ? (coreMetrics[r.scenario.id] ?? null) : null
+				),
+				scenarios
+			};
+		});
 
 		return json({ items, total, page, page_size: pageSize });
 	} catch (err) {

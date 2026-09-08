@@ -15,6 +15,13 @@
       "when": 1788521966756,
       "tag": "0001_add_sectors",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788888765356,
+      "tag": "0002_opposite_red_ghost",
+      "breakpoints": true
     }
   ]
 }

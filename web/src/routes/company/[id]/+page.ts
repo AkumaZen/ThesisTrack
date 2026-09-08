@@ -43,6 +43,9 @@ export type CompanyDetail = {
 	status: string | null;
 	has_own_scenario: boolean;
 	has_active_override: boolean;
+	scenario_id: number | null;
+	scenario_owner: string | null;
+	viewing_own_scenario: boolean;
 	current_thesis?: ThesisData;
 	kill_triggers: KillTrigger[];
 	health_checks: HealthCheck[];
@@ -51,7 +54,8 @@ export type CompanyDetail = {
 	pending_proposals?: unknown[];
 };
 
-export const load: PageLoad = async ({ params }) => {
-	const detail = (await api.getCompany(params.id)) as CompanyDetail;
+export const load: PageLoad = async ({ params, url }) => {
+	const owner = url.searchParams.get('owner');
+	const detail = (await api.getCompany(params.id, owner)) as CompanyDetail;
 	return { detail };
 };

@@ -348,6 +348,19 @@ export const customTableRows = pgTable('custom_table_rows', {
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
+export const customNotes = pgTable('custom_notes', {
+	id: bigserial('id', { mode: 'number' }).primaryKey(),
+	companyId: varchar('company_id', { length: 50 })
+		.notNull()
+		.references(() => companies.companyId, { onDelete: 'cascade' }),
+	heading: varchar('heading', { length: 120 }).notNull(),
+	body: text('body').notNull(),
+	section: varchar('section', { length: 50 }),
+	createdBy: varchar('created_by', { length: 80 }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
 export const sectors = pgTable('sectors', {
 	id: bigserial('id', { mode: 'number' }).primaryKey(),
 	name: varchar('name', { length: 100 }).notNull().unique(),
