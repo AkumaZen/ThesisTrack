@@ -1,5 +1,70 @@
 # Decisions (append-only ADR log)
 
+## ADR-030: Multi-analyst read-only viewing, card-level guidance/review, and custom notes
+Three separate user requests landed in one session and compose on top of
+ADR-026's scenario model rather than replacing it:
+
+**Cross-analyst read-only viewing.** Any analyst can now open any other
+analyst's thesis on a shared company, read-only, via a `?owner=` query
+param on `GET /api/companies/:id` (falls back to the caller's own scenario
+when absent/unrecognized - old behavior unchanged for every existing
+caller). `GET /api/companies/:id/performance` had to take the same
+`owner` param - found live, not planned: `computePerformance` anchors its
+baseline to whichever identity string it's given, so without threading
+`owner` through, viewing someone else's thesis would have silently shown
+*your own* price baseline instead of theirs. UI: a cycle arrow + owner
+badge on both the company-detail header and (per explicit user
+correction - "I wanted the name on card only and that arrow also on the
+card") the dashboard grid card itself, clicking the existing "Also tracked
+by" pills to switch rather than a new dropdown (confirmed via
+AskUserQuestion).
+
+**Guidance and Review moved onto the card.** Two existing-but-buried
+features got surfaced for quick access without opening a company:
+guidance notes (already existed, company-wide/shared) and a new "Review"
+concept - the kill triggers on a scenario's current thesis version, i.e.
+a monitoring checklist, explicitly distinct from the pre-existing Review
+Queue (`status_proposals` pending accept/reject). Product decision on
+guidance visibility (confirmed with the user): notes stay attached to
+whoever wrote them (`created_by` *is* the owner, no new column needed) and
+are visible to teammates viewing that owner's scenario/card, but the
+shared `/guidance` tab now always filters to the actor's own notes only -
+a real behavior change from "everyone sees everyone's" to "shared context
+on the card, private inbox on the tab". `GET /api/companies` batches both
+(`trackablesForScenarios`, `openGuidanceForScenarios` in
+`companiesShared.ts`) the same way `coreMetricsForScenarios` already did,
+one query per company-list load rather than N+1.
+
+**Custom notes.** A new `custom_notes` table (heading + body, mirrors
+`custom_tables`' shape/section-tagging) alongside "+ Add Table" everywhere
+that button appears - explicitly asked as "heading and text field, asked
+separately", i.e. two distinct form fields, not one free-text block.
+
+**CSV import and Ctrl+V paste for custom tables**, in two places: building
+a brand-new table (paste or upload a .csv, header row becomes columns
+with type inferred from the data, live preview before committing - a
+"Preview template" button shows the expected shape) and appending rows to
+an existing table (paste directly into the live grid, matched to columns
+by position, header row auto-detected and dropped if present). Both funnel
+through one new `POST /api/tables/:id/rows/bulk` endpoint (one DB
+transaction) rather than N sequential row-creates.
+
+Also fixed in the same session, unrelated to the above but found while
+verifying it: the `0001_add_sectors.sql` migration had never actually
+been applied to the local database (see gotchas.md), and a missing
+`scrollbar-gutter: stable` was causing the navbar to visibly shift a few
+pixels between pages of different height.
+
+Evidence: `web/src/routes/api/companies/[id]/+server.ts`,
+`web/src/routes/api/companies/[id]/performance/+server.ts`,
+`web/src/lib/components/CompanyCard.svelte`,
+`web/src/lib/server/services/companiesShared.ts`,
+`web/src/lib/server/services/customNotes.ts`,
+`web/src/routes/company/[id]/CustomTables.svelte`,
+`web/src/routes/api/tables/[tableId]/rows/bulk/+server.ts`. Committed as
+`eec7744`, pushed to `origin/master` - see STATE.md for why that isn't
+live on production yet.
+
 ## ADR-029: Continuous Application Review agent (`/app-review`)
 User asked for a persistent reviewer, not a one-off audit: continuously
 inspect the app at feature and UI/UX level (missing features, broken

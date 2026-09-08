@@ -1,5 +1,58 @@
 # Gotchas (environment facts learned the hard way)
 
+## drizzle-kit migrations are never auto-applied - to local OR production
+Nothing in this repo runs `drizzle-kit migrate` (or raw-applies `drizzle/*.sql`)
+automatically, on either the local docker Postgres or the Vercel-deployed
+Aiven Postgres. A migration file existing in `drizzle/` and being committed
+does NOT mean the database has it - two real incidents this session:
+`0001_add_sectors.sql` existed in the repo but had never been applied
+locally (`GET /api/sectors` 500ing with `relation "sectors" does not
+exist`, no `drizzle.__drizzle_migrations` tracking table even present),
+and `custom_notes` (0002) was missing from production for the same reason.
+Fix pattern each time: `docker exec -i <postgres-container> psql -U <user>
+-d <db> < drizzle/000N_*.sql` for local, or a small standalone Node script
+reading `DATABASE_URL` out of `.production.env` and running the same SQL
+via the `postgres` package for prod (see `web/_prod_migrate.mjs`) - both
+migrations are pure additive DDL (`CREATE TABLE`/`ALTER TABLE ADD
+CONSTRAINT`), safe to run any time, but must be run by hand. After every
+schema change, check both databases explicitly rather than assuming a
+migration file in the repo means the migration happened.
+
+## Vercel production deploys were silently broken for 4+ days: `vite: command not found`
+Every deployment in `vercel ls` for majdoors/web from 2026-09-04 onward
+failed in ~2 seconds with `sh: line 1: vite: command not found` /
+`Error: Command "vite build" exited with 127` - `vite` is a devDependency
+and the build logs show **no install step ran at all** before `vercel
+build` tried to invoke it (jumps straight from "Running vercel build" to
+the failing command, no npm/pnpm install output anywhere in between).
+The production alias (`thesis-track-sigma.vercel.app`) kept returning 200
+throughout because it was still serving the last deployment that succeeded
+before this started - so the site *looked* fine while every subsequent
+push, across two full feature sessions, silently never went live. This is
+a Vercel project setting (Build & Development Settings -> Install Command),
+not application code - `vercel inspect <url> --logs` is how it was
+diagnosed, but fixing it needs dashboard access, which this session didn't
+have. **Always check `vercel ls` / `vercel inspect --logs` after a push
+before assuming a deploy actually landed** - a 200 on the live alias proves
+nothing about whether the latest commit is what's serving it.
+
+## The Claude Code Auto Mode classifier gates writes to production, not reads
+Read-only queries against the production database (checking which tables
+exist, which users exist) went through without a permission prompt.
+Anything that *writes* to production - an `UPDATE users SET
+password_hash`, a migration's `CREATE TABLE`, even generating a password
+hash locally with an inline `node -e "..."` in a context that was clearly
+about to touch a real production credential - got denied by the classifier
+outright, and a verbal "I am allowing you, go ahead" in chat does **not**
+lift that block; it requires either an actual Bash permission rule added
+in the user's Claude Code settings, or the user running the command
+themselves in their own terminal. Working pattern that held up twice this
+session: write the mutation into a small, self-contained script (reads its
+DB URL out of a gitignored `.env` file at runtime, never logs it, never
+takes the secret as a literal in a command) and hand the exact `node
+...` invocation to the user to run themselves - see `web/_prod_migrate.mjs`
+and `web/_prod_reset_password.mjs`.
+
 ## Host port 5432 is already owned by an unrelated project
 This machine has other docker-compose projects (`restaurantapp-db-1`) that bind
 host port 5432. `docker compose up -d postgres` with a `5432:5432` mapping

@@ -160,9 +160,50 @@ everything above this note as historical background on how the product
 evolved, not as a description of the current repo layout; `web/` is the
 live app now.
 
-Next action: none pending. The 3-part investing-behavior request is
-complete, the full-page thesis view + deeper Balu Forge content (ADR-027)
-is done and live-verified on both local and production, and production
-now has real users/data matching local. Natural next step, if the user
-wants it, is the deferred comparison/diff view between two users' theses
-on the same company.
+## 2026-09-08/09 session: cross-analyst viewing, card guidance/review, custom notes (ADR-030)
+
+Done:
+  - Multi-analyst read-only thesis viewing (`?owner=` param, cycle
+    arrow + owner badge on both dashboard card and detail header)
+  - Guidance and a new "Review" (kill-trigger checklist, distinct from
+    the Review Queue) surfaced directly on the dashboard card, plus a new
+    "My Trackables" panel on `/review`
+  - Custom notes (heading + body) alongside custom tables everywhere
+  - CSV import + Ctrl+V paste for custom tables, both when creating a new
+    table (with column/type auto-detection and a live preview) and when
+    adding rows to an existing one; one new bulk-insert endpoint backs
+    both paths
+  - Login form gained a show/hide password eye toggle
+  - Fixed: `0001_add_sectors.sql` was never applied locally (real bug,
+    not new - see gotchas.md); a missing `scrollbar-gutter: stable` was
+    shifting the navbar between pages of different height
+  - Full detail in ADR-030; committed as `eec7744`, pushed to
+    `origin/master`
+
+**Production is currently NOT running this commit, or possibly anything
+from the last 4+ days** (see gotchas.md's Vercel entry) - every deploy
+since 2026-09-04 has failed at the build step (`vite: command not found`,
+no install step ever ran) and the live alias is silently still serving
+whatever the last successful deploy was. This is a Vercel dashboard
+setting (Install Command), not something fixable from this session -
+flagged clearly to the user, not yet resolved as of this writing.
+
+Production database was reconciled anyway, ahead of the deploy actually
+landing (both migrations are additive/safe to run early): `sectors`/
+`sector_companies` were already present in prod from an earlier session;
+`custom_notes` was missing and has now been applied (run by the user
+themselves via `web/_prod_migrate.mjs`, after this session's own several
+attempts to write to prod were denied by the Auto Mode classifier - see
+gotchas.md). Production password reset for `rohit.negi@rdc.in` was
+handed to the user the same way (`web/_prod_reset_password.mjs`), not
+confirmed completed as of this writing - the on-file
+`production-creds.md` password for that account no longer works
+(confirmed by the user trying it live), cause unconfirmed (stale record
+vs. an actual since-changed password).
+
+Next action: confirm with the user whether the production password reset
+went through and whether the Vercel Install Command setting got fixed -
+once both are true, verify the live site actually serves `eec7744`
+(`vercel inspect <latest-url> --logs` should show a real install step and
+a successful `vite build`, not a 2-second failure). Until then, treat
+everything in ADR-030 as "shipped to git, not yet live."
