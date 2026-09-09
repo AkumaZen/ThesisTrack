@@ -1089,7 +1089,11 @@ My notes:
 		<section class="mt-5 mb-5 rounded-xl border border-border bg-surface p-5">
 			<div class="flex items-center justify-between">
 				<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Custom Sections</h2>
-				<button type="button" onclick={() => (sectionBuilderOpen = true)} class="text-xs text-ok cursor-pointer">+ Add Custom Section</button>
+				<button
+					type="button"
+					onclick={() => (sectionBuilderOpen = true)}
+					class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Custom Section</button
+				>
 			</div>
 			<p class="text-xs text-muted-fg mt-1">
 				Optional - define your own data tables (name + columns), same builder as "+ Add Table" on the company page. Each one
