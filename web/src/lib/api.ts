@@ -70,6 +70,7 @@ export const api = {
 	proposeOperatingModel: (name: string) => request('POST', '/taxonomy/operating-models', { name }),
 	getMetrics: (operatingModel?: string) =>
 		request('GET', `/metrics${operatingModel ? `?operating_model=${operatingModel}` : ''}`),
+	createMetric: (payload: unknown) => request('POST', '/metrics', payload),
 
 	// Custom tables (app/routers/custom_tables.py)
 	listTables: (companyId: string) => request('GET', `/companies/${encodeURIComponent(companyId)}/tables`),

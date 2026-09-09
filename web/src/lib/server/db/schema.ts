@@ -32,14 +32,6 @@ export const thesisOutcomeEnum = pgEnum('thesis_outcome', [
 	'exited_early',
 	'superseded'
 ]);
-export const metricUnitEnum = pgEnum('metric_unit', [
-	'pct',
-	'days',
-	'ratio',
-	'currency',
-	'count',
-	'currency_per_unit'
-]);
 export const triggerSeverityEnum = pgEnum('trigger_severity', ['warn', 'kill']);
 export const proposalStateEnum = pgEnum('proposal_state', [
 	'pending',
@@ -83,7 +75,9 @@ export const metricDefinitions = pgTable('metric_definitions', {
 	metricKey: varchar('metric_key', { length: 60 }).primaryKey(),
 	label: varchar('label', { length: 120 }).notNull(),
 	operatingModel: varchar('operating_model', { length: 50 }).references(() => operatingModels.name),
-	unit: metricUnitEnum('unit').notNull(),
+	// Free-form because company-specific metrics can use domain units such as
+	// beds, tonnes/day, INR/employee, patients/day, or an analyst's own scale.
+	unit: varchar('unit', { length: 40 }).notNull(),
 	higherIsBetter: boolean('higher_is_better'),
 	decimals: smallint('decimals').notNull().default(1),
 	isCore: boolean('is_core').notNull().default(false),

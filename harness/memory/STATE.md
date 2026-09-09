@@ -3,6 +3,15 @@ Phase: BUILD_PLAN.md v1 (P0-P6) COMPLETE. Now building user-requested work
 explicitly outside the original harness mandate (see below) - this has
 grown into an ongoing sequence of features, not a fixed TODO list anymore.
 
+Latest local change (2026-09-09, not pushed/deployed): company creation no
+longer renders every operating-model metric as a fixed grid. Analysts start
+with no proof-point metrics, can search the whole registry, select/remove only
+what matters, and create a metric with any name and free-form unit. Migration
+0005 converts metric_definitions.unit from a closed enum to varchar(40); it is
+applied locally only. Verified by 58 passing Vitest tests and svelte-check
+(0 errors, 2 pre-existing warnings). Vite compilation succeeds; local Vercel
+adapter finalization still hits Windows EPERM while creating a symlink.
+
 Done:
   - Harness bootstrapped (68ffdec); evolve cycles for P0-P6 (evolutions/
     2026-09-02T-p0..p4.md, 2026-09-03T-p5.md, 2026-09-03T-p6.md)

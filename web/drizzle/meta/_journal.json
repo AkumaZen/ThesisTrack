@@ -36,6 +36,13 @@
       "when": 1788927978094,
       "tag": "0004_operating_models_table",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788941805485,
+      "tag": "0005_custom_metric_units",
+      "breakpoints": true
     }
   ]
 }

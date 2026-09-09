@@ -25,6 +25,7 @@
 	type Industry = { name: string; niches: { name: string }[] };
 	type OperatingModel = { name: string };
 	type MetricDef = { metric_key: string; label: string; unit: string };
+	type SelectedMetric = MetricDef & { value: string };
 
 	let mode = $derived(page.url.searchParams.get('mode') === 'amend' ? 'amend' : 'create');
 	let prefillCompanyId = $derived(page.url.searchParams.get('companyId') ?? '');
@@ -137,7 +138,49 @@
 
 	// Proof Points
 	let hardEvidence = $state<string[]>(['']);
-	let metricValues = $state<Record<string, string>>({});
+	let selectedMetrics = $state<SelectedMetric[]>([]);
+	let metricSearch = $state('');
+	let creatingMetric = $state(false);
+	let newMetricLabel = $state('');
+	let newMetricUnit = $state('');
+	let metricBusy = $state(false);
+	let metricError = $state('');
+	let availableMetrics = $derived(
+		metrics.filter((metric) => {
+			if (selectedMetrics.some((selected) => selected.metric_key === metric.metric_key)) return false;
+			const query = metricSearch.trim().toLowerCase();
+			return !query || metric.label.toLowerCase().includes(query) || metric.metric_key.includes(query) || metric.unit.toLowerCase().includes(query);
+		})
+	);
+
+	function addMetric(metric: MetricDef) {
+		if (!selectedMetrics.some((selected) => selected.metric_key === metric.metric_key)) {
+			selectedMetrics = [...selectedMetrics, { ...metric, value: '' }];
+		}
+		metricSearch = '';
+	}
+
+	function removeMetric(metricKey: string) {
+		selectedMetrics = selectedMetrics.filter((metric) => metric.metric_key !== metricKey);
+	}
+
+	async function createCustomMetric() {
+		if (!newMetricLabel.trim() || !newMetricUnit.trim()) return;
+		metricBusy = true;
+		metricError = '';
+		try {
+			const created = (await api.createMetric({ label: newMetricLabel, unit: newMetricUnit })) as MetricDef;
+			metrics = [...metrics, created].sort((a, b) => a.label.localeCompare(b.label));
+			addMetric(created);
+			newMetricLabel = '';
+			newMetricUnit = '';
+			creatingMetric = false;
+		} catch (error) {
+			metricError = error instanceof ApiError ? String((error.body as { message?: string })?.message ?? error.message) : String(error);
+		} finally {
+			metricBusy = false;
+		}
+	}
 
 	// What Can Kill It
 	type KillTriggerForm = {
@@ -266,9 +309,10 @@
 		bigChangeSummary = t.the_big_change?.summary ?? '';
 		expectedCompletion = t.the_big_change?.expected_completion ?? '';
 		hardEvidence = t.proof_points?.hard_evidence?.length ? [...t.proof_points.hard_evidence] : [''];
-		metricValues = Object.fromEntries(
-			Object.entries(t.proof_points?.model_specific_metrics ?? {}).map(([k, v]) => [k, String(v)])
-		);
+		selectedMetrics = Object.entries(t.proof_points?.model_specific_metrics ?? {}).map(([key, value]) => {
+			const definition = metrics.find((metric) => metric.metric_key === key);
+			return { metric_key: key, label: definition?.label ?? key, unit: definition?.unit ?? 'value', value: String(value) };
+		});
 		killTriggers = t.what_can_kill_it?.length
 			? t.what_can_kill_it.map((k) => ({
 					label: k.label,
@@ -295,9 +339,13 @@
 
 	onMount(async () => {
 		try {
-			const tax = (await api.getTaxonomy()) as { industries: Industry[]; operating_models: OperatingModel[] };
+			const [tax, allMetrics] = await Promise.all([
+				api.getTaxonomy() as Promise<{ industries: Industry[]; operating_models: OperatingModel[] }>,
+				api.getMetrics() as Promise<MetricDef[]>
+			]);
 			taxonomy = tax.industries;
 			operatingModels = tax.operating_models;
+			metrics = allMetrics;
 			if (tax.industries.length && !isExistingCompany) broadIndustry = tax.industries[0].name;
 			if (tax.operating_models.length && !isExistingCompany) operatingModel = tax.operating_models[0].name;
 		} catch (e) {
@@ -341,14 +389,6 @@
 		}
 	});
 
-	$effect(() => {
-		operatingModel;
-		api
-			.getMetrics(operatingModel)
-			.then((m) => (metrics = m as MetricDef[]))
-			.catch(() => (metrics = []));
-	});
-
 	function addRow<T>(list: T[], row: T): T[] {
 		return [...list, row];
 	}
@@ -369,7 +409,7 @@
 			proof_points: {
 				hard_evidence: hardEvidence.map((e) => e.trim()).filter(Boolean),
 				model_specific_metrics: Object.fromEntries(
-					Object.entries(metricValues).filter(([, v]) => v !== '' && v !== undefined).map(([k, v]) => [k, Number(v)])
+					selectedMetrics.filter((metric) => metric.value !== '').map((metric) => [metric.metric_key, Number(metric.value)])
 				)
 			},
 			what_can_kill_it: killTriggers
@@ -960,24 +1000,57 @@ My notes:
 			<button type="button" onclick={() => (hardEvidence = addRow(hardEvidence, ''))} class="text-xs text-ok mt-1">+ Add evidence</button>
 
 			<div class="mt-4">
-				<div class="text-sm font-medium">Model-Specific Metrics</div>
-				<div class="grid grid-cols-2 gap-3 mt-1">
-					{#if !metrics.length}
-						<div class="text-xs text-muted-fg col-span-2">No metrics registered for this operating model yet.</div>
-					{/if}
-					{#each metrics as m (m.metric_key)}
-						<label class="text-xs"
-							>{m.label} <span class="text-muted-fg">({m.unit})</span>
-							<input
-								type="number"
-								step="any"
-								bind:value={metricValues[m.metric_key]}
-								class="mt-0.5 w-full rounded-md border border-border px-2 py-1 text-sm"
-							/>
+				<div class="text-sm font-medium">Proof-point metrics</div>
+				<p class="text-xs text-muted-fg mt-0.5">Add only the measurements that matter for this company. Nothing is required or preselected.</p>
+				<div class="space-y-2 mt-2">
+					{#each selectedMetrics as metric (metric.metric_key)}
+						<div class="grid grid-cols-[minmax(0,1fr)_minmax(9rem,0.45fr)_auto] gap-2 items-end">
+						<label class="text-xs">
+							<span>{metric.label}</span> <span class="text-muted-fg">({metric.unit})</span>
+							<input type="number" step="any" bind:value={metric.value} placeholder="Value" class="mt-0.5 w-full rounded-md border border-border px-2 py-1 text-sm" />
 						</label>
+						<div class="pb-1 text-xs text-muted-fg truncate" title={metric.metric_key}>{metric.metric_key}</div>
+						<button type="button" aria-label="Remove {metric.label}" onclick={() => removeMetric(metric.metric_key)} class="mb-1 px-2 py-1 text-muted-fg hover:text-danger">&times;</button>
+						</div>
 					{/each}
-				</div>
+					{#if !selectedMetrics.length}
+						<div class="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-muted-fg">No metrics selected. Add any metric that makes this thesis measurable.</div>
+					{/if}
 			</div>
+
+				<div class="mt-3 relative">
+					<label class="text-xs font-medium" for="metric-search">Add a metric</label>
+					<input id="metric-search" bind:value={metricSearch} placeholder="Search all metrics by name, key, or unit" autocomplete="off" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+					{#if metricSearch.trim()}
+						<div class="mt-1 max-h-44 overflow-y-auto rounded-md border border-border bg-bg-ink shadow-lg">
+							{#each availableMetrics as metric (metric.metric_key)}
+								<button type="button" onclick={() => addMetric(metric)} class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-surface-3">
+									<span>{metric.label}</span><span class="text-xs text-muted-fg">{metric.unit}</span>
+								</button>
+							{/each}
+							{#if !availableMetrics.length}
+								<div class="px-3 py-2 text-xs text-muted-fg">No matching metric. Create it below.</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
+
+				{#if creatingMetric}
+					<div class="mt-3 rounded-md border border-border bg-surface-2 p-3">
+						<div class="grid grid-cols-2 gap-2">
+							<label class="text-xs">Metric name<input bind:value={newMetricLabel} placeholder="e.g. Beds occupied" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" /></label>
+							<label class="text-xs">Unit<input bind:value={newMetricUnit} placeholder="e.g. beds, tonnes/day, INR/room" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" /></label>
+						</div>
+						{#if metricError}<div class="mt-2 text-xs text-danger">{metricError}</div>{/if}
+						<div class="mt-2 flex gap-2">
+							<button type="button" disabled={metricBusy || !newMetricLabel.trim() || !newMetricUnit.trim()} onclick={createCustomMetric} class="rounded-md bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-50">{metricBusy ? 'Creating…' : 'Create and add'}</button>
+							<button type="button" onclick={() => (creatingMetric = false)} class="rounded-md border border-border px-3 py-1.5 text-xs">Cancel</button>
+						</div>
+					</div>
+				{:else}
+					<button type="button" onclick={() => (creatingMetric = true)} class="mt-2 text-xs text-ok">+ Create a custom metric</button>
+				{/if}
+				</div>
 			<div class="mt-4 pt-3 border-t border-border">
 				<div class="text-sm font-medium">Additional Notes</div>
 				<div class="space-y-1 mt-1">
