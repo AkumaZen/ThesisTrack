@@ -7,7 +7,14 @@ import { db } from '../db';
 import { guidanceNotes, killTriggers, metricDefinitions, statusEvents, thesisVersions, triggerEvaluations } from '../db/schema';
 
 export function scenarioToOut(
-	company: { companyId: string; name: string; operatingModel: string; currency: string },
+	company: {
+		companyId: string;
+		name: string;
+		operatingModel: string;
+		currency: string;
+		nseTicker?: string | null;
+		bseTicker?: string | null;
+	},
 	industryName: string,
 	nicheName: string,
 	scenario: {
@@ -33,6 +40,8 @@ export function scenarioToOut(
 	return {
 		company_id: company.companyId,
 		name: company.name,
+		nse_ticker: company.nseTicker ?? null,
+		bse_ticker: company.bseTicker ?? null,
 		broad_industry: industryName,
 		specific_niche: nicheName,
 		operating_model: company.operatingModel,

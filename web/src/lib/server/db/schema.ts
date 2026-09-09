@@ -90,6 +90,8 @@ export const metricDefinitions = pgTable('metric_definitions', {
 export const companies = pgTable('companies', {
 	companyId: varchar('company_id', { length: 50 }).primaryKey(),
 	name: varchar('name', { length: 255 }).notNull(),
+	nseTicker: varchar('nse_ticker', { length: 30 }),
+	bseTicker: varchar('bse_ticker', { length: 30 }),
 	broadIndustryId: integer('broad_industry_id')
 		.notNull()
 		.references(() => broadIndustries.id),

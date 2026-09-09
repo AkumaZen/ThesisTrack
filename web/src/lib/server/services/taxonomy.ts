@@ -6,6 +6,14 @@ import { broadIndustries, specificNiches } from '../db/schema';
 
 export class TaxonomyError extends Error {}
 
+export async function proposeIndustry(name: string) {
+	const [existing] = await db.select().from(broadIndustries).where(eq(broadIndustries.name, name)).limit(1);
+	if (existing) return existing;
+
+	const [industry] = await db.insert(broadIndustries).values({ name, isActive: true }).returning();
+	return industry;
+}
+
 export async function proposeNiche(broadIndustryName: string, nicheName: string) {
 	const [industry] = await db.select().from(broadIndustries).where(eq(broadIndustries.name, broadIndustryName)).limit(1);
 	if (!industry) throw new TaxonomyError(`unknown broad_industry '${broadIndustryName}'`);

@@ -42,10 +42,22 @@ async function writeKillTriggers(versionId: number, thesis: ThesisData) {
 	);
 }
 
+// The form no longer collects a raw company_id - it derives one from
+// whichever exchange ticker was supplied (NSE preferred, since that's the
+// more commonly quoted one), falling back to a passed-through company_id
+// for API/JSON-import callers that still provide it directly.
+function deriveCompanyId(payload: ThesisCreate): string {
+	if (payload.company_id) return payload.company_id;
+	const raw = payload.nse_ticker || payload.bse_ticker;
+	if (!raw) throw new TaxonomyError('one of nse_ticker, bse_ticker, or company_id is required');
+	return raw.replace(/[^A-Z0-9_]/g, '_').slice(0, 50);
+}
+
 export async function createCompany(payload: ThesisCreate, actor: string) {
-	const [existing] = await db.select().from(companies).where(eq(companies.companyId, payload.company_id)).limit(1);
-	if (existing && (await getScenarioOptional(payload.company_id, actor))) {
-		throw new AlreadyExistsError(`'${actor}' already has a thesis on company '${payload.company_id}'`);
+	const companyId = deriveCompanyId(payload);
+	const [existing] = await db.select().from(companies).where(eq(companies.companyId, companyId)).limit(1);
+	if (existing && (await getScenarioOptional(companyId, actor))) {
+		throw new AlreadyExistsError(`'${actor}' already has a thesis on company '${companyId}'`);
 	}
 
 	let company = existing;
@@ -57,8 +69,10 @@ export async function createCompany(payload: ThesisCreate, actor: string) {
 		[company] = await db
 			.insert(companies)
 			.values({
-				companyId: payload.company_id,
+				companyId,
 				name: payload.name,
+				nseTicker: payload.nse_ticker ?? null,
+				bseTicker: payload.bse_ticker ?? null,
 				broadIndustryId: industry.id,
 				specificNicheId: niche.id,
 				operatingModel: payload.classification.operating_model,

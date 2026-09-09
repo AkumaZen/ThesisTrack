@@ -64,6 +64,7 @@ export const api = {
 	getVersions: (id: string, diff?: string) =>
 		request('GET', `/companies/${encodeURIComponent(id)}/versions${diff ? `?diff=${diff}` : ''}`),
 	getTaxonomy: () => request('GET', '/taxonomy'),
+	proposeIndustry: (name: string) => request('POST', '/taxonomy', { name }),
 	proposeNiche: (broadIndustry: string, name: string) =>
 		request('POST', '/taxonomy/niches', { broad_industry: broadIndustry, name }),
 	getMetrics: (operatingModel?: string) =>

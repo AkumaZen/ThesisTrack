@@ -42,7 +42,8 @@
 	let jsonValidateOk = $state(false);
 
 	// Basics
-	let companyId = $state('');
+	let nseTicker = $state('');
+	let bseTicker = $state('');
 	let name = $state('');
 	let broadIndustry = $state('');
 	let specificNiche = $state('');
@@ -50,6 +51,52 @@
 	let currency = $state('INR');
 	let status = $state('on_track');
 	let lastReviewed = $state(new Date().toISOString().slice(0, 10));
+
+	// Inline "add new" taxonomy affordances
+	let addingIndustry = $state(false);
+	let newIndustryName = $state('');
+	let addingNiche = $state(false);
+	let newNicheName = $state('');
+	let taxonomyBusy = $state(false);
+	let taxonomyError = $state('');
+
+	async function submitNewIndustry() {
+		const nm = newIndustryName.trim();
+		if (!nm) return;
+		taxonomyBusy = true;
+		taxonomyError = '';
+		try {
+			const created = (await api.proposeIndustry(nm)) as { name: string };
+			taxonomy = [...taxonomy, { name: created.name, niches: [] }];
+			broadIndustry = created.name;
+			newIndustryName = '';
+			addingIndustry = false;
+		} catch (e) {
+			taxonomyError = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+		} finally {
+			taxonomyBusy = false;
+		}
+	}
+
+	async function submitNewNiche() {
+		const nm = newNicheName.trim();
+		if (!nm || !broadIndustry) return;
+		taxonomyBusy = true;
+		taxonomyError = '';
+		try {
+			const created = (await api.proposeNiche(broadIndustry, nm)) as { name: string };
+			taxonomy = taxonomy.map((i) =>
+				i.name === broadIndustry ? { ...i, niches: [...i.niches, { name: created.name }] } : i
+			);
+			specificNiche = created.name;
+			newNicheName = '';
+			addingNiche = false;
+		} catch (e) {
+			taxonomyError = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+		} finally {
+			taxonomyBusy = false;
+		}
+	}
 
 	// Amend-only
 	let changeNote = $state('');
@@ -254,6 +301,8 @@
 				const detail = (await api.getCompany(prefillCompanyId)) as {
 					company_id: string;
 					name: string;
+					nse_ticker?: string | null;
+					bse_ticker?: string | null;
 					broad_industry: string;
 					specific_niche: string;
 					operating_model: string;
@@ -263,7 +312,8 @@
 					current_thesis?: ThesisDataShape;
 					has_own_scenario: boolean;
 				};
-				companyId = detail.company_id;
+				nseTicker = detail.nse_ticker ?? '';
+				bseTicker = detail.bse_ticker ?? '';
 				name = detail.name;
 				broadIndustry = detail.broad_industry;
 				specificNiche = detail.specific_niche;
@@ -338,7 +388,8 @@
 
 	function buildCreatePayload() {
 		return {
-			company_id: companyId.trim().toUpperCase(),
+			nse_ticker: nseTicker.trim().toUpperCase(),
+			bse_ticker: bseTicker.trim().toUpperCase(),
 			name: name.trim(),
 			classification: {
 				broad_industry: broadIndustry,
@@ -376,6 +427,11 @@
 				await createCustomSections(prefillCompanyId);
 				await goto(`/company/${encodeURIComponent(prefillCompanyId)}`);
 			} else {
+				if (!isExistingCompany && !nseTicker.trim() && !bseTicker.trim()) {
+					fieldErrors = ['At least one of NSE Ticker or BSE Ticker is required.'];
+					submitting = false;
+					return;
+				}
 				const payload = buildCreatePayload();
 				const created = (await api.createCompany(payload)) as { company_id: string };
 				await createCustomSections(created.company_id);
@@ -394,7 +450,8 @@
 	const CONVERSION_PROMPT = `Convert the investment thesis notes I paste after this prompt into a single JSON object with EXACTLY this shape (no extra keys, no markdown fencing):
 
 {
-  "company_id": "TICKER_OR_SLUG",
+  "nse_ticker": "NSE_TICKER (at least one of nse_ticker/bse_ticker required)",
+  "bse_ticker": "BSE_TICKER_OR_SCRIP_CODE",
   "name": "Company Name",
   "classification": { "broad_industry": "...", "specific_niche": "...", "operating_model": "factory|subscription|money_lending|retail_stores|services", "currency": "INR" },
   "status": "on_track|watch_closely|broken",
@@ -448,6 +505,8 @@ My notes:
 
 	function applyParsedPayload(parsed: {
 		company_id?: string;
+		nse_ticker?: string;
+		bse_ticker?: string;
 		name?: string;
 		classification?: { broad_industry?: string; specific_niche?: string; operating_model?: string; currency?: string };
 		status?: string;
@@ -455,7 +514,11 @@ My notes:
 		thesis_data?: ThesisDataShape;
 		custom_sections?: ParsedCustomSection[];
 	}) {
-		if (parsed.company_id) companyId = parsed.company_id;
+		// company_id-only JSON payloads (older exports) map onto nse_ticker so
+		// they still derive a working company_id on submit.
+		if (parsed.nse_ticker) nseTicker = parsed.nse_ticker;
+		else if (parsed.company_id) nseTicker = parsed.company_id;
+		if (parsed.bse_ticker) bseTicker = parsed.bse_ticker;
 		if (parsed.name) name = parsed.name;
 		if (parsed.classification?.broad_industry) broadIndustry = parsed.classification.broad_industry;
 		if (parsed.classification?.specific_niche) specificNiche = parsed.classification.specific_niche;
@@ -606,12 +669,21 @@ My notes:
 				<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Basics</h2>
 				<div class="grid grid-cols-2 gap-3 mt-2">
 					<label class="text-sm"
-						>Company ID
+						>NSE Ticker <span class="text-muted-fg font-normal">(at least one of NSE/BSE required)</span>
 						<input
-							bind:value={companyId}
+							bind:value={nseTicker}
 							readonly={isExistingCompany}
-							placeholder="TICKER_OR_SLUG"
-							class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm {isExistingCompany ? 'bg-surface-2 text-muted-fg' : ''}"
+							placeholder="e.g. RELIANCE"
+							class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm uppercase {isExistingCompany ? 'bg-surface-2 text-muted-fg' : ''}"
+						/>
+					</label>
+					<label class="text-sm"
+						>BSE Ticker <span class="text-muted-fg font-normal">(at least one of NSE/BSE required)</span>
+						<input
+							bind:value={bseTicker}
+							readonly={isExistingCompany}
+							placeholder="e.g. 500325"
+							class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm uppercase {isExistingCompany ? 'bg-surface-2 text-muted-fg' : ''}"
 						/>
 					</label>
 					<label class="text-sm"
@@ -620,19 +692,61 @@ My notes:
 					</label>
 					<label class="text-sm"
 						>Broad Industry
-						<select bind:value={broadIndustry} disabled={isExistingCompany} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
-							{#each taxonomy as i (i.name)}
-								<option value={i.name}>{i.name}</option>
-							{/each}
-						</select>
+						{#if !isExistingCompany && !addingIndustry}
+							<button type="button" onclick={() => (addingIndustry = true)} class="float-right text-xs text-ok normal-case font-normal"
+								>+ New Industry</button
+							>
+						{/if}
+						{#if addingIndustry}
+							<div class="mt-1 flex gap-1">
+								<input
+									bind:value={newIndustryName}
+									placeholder="New industry name"
+									class="flex-1 rounded-md border border-border px-2 py-1.5 text-sm"
+								/>
+								<button type="button" disabled={taxonomyBusy} onclick={submitNewIndustry} class="text-xs px-2 rounded-md border border-border hover:bg-surface-3"
+									>Add</button
+								>
+								<button type="button" onclick={() => (addingIndustry = false)} class="text-xs px-2 text-muted-fg hover:text-danger"
+									>Cancel</button
+								>
+							</div>
+						{:else}
+							<select bind:value={broadIndustry} disabled={isExistingCompany} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+								{#each taxonomy as i (i.name)}
+									<option value={i.name}>{i.name}</option>
+								{/each}
+							</select>
+						{/if}
 					</label>
 					<label class="text-sm"
 						>Specific Niche
-						<select bind:value={specificNiche} disabled={isExistingCompany} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
-							{#each niches as n (n.name)}
-								<option value={n.name}>{n.name}</option>
-							{/each}
-						</select>
+						{#if !isExistingCompany && !addingNiche && broadIndustry}
+							<button type="button" onclick={() => (addingNiche = true)} class="float-right text-xs text-ok normal-case font-normal"
+								>+ New Niche</button
+							>
+						{/if}
+						{#if addingNiche}
+							<div class="mt-1 flex gap-1">
+								<input
+									bind:value={newNicheName}
+									placeholder="New niche name under {broadIndustry}"
+									class="flex-1 rounded-md border border-border px-2 py-1.5 text-sm"
+								/>
+								<button type="button" disabled={taxonomyBusy} onclick={submitNewNiche} class="text-xs px-2 rounded-md border border-border hover:bg-surface-3"
+									>Add</button
+								>
+								<button type="button" onclick={() => (addingNiche = false)} class="text-xs px-2 text-muted-fg hover:text-danger"
+									>Cancel</button
+								>
+							</div>
+						{:else}
+							<select bind:value={specificNiche} disabled={isExistingCompany} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+								{#each niches as n (n.name)}
+									<option value={n.name}>{n.name}</option>
+								{/each}
+							</select>
+						{/if}
 					</label>
 					<label class="text-sm"
 						>Operating Model
@@ -661,6 +775,9 @@ My notes:
 				</div>
 				{#if isExistingCompany}
 					<p class="text-xs text-muted-fg mt-2">This company already exists - identity/classification are locked. You're starting a new thesis (scenario) of your own on it.</p>
+				{/if}
+				{#if taxonomyError}
+					<p class="text-xs text-danger mt-2">{taxonomyError}</p>
 				{/if}
 			</section>
 		{/if}

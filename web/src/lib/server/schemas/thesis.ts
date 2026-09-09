@@ -142,20 +142,43 @@ export const classification = z.object({
 		.default('INR')
 });
 
-export const thesisCreate = z.object({
-	company_id: z.string().regex(/^[A-Z0-9_]{2,50}$/),
-	name: z.string(),
-	classification,
-	status: z.string().transform((v, ctx) => {
-		const n = normalizeEnum(v);
-		if (!(THESIS_STATUSES as readonly string[]).includes(n)) {
-			ctx.addIssue({ code: 'custom', message: `unknown status '${v}'` });
-			return z.NEVER;
+const tickerField = z
+	.string()
+	.trim()
+	.toUpperCase()
+	.regex(/^[A-Z0-9&.-]{1,20}$/, 'must be a short alphanumeric ticker/scrip code')
+	.optional()
+	.or(z.literal(''))
+	.transform((v) => (v ? v : undefined));
+
+export const thesisCreate = z
+	.object({
+		// company_id is optional on input - createCompany() derives it from
+		// whichever ticker is present when omitted, since the form no longer
+		// asks the user to type an internal ID directly (see ingest/+page.svelte).
+		company_id: z
+			.string()
+			.regex(/^[A-Z0-9_]{2,50}$/)
+			.optional(),
+		nse_ticker: tickerField,
+		bse_ticker: tickerField,
+		name: z.string(),
+		classification,
+		status: z.string().transform((v, ctx) => {
+			const n = normalizeEnum(v);
+			if (!(THESIS_STATUSES as readonly string[]).includes(n)) {
+				ctx.addIssue({ code: 'custom', message: `unknown status '${v}'` });
+				return z.NEVER;
+			}
+			return n as (typeof THESIS_STATUSES)[number];
+		}).default('on_track'),
+		last_reviewed: z.string(),
+		thesis_data: thesisData
+	})
+	.superRefine((v, ctx) => {
+		if (!v.nse_ticker && !v.bse_ticker && !v.company_id) {
+			ctx.addIssue({ code: 'custom', message: 'at least one of nse_ticker or bse_ticker is required' });
 		}
-		return n as (typeof THESIS_STATUSES)[number];
-	}).default('on_track'),
-	last_reviewed: z.string(),
-	thesis_data: thesisData
-});
+	});
 
 export type ThesisCreate = z.infer<typeof thesisCreate>;
