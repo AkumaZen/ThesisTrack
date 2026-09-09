@@ -2,9 +2,17 @@
 // inlined directly in web/src/routes/api/taxonomy/+server.ts's GET handler).
 import { and, eq } from 'drizzle-orm';
 import { db } from '../db';
-import { broadIndustries, specificNiches } from '../db/schema';
+import { broadIndustries, operatingModels, specificNiches } from '../db/schema';
 
 export class TaxonomyError extends Error {}
+
+export async function proposeOperatingModel(name: string) {
+	const [existing] = await db.select().from(operatingModels).where(eq(operatingModels.name, name)).limit(1);
+	if (existing) return existing;
+
+	const [model] = await db.insert(operatingModels).values({ name, isActive: true }).returning();
+	return model;
+}
 
 export async function proposeIndustry(name: string) {
 	const [existing] = await db.select().from(broadIndustries).where(eq(broadIndustries.name, name)).limit(1);

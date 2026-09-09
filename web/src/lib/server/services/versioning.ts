@@ -1,7 +1,15 @@
 // Ports app/services/versioning.py
 import { and, eq, max } from 'drizzle-orm';
 import { db } from '../db';
-import { broadIndustries, companies, killTriggers, specificNiches, thesisScenarios, thesisVersions } from '../db/schema';
+import {
+	broadIndustries,
+	companies,
+	killTriggers,
+	operatingModels,
+	specificNiches,
+	thesisScenarios,
+	thesisVersions
+} from '../db/schema';
 import type { ThesisCreate, ThesisData } from '../schemas/thesis';
 import { getScenarioOptional, ScenarioNotFoundError } from './scenarios';
 
@@ -23,6 +31,14 @@ async function resolveTaxonomy(broadIndustryName: string, specificNicheName: str
 		);
 	}
 	return { industry, niche };
+}
+
+async function resolveOperatingModel(name: string) {
+	const [model] = await db.select().from(operatingModels).where(eq(operatingModels.name, name)).limit(1);
+	if (!model) {
+		throw new TaxonomyError(`unknown operating_model '${name}'; propose it via POST /taxonomy/operating-models first`);
+	}
+	return model;
 }
 
 async function writeKillTriggers(versionId: number, thesis: ThesisData) {
@@ -66,6 +82,7 @@ export async function createCompany(payload: ThesisCreate, actor: string) {
 			payload.classification.broad_industry,
 			payload.classification.specific_niche
 		);
+		const model = await resolveOperatingModel(payload.classification.operating_model);
 		[company] = await db
 			.insert(companies)
 			.values({
@@ -75,7 +92,7 @@ export async function createCompany(payload: ThesisCreate, actor: string) {
 				bseTicker: payload.bse_ticker ?? null,
 				broadIndustryId: industry.id,
 				specificNicheId: niche.id,
-				operatingModel: payload.classification.operating_model,
+				operatingModel: model.name,
 				currency: payload.classification.currency
 			})
 			.returning();
@@ -125,7 +142,10 @@ export async function updateCompanyDetails(
 
 	const values: Partial<typeof companies.$inferInsert> = {};
 	if (patch.name !== undefined) values.name = patch.name;
-	if (patch.operating_model !== undefined) values.operatingModel = patch.operating_model as (typeof companies.$inferInsert)['operatingModel'];
+	if (patch.operating_model !== undefined) {
+		const model = await resolveOperatingModel(patch.operating_model);
+		values.operatingModel = model.name;
+	}
 	if (patch.currency !== undefined) values.currency = patch.currency;
 	if (patch.broad_industry !== undefined || patch.specific_niche !== undefined) {
 		const { industry, niche } = await resolveTaxonomy(

@@ -20,13 +20,14 @@ import { listScenarios } from '$lib/server/services/scenarios';
 import { latestTriggerEvaluations, scenarioToOut } from '$lib/server/services/companiesShared';
 import { updateCompanyDetails, NotFoundError, TaxonomyError } from '$lib/server/services/versioning';
 
-const OPERATING_MODELS = ['factory', 'subscription', 'money_lending', 'retail_stores', 'services'] as const;
-
 const companyPatch = z.object({
 	name: z.string().min(1).max(255).optional(),
 	broad_industry: z.string().min(1).optional(),
 	specific_niche: z.string().min(1).optional(),
-	operating_model: z.enum(OPERATING_MODELS).optional(),
+	// Validated against the operating_models table in versioning.ts's
+	// resolveOperatingModel, not a fixed enum - see thesis.ts's classification
+	// schema for the same reasoning.
+	operating_model: z.string().min(1).optional(),
 	currency: z.string().min(1).max(3).optional()
 });
 

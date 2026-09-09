@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { asc, count, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { broadIndustries, companies, specificNiches } from '$lib/server/db/schema';
+import { broadIndustries, companies, operatingModels, specificNiches } from '$lib/server/db/schema';
 import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { proposeIndustry, TaxonomyError } from '$lib/server/services/taxonomy';
 
@@ -45,7 +45,23 @@ export const GET: RequestHandler = async ({ locals }) => {
 				}))
 			});
 		}
-		return json(result);
+
+		const modelCounts = await db
+			.select({ model: companies.operatingModel, value: count() })
+			.from(companies)
+			.groupBy(companies.operatingModel);
+		const modelCountMap = new Map(modelCounts.map((r) => [r.model, r.value]));
+		const models = await db.select().from(operatingModels).orderBy(asc(operatingModels.name));
+
+		return json({
+			industries: result,
+			operating_models: models.map((m) => ({
+				id: m.id,
+				name: m.name,
+				is_active: m.isActive,
+				company_count: modelCountMap.get(m.name) ?? 0
+			}))
+		});
 	} catch (err) {
 		return handleAuthError(err);
 	}

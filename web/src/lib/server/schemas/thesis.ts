@@ -2,7 +2,6 @@
 import { z } from 'zod';
 import { PILLAR_KEYS } from '../pillars';
 
-const OPERATING_MODELS = ['factory', 'subscription', 'money_lending', 'retail_stores', 'services'] as const;
 const THESIS_STATUSES = ['on_track', 'watch_closely', 'broken'] as const;
 
 const normalizeEnum = (v: string) => v.trim().toLowerCase().replace(/ /g, '_').replace(/-/g, '_');
@@ -128,14 +127,11 @@ export type ThesisData = z.infer<typeof thesisData>;
 export const classification = z.object({
 	broad_industry: z.string(),
 	specific_niche: z.string(),
-	operating_model: z.string().transform((v, ctx) => {
-		const n = normalizeEnum(v);
-		if (!(OPERATING_MODELS as readonly string[]).includes(n)) {
-			ctx.addIssue({ code: 'custom', message: `unknown operating_model '${v}'` });
-			return z.NEVER;
-		}
-		return n as (typeof OPERATING_MODELS)[number];
-	}),
+	// operating_model used to be checked against a fixed list here; it's now
+	// an open, user-extensible lookup table (operating_models) - existence is
+	// validated in versioning.ts's resolveOperatingModel, same place
+	// broad_industry/specific_niche get validated against their tables.
+	operating_model: z.string().min(1).transform(normalizeEnum),
 	currency: z
 		.string()
 		.regex(/^[A-Z]{3}$/)

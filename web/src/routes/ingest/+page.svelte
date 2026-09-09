@@ -15,13 +15,15 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { api, ApiError } from '$lib/api';
+	import { operatingModelLabel } from '$lib/format';
+	import TableBuilderModal, { type BuiltTable } from '$lib/components/TableBuilderModal.svelte';
 
-	const OPERATING_MODELS = ['factory', 'subscription', 'money_lending', 'retail_stores', 'services'];
 	const STATUSES = ['on_track', 'watch_closely', 'broken'];
 	const OPERATORS = ['<', '<=', '>', '>=', '==', '!='];
 	const BELIEVE_KINDS = ['Premise', 'Inference', 'Conclusion'];
 
 	type Industry = { name: string; niches: { name: string }[] };
+	type OperatingModel = { name: string };
 	type MetricDef = { metric_key: string; label: string; unit: string };
 
 	let mode = $derived(page.url.searchParams.get('mode') === 'amend' ? 'amend' : 'create');
@@ -29,6 +31,7 @@
 	let isExistingCompany = $derived(mode === 'amend' || !!prefillCompanyId);
 
 	let taxonomy = $state<Industry[]>([]);
+	let operatingModels = $state<OperatingModel[]>([]);
 	let metrics = $state<MetricDef[]>([]);
 	let loadError = $state('');
 	let submitting = $state(false);
@@ -57,6 +60,8 @@
 	let newIndustryName = $state('');
 	let addingNiche = $state(false);
 	let newNicheName = $state('');
+	let addingOperatingModel = $state(false);
+	let newOperatingModelName = $state('');
 	let taxonomyBusy = $state(false);
 	let taxonomyError = $state('');
 
@@ -91,6 +96,24 @@
 			specificNiche = created.name;
 			newNicheName = '';
 			addingNiche = false;
+		} catch (e) {
+			taxonomyError = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+		} finally {
+			taxonomyBusy = false;
+		}
+	}
+
+	async function submitNewOperatingModel() {
+		const nm = newOperatingModelName.trim();
+		if (!nm) return;
+		taxonomyBusy = true;
+		taxonomyError = '';
+		try {
+			const created = (await api.proposeOperatingModel(nm)) as { name: string };
+			operatingModels = [...operatingModels, { name: created.name }];
+			operatingModel = created.name;
+			newOperatingModelName = '';
+			addingOperatingModel = false;
 		} catch (e) {
 			taxonomyError = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
 		} finally {
@@ -146,60 +169,26 @@
 
 	// Custom Sections - each becomes its own untagged custom data table on
 	// the company, same shape as the "+ Add Table" builder on the company
-	// page, so it shows up there as its own named card/nav entry. Available
-	// both when creating a company and when amending an existing thesis.
-	type CustomSectionColumn = { key: string; label: string; type: string; optionsCsv: string };
-	// `rows` is JSON-import-only (no UI editor for it yet) - lets a paste
-	// carry actual data values, not just a column layout, since research
-	// often turns up many rows of one shape before the section exists at all.
-	type CustomSectionForm = { name: string; columns: CustomSectionColumn[]; rows?: Record<string, string>[] };
-	let customSections = $state<CustomSectionForm[]>([]);
+	// page - literally the same TableBuilderModal component, so any change to
+	// that builder (columns editor, CSV/paste import, etc.) shows up in both
+	// places for free. The company doesn't exist yet while filling this form
+	// out, so each built table is just queued here and actually created via
+	// the API after the company itself is created (createCustomSections).
+	let customSections = $state<BuiltTable[]>([]);
+	let sectionBuilderOpen = $state(false);
 
-	function addCustomSection() {
-		customSections = [...customSections, { name: '', columns: [{ key: '', label: '', type: 'text', optionsCsv: '' }] }];
-	}
 	function removeCustomSection(i: number) {
 		customSections = customSections.filter((_, idx) => idx !== i);
 	}
-	function addCustomSectionColumn(sectionIdx: number) {
-		customSections[sectionIdx].columns.push({ key: '', label: '', type: 'text', optionsCsv: '' });
-		customSections = [...customSections];
-	}
-	function removeCustomSectionColumn(sectionIdx: number, colIdx: number) {
-		customSections[sectionIdx].columns = customSections[sectionIdx].columns.filter((_, i) => i !== colIdx);
-		customSections = [...customSections];
-	}
-	function slugifyKey(raw: string): string {
-		return raw
-			.trim()
-			.toLowerCase()
-			.replace(/[^a-z0-9_]+/g, '_')
-			.replace(/^[^a-z]+/, '')
-			.replace(/_+/g, '_')
-			.replace(/_$/, '')
-			.slice(0, 50);
+	function handleNewCustomSection(built: BuiltTable) {
+		if (built.name.trim() && built.columns.length) customSections = [...customSections, built];
 	}
 	async function createCustomSections(companyId: string) {
 		for (const s of customSections) {
-			const columns = s.columns
-				.filter((c) => c.key.trim() && c.label.trim())
-				.map((c) => ({
-					key: slugifyKey(c.key),
-					label: c.label.trim(),
-					type: c.type,
-					options: c.type === 'enum' ? c.optionsCsv.split(',').map((o) => o.trim()).filter(Boolean) : undefined
-				}));
-			if (!s.name.trim() || !columns.length) continue;
-			const table = (await api.createTable(companyId, { name: s.name.trim(), columns, section: null })) as { id: number };
-			const columnKeys = new Set(columns.map((c) => c.key));
-			for (const row of s.rows ?? []) {
-				const rowData = Object.fromEntries(
-					Object.entries(row)
-						.map(([k, v]) => [slugifyKey(k), v])
-						.filter(([k, v]) => columnKeys.has(k as string) && v !== '' && v != null)
-				);
-				if (Object.keys(rowData).length) await api.createRow(table.id, rowData);
-			}
+			const table = (await api.createTable(companyId, { name: s.name.trim(), columns: s.columns, section: null })) as {
+				id: number;
+			};
+			if (s.rows.length) await api.createRowsBulk(table.id, s.rows);
 		}
 	}
 
@@ -288,9 +277,11 @@
 
 	onMount(async () => {
 		try {
-			const tax = (await api.getTaxonomy()) as Industry[];
-			taxonomy = tax;
-			if (tax.length && !isExistingCompany) broadIndustry = tax[0].name;
+			const tax = (await api.getTaxonomy()) as { industries: Industry[]; operating_models: OperatingModel[] };
+			taxonomy = tax.industries;
+			operatingModels = tax.operating_models;
+			if (tax.industries.length && !isExistingCompany) broadIndustry = tax.industries[0].name;
+			if (tax.operating_models.length && !isExistingCompany) operatingModel = tax.operating_models[0].name;
 		} catch (e) {
 			loadError = String(e);
 		}
@@ -488,15 +479,15 @@ My notes:
 	};
 
 	function applyParsedCustomSections(sections: ParsedCustomSection[]) {
-		const mapped = sections
+		const mapped: BuiltTable[] = sections
 			.filter((s) => s.name?.trim() && s.columns?.length)
 			.map((s) => ({
 				name: s.name!.trim(),
 				columns: (s.columns ?? []).map((c) => ({
 					key: c.key ?? '',
 					label: c.label ?? c.key ?? '',
-					type: c.type ?? 'text',
-					optionsCsv: (c.options ?? []).join(', ')
+					type: (c.type ?? 'text') as BuiltTable['columns'][number]['type'],
+					options: c.options
 				})),
 				rows: s.rows ?? []
 			}));
@@ -750,11 +741,32 @@ My notes:
 					</label>
 					<label class="text-sm"
 						>Operating Model
-						<select bind:value={operatingModel} disabled={isExistingCompany} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
-							{#each OPERATING_MODELS as m (m)}
-								<option value={m}>{m}</option>
-							{/each}
-						</select>
+						{#if !isExistingCompany && !addingOperatingModel}
+							<button type="button" onclick={() => (addingOperatingModel = true)} class="float-right text-xs text-ok normal-case font-normal"
+								>+ New Operating Model</button
+							>
+						{/if}
+						{#if addingOperatingModel}
+							<div class="mt-1 flex gap-1">
+								<input
+									bind:value={newOperatingModelName}
+									placeholder="New operating model name"
+									class="flex-1 rounded-md border border-border px-2 py-1.5 text-sm"
+								/>
+								<button type="button" disabled={taxonomyBusy} onclick={submitNewOperatingModel} class="text-xs px-2 rounded-md border border-border hover:bg-surface-3"
+									>Add</button
+								>
+								<button type="button" onclick={() => (addingOperatingModel = false)} class="text-xs px-2 text-muted-fg hover:text-danger"
+									>Cancel</button
+								>
+							</div>
+						{:else}
+							<select bind:value={operatingModel} disabled={isExistingCompany} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+								{#each operatingModels as m (m.name)}
+									<option value={m.name}>{operatingModelLabel(m.name)}</option>
+								{/each}
+							</select>
+						{/if}
 					</label>
 					<label class="text-sm"
 						>Currency
@@ -1071,56 +1083,43 @@ My notes:
 			</div>
 		</section>
 
-		<!-- Custom Sections -->
+		<!-- Custom Sections - uses the exact same builder (TableBuilderModal) as
+		     the company page's "+ Add Table", so it's available up front too,
+		     not just after the company card exists. -->
 		<section class="mt-5 mb-5 rounded-xl border border-border bg-surface p-5">
 			<div class="flex items-center justify-between">
 				<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Custom Sections</h2>
-				<button type="button" onclick={addCustomSection} class="text-xs text-ok">+ Add Custom Section</button>
+				<button type="button" onclick={() => (sectionBuilderOpen = true)} class="text-xs text-ok cursor-pointer">+ Add Custom Section</button>
 			</div>
 			<p class="text-xs text-muted-fg mt-1">
-				Optional - define your own data tables (name + columns), same as "+ Add Table" on the company page. Each one shows up
-				on the company page as its own named card and nav entry.
+				Optional - define your own data tables (name + columns), same builder as "+ Add Table" on the company page. Each one
+				shows up there as its own named card and nav entry once the company is created.
 			</p>
 			{#if customSections.length}
-					<div class="space-y-3 mt-3">
-						{#each customSections as sectionForm, si (si)}
-							<div class="rounded-lg border border-border p-3">
-								<div class="flex gap-2 items-center">
-									<input
-										bind:value={sectionForm.name}
-										placeholder="Section name (e.g. Shareholding Pattern)"
-										class="flex-1 rounded-md border border-border px-2 py-1.5 text-sm"
-									/>
-									<button type="button" onclick={() => removeCustomSection(si)} class="text-muted-fg hover:text-danger">&times;</button>
+				<div class="space-y-2 mt-3">
+					{#each customSections as s, si (si)}
+						<div class="rounded-lg border border-border p-3 flex items-center justify-between">
+							<div>
+								<div class="text-sm font-medium">{s.name}</div>
+								<div class="text-xs text-muted-fg">
+									{s.columns.length} column{s.columns.length === 1 ? '' : 's'} &middot; {s.rows.length} row{s.rows.length === 1
+										? ''
+										: 's'} staged
 								</div>
-								<div class="space-y-1 mt-2">
-									{#each sectionForm.columns as col, ci (ci)}
-										<div class="grid grid-cols-12 gap-1 items-center">
-											<input placeholder="key" bind:value={col.key} class="col-span-3 rounded-md border border-border px-2 py-1 text-xs font-mono" />
-											<input placeholder="Label" bind:value={col.label} class="col-span-3 rounded-md border border-border px-2 py-1 text-xs" />
-											<select bind:value={col.type} class="col-span-2 rounded-md border border-border px-1 py-1 text-xs">
-												<option value="text">text</option>
-												<option value="number">number</option>
-												<option value="date">date</option>
-												<option value="enum">enum</option>
-											</select>
-											<input
-												placeholder="Options (enum, comma-sep)"
-												bind:value={col.optionsCsv}
-												class="col-span-3 rounded-md border border-border px-2 py-1 text-xs"
-											/>
-											<button type="button" onclick={() => removeCustomSectionColumn(si, ci)} class="text-muted-fg hover:text-danger text-center"
-												>&times;</button
-											>
-										</div>
-									{/each}
-								</div>
-								<button type="button" onclick={() => addCustomSectionColumn(si)} class="text-xs text-ok mt-1">+ Add Column</button>
 							</div>
-						{/each}
-					</div>
-				{/if}
+							<button type="button" onclick={() => removeCustomSection(si)} class="text-muted-fg hover:text-danger">&times;</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</section>
+
+		<TableBuilderModal
+			bind:open={sectionBuilderOpen}
+			title="New Custom Section"
+			submitLabel="Add Section"
+			onSubmit={handleNewCustomSection}
+		/>
 	{/if}
 
 	<div class="flex justify-end gap-2 mb-10">

@@ -23,13 +23,6 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
-export const operatingModelEnum = pgEnum('operating_model', [
-	'factory',
-	'subscription',
-	'money_lending',
-	'retail_stores',
-	'services'
-]);
 export const thesisStatusEnum = pgEnum('thesis_status', ['on_track', 'watch_closely', 'broken']);
 export const verdictSourceEnum = pgEnum('verdict_source', ['manual', 'rule_engine', 'ai_proposed']);
 export const thesisOutcomeEnum = pgEnum('thesis_outcome', [
@@ -62,6 +55,17 @@ export const broadIndustries = pgTable('broad_industries', {
 	isActive: boolean('is_active').notNull().default(true)
 });
 
+// Operating model was a fixed Postgres enum until it needed the same
+// "any user can propose a new one" extensibility as broad_industries /
+// specific_niches - a plain lookup table (referenced by name, not id, since
+// every existing column already stores the model as a string) gets that
+// without an enum-widening migration every time someone adds one.
+export const operatingModels = pgTable('operating_models', {
+	id: serial('id').primaryKey(),
+	name: varchar('name', { length: 50 }).notNull().unique(),
+	isActive: boolean('is_active').notNull().default(true)
+});
+
 export const specificNiches = pgTable(
 	'specific_niches',
 	{
@@ -78,7 +82,7 @@ export const specificNiches = pgTable(
 export const metricDefinitions = pgTable('metric_definitions', {
 	metricKey: varchar('metric_key', { length: 60 }).primaryKey(),
 	label: varchar('label', { length: 120 }).notNull(),
-	operatingModel: operatingModelEnum('operating_model'),
+	operatingModel: varchar('operating_model', { length: 50 }).references(() => operatingModels.name),
 	unit: metricUnitEnum('unit').notNull(),
 	higherIsBetter: boolean('higher_is_better'),
 	decimals: smallint('decimals').notNull().default(1),
@@ -98,7 +102,9 @@ export const companies = pgTable('companies', {
 	specificNicheId: integer('specific_niche_id')
 		.notNull()
 		.references(() => specificNiches.id),
-	operatingModel: operatingModelEnum('operating_model').notNull(),
+	operatingModel: varchar('operating_model', { length: 50 })
+		.notNull()
+		.references(() => operatingModels.name),
 	currency: varchar('currency', { length: 3 }).notNull().default('INR'),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
@@ -369,7 +375,7 @@ export const sectors = pgTable('sectors', {
 	description: text('description'),
 	// Nullable - a sector can span multiple operating models (e.g. a
 	// "Precision Components" sector may hold both factory and services cos).
-	operatingModel: operatingModelEnum('operating_model'),
+	operatingModel: varchar('operating_model', { length: 50 }).references(() => operatingModels.name),
 	createdBy: varchar('created_by', { length: 80 }).notNull(),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()

@@ -67,6 +67,7 @@ export const api = {
 	proposeIndustry: (name: string) => request('POST', '/taxonomy', { name }),
 	proposeNiche: (broadIndustry: string, name: string) =>
 		request('POST', '/taxonomy/niches', { broad_industry: broadIndustry, name }),
+	proposeOperatingModel: (name: string) => request('POST', '/taxonomy/operating-models', { name }),
 	getMetrics: (operatingModel?: string) =>
 		request('GET', `/metrics${operatingModel ? `?operating_model=${operatingModel}` : ''}`),
 

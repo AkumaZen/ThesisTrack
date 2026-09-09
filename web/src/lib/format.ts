@@ -8,6 +8,14 @@ export const OPERATING_MODEL_LABELS: Record<string, string> = {
 	services: 'Services'
 };
 
+// Operating models are user-extensible (see the ingest form's "+ New
+// Operating Model") - anything not in the static label map above (i.e. not
+// one of the 5 originally-seeded models) falls back to title-casing its
+// underscore-separated name.
+export function operatingModelLabel(name: string): string {
+	return OPERATING_MODEL_LABELS[name] ?? name.split('_').map((w) => w[0]?.toUpperCase() + w.slice(1)).join(' ');
+}
+
 export const STATUS_STYLES: Record<string, { label: string; dot: string; pill: string }> = {
 	on_track: { label: 'On Track', dot: 'bg-good', pill: 'bg-good/10 text-good ring-good/20' },
 	watch_closely: { label: 'Watch Closely', dot: 'bg-warn', pill: 'bg-warn/10 text-warn ring-warn/20' },

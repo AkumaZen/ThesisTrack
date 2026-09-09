@@ -62,6 +62,17 @@
 }
 
 /*
+ * Chrome's UA stylesheet gives <button> `cursor: default` (an arrow), not
+ * `pointer` - only <a> gets that for free. Every button in this app is
+ * clickable by definition, so the arrow cursor over "+ Add Table"/"+ Add
+ * Note"/etc. reads as non-interactive even though it isn't. One rule fixes
+ * every button app-wide instead of hand-adding `cursor-pointer` per button.
+ */
+button:not(:disabled) {
+	cursor: pointer;
+}
+
+/*
  * Reserve the scrollbar's width on every page, not just the ones tall
  * enough to need it - otherwise the centered max-w-7xl header/content
  * shifts a few pixels sideways every time navigation lands on a page

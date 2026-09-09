@@ -29,6 +29,13 @@
       "when": 1788926294896,
       "tag": "0003_add_ticker_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788927978094,
+      "tag": "0004_operating_models_table",
+      "breakpoints": true
     }
   ]
 }

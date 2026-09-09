@@ -7,7 +7,7 @@
 	// wired-up "Run AI Review" action.
 	import { goto } from '$app/navigation';
 	import { api, ApiError } from '$lib/api';
-	import { STATUS_STYLES, OPERATING_MODEL_LABELS } from '$lib/format';
+	import { STATUS_STYLES, operatingModelLabel } from '$lib/format';
 	import { session } from '$lib/session.svelte';
 	import CustomTables from './CustomTables.svelte';
 	import ActionPanels from './ActionPanels.svelte';
@@ -15,8 +15,6 @@
 	import type { CompanyDetail } from './+page';
 
 	let { data }: { data: PageData } = $props();
-
-	const OPERATING_MODELS = Object.keys(OPERATING_MODEL_LABELS);
 
 	const BASE_SECTIONS = [
 		{ id: 'business', label: '1. The Business' },
@@ -79,8 +77,10 @@
 
 	// ---- Edit Details (Basics) ----
 	type Industry = { name: string; niches: { name: string }[] };
+	type OperatingModel = { name: string };
 	let editOpen = $state(false);
 	let editTaxonomy = $state<Industry[]>([]);
+	let editOperatingModels = $state<OperatingModel[]>([]);
 	let editName = $state('');
 	let editBroadIndustry = $state('');
 	let editSpecificNiche = $state('');
@@ -88,7 +88,23 @@
 	let editCurrency = $state('');
 	let editSubmitting = $state(false);
 	let editError = $state('');
+	let addingEditOperatingModel = $state(false);
+	let newEditOperatingModelName = $state('');
 	let editNiches = $derived(editTaxonomy.find((i) => i.name === editBroadIndustry)?.niches ?? []);
+
+	async function submitNewEditOperatingModel() {
+		const nm = newEditOperatingModelName.trim();
+		if (!nm) return;
+		try {
+			const created = (await api.proposeOperatingModel(nm)) as { name: string };
+			editOperatingModels = [...editOperatingModels, { name: created.name }];
+			editOperatingModel = created.name;
+			newEditOperatingModelName = '';
+			addingEditOperatingModel = false;
+		} catch (e) {
+			editError = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+		}
+	}
 
 	async function openEdit() {
 		if (!detail) return;
@@ -101,7 +117,9 @@
 		editOpen = true;
 		if (!editTaxonomy.length) {
 			try {
-				editTaxonomy = (await api.getTaxonomy()) as Industry[];
+				const tax = (await api.getTaxonomy()) as { industries: Industry[]; operating_models: OperatingModel[] };
+				editTaxonomy = tax.industries;
+				editOperatingModels = tax.operating_models;
 			} catch (e) {
 				editError = String(e);
 			}
@@ -299,11 +317,32 @@
 					</label>
 					<label class="block text-sm"
 						>Operating Model
-						<select bind:value={editOperatingModel} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
-							{#each OPERATING_MODELS as m (m)}
-								<option value={m}>{OPERATING_MODEL_LABELS[m]}</option>
-							{/each}
-						</select>
+						{#if !addingEditOperatingModel}
+							<button type="button" onclick={() => (addingEditOperatingModel = true)} class="float-right text-xs text-ok normal-case font-normal"
+								>+ New Operating Model</button
+							>
+						{/if}
+						{#if addingEditOperatingModel}
+							<div class="mt-1 flex gap-1">
+								<input
+									bind:value={newEditOperatingModelName}
+									placeholder="New operating model name"
+									class="flex-1 rounded-md border border-border px-2 py-1.5 text-sm"
+								/>
+								<button type="button" onclick={submitNewEditOperatingModel} class="text-xs px-2 rounded-md border border-border hover:bg-surface-3"
+									>Add</button
+								>
+								<button type="button" onclick={() => (addingEditOperatingModel = false)} class="text-xs px-2 text-muted-fg hover:text-danger"
+									>Cancel</button
+								>
+							</div>
+						{:else}
+							<select bind:value={editOperatingModel} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+								{#each editOperatingModels as m (m.name)}
+									<option value={m.name}>{operatingModelLabel(m.name)}</option>
+								{/each}
+							</select>
+						{/if}
 					</label>
 					<label class="block text-sm"
 						>Currency
