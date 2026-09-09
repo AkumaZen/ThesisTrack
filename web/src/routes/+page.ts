@@ -16,7 +16,19 @@ export type Trackable = {
 	threshold: number | null;
 	latest_fired: boolean | null;
 };
-export type GuidanceSummary = { id: number; block_key: string; note: string; created_at: string };
+export type GuidanceSummary = {
+	id: number;
+	block_key: string;
+	note: string;
+	created_at: string;
+	target_metric: 'revenue' | 'margin' | 'other' | null;
+	target_metric_label: string | null;
+	target_value: number | null;
+	target_unit: string | null;
+	target_period: string | null;
+	expected_results_date: string | null;
+	outcome: 'pending' | 'achieved' | 'missed';
+};
 export type CompanyScenario = {
 	owner: string;
 	status: string | null;

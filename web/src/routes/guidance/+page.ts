@@ -18,6 +18,13 @@ export type Guidance = {
 	created_at: string;
 	resolved_by: string | null;
 	resolved_at: string | null;
+	target_metric: 'revenue' | 'margin' | 'other' | null;
+	target_metric_label: string | null;
+	target_value: number | null;
+	target_unit: string | null;
+	target_period: string | null;
+	expected_results_date: string | null;
+	outcome: 'pending' | 'achieved' | 'missed';
 };
 export type Company = { company_id: string; name: string };
 

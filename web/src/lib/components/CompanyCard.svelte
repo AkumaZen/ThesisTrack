@@ -15,6 +15,25 @@
 			.join(' ');
 	}
 
+	const METRIC_LABELS: Record<string, string> = { revenue: 'Revenue', margin: 'Margin', other: 'Other' };
+	// Real green/red, not the app's neutral --good/--danger tokens (both
+	// resolve to plain ink in this monochrome palette) - achieved vs missed
+	// needs to read as different at a glance.
+	const OUTCOME_DOT: Record<string, string> = { achieved: 'bg-emerald-500', missed: 'bg-red-500', pending: '' };
+	const OUTCOME_TEXT: Record<string, string> = {
+		achieved: 'text-emerald-700 dark:text-emerald-400',
+		missed: 'text-red-700 dark:text-red-400',
+		pending: ''
+	};
+
+	function targetLabel(note: { target_metric: string | null; target_metric_label: string | null; target_value: number | null; target_unit: string | null; target_period: string | null }) {
+		if (!note.target_metric) return null;
+		const metric = note.target_metric === 'other' ? note.target_metric_label || 'Other' : METRIC_LABELS[note.target_metric];
+		const value = note.target_value != null ? `${note.target_value}${note.target_unit || ''}` : null;
+		const parts = [metric, value].filter(Boolean).join(' ');
+		return note.target_period ? `${parts} · ${note.target_period}` : parts;
+	}
+
 	type MetricDef = { label: string; unit: string; decimals?: number };
 	let {
 		company,
@@ -128,9 +147,21 @@
 			<div class="text-[10px] font-semibold uppercase tracking-wide text-muted-fg mb-1.5">Guidance</div>
 			<ul class="space-y-1">
 				{#each guidanceNotes.slice(0, 2) as note (note.id)}
-					<li class="text-xs text-fg flex gap-1.5">
-						<span class="text-muted-fg shrink-0">{blockLabel(note.block_key)}:</span>
-						<span class="truncate">{note.note}</span>
+					{@const target = targetLabel(note)}
+					<li class="text-xs text-fg">
+						<div class="flex gap-1.5 items-baseline">
+							<span class="text-muted-fg shrink-0">{blockLabel(note.block_key)}:</span>
+							<span class="truncate">{note.note}</span>
+						</div>
+						{#if target}
+							<div class="flex items-center gap-1 mt-0.5">
+								<span class="text-[10px] text-muted-fg">{target}</span>
+								{#if note.outcome !== 'pending'}
+									<span class="h-1.5 w-1.5 rounded-full {OUTCOME_DOT[note.outcome]}"></span>
+									<span class="text-[10px] font-medium {OUTCOME_TEXT[note.outcome]}">{note.outcome}</span>
+								{/if}
+							</div>
+						{/if}
 					</li>
 				{/each}
 			</ul>

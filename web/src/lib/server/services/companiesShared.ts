@@ -167,7 +167,19 @@ export async function trackablesForScenarios(
 	return result;
 }
 
-export type GuidanceSummaryOut = { id: number; block_key: string; note: string; created_at: string };
+export type GuidanceSummaryOut = {
+	id: number;
+	block_key: string;
+	note: string;
+	created_at: string;
+	target_metric: string | null;
+	target_metric_label: string | null;
+	target_value: number | null;
+	target_unit: string | null;
+	target_period: string | null;
+	expected_results_date: string | null;
+	outcome: string;
+};
 
 // Open guidance notes, grouped by (companyId, owner) so the card and the
 // Guidance tab can both show "my notes on this company" without a
@@ -190,7 +202,19 @@ export async function openGuidanceForScenarios(
 	for (const row of rows) {
 		const key = `${row.companyId}::${row.createdBy}`;
 		const list = byKey.get(key) ?? [];
-		list.push({ id: row.id, block_key: row.blockKey, note: row.note, created_at: row.createdAt as unknown as string });
+		list.push({
+			id: row.id,
+			block_key: row.blockKey,
+			note: row.note,
+			created_at: row.createdAt as unknown as string,
+			target_metric: row.targetMetric,
+			target_metric_label: row.targetMetricLabel,
+			target_value: row.targetValue != null ? Number(row.targetValue) : null,
+			target_unit: row.targetUnit,
+			target_period: row.targetPeriod,
+			expected_results_date: row.expectedResultsDate,
+			outcome: row.outcome
+		});
 		byKey.set(key, list);
 	}
 

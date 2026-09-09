@@ -99,9 +99,21 @@ export const api = {
 
 	// Guidance notes (app/routers/guidance.py)
 	listGuidance: (params?: Record<string, unknown>) => request('GET', `/guidance?${buildQuery(params)}`),
-	createGuidance: (companyId: string, payload: { block_key: string; note: string }) =>
-		request('POST', `/companies/${encodeURIComponent(companyId)}/guidance`, payload),
-	resolveGuidance: (id: number) => request('POST', `/guidance/${id}/resolve`),
+	createGuidance: (
+		companyId: string,
+		payload: {
+			block_key: string;
+			note: string;
+			target_metric?: 'revenue' | 'margin' | 'other' | null;
+			target_metric_label?: string | null;
+			target_value?: number | null;
+			target_unit?: string | null;
+			target_period?: string | null;
+			expected_results_date?: string | null;
+		}
+	) => request('POST', `/companies/${encodeURIComponent(companyId)}/guidance`, payload),
+	resolveGuidance: (id: number, outcome?: 'achieved' | 'missed') =>
+		request('POST', `/guidance/${id}/resolve`, outcome ? { outcome } : undefined),
 	deleteGuidance: (id: number) => request('DELETE', `/guidance/${id}`),
 
 	// Observations (app/routers/observations.py)

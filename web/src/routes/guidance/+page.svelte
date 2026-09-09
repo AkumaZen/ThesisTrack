@@ -32,8 +32,63 @@
 			.join(' ');
 	}
 
+	const METRIC_LABELS: Record<string, string> = { revenue: 'Revenue', margin: 'Margin', other: 'Other' };
+
+	function targetLabel(item: Guidance) {
+		if (!item.target_metric) return null;
+		const metric = item.target_metric === 'other' ? item.target_metric_label || 'Other' : METRIC_LABELS[item.target_metric];
+		const value = item.target_value != null ? `${item.target_value}${item.target_unit || ''}` : null;
+		const parts = [metric, value].filter(Boolean).join(' ');
+		return item.target_period ? `${parts} · ${item.target_period}` : parts;
+	}
+
+	function formatResultsDate(dateStr: string) {
+		return new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+	}
+
+	// "Due" once the expected date has passed and nobody's checked yet -
+	// prompts the analyst to go verify the target rather than letting it sit.
+	function isResultsDue(item: Guidance) {
+		if (!item.expected_results_date || item.outcome !== 'pending') return false;
+		return new Date(item.expected_results_date + 'T00:00:00').getTime() <= Date.now();
+	}
+
+	// This app's palette is deliberately monochrome (--good/--danger both
+	// resolve to plain ink, see layout.css) - but achieved vs missed needs to
+	// actually read as different at a glance, so this one feature breaks that
+	// convention on purpose with real green/red rather than the neutral tokens.
+	const OUTCOME_STYLES: Record<string, string> = {
+		achieved: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+		missed: 'bg-red-500/10 text-red-700 dark:text-red-400',
+		pending: 'bg-surface-3 text-muted-fg'
+	};
+	const OUTCOME_CARD_STYLES: Record<string, string> = {
+		achieved: 'border-emerald-500/30 bg-emerald-500/5',
+		missed: 'border-red-500/30 bg-red-500/5',
+		pending: 'border-border bg-surface-2'
+	};
+
+	// Items already arrive latest-first from the server; grouping by company
+	// must preserve that, and the groups themselves float to the top in order
+	// of whichever company has the most recent guidance - so "latest on top"
+	// holds both within a company's notes and across the whole page.
 	let items = $derived(data.items);
 	let companies = $derived(data.companies);
+	let groupedItems = $derived.by(() => {
+		const groups = new Map<string, { company_id: string; company_name: string; items: typeof items }>();
+		for (const item of items) {
+			const group = groups.get(item.company_id) ?? {
+				company_id: item.company_id,
+				company_name: item.company_name || item.company_id,
+				items: []
+			};
+			group.items.push(item);
+			groups.set(item.company_id, group);
+		}
+		return [...groups.values()].sort(
+			(a, b) => new Date(b.items[0].created_at).getTime() - new Date(a.items[0].created_at).getTime()
+		);
+	});
 	let error = $state('');
 
 	let filterCompany = $state('');
@@ -44,7 +99,14 @@
 	let addCompany = $state(data.companies[0]?.company_id ?? '');
 	let addBlock = $state('general');
 	let addNote = $state('');
+	let addTargetMetric = $state<'' | 'revenue' | 'margin' | 'other'>('');
+	let addTargetMetricLabel = $state('');
+	let addTargetValue = $state<number | ''>('');
+	let addTargetUnit = $state('');
+	let addTargetPeriod = $state('');
+	let addExpectedResultsDate = $state('');
 	let adding = $state(false);
+	let outcomeUpdating = $state<Record<number, boolean>>({});
 
 	async function refresh() {
 		error = '';
@@ -75,6 +137,12 @@
 		if (!addCompany) addCompany = companies[0]?.company_id ?? '';
 		addBlock = 'general';
 		addNote = '';
+		addTargetMetric = '';
+		addTargetMetricLabel = '';
+		addTargetValue = '';
+		addTargetUnit = '';
+		addTargetPeriod = '';
+		addExpectedResultsDate = '';
 		showAddForm = true;
 	}
 
@@ -83,7 +151,16 @@
 		adding = true;
 		error = '';
 		try {
-			await api.createGuidance(addCompany, { block_key: addBlock, note: addNote.trim() });
+			await api.createGuidance(addCompany, {
+				block_key: addBlock,
+				note: addNote.trim(),
+				target_metric: addTargetMetric || null,
+				target_metric_label: addTargetMetric === 'other' ? addTargetMetricLabel.trim() || null : null,
+				target_value: addTargetValue !== '' ? Number(addTargetValue) : null,
+				target_unit: addTargetUnit.trim() || null,
+				target_period: addTargetPeriod.trim() || null,
+				expected_results_date: addExpectedResultsDate || null
+			});
 			showAddForm = false;
 			await refresh();
 		} catch (e) {
@@ -99,6 +176,19 @@
 			await refresh();
 		} catch (e) {
 			error = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+		}
+	}
+
+	async function markOutcome(item: Guidance, outcome: 'achieved' | 'missed') {
+		outcomeUpdating = { ...outcomeUpdating, [item.id]: true };
+		try {
+			await api.resolveGuidance(item.id, outcome);
+			await refresh();
+		} catch (e) {
+			error = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+		} finally {
+			const { [item.id]: _drop, ...rest } = outcomeUpdating;
+			outcomeUpdating = rest;
 		}
 	}
 
@@ -158,43 +248,86 @@
 {#if !items.length}
 	<div class="text-center text-muted-fg py-16">No guidance notes match these filters.</div>
 {:else}
-	<div class="space-y-3">
-		{#each items as item (item.id)}
+	<div class="space-y-5">
+		{#each groupedItems as group (group.company_id)}
 			<div class="rounded-lg border border-border bg-surface p-4">
-				<div class="flex items-start justify-between gap-3">
-					<div>
-						<div class="flex items-center gap-2">
-							<a href="/company/{item.company_id}" class="font-medium hover:text-accent"
-								>{item.company_name || item.company_id}</a
-							>
-							<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-muted-fg">{blockLabel(item.block_key)}</span>
-							<span
-								class="text-xs px-2 py-0.5 rounded-full {item.status === 'open' ? 'bg-warn/10 text-warn' : 'bg-good/10 text-good'}"
-								>{item.status}</span
-							>
+				<div class="flex items-center gap-2 mb-3">
+					<a href="/company/{group.company_id}" class="font-medium hover:text-accent">{group.company_name}</a>
+					<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-muted-fg"
+						>{group.items.length} note{group.items.length === 1 ? '' : 's'}</span
+					>
+				</div>
+				<div class="space-y-3">
+					{#each group.items as item (item.id)}
+						{@const target = targetLabel(item)}
+						<div class="rounded-md border p-3 {OUTCOME_CARD_STYLES[item.outcome]}">
+							<div class="flex items-start justify-between gap-3">
+								<div>
+									<div class="flex items-center gap-2 flex-wrap">
+										<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-muted-fg">{blockLabel(item.block_key)}</span>
+										{#if target}
+											<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-fg font-medium">{target}</span>
+										{/if}
+										{#if item.target_metric}
+											<span class="text-xs px-2 py-0.5 rounded-full font-medium {OUTCOME_STYLES[item.outcome]}"
+												>{item.outcome}</span
+											>
+											{#if isResultsDue(item)}
+												<span
+													class="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400"
+													>Results due - check it</span
+												>
+											{/if}
+										{:else}
+											<span
+												class="text-xs px-2 py-0.5 rounded-full {item.status === 'open'
+													? 'bg-warn/10 text-warn'
+													: 'bg-good/10 text-good'}">{item.status}</span
+											>
+										{/if}
+									</div>
+									<p class="text-sm mt-2 whitespace-pre-wrap">{item.note}</p>
+									{#if item.expected_results_date}
+										<p class="text-xs text-muted-fg mt-1">Results expected {formatResultsDate(item.expected_results_date)}</p>
+									{/if}
+									<p class="text-xs text-muted-fg mt-2 font-mono">
+										{item.created_by} &middot; {new Date(item.created_at).toLocaleString()}
+										{#if item.resolved_at}
+											&middot; resolved by {item.resolved_by || ''}
+											{new Date(item.resolved_at).toLocaleString()}
+										{/if}
+									</p>
+								</div>
+								{#if !session.isReadOnly}
+									<div class="flex items-center gap-2 shrink-0">
+										{#if item.status === 'open' && item.target_metric}
+											<button
+												disabled={outcomeUpdating[item.id]}
+												onclick={() => markOutcome(item, 'achieved')}
+												class="text-xs px-2 py-1 rounded-md border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50"
+												>Achieved</button
+											>
+											<button
+												disabled={outcomeUpdating[item.id]}
+												onclick={() => markOutcome(item, 'missed')}
+												class="text-xs px-2 py-1 rounded-md border border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+												>Missed</button
+											>
+										{:else if item.status === 'open'}
+											<button
+												onclick={() => resolveNote(item)}
+												class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Resolve</button
+											>
+										{/if}
+										<button
+											onclick={() => deleteNote(item)}
+											class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger">Delete</button
+										>
+									</div>
+								{/if}
+							</div>
 						</div>
-						<p class="text-sm mt-2 whitespace-pre-wrap">{item.note}</p>
-						<p class="text-xs text-muted-fg mt-2 font-mono">
-							{item.created_by} &middot; {new Date(item.created_at).toLocaleString()}
-							{#if item.resolved_at}
-								&middot; resolved by {item.resolved_by || ''}
-								{new Date(item.resolved_at).toLocaleString()}
-							{/if}
-						</p>
-					</div>
-					{#if !session.isReadOnly}
-						<div class="flex items-center gap-2 shrink-0">
-							{#if item.status === 'open'}
-								<button
-									onclick={() => resolveNote(item)}
-									class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Resolve</button
-								>
-							{/if}
-							<button onclick={() => deleteNote(item)} class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger"
-								>Delete</button
-							>
-						</div>
-					{/if}
+					{/each}
 				</div>
 			</div>
 		{/each}
@@ -247,6 +380,77 @@
 						placeholder="What should the analyst look into or keep in mind on this block?"
 					></textarea>
 				</label>
+
+				<div class="pt-1 border-t border-border">
+					<div class="text-xs font-semibold uppercase tracking-wide text-muted-fg mt-3 mb-2">
+						Management guidance target <span class="font-normal normal-case">(optional)</span>
+					</div>
+					<div class="grid grid-cols-2 gap-3">
+						<label class="block text-sm"
+							>Metric
+							<select bind:value={addTargetMetric} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm">
+								<option value="">None</option>
+								<option value="revenue">Revenue</option>
+								<option value="margin">Margin</option>
+								<option value="other">Other</option>
+							</select>
+						</label>
+						<label class="block text-sm"
+							>Period
+							<input
+								type="text"
+								bind:value={addTargetPeriod}
+								placeholder="e.g. Q2 FY26"
+								class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
+							/>
+						</label>
+					</div>
+					{#if addTargetMetric === 'other'}
+						<label class="block text-sm mt-3"
+							>Metric name
+							<input
+								type="text"
+								bind:value={addTargetMetricLabel}
+								placeholder="e.g. EBITDA"
+								class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
+							/>
+						</label>
+					{/if}
+					{#if addTargetMetric}
+						<div class="grid grid-cols-2 gap-3 mt-3">
+							<label class="block text-sm"
+								>Target value
+								<input
+									type="number"
+									step="any"
+									bind:value={addTargetValue}
+									placeholder="e.g. 15"
+									class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
+								/>
+							</label>
+							<label class="block text-sm"
+								>Unit
+								<input
+									type="text"
+									bind:value={addTargetUnit}
+									placeholder="e.g. % or INR cr"
+									class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
+								/>
+							</label>
+						</div>
+						<label class="block text-sm mt-3"
+							>Results expected on
+							<input
+								type="date"
+								bind:value={addExpectedResultsDate}
+								class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
+							/>
+							<span class="block text-xs text-muted-fg mt-1"
+								>When that quarter's numbers should be out - so you know when to come check this.</span
+							>
+						</label>
+					{/if}
+				</div>
 			</div>
 			<div class="px-5 py-3 border-t border-border flex justify-end gap-2">
 				<button onclick={() => (showAddForm = false)} class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-surface-3"

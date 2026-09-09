@@ -1,0 +1,1 @@
+ALTER TABLE "guidance_notes" ADD COLUMN "expected_results_date" date;
