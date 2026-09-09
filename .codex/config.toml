@@ -1,0 +1,6 @@
+[features]
+multi_agent = true
+
+[agents.product_review]
+description = "Product, UX, QA, and strategy reviewer that maps journeys, exercises the live app, finds customer pain, researches when useful, prioritizes opportunities, and verifies evidence."
+config_file = "agents/product-review.toml"

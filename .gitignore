@@ -10,6 +10,9 @@ creds.md
 production-creds.md
 
 .vercel
-.claude/
+.claude/*
+!.claude/agents/
+.claude/agents/*
+!.claude/agents/product-review.md
 node_modules/
 web/.svelte-kit/

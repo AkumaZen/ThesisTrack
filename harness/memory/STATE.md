@@ -18,6 +18,14 @@ grid. It filters instantly, is case-insensitive, supports Escape/clear,
 reports the visible result count, and has a dedicated empty-result state.
 Verified by 61 passing tests when run serially and svelte-check (0 errors).
 
+Harness addition (2026-09-09, not pushed): shared Product Review and
+Improvement agent contract at `harness/agents/product-review.md`, exposed as a
+Claude subagent (`.claude/agents/product-review.md`) and a Codex project role
+(`.codex/config.toml`, `.codex/agents/product-review.toml`). Supports Discovery
+and Review modes, live-browser evidence, research, scoring, verification, and
+the existing review memory. TOML and contract assertions pass; Codex CLI was
+not present on this PowerShell PATH for a runtime role-list check.
+
 Done:
   - Harness bootstrapped (68ffdec); evolve cycles for P0-P6 (evolutions/
     2026-09-02T-p0..p4.md, 2026-09-03T-p5.md, 2026-09-03T-p6.md)
