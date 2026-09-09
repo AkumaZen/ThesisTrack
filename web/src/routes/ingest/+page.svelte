@@ -167,28 +167,46 @@
 	// References
 	let references = $state<{ title: string; url: string }[]>([]);
 
-	// Custom Sections - each becomes its own untagged custom data table on
-	// the company, same shape as the "+ Add Table" builder on the company
-	// page - literally the same TableBuilderModal component, so any change to
-	// that builder (columns editor, CSV/paste import, etc.) shows up in both
-	// places for free. The company doesn't exist yet while filling this form
-	// out, so each built table is just queued here and actually created via
-	// the API after the company itself is created (createCustomSections).
-	let customSections = $state<BuiltTable[]>([]);
+	// Custom/pillar tables - each becomes its own custom data table on the
+	// company, same shape as the "+ Add Table" builder on the company page -
+	// literally the same TableBuilderModal component, so any change to that
+	// builder (columns editor, CSV/paste import, etc.) shows up in both places
+	// for free. The company doesn't exist yet while filling this form out, so
+	// each built table is just queued here (tagged with the pillar section it
+	// was added from, or null for the untagged "Custom Sections" block - same
+	// tagging the company page's per-pillar "+ Add Table" uses) and actually
+	// created via the API after the company itself is created
+	// (createCustomSections).
+	type QueuedTable = { id: number; section: string | null; built: BuiltTable };
+	let queuedTables = $state<QueuedTable[]>([]);
+	let nextQueuedTableId = 0;
 	let sectionBuilderOpen = $state(false);
+	let builderSection = $state<string | null>(null);
 
-	function removeCustomSection(i: number) {
-		customSections = customSections.filter((_, idx) => idx !== i);
+	// Back-compat alias for the untagged "Custom Sections" block below.
+	let customSections = $derived(queuedTables.filter((t) => t.section === null));
+
+	function tablesForSection(section: string) {
+		return queuedTables.filter((t) => t.section === section);
+	}
+	function openTableBuilder(section: string | null) {
+		builderSection = section;
+		sectionBuilderOpen = true;
+	}
+	function removeQueuedTable(id: number) {
+		queuedTables = queuedTables.filter((t) => t.id !== id);
 	}
 	function handleNewCustomSection(built: BuiltTable) {
-		if (built.name.trim() && built.columns.length) customSections = [...customSections, built];
+		if (built.name.trim() && built.columns.length) {
+			queuedTables = [...queuedTables, { id: nextQueuedTableId++, section: builderSection, built }];
+		}
 	}
 	async function createCustomSections(companyId: string) {
-		for (const s of customSections) {
-			const table = (await api.createTable(companyId, { name: s.name.trim(), columns: s.columns, section: null })) as {
+		for (const { section, built } of queuedTables) {
+			const table = (await api.createTable(companyId, { name: built.name.trim(), columns: built.columns, section })) as {
 				id: number;
 			};
-			if (s.rows.length) await api.createRowsBulk(table.id, s.rows);
+			if (built.rows.length) await api.createRowsBulk(table.id, built.rows);
 		}
 	}
 
@@ -491,7 +509,9 @@ My notes:
 				})),
 				rows: s.rows ?? []
 			}));
-		if (mapped.length) customSections = [...customSections, ...mapped];
+		if (mapped.length) {
+			queuedTables = [...queuedTables, ...mapped.map((built) => ({ id: nextQueuedTableId++, section: null, built }))];
+		}
 	}
 
 	function applyParsedPayload(parsed: {
@@ -794,6 +814,47 @@ My notes:
 			</section>
 		{/if}
 
+		<!-- Staged data tables for a pillar section - name + row/column count,
+		     with a remove (x) button - reused across every pillar below and the
+		     untagged "Custom Sections" block. -->
+		{#snippet queuedTableList(items: QueuedTable[])}
+			{#if items.length}
+				<div class="space-y-2 mt-3">
+					{#each items as t (t.id)}
+						<div class="rounded-lg border border-border p-3 flex items-center justify-between">
+							<div>
+								<div class="text-sm font-medium">{t.built.name}</div>
+								<div class="text-xs text-muted-fg">
+									{t.built.columns.length} column{t.built.columns.length === 1 ? '' : 's'} &middot; {t.built.rows.length} row{t.built
+										.rows.length === 1
+										? ''
+										: 's'} staged
+								</div>
+							</div>
+							<button type="button" onclick={() => removeQueuedTable(t.id)} class="text-muted-fg hover:text-danger">&times;</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		{/snippet}
+
+		<!-- Per-pillar table button + list - same builder/tagging as the "+ Add
+		     Table" button inside each pillar's CustomTables on the company page,
+		     just deferred (queued) until the company itself is created. -->
+		{#snippet pillarTables(section: string)}
+			<div class="mt-4 pt-3 border-t border-border">
+				<div class="flex items-center justify-between">
+					<div class="text-sm font-medium">Tables <span class="text-muted-fg font-normal">- optional data tables for this section</span></div>
+					<button
+						type="button"
+						onclick={() => openTableBuilder(section)}
+						class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Table</button
+					>
+				</div>
+				{@render queuedTableList(tablesForSection(section))}
+			</div>
+		{/snippet}
+
 		<!-- The Business -->
 		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h2>
@@ -828,6 +889,7 @@ My notes:
 				</div>
 				<button type="button" onclick={() => addNote('the_business')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
+			{@render pillarTables('the_business')}
 		</section>
 
 		<!-- The Growth Engine -->
@@ -854,6 +916,7 @@ My notes:
 				</div>
 				<button type="button" onclick={() => addNote('the_growth_engine')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
+			{@render pillarTables('the_growth_engine')}
 		</section>
 
 		<!-- The Big Change -->
@@ -879,6 +942,7 @@ My notes:
 				</div>
 				<button type="button" onclick={() => addNote('the_big_change')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
+			{@render pillarTables('the_big_change')}
 		</section>
 
 		<!-- Proof Points -->
@@ -926,6 +990,7 @@ My notes:
 				</div>
 				<button type="button" onclick={() => addNote('proof_points')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
+			{@render pillarTables('proof_points')}
 		</section>
 
 		<!-- What Can Kill It -->
@@ -998,6 +1063,7 @@ My notes:
 				</div>
 				<button type="button" onclick={() => addNote('what_can_kill_it')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
+			{@render pillarTables('what_can_kill_it')}
 		</section>
 
 		<!-- Why We Believe It -->
@@ -1033,6 +1099,7 @@ My notes:
 				</div>
 				<button type="button" onclick={() => addNote('why_we_believe_it')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
+			{@render pillarTables('why_we_believe_it')}
 		</section>
 
 		<!-- Health Check (pillar 7 / Quarterly Review) -->
@@ -1054,6 +1121,7 @@ My notes:
 				</div>
 				<button type="button" onclick={() => addNote('health_check')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
+			{@render pillarTables('health_check')}
 		</section>
 
 		<!-- References -->
@@ -1081,6 +1149,7 @@ My notes:
 				</div>
 				<button type="button" onclick={() => addNote('references')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
+			{@render pillarTables('references')}
 		</section>
 
 		<!-- Custom Sections - uses the exact same builder (TableBuilderModal) as
@@ -1091,7 +1160,7 @@ My notes:
 				<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Custom Sections</h2>
 				<button
 					type="button"
-					onclick={() => (sectionBuilderOpen = true)}
+					onclick={() => openTableBuilder(null)}
 					class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Custom Section</button
 				>
 			</div>
@@ -1099,29 +1168,13 @@ My notes:
 				Optional - define your own data tables (name + columns), same builder as "+ Add Table" on the company page. Each one
 				shows up there as its own named card and nav entry once the company is created.
 			</p>
-			{#if customSections.length}
-				<div class="space-y-2 mt-3">
-					{#each customSections as s, si (si)}
-						<div class="rounded-lg border border-border p-3 flex items-center justify-between">
-							<div>
-								<div class="text-sm font-medium">{s.name}</div>
-								<div class="text-xs text-muted-fg">
-									{s.columns.length} column{s.columns.length === 1 ? '' : 's'} &middot; {s.rows.length} row{s.rows.length === 1
-										? ''
-										: 's'} staged
-								</div>
-							</div>
-							<button type="button" onclick={() => removeCustomSection(si)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-			{/if}
+			{@render queuedTableList(customSections)}
 		</section>
 
 		<TableBuilderModal
 			bind:open={sectionBuilderOpen}
-			title="New Custom Section"
-			submitLabel="Add Section"
+			title={builderSection ? 'New Data Table' : 'New Custom Section'}
+			submitLabel={builderSection ? 'Create Table' : 'Add Section'}
 			onSubmit={handleNewCustomSection}
 		/>
 	{/if}
