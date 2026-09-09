@@ -18,6 +18,6 @@ describe('filterCompaniesByName', () => {
 	});
 
 	it('does not match unrelated company ids', () => {
-		expect(filterCompaniesByName(companies, 'NEOGEN')).toEqual([]);
+		expect(filterCompaniesByName(companies, 'GFL')).toEqual([]);
 	});
 });

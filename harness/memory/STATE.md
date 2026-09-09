@@ -12,6 +12,12 @@ applied locally only. Verified by 58 passing Vitest tests and svelte-check
 (0 errors, 2 pre-existing warnings). Vite compilation succeeds; local Vercel
 adapter finalization still hits Windows EPERM while creating a symlink.
 
+Dashboard follow-up (2026-09-09, not pushed/deployed): a full-width,
+accessible company-name search now sits between the summary cards and company
+grid. It filters instantly, is case-insensitive, supports Escape/clear,
+reports the visible result count, and has a dedicated empty-result state.
+Verified by 61 passing tests when run serially and svelte-check (0 errors).
+
 Done:
   - Harness bootstrapped (68ffdec); evolve cycles for P0-P6 (evolutions/
     2026-09-02T-p0..p4.md, 2026-09-03T-p5.md, 2026-09-03T-p6.md)
