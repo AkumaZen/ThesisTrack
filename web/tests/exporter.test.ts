@@ -86,7 +86,7 @@ describe('serialize', () => {
 	it('uses distinct system prompts for thesis_synthesis and redline_extraction', () => {
 		const synthesis = serialize({ ...row, task: 'thesis_synthesis' }, 'anthropic');
 		const redline = serialize({ ...row, task: 'redline_extraction' }, 'anthropic');
-		expect(synthesis.system).toMatch(/7-pillar investment thesis/i);
+		expect(synthesis.system).toMatch(/9-section investment thesis with separate references/i);
 		expect(redline.system).toMatch(/invalidation triggers/i);
 		expect(synthesis.system).not.toBe(redline.system);
 	});

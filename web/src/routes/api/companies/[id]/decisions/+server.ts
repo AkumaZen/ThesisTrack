@@ -63,12 +63,13 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 	}
 };
 
-export const GET: RequestHandler = async ({ locals, params }) => {
+export const GET: RequestHandler = async ({ locals, params, url }) => {
 	try {
-		requireActor(locals.actor);
-		const rows = await listDecisions(params.id!);
+		const actor = requireActor(locals.actor);
+		const rows = await listDecisions(params.id!, url.searchParams.get('owner') || actor.identity);
 		return json(rows.map(toOut));
 	} catch (err) {
+		if (err instanceof NotFoundError || err instanceof ScenarioNotFoundError) return errorResponse(404, err.message);
 		return handleAuthError(err);
 	}
 };

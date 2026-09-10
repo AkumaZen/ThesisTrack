@@ -206,6 +206,8 @@
 
 	// Health Check
 	let latestQuarterReview = $state('');
+	let trackables = $state<string[]>([]);
+	let buySellDecision = $state('');
 
 	// References
 	let references = $state<{ title: string; url: string }[]>([]);
@@ -297,6 +299,8 @@
 		}[];
 		why_we_believe_it?: string[];
 		health_check?: { latest_quarter_review?: string };
+		trackables?: string[];
+		buy_sell_decision?: string;
 		references?: { title: string; url: string }[];
 		pillar_notes?: Record<string, string[]>;
 	};
@@ -333,6 +337,8 @@
 					{ kind: 'Conclusion', text: '' }
 				];
 		latestQuarterReview = t.health_check?.latest_quarter_review ?? '';
+		trackables = [...(t.trackables ?? [])];
+		buySellDecision = t.buy_sell_decision ?? '';
 		references = t.references?.length ? [...t.references] : [];
 		pillarNotes = { ...(t.pillar_notes ?? {}) };
 	}
@@ -426,6 +432,8 @@
 				})),
 			why_we_believe_it: believeRows.filter((r) => r.text.trim()).map((r) => `${r.kind}: ${r.text.trim()}`),
 			health_check: { latest_quarter_review: latestQuarterReview, historical_checks: [] },
+			trackables: trackables.filter((item) => item.trim()),
+			buy_sell_decision: buySellDecision,
 			references: references.filter((r) => r.title.trim() && r.url.trim()),
 			pillar_notes: Object.fromEntries(
 				Object.entries(pillarNotes)
@@ -513,6 +521,8 @@
     "what_can_kill_it": [{ "label": "...", "metric_key": null, "operator": null, "threshold": null, "action": "...", "severity": "kill", "grace_periods": 1, "manual_check": true }],
     "why_we_believe_it": ["Premise: ...", "Premise: ...", "Conclusion: ..."],
     "health_check": { "latest_quarter_review": "...", "historical_checks": [] },
+    "trackables": ["What to monitor, in your own words"],
+    "buy_sell_decision": "Your buy/sell reasoning and conditions. Actual transactions are logged separately after saving.",
     "references": [{ "title": "...", "url": "https://..." }],
     "pillar_notes": {}
   },
@@ -638,8 +648,8 @@ My notes:
 			<h1 class="text-xl font-semibold">{mode === 'amend' ? `Amend Thesis - ${name || prefillCompanyId}` : isExistingCompany ? `Start Your Own Thesis - ${name || prefillCompanyId}` : 'New Company / Thesis'}</h1>
 			<p class="text-sm text-muted-fg mt-0.5">
 				{mode === 'amend'
-					? 'Basics are immutable after creation - amend the 7 pillars and explain why.'
-					: 'Fill in the 7 pillars to create a company and its initial thesis.'}
+					? 'Amend the 9 default sections and explain why. References remain separate.'
+					: 'Complete the 9 default sections for your company thesis. References remain separate.'}
 			</p>
 		</div>
 		<div class="flex border border-border rounded-md overflow-hidden shrink-0">
@@ -1195,6 +1205,28 @@ My notes:
 				<button type="button" onclick={() => addNote('health_check')} class="text-xs text-ok mt-1">+ Add note</button>
 			</div>
 			{@render pillarTables('health_check')}
+		</section>
+
+		<section class="rounded-xl border border-border bg-surface p-5">
+			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">8. Trackables</h2>
+			<p class="mt-2 text-sm text-muted-fg">Write exactly what you want to monitor. These entries appear unchanged in the Review Queue, grouped by company.</p>
+			<div class="mt-3 space-y-3">
+				{#each trackables as item, i (i)}
+					<div class="flex items-start gap-2">
+						<textarea aria-label={`Trackable ${i + 1}`} bind:value={trackables[i]} rows="3" class="flex-1 min-w-0 rounded-md border border-border p-2 text-sm"></textarea>
+						<button type="button" aria-label={`Remove trackable ${i + 1}`} onclick={() => trackables = removeRow(trackables, i)} class="px-2 py-1 text-muted-fg hover:text-fg">&times;</button>
+					</div>
+				{/each}
+			</div>
+			<button type="button" onclick={() => trackables = [...trackables, '']} class="mt-3 text-sm underline">+ Add trackable</button>
+		</section>
+
+		<section class="rounded-xl border border-border bg-surface p-5">
+			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">9. Buy / Sell Decision</h2>
+			<label class="block mt-3 text-sm" for="buy-sell-decision">Decision reasoning and conditions</label>
+			<textarea id="buy-sell-decision" bind:value={buySellDecision} rows="5" placeholder="Explain your buy/sell decision, the conditions behind it, and what would change your mind." class="mt-2 w-full rounded-md border border-border p-2 text-sm"></textarea>
+			<p class="mt-2 text-xs text-muted-fg">After saving, log actual buys and sells in this section on the company page, with price, optional quantity, date, and rationale. Logged decisions remain in the permanent history.</p>
+			{@render pillarTables('buy_sell_decision')}
 		</section>
 
 		<!-- References -->

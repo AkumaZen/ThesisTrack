@@ -140,19 +140,17 @@
 		</div>
 	{/if}
 
-	<!-- Review: the trackables (kill triggers) actively being monitored on
-	     this scenario - a checklist, not the Review Queue's flagged
-	     accept/reject inbox. Also hidden when empty. -->
+	<!-- Same explicit Trackables as the current thesis and Review Queue. -->
 	{#if trackables.length}
 		<div class="mt-3 pt-3 border-t border-border">
-			<div class="text-[10px] font-semibold uppercase tracking-wide text-muted-fg mb-1.5">Review</div>
+			<div class="text-[10px] font-semibold uppercase tracking-wide text-muted-fg mb-1.5">Trackables</div>
 			<ul class="space-y-1">
 				{#each trackables.slice(0, 3) as t (t.id)}
 					<li class="text-xs flex items-center gap-1.5">
 						<span
-							class="h-1.5 w-1.5 rounded-full shrink-0 {t.latest_fired ? 'bg-danger' : t.severity === 'kill' ? 'bg-warn' : 'bg-muted-fg'}"
+							class="h-1.5 w-1.5 rounded-full shrink-0 bg-fg"
 						></span>
-						<span class="truncate {t.latest_fired ? 'text-danger' : 'text-fg'}">{t.label}</span>
+						<span class="truncate text-fg">{t.label}</span>
 					</li>
 				{/each}
 			</ul>

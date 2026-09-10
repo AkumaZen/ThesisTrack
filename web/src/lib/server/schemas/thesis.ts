@@ -88,6 +88,8 @@ export const thesisData = z
 		what_can_kill_it: z.array(killTrigger),
 		why_we_believe_it: z.array(z.string()),
 		health_check: healthCheckPillar,
+		trackables: z.array(z.string().refine((value) => !!value.trim(), 'Trackable cannot be blank')).default([]),
+		buy_sell_decision: z.string().default(''),
 		references: z.array(referenceItem).default([]),
 		pillar_notes: z.record(z.string(), z.array(z.string())).default({})
 	})

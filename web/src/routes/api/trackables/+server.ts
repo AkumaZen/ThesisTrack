@@ -1,6 +1,4 @@
-// The Review tab's "My Trackables" feed: every kill trigger on the actor's
-// own current thesis versions, across all companies - the active-monitoring
-// checklist, distinct from /api/proposals' pending-decision Review Queue.
+// Review Queue: explicit Trackables from the actor's current thesis versions.
 import { json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import type { RequestHandler } from './$types';

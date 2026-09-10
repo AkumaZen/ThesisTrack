@@ -110,7 +110,7 @@ export const api = {
 		request('POST', `/companies/${encodeURIComponent(companyId)}/observations`, payload),
 
 	// Decisions (app/routers/decisions.py) - insert-only, position_decisions is append-only via DB trigger
-	listDecisions: (companyId: string) => request('GET', `/companies/${encodeURIComponent(companyId)}/decisions`),
+	listDecisions: (companyId: string, owner?: string | null) => request('GET', `/companies/${encodeURIComponent(companyId)}/decisions${owner ? `?owner=${encodeURIComponent(owner)}` : ''}`),
 	logDecision: (companyId: string, payload: unknown) =>
 		request('POST', `/companies/${encodeURIComponent(companyId)}/decisions`, payload),
 

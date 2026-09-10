@@ -7,14 +7,8 @@ import { api } from '$lib/api';
 import type { PageLoad } from './$types';
 
 export type Trackable = {
-	id: number;
+	id: string;
 	label: string;
-	severity: string;
-	manual_check: boolean;
-	metric_key: string | null;
-	operator: string | null;
-	threshold: number | null;
-	latest_fired: boolean | null;
 };
 export type GuidanceSummary = { id: number; block_key: string; note: string; created_at: string };
 export type CompanyScenario = {

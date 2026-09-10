@@ -15,8 +15,10 @@
 	let {
 		companyId,
 		readOnly = session.isReadOnly,
-		viewedOwner = null
-	}: { companyId: string; readOnly?: boolean; viewedOwner?: string | null } = $props();
+		viewedOwner = null,
+		panel = 'decisions',
+		onChanged = async () => {}
+	}: { companyId: string; readOnly?: boolean; viewedOwner?: string | null; panel?: 'decisions' | 'monitoring'; onChanged?: () => Promise<void> } = $props();
 
 	function apiErrorMessage(e: unknown): string {
 		if (e instanceof ApiError) {
@@ -97,7 +99,7 @@
 		decisionsLoading = true;
 		decisionsError = '';
 		try {
-			decisions = (await api.listDecisions(companyId)) as Decision[];
+			decisions = (await api.listDecisions(companyId, viewedOwner)) as Decision[];
 		} catch (e) {
 			decisionsError = apiErrorMessage(e);
 		} finally {
@@ -124,6 +126,7 @@
 			decQuantity = '';
 			decRationale = '';
 			await loadDecisions();
+			await onChanged();
 		} catch (e) {
 			decisionsError = apiErrorMessage(e);
 		} finally {
@@ -184,7 +187,8 @@
 	$effect(() => {
 		baselineMode;
 		viewedOwner;
-		loadPerformance();
+		onChanged;
+		if (panel === 'monitoring') loadPerformance();
 	});
 
 	// ---- Health check ----
@@ -207,6 +211,7 @@
 			await api.submitHealthCheck(companyId, { period: hcPeriod.trim(), verdict: hcVerdict, note: hcNote.trim() });
 			hcSuccess = 'Quarterly review recorded.';
 			hcNote = '';
+			await onChanged();
 		} catch (e) {
 			hcError = apiErrorMessage(e);
 		} finally {
@@ -233,6 +238,7 @@
 			await api.submitOutcome(companyId, { outcome: outcomeValue, note: outcomeNote.trim() });
 			outcomeSuccess = 'Outcome recorded - scenario closed.';
 			outcomeNote = '';
+			await onChanged();
 		} catch (e) {
 			outcomeError = apiErrorMessage(e);
 		} finally {
@@ -242,11 +248,12 @@
 
 	$effect(() => {
 		companyId;
-		loadDecisions();
+		viewedOwner;
+		if (panel === 'decisions') loadDecisions();
 	});
 </script>
 
-{#if !readOnly}
+{#if panel === 'monitoring' && !readOnly}
 	<section class="mt-6 border-t border-border pt-5">
 		<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Log Observation</h3>
 		{#if obsError}
@@ -272,6 +279,7 @@
 	</section>
 {/if}
 
+{#if panel === 'decisions'}
 <section class="mt-6 border-t border-border pt-5">
 	<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Position Decisions</h3>
 	{#if decisionsError}
@@ -298,14 +306,14 @@
 		</div>
 	{/if}
 	{#if !readOnly}
-		<div class="grid grid-cols-4 gap-2 mt-3">
-			<select bind:value={decAction} class="rounded-md border border-border px-2 py-1.5 text-sm">
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-3">
+			<select aria-label="Decision action" bind:value={decAction} class="rounded-md border border-border px-2 py-1.5 text-sm">
 				<option value="buy">Buy</option>
 				<option value="sell">Sell</option>
 			</select>
-			<input placeholder="Price" type="number" step="any" bind:value={decPrice} class="rounded-md border border-border px-2 py-1.5 text-sm" />
+			<input aria-label="Decision price" placeholder="Price" type="number" step="any" bind:value={decPrice} class="rounded-md border border-border px-2 py-1.5 text-sm" />
 			<input placeholder="Quantity (optional)" type="number" step="any" bind:value={decQuantity} class="rounded-md border border-border px-2 py-1.5 text-sm" />
-			<input type="date" bind:value={decDecidedOn} class="rounded-md border border-border px-2 py-1.5 text-sm" />
+			<input aria-label="Decision date" type="date" bind:value={decDecidedOn} class="rounded-md border border-border px-2 py-1.5 text-sm" />
 		</div>
 		<input placeholder="Rationale" bind:value={decRationale} class="mt-2 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
 		<button
@@ -318,6 +326,8 @@
 	{/if}
 </section>
 
+{/if}
+{#if panel === 'monitoring'}
 <section class="mt-6 border-t border-border pt-5">
 	<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Price &amp; Performance</h3>
 	<div class="flex items-center gap-2 mt-2">
@@ -417,4 +427,5 @@
 			>{outcomeSubmitting ? 'Saving...' : 'Close Out'}</button
 		>
 	</section>
+{/if}
 {/if}

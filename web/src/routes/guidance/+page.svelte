@@ -36,6 +36,19 @@
 	let companies = $derived(data.companies);
 	let error = $state('');
 
+	// Same "group by company" shape as the Review Queue - one card per
+	// company holding all its matching notes, instead of a flat list that
+	// repeats the company name/link on every single note.
+	let groups = $derived.by(() => {
+		const byCompany = new Map<string, { id: string; name: string; items: Guidance[] }>();
+		for (const item of items) {
+			const group = byCompany.get(item.company_id) ?? { id: item.company_id, name: item.company_name || item.company_id, items: [] };
+			group.items.push(item);
+			byCompany.set(item.company_id, group);
+		}
+		return [...byCompany.values()].sort((a, b) => a.name.localeCompare(b.name));
+	});
+
 	let filterCompany = $state('');
 	let filterBlock = $state('');
 	let filterStatus = $state('open');
@@ -158,43 +171,45 @@
 {#if !items.length}
 	<div class="text-center text-muted-fg py-16">No guidance notes match these filters.</div>
 {:else}
-	<div class="space-y-3">
-		{#each items as item (item.id)}
+	<div class="space-y-4">
+		{#each groups as group (group.id)}
 			<div class="rounded-lg border border-border bg-surface p-4">
-				<div class="flex items-start justify-between gap-3">
-					<div>
-						<div class="flex items-center gap-2">
-							<a href="/company/{item.company_id}" class="font-medium hover:text-accent"
-								>{item.company_name || item.company_id}</a
-							>
-							<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-muted-fg">{blockLabel(item.block_key)}</span>
-							<span
-								class="text-xs px-2 py-0.5 rounded-full {item.status === 'open' ? 'bg-warn/10 text-warn' : 'bg-good/10 text-good'}"
-								>{item.status}</span
-							>
-						</div>
-						<p class="text-sm mt-2 whitespace-pre-wrap">{item.note}</p>
-						<p class="text-xs text-muted-fg mt-2 font-mono">
-							{item.created_by} &middot; {new Date(item.created_at).toLocaleString()}
-							{#if item.resolved_at}
-								&middot; resolved by {item.resolved_by || ''}
-								{new Date(item.resolved_at).toLocaleString()}
+				<a href="/company/{group.id}" class="font-medium hover:text-accent">{group.name}</a>
+				<div class="mt-3 space-y-3 divide-y divide-border">
+					{#each group.items as item (item.id)}
+						<div class="flex items-start justify-between gap-3 pt-3 first:pt-0">
+							<div>
+								<div class="flex items-center gap-2">
+									<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-muted-fg">{blockLabel(item.block_key)}</span>
+									<span
+										class="text-xs px-2 py-0.5 rounded-full {item.status === 'open' ? 'bg-warn/10 text-warn' : 'bg-good/10 text-good'}"
+										>{item.status}</span
+									>
+								</div>
+								<p class="text-sm mt-2 whitespace-pre-wrap">{item.note}</p>
+								<p class="text-xs text-muted-fg mt-2 font-mono">
+									{item.created_by} &middot; {new Date(item.created_at).toLocaleString()}
+									{#if item.resolved_at}
+										&middot; resolved by {item.resolved_by || ''}
+										{new Date(item.resolved_at).toLocaleString()}
+									{/if}
+								</p>
+							</div>
+							{#if !session.isReadOnly}
+								<div class="flex items-center gap-2 shrink-0">
+									{#if item.status === 'open'}
+										<button
+											onclick={() => resolveNote(item)}
+											class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Resolve</button
+										>
+									{/if}
+									<button onclick={() => deleteNote(item)} class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger"
+										>Delete</button
+									>
+								</div>
 							{/if}
-						</p>
-					</div>
-					{#if !session.isReadOnly}
-						<div class="flex items-center gap-2 shrink-0">
-							{#if item.status === 'open'}
-								<button
-									onclick={() => resolveNote(item)}
-									class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3">Resolve</button
-								>
-							{/if}
-							<button onclick={() => deleteNote(item)} class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger"
-								>Delete</button
-							>
 						</div>
-					{/if}
+					{/each}
 				</div>
 			</div>
 		{/each}

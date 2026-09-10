@@ -4,7 +4,8 @@
 // added by the N+1 perf fix on the Python side).
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
-import { guidanceNotes, killTriggers, metricDefinitions, statusEvents, thesisVersions, triggerEvaluations } from '../db/schema';
+import { readTrackables } from '../../sections';
+import { guidanceNotes, metricDefinitions, statusEvents, thesisVersions, triggerEvaluations } from '../db/schema';
 
 export function scenarioToOut(
 	company: {
@@ -119,49 +120,27 @@ export async function latestTriggerEvaluations(triggerIds: number[]) {
 }
 
 export type TrackableOut = {
-	id: number;
+	id: string;
 	label: string;
-	severity: string;
-	manual_check: boolean;
-	metric_key: string | null;
-	operator: string | null;
-	threshold: number | null;
-	latest_fired: boolean | null;
 };
 
-// "Trackables" - the kill triggers on a scenario's current thesis version,
-// the things that "need to be actively monitored" (the card/Review-tab
-// checklist), as opposed to the Review Queue's pending status_proposals
-// (things already flagged and awaiting an accept/reject decision). Batched
-// the same way coreMetricsForScenarios is, one query per company/dashboard
-// page load rather than one per scenario.
+// Explicit entries from the current thesis version, shared by cards and the
+// Review Queue. Fetch all versions in one query and preserve entry order/text.
 export async function trackablesForScenarios(
 	scenarios: { id: number; currentVersionId: number | null }[]
 ): Promise<Record<number, TrackableOut[]>> {
 	const versionIds = scenarios.map((s) => s.currentVersionId).filter((v): v is number => v != null);
 	if (!versionIds.length) return {};
 
-	const triggers = await db.select().from(killTriggers).where(inArray(killTriggers.versionId, versionIds));
-	if (!triggers.length) return {};
-	const evalMap = await latestTriggerEvaluations(triggers.map((t) => t.id));
-	const byVersion = new Map<number, typeof triggers>();
-	for (const t of triggers) {
-		(byVersion.get(t.versionId) ?? byVersion.set(t.versionId, []).get(t.versionId)!).push(t);
-	}
+	const versions = await db.select().from(thesisVersions).where(inArray(thesisVersions.versionId, versionIds));
+	const byVersion = new Map(versions.map((v) => [v.versionId, v.thesisData]));
 
 	const result: Record<number, TrackableOut[]> = {};
 	for (const scenario of scenarios) {
-		const rows = scenario.currentVersionId != null ? (byVersion.get(scenario.currentVersionId) ?? []) : [];
-		if (!rows.length) continue;
-		result[scenario.id] = rows.map((t) => ({
-			id: t.id,
-			label: t.label,
-			severity: t.severity,
-			manual_check: t.manualCheck,
-			metric_key: t.metricKey,
-			operator: t.operator,
-			threshold: t.threshold != null ? Number(t.threshold) : null,
-			latest_fired: evalMap.get(t.id)?.fired ?? null
+		const items = readTrackables(byVersion.get(scenario.currentVersionId!));
+		result[scenario.id] = items.map((label, index) => ({
+			id: `${scenario.currentVersionId}:${index}`,
+			label
 		}));
 	}
 	return result;

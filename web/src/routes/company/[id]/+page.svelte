@@ -11,20 +11,16 @@
 	import { session } from '$lib/session.svelte';
 	import CustomTables from './CustomTables.svelte';
 	import ActionPanels from './ActionPanels.svelte';
+	import Trackables from '$lib/components/Trackables.svelte';
+	import ProposalReview from '$lib/components/ProposalReview.svelte';
+	import { THESIS_SECTIONS, readTrackables } from '$lib/sections';
 	import type { PageData } from './$types';
 	import type { CompanyDetail } from './+page';
 
 	let { data }: { data: PageData } = $props();
 
 	const BASE_SECTIONS = [
-		{ id: 'business', label: '1. The Business' },
-		{ id: 'growth', label: '2. The Growth Engine' },
-		{ id: 'change', label: '3. The Big Change' },
-		{ id: 'proof', label: '4. Proof Points' },
-		{ id: 'kill', label: '5. What Can Kill It' },
-		{ id: 'believe', label: '6. Why We Believe It' },
-		{ id: 'health', label: '7. Quarterly Review' },
-		{ id: 'decisions', label: 'Buy / Sell Decisions' },
+		...THESIS_SECTIONS,
 		{ id: 'references', label: 'References' }
 	];
 
@@ -370,7 +366,7 @@
 				<button type="button" onclick={() => (aiReviewOpen = false)} class="text-muted-fg hover:text-fg text-lg leading-none">&times;</button>
 			</div>
 			<p class="text-xs text-muted-fg mt-1">
-				Files an advisory proposal only - it never changes the thesis status directly. Review it from the Review Queue.
+				Files an advisory proposal only - it never changes the thesis status directly. Review it in Quarterly Review below.
 			</p>
 			{#if aiError}
 				<div class="mt-2 rounded-md bg-danger/10 border border-danger/30 p-2 text-xs text-danger">{aiError}</div>
@@ -390,7 +386,7 @@
 				<div class="mt-3 rounded-md bg-surface-2 p-3">
 					<div class="flex items-center gap-2">
 						<span class="text-xs font-medium {rstyle.pill} px-2 py-0.5 rounded-full ring-1">Proposed: {rstyle.label}</span>
-						<span class="text-xs text-muted-fg">filed as a "To Review" item - visible in the Review Queue</span>
+						<span class="text-xs text-muted-fg">filed as a status recommendation - visible in Quarterly Review</span>
 					</div>
 					{#if aiResult.evidence?.reasoning_chain?.length}
 						<ol class="list-decimal list-inside text-sm mt-2 space-y-1">
@@ -682,16 +678,21 @@
 						</div>
 					{/if}
 					<CustomTables {companyId} section="health_check" compact />
+					<ActionPanels {companyId} panel="monitoring" readOnly={!viewingOwnScenario || session.isReadOnly} viewedOwner={detail.scenario_owner} onChanged={reload} />
+					<ProposalReview proposals={detail.pending_proposals ?? []} readOnly={!viewingOwnScenario || session.isReadOnly} onResolved={reload} />
+				</section>
+
+				<section id="cp-sec-trackables" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide mb-3">8. Trackables</h3>
+					<Trackables items={readTrackables(t)} />
 				</section>
 
 				<!-- Buy/Sell Decisions + Observations + Price/Performance + Outcome (ActionPanels) -->
 				<section id="cp-sec-decisions" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
-					<ActionPanels {companyId} readOnly={!viewingOwnScenario || session.isReadOnly} viewedOwner={detail.scenario_owner} />
-					{#if detail.pending_proposals?.length}
-						<div class="text-xs text-muted-fg mt-3">
-							{detail.pending_proposals.length} item(s) "To Review" - resolve them from the Review Queue.
-						</div>
-					{/if}
+					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">9. Buy / Sell Decision</h3>
+					<p class="mt-3 text-sm whitespace-pre-wrap break-words">{t.buy_sell_decision || 'No decision reasoning added yet.'}</p>
+					<ActionPanels {companyId} readOnly={!viewingOwnScenario || session.isReadOnly} viewedOwner={detail.scenario_owner} onChanged={reload} />
+					<CustomTables {companyId} section="buy_sell_decision" compact />
 				</section>
 
 				<!-- References -->

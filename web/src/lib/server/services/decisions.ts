@@ -1,5 +1,5 @@
 // Ports app/services/decisions.py - append-only buy/sell decisions.
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { db } from '../db';
 import { positionDecisions } from '../db/schema';
 import { getMyScenario } from './scenarios';
@@ -32,10 +32,11 @@ export async function logDecision(
 	return decision;
 }
 
-export async function listDecisions(companyId: string) {
+export async function listDecisions(companyId: string, owner?: string) {
+	const scenario = owner ? await getMyScenario(companyId, owner) : null;
 	return db
 		.select()
 		.from(positionDecisions)
-		.where(eq(positionDecisions.companyId, companyId))
+		.where(and(eq(positionDecisions.companyId, companyId), scenario ? eq(positionDecisions.scenarioId, scenario.id) : undefined))
 		.orderBy(asc(positionDecisions.decidedOn), asc(positionDecisions.createdAt));
 }

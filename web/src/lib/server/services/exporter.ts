@@ -20,7 +20,7 @@ const EVAL_HOLDOUT_BUCKET = 1500; // ~15% of 10000
 const SYSTEM_PROMPTS: Record<string, string> = {
 	thesis_synthesis:
 		'You are an investment analyst. Given raw company data (classification and ' +
-		'prior operating metrics), produce a structured 7-pillar investment thesis. ' +
+		'prior operating metrics), produce a structured 9-section investment thesis with separate references. ' +
 		'Return JSON only.',
 	verdict: REVIEWER_SYSTEM_PROMPT,
 	redline_extraction:

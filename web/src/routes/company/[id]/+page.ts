@@ -30,6 +30,8 @@ export type ThesisData = {
 	proof_points?: { hard_evidence: string[] };
 	why_we_believe_it?: string[];
 	health_check?: { latest_quarter_review: string };
+	trackables?: string[];
+	buy_sell_decision?: string;
 	references?: { title: string; url: string }[];
 	pillar_notes?: Record<string, string[]>;
 };
@@ -51,7 +53,7 @@ export type CompanyDetail = {
 	health_checks: HealthCheck[];
 	active_override: { to_status: string; rationale: string; actor: string } | null;
 	other_scenarios: OtherScenario[];
-	pending_proposals?: unknown[];
+	pending_proposals?: import('$lib/components/ProposalReview.svelte').Proposal[];
 };
 
 export const load: PageLoad = async ({ params, url }) => {
