@@ -1,5 +1,5 @@
 ---
-name: Investment Thesis Platform
+name: Thesis Tracker
 description: A kill-switch console for disciplined, falsifiable equity theses
 colors:
   paper: "#faf9f5"
@@ -74,7 +74,7 @@ components:
     padding: "6px 8px"
 ---
 
-# Design System: Investment Thesis Platform
+# Design System: Thesis Tracker
 
 ## Overview
 

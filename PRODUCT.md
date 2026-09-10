@@ -28,7 +28,7 @@ FastAPI + PostgreSQL backend; vanilla JS frontend with no framework and no build
 
 ## Brand Commitments
 
-Name is "Investment Thesis Platform" (current page title) - confirmed as final, not a placeholder. No logo or other brand assets exist.
+Name is "Thesis Tracker" (current page title, renamed 2026-09-10 from "Investment Thesis Platform") - confirmed as final, not a placeholder. No logo or other brand assets exist.
 
 ## Evidence on Hand
 

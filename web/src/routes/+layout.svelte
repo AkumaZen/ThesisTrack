@@ -64,7 +64,7 @@
 {#if !session.isAuthenticated}
 	<div class="fixed inset-0 bg-bg z-50 flex items-center justify-center p-4">
 		<div class="bg-bg-ink rounded-xl shadow-md border border-border w-full max-w-sm p-6">
-			<h1 class="font-semibold text-lg mb-1">Investment Thesis Platform</h1>
+			<h1 class="font-semibold text-lg mb-1">Thesis Tracker</h1>
 			<p class="text-sm text-muted-fg mb-4">Sign in to continue.</p>
 			{#if loginError}
 				<div class="mb-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{loginError}</div>
@@ -129,7 +129,7 @@
 {:else}
 	<header class="bg-bg-ink border-b border-border sticky top-0 z-30">
 		<div class="max-w-7xl mx-auto px-4 h-14 flex items-center gap-6">
-			<h1 class="font-semibold text-base shrink-0">Investment Thesis Platform</h1>
+			<h1 class="font-semibold text-base shrink-0">Thesis Tracker</h1>
 			<nav class="flex items-center gap-1">
 				<a href="/" class="nav-tab" class:active={page.url.pathname === '/'}>Companies</a>
 				<a href="/sectors" class="nav-tab" class:active={page.url.pathname.startsWith('/sectors')}>Sectors</a>
