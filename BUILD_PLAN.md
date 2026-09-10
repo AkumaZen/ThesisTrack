@@ -1,4 +1,4 @@
-# Investment Thesis Platform — Implementation Plan
+# Thesis Tracker — Implementation Plan
 
 **Audience:** whoever (human or agent) works on this codebase next.
 **Status:** implemented. This describes the system as it actually exists in `web/`, not a proposal.

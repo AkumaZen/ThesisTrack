@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-09-03T15:30:00Z",
-  "title": "Design System: Investment Thesis Platform",
+  "title": "Design System: Thesis Tracker",
   "extensions": {
     "colorMeta": {
       "void-black": { "role": "neutral", "displayName": "Void Black", "canonical": "#050505", "tonalRamp": ["#000000", "#0a0a0a", "#141414", "#1f1f1f", "#2e2e2e", "#494949", "#7a7a7a", "#c2c2c2"] },

@@ -1,4 +1,4 @@
-# Investment Thesis Platform — Implementation Plan (SUPERSEDED)
+# Thesis Tracker — Implementation Plan (SUPERSEDED)
 
 > **Superseded.** This was the original plan for the Python/FastAPI +
 > vanilla-JS implementation (`app/`, `frontend/`). That stack was replaced
