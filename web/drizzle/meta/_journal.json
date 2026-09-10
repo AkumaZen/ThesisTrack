@@ -40,8 +40,22 @@
     {
       "idx": 5,
       "version": "7",
+      "when": 1788973616100,
+      "tag": "0005_open_pandemic",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788974900854,
+      "tag": "0006_chunky_ikaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
       "when": 1788941805485,
-      "tag": "0005_custom_metric_units",
+      "tag": "0007_custom_metric_units",
       "breakpoints": true
     }
   ]

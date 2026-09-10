@@ -1,6 +1,6 @@
 {
-  "id": "c9084a5d-086b-4468-8006-ff2929178055",
-  "prevId": "339f355c-0abe-41f7-9804-b13a54b71166",
+  "id": "02ebefe6-ea86-4546-ac62-e275256728ca",
+  "prevId": "c9084a5d-086b-4468-8006-ff2929178055",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -475,6 +475,12 @@
         "target_period": {
           "name": "target_period",
           "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expected_results_date": {
+          "name": "expected_results_date",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },

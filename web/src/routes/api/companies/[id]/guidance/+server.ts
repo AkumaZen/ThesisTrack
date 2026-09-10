@@ -20,7 +20,13 @@ const BLOCK_KEYS = [
 
 const guidanceIn = z.object({
 	block_key: z.enum(BLOCK_KEYS),
-	note: z.string().min(1)
+	note: z.string().min(1),
+	target_metric: z.enum(['revenue', 'margin', 'other']).nullish(),
+	target_metric_label: z.string().max(60).nullish(),
+	target_value: z.number().nullish(),
+	target_unit: z.string().max(20).nullish(),
+	target_period: z.string().max(20).nullish(),
+	expected_results_date: z.string().date().nullish()
 });
 
 function toOut(note: {
@@ -33,6 +39,13 @@ function toOut(note: {
 	createdAt: Date;
 	resolvedBy: string | null;
 	resolvedAt: Date | null;
+	targetMetric: string | null;
+	targetMetricLabel: string | null;
+	targetValue: string | null;
+	targetUnit: string | null;
+	targetPeriod: string | null;
+	expectedResultsDate: string | null;
+	outcome: string;
 }, companyName: string | null) {
 	return {
 		id: note.id,
@@ -44,7 +57,14 @@ function toOut(note: {
 		created_by: note.createdBy,
 		created_at: note.createdAt,
 		resolved_by: note.resolvedBy,
-		resolved_at: note.resolvedAt
+		resolved_at: note.resolvedAt,
+		target_metric: note.targetMetric,
+		target_metric_label: note.targetMetricLabel,
+		target_value: note.targetValue != null ? Number(note.targetValue) : null,
+		target_unit: note.targetUnit,
+		target_period: note.targetPeriod,
+		expected_results_date: note.expectedResultsDate,
+		outcome: note.outcome
 	};
 }
 
@@ -55,7 +75,14 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const parsed = guidanceIn.safeParse(body);
 		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
-		const { note, companyName } = await createGuidance(params.id!, parsed.data.block_key, parsed.data.note, actor.identity);
+		const { note, companyName } = await createGuidance(params.id!, parsed.data.block_key, parsed.data.note, actor.identity, {
+			targetMetric: parsed.data.target_metric,
+			targetMetricLabel: parsed.data.target_metric_label,
+			targetValue: parsed.data.target_value,
+			targetUnit: parsed.data.target_unit,
+			targetPeriod: parsed.data.target_period,
+			expectedResultsDate: parsed.data.expected_results_date
+		});
 		return json(toOut(note, companyName), { status: 201 });
 	} catch (err) {
 		if (err instanceof NotFoundError) return errorResponse(404, err.message);

@@ -320,9 +320,32 @@ export const guidanceNotes = pgTable(
 		createdBy: varchar('created_by', { length: 80 }).notNull(),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		resolvedBy: varchar('resolved_by', { length: 80 }),
-		resolvedAt: timestamp('resolved_at', { withTimezone: true })
+		resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+		// Structured management-guidance target this note tracks (e.g. "Revenue,
+		// 15%, Q2 FY26") - all null for a plain analyst note with no target to
+		// evaluate. targetMetricLabel only holds a value when targetMetric is
+		// 'other', naming what "other" means (e.g. "EBITDA").
+		targetMetric: varchar('target_metric', { length: 20 }),
+		targetMetricLabel: varchar('target_metric_label', { length: 60 }),
+		targetValue: numeric('target_value'),
+		targetUnit: varchar('target_unit', { length: 20 }),
+		targetPeriod: varchar('target_period', { length: 20 }),
+		// When that quarter's actual results are expected to be reported (e.g.
+		// the Q2 FY26 target's numbers come out mid-July) - distinct from
+		// targetPeriod, which names the quarter the target itself is *for*.
+		// Lets the list flag "results are due, go check this" independent of
+		// whether the analyst has gotten around to marking an outcome yet.
+		expectedResultsDate: date('expected_results_date'),
+		// Whether the target was hit once the period's numbers are in - set by
+		// the analyst via the Mark Achieved/Missed actions, independent of
+		// `status` (a note can be resolved without ever getting an outcome).
+		outcome: varchar('outcome', { length: 10 }).notNull().default('pending')
 	},
-	(t) => [check('status_check', sql`${t.status} IN ('open', 'resolved')`)]
+	(t) => [
+		check('status_check', sql`${t.status} IN ('open', 'resolved')`),
+		check('outcome_check', sql`${t.outcome} IN ('pending', 'achieved', 'missed')`),
+		check('target_metric_check', sql`${t.targetMetric} IS NULL OR ${t.targetMetric} IN ('revenue', 'margin', 'other')`)
+	]
 );
 
 export const customTables = pgTable('custom_tables', {

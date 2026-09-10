@@ -27,7 +27,14 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 				created_by: note.createdBy,
 				created_at: note.createdAt,
 				resolved_by: note.resolvedBy,
-				resolved_at: note.resolvedAt
+				resolved_at: note.resolvedAt,
+				target_metric: note.targetMetric,
+				target_metric_label: note.targetMetricLabel,
+				target_value: note.targetValue != null ? Number(note.targetValue) : null,
+				target_unit: note.targetUnit,
+				target_period: note.targetPeriod,
+				expected_results_date: note.expectedResultsDate,
+				outcome: note.outcome
 			}))
 		);
 	} catch (err) {

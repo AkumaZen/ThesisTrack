@@ -1,6 +1,6 @@
 {
-  "id": "c9084a5d-086b-4468-8006-ff2929178055",
-  "prevId": "339f355c-0abe-41f7-9804-b13a54b71166",
+  "id": "bfead7a9-d085-4749-a80f-8d24a50e37f2",
+  "prevId": "02ebefe6-ea86-4546-ac62-e275256728ca",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -447,43 +447,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
-        },
-        "target_metric": {
-          "name": "target_metric",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_metric_label": {
-          "name": "target_metric_label",
-          "type": "varchar(60)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_value": {
-          "name": "target_value",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_unit": {
-          "name": "target_unit",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_period": {
-          "name": "target_period",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "outcome": {
-          "name": "outcome",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
         }
       },
       "indexes": {},
@@ -509,14 +472,6 @@
         "status_check": {
           "name": "status_check",
           "value": "\"guidance_notes\".\"status\" IN ('open', 'resolved')"
-        },
-        "outcome_check": {
-          "name": "outcome_check",
-          "value": "\"guidance_notes\".\"outcome\" IN ('pending', 'achieved', 'missed')"
-        },
-        "target_metric_check": {
-          "name": "target_metric_check",
-          "value": "\"guidance_notes\".\"target_metric\" IS NULL OR \"guidance_notes\".\"target_metric\" IN ('revenue', 'margin', 'other')"
         }
       },
       "isRLSEnabled": false
@@ -799,8 +754,7 @@
         },
         "unit": {
           "name": "unit",
-          "type": "metric_unit",
-          "typeSchema": "public",
+          "type": "varchar(40)",
           "primaryKey": false,
           "notNull": true
         },
@@ -2109,18 +2063,6 @@
     }
   },
   "enums": {
-    "public.metric_unit": {
-      "name": "metric_unit",
-      "schema": "public",
-      "values": [
-        "pct",
-        "days",
-        "ratio",
-        "currency",
-        "count",
-        "currency_per_unit"
-      ]
-    },
     "public.proposal_state": {
       "name": "proposal_state",
       "schema": "public",
