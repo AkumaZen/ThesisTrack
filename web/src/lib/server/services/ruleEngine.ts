@@ -83,6 +83,11 @@ async function evaluateScenario(scenario: typeof thesisScenarios.$inferSelect, p
 	const newProposals: (typeof statusProposals.$inferSelect)[] = [];
 
 	for (const trigger of triggers) {
+		// Schema no longer requires metric_key/operator/threshold to be set
+		// together (a trigger can be saved half-configured, mid-draft) - skip
+		// anything not fully specified rather than crash on a null operator.
+		if (trigger.metricKey == null || trigger.operator == null || trigger.threshold == null) continue;
+
 		const [obs] = await db
 			.select()
 			.from(observations)

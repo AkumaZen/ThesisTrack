@@ -15,18 +15,14 @@ export const revenueSplitItem = z.object({
 	share_pct: z.number().min(0).max(100)
 });
 
-// A thesis gets built up incrementally - nothing in it is required to save.
-// revenue_split summing to ~100 is only checked when the analyst has actually
-// entered a full split (empty is fine, a partial one they're mid-typing is
-// left alone rather than blocked).
-export const theBusiness = z
-	.object({
-		what_it_does: z.string().default(''),
-		revenue_split: z.array(revenueSplitItem).default([])
-	})
-	.refine((v) => v.revenue_split.length === 0 || Math.abs(v.revenue_split.reduce((s, i) => s + i.share_pct, 0) - 100) <= 0.5, {
-		message: 'revenue_split.share_pct must sum to 100 +/- 0.5 once entries are added'
-	});
+// A thesis gets built up incrementally - nothing in it is required to save,
+// including a revenue split that doesn't (yet) sum to 100. That used to be
+// enforced; it isn't anymore, on purpose - a partial split the analyst is
+// still mid-typing must save exactly as-is, not get rejected.
+export const theBusiness = z.object({
+	what_it_does: z.string().default(''),
+	revenue_split: z.array(revenueSplitItem).default([])
+});
 
 export const theBigChange = z.object({
 	summary: z.string().default(''),
@@ -39,29 +35,21 @@ export const proofPoints = z.object({
 });
 
 // A half-filled trigger row (label typed, threshold not yet decided) is a
-// normal mid-draft state, not an error - only reject a trigger that claims to
-// be metric-driven (manual_check=false) but sets just some of the three
-// metric fields, since that combination can't evaluate to anything.
-export const killTrigger = z
-	.object({
-		label: z.string().default(''),
-		metric_key: z.string().nullable().optional(),
-		operator: z.enum(['<', '<=', '>', '>=', '==', '!=']).nullable().optional(),
-		threshold: z.number().nullable().optional(),
-		unit: z.string().nullable().optional(),
-		action: z.string().default(''),
-		severity: z.enum(['warn', 'kill']).default('kill'),
-		grace_periods: z.number().int().min(1).default(1),
-		manual_check: z.boolean().default(false)
-	})
-	.refine(
-		(v) => {
-			if (v.manual_check) return true;
-			const set = [v.metric_key, v.operator, v.threshold].filter((x) => x != null);
-			return set.length === 0 || set.length === 3;
-		},
-		{ message: 'kill trigger metric_key, operator, and threshold must all be set together (or leave all three blank)' }
-	);
+// normal mid-draft state, not an error - saves exactly as typed. A trigger
+// left half-configured (metric_key set but no operator/threshold yet) simply
+// won't evaluate against anything until the analyst finishes it; that's the
+// rule engine's problem to skip over, not a reason to block the save.
+export const killTrigger = z.object({
+	label: z.string().default(''),
+	metric_key: z.string().nullable().optional(),
+	operator: z.enum(['<', '<=', '>', '>=', '==', '!=']).nullable().optional(),
+	threshold: z.number().nullable().optional(),
+	unit: z.string().nullable().optional(),
+	action: z.string().default(''),
+	severity: z.enum(['warn', 'kill']).default('kill'),
+	grace_periods: z.number().int().min(1).default(1),
+	manual_check: z.boolean().default(false)
+});
 
 export const healthCheckHistoryItem = z.object({
 	quarter: z.string(),
@@ -74,24 +62,12 @@ export const healthCheckPillar = z.object({
 	historical_checks: z.array(healthCheckHistoryItem).default([])
 });
 
+// No format check on url - a reference the analyst hasn't finished pasting a
+// link into yet (or never will) still needs to save. stripMarkdownLink still
+// runs so a properly-formed `[text](url)` paste keeps working as before.
 export const referenceItem = z.object({
 	title: z.string().default(''),
-	url: z
-		.string()
-		.default('')
-		.transform(stripMarkdownLink)
-		.refine(
-			(v) => {
-				if (!v) return true;
-				try {
-					const u = new URL(v);
-					return u.protocol === 'http:' || u.protocol === 'https:';
-				} catch {
-					return false;
-				}
-			},
-			{ message: 'references[].url must be a valid absolute URL when provided' }
-		)
+	url: z.string().default('').transform(stripMarkdownLink)
 });
 
 export const thesisData = z
