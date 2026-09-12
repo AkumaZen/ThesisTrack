@@ -230,6 +230,10 @@
 	let nextQueuedTableId = 0;
 	let sectionBuilderOpen = $state(false);
 	let builderSection = $state<string | null>(null);
+	// Set when "+ Add Table" was opened from inside a specific note (rather
+	// than as this section's general table-add) - the created table gets
+	// appended as a block on that note too, once real IDs are known.
+	let builderNoteIndex = $state<number | null>(null);
 
 	// Back-compat alias for the untagged "Custom Sections" block below.
 	let customSections = $derived(queuedTables.filter((t) => t.section === null));
@@ -237,8 +241,9 @@
 	function tablesForSection(section: string) {
 		return queuedTables.filter((t) => t.section === section);
 	}
-	function openTableBuilder(section: string | null) {
+	function openTableBuilder(section: string | null, noteIndex: number | null = null) {
 		builderSection = section;
+		builderNoteIndex = noteIndex;
 		sectionBuilderOpen = true;
 	}
 	function removeQueuedTable(id: number) {
@@ -246,56 +251,111 @@
 	}
 	function handleNewCustomSection(built: BuiltTable) {
 		if (built.name.trim() && built.columns.length) {
-			queuedTables = [...queuedTables, { id: nextQueuedTableId++, section: builderSection, built }];
+			const queuedId = nextQueuedTableId++;
+			queuedTables = [...queuedTables, { id: queuedId, section: builderSection, built }];
+			if (builderSection != null && builderNoteIndex != null) {
+				const section = builderSection;
+				const noteIndex = builderNoteIndex;
+				pillarNotes = {
+					...pillarNotes,
+					[section]: notesFor(section).map((n, idx) =>
+						idx === noteIndex ? { blocks: [...n.blocks, { type: 'table_pending' as const, queued_id: queuedId }] } : n
+					)
+				};
+			}
 		}
+		builderNoteIndex = null;
 	}
-	async function createCustomSections(companyId: string) {
-		for (const { section, built } of queuedTables) {
+	// Returns queued-table-id -> real-table-id once every queued table has
+	// actually been created (only possible after the company itself exists).
+	async function createCustomSections(companyId: string): Promise<Map<number, number>> {
+		const idMap = new Map<number, number>();
+		for (const { id: queuedId, section, built } of queuedTables) {
 			const table = (await api.createTable(companyId, { name: built.name.trim(), columns: built.columns, section })) as {
 				id: number;
 			};
 			if (built.rows.length) await api.createRowsBulk(table.id, built.rows);
+			idMap.set(queuedId, table.id);
 		}
+		return idMap;
 	}
 
-	// Pillar notes (Additional Notes, keyed by ThesisData field name)
-	let pillarNotes = $state<Record<string, string[]>>({});
+	// Pillar notes ("Additional Notes", keyed by ThesisData field name) - each
+	// note is a small ordered sequence of blocks (free text or a table
+	// reference), not a single string. A newly-added table block starts out
+	// "table_pending" (pointing at a queued table with no real id yet, since
+	// the company doesn't exist until this form is submitted); it's resolved
+	// to a real "table" block after creation - see hasPendingTableBlocks()
+	// and buildThesisData()'s idMap parameter.
+	type IngestBlock =
+		| { type: 'text'; text: string }
+		| { type: 'table'; table_id: number }
+		| { type: 'table_pending'; queued_id: number };
+	type IngestNote = { blocks: IngestBlock[] };
+	let pillarNotes = $state<Record<string, IngestNote[]>>({});
 
-	function notesFor(fieldKey: string): string[] {
+	function notesFor(fieldKey: string): IngestNote[] {
 		return pillarNotes[fieldKey] ?? [];
 	}
 	function addNote(fieldKey: string) {
-		pillarNotes = { ...pillarNotes, [fieldKey]: [...notesFor(fieldKey), ''] };
+		pillarNotes = { ...pillarNotes, [fieldKey]: [...notesFor(fieldKey), { blocks: [{ type: 'text', text: '' }] }] };
 	}
 	function removeNote(fieldKey: string, i: number) {
 		pillarNotes = { ...pillarNotes, [fieldKey]: notesFor(fieldKey).filter((_, idx) => idx !== i) };
 	}
+	function addTextBlock(fieldKey: string, noteIndex: number) {
+		pillarNotes = {
+			...pillarNotes,
+			[fieldKey]: notesFor(fieldKey).map((n, idx) => (idx === noteIndex ? { blocks: [...n.blocks, { type: 'text', text: '' }] } : n))
+		};
+	}
+	function removeBlock(fieldKey: string, noteIndex: number, blockIndex: number) {
+		pillarNotes = {
+			...pillarNotes,
+			[fieldKey]: notesFor(fieldKey).map((n, idx) =>
+				idx === noteIndex ? { blocks: n.blocks.filter((_, bi) => bi !== blockIndex) } : n
+			)
+		};
+	}
+	function hasPendingTableBlocks(): boolean {
+		return Object.values(pillarNotes).some((notes) => notes.some((n) => n.blocks.some((b) => b.type === 'table_pending')));
+	}
 
 	// VSCode-style Tab: inserts a literal tab at the cursor instead of jumping
 	// focus to the next field, with Shift+Tab removing one level of leading
-	// indent from the current line.
-	async function handleNoteKeydown(e: KeyboardEvent, fieldKey: string, i: number) {
+	// indent from the current line. Only meaningful for text blocks.
+	async function handleBlockKeydown(e: KeyboardEvent, fieldKey: string, noteIndex: number, blockIndex: number) {
 		if (e.key !== 'Tab') return;
+		const block = notesFor(fieldKey)[noteIndex]?.blocks[blockIndex];
+		if (!block || block.type !== 'text') return;
 		e.preventDefault();
 		const el = e.currentTarget as HTMLTextAreaElement;
 		const start = el.selectionStart ?? 0;
 		const end = el.selectionEnd ?? 0;
-		const value = notesFor(fieldKey)[i] ?? '';
+		const value = block.text;
 
+		let nextText: string | null = null;
+		let cursor = start;
 		if (e.shiftKey) {
 			const lineStart = value.lastIndexOf('\n', start - 1) + 1;
 			if (value[lineStart] === '\t') {
-				const next = value.slice(0, lineStart) + value.slice(lineStart + 1);
-				pillarNotes = { ...pillarNotes, [fieldKey]: notesFor(fieldKey).map((n, idx) => (idx === i ? next : n)) };
-				await tick();
-				el.selectionStart = el.selectionEnd = Math.max(lineStart, start - 1);
+				nextText = value.slice(0, lineStart) + value.slice(lineStart + 1);
+				cursor = Math.max(lineStart, start - 1);
 			}
 		} else {
-			const next = value.slice(0, start) + '\t' + value.slice(end);
-			pillarNotes = { ...pillarNotes, [fieldKey]: notesFor(fieldKey).map((n, idx) => (idx === i ? next : n)) };
-			await tick();
-			el.selectionStart = el.selectionEnd = start + 1;
+			nextText = value.slice(0, start) + '\t' + value.slice(end);
+			cursor = start + 1;
 		}
+		if (nextText == null) return;
+		const resolvedText = nextText;
+		pillarNotes = {
+			...pillarNotes,
+			[fieldKey]: notesFor(fieldKey).map((n, ni) =>
+				ni === noteIndex ? { blocks: n.blocks.map((b, bi) => (bi === blockIndex ? { type: 'text', text: resolvedText } : b)) } : n
+			)
+		};
+		await tick();
+		el.selectionStart = el.selectionEnd = cursor;
 	}
 
 	let niches = $derived(taxonomy.find((i) => i.name === broadIndustry)?.niches ?? []);
@@ -332,7 +392,10 @@
 		trackables?: string[];
 		buy_sell_decision?: string;
 		references?: { title: string; url: string }[];
-		pillar_notes?: Record<string, string[]>;
+		// Server-side data is already blocks-shaped (old plain-string notes get
+		// normalized to a single text block on the way through the Zod schema),
+		// but tolerate raw strings too in case this is hand-edited JSON.
+		pillar_notes?: Record<string, (string | { blocks: ({ type: 'text'; text: string } | { type: 'table'; table_id: number })[] })[]>;
 	};
 
 	function applyThesisData(t: ThesisDataShape) {
@@ -370,7 +433,12 @@
 		trackables = [...(t.trackables ?? [])];
 		buySellDecision = t.buy_sell_decision ?? '';
 		references = t.references?.length ? [...t.references] : [];
-		pillarNotes = { ...(t.pillar_notes ?? {}) };
+		pillarNotes = Object.fromEntries(
+			Object.entries(t.pillar_notes ?? {}).map(([key, notes]) => [
+				key,
+				notes.map((n) => (typeof n === 'string' ? { blocks: [{ type: 'text' as const, text: n }] } : n))
+			])
+		);
 	}
 
 	onMount(async () => {
@@ -432,7 +500,36 @@
 		return list.filter((_, idx) => idx !== i);
 	}
 
-	function buildThesisData() {
+	// Serializes pillar_notes for submission. `idMap` resolves queued table ids
+	// to real ones once the company/tables actually exist; a table_pending
+	// block with no resolution yet (idMap omitted, or the id simply isn't in
+	// it) is dropped rather than sent broken - the caller re-submits with a
+	// resolved idMap right after createCustomSections runs (see submit()).
+	function buildPillarNotesPayload(idMap?: Map<number, number>) {
+		const out: Record<string, { blocks: ({ type: 'text'; text: string } | { type: 'table'; table_id: number })[] }[]> = {};
+		for (const [key, notes] of Object.entries(pillarNotes)) {
+			const serialized = notes
+				.map((n) => {
+					const blocks = n.blocks
+						.map((b) => {
+							if (b.type === 'text') {
+								const text = b.text.trim();
+								return text ? { type: 'text' as const, text } : null;
+							}
+							if (b.type === 'table') return { type: 'table' as const, table_id: b.table_id };
+							const realId = idMap?.get(b.queued_id);
+							return realId != null ? { type: 'table' as const, table_id: realId } : null;
+						})
+						.filter((b): b is { type: 'text'; text: string } | { type: 'table'; table_id: number } => b != null);
+					return blocks.length ? { blocks } : null;
+				})
+				.filter((n): n is { blocks: ({ type: 'text'; text: string } | { type: 'table'; table_id: number })[] } => n != null);
+			if (serialized.length) out[key] = serialized;
+		}
+		return out;
+	}
+
+	function buildThesisData(idMap?: Map<number, number>) {
 		return {
 			the_business: {
 				what_it_does: whatItDoes,
@@ -465,15 +562,11 @@
 			trackables: trackables.filter((item) => item.trim()),
 			buy_sell_decision: buySellDecision,
 			references: references.filter((r) => r.title.trim() && r.url.trim()),
-			pillar_notes: Object.fromEntries(
-				Object.entries(pillarNotes)
-					.map(([k, v]) => [k, v.map((n) => n.trim()).filter(Boolean)])
-					.filter(([, v]) => (v as string[]).length)
-			)
+			pillar_notes: buildPillarNotesPayload(idMap)
 		};
 	}
 
-	function buildCreatePayload() {
+	function buildCreatePayload(idMap?: Map<number, number>) {
 		return {
 			nse_ticker: nseTicker.trim().toUpperCase(),
 			bse_ticker: bseTicker.trim().toUpperCase(),
@@ -486,7 +579,7 @@
 			},
 			status,
 			last_reviewed: lastReviewed,
-			thesis_data: buildThesisData()
+			thesis_data: buildThesisData(idMap)
 		};
 	}
 
@@ -506,7 +599,13 @@
 		try {
 			if (mode === 'amend') {
 				await api.amendThesis(prefillCompanyId, { thesis_data: buildThesisData(), change_note: changeNote.trim() || null });
-				await createCustomSections(prefillCompanyId);
+				const idMap = await createCustomSections(prefillCompanyId);
+				// Any note with a table added just now referenced a queued id that
+				// didn't exist yet at the call above - now that the tables are
+				// real, resubmit with those references resolved.
+				if (hasPendingTableBlocks()) {
+					await api.amendThesis(prefillCompanyId, { thesis_data: buildThesisData(idMap), change_note: null });
+				}
 				await goto(`/company/${encodeURIComponent(prefillCompanyId)}`);
 			} else {
 				if (!isExistingCompany && !nseTicker.trim() && !bseTicker.trim()) {
@@ -516,7 +615,10 @@
 				}
 				const payload = buildCreatePayload();
 				const created = (await api.createCompany(payload)) as { company_id: string };
-				await createCustomSections(created.company_id);
+				const idMap = await createCustomSections(created.company_id);
+				if (hasPendingTableBlocks()) {
+					await api.amendThesis(created.company_id, { thesis_data: buildThesisData(idMap), change_note: null });
+				}
 				await goto(`/company/${encodeURIComponent(created.company_id)}`);
 			}
 		} catch (e) {
@@ -930,39 +1032,82 @@ My notes:
 			</div>
 		{/snippet}
 
-		<!-- Additional Notes + Tables, combined - "+ Add Table" lives inside this
-		     block (right under "+ Add note") rather than as its own standalone
-		     section, since a table is almost always added alongside the note
-		     that explains it. Notes are textareas (not single-line inputs) so
-		     Tab can insert real indentation like a code editor instead of only
-		     ever being one line. -->
+		<!-- Additional Notes + Tables, combined - a note is a small ordered
+		     sequence of Text/Table blocks the analyst builds up in whatever mix
+		     and order they want, not one fixed text area. "+ Add Table" inside a
+		     note queues a table (shown here, created for real on submit) AND
+		     appends a block referencing it, so it reads inline as part of that
+		     note - it also still lists below like any other table for this
+		     section. -->
 		{#snippet pillarNotesAndTables(section: string, hint?: string)}
 			<div class="mt-4 pt-3 border-t border-border">
 				<div class="text-sm font-medium">Additional Notes {#if hint}<span class="text-muted-fg font-normal">- {hint}</span>{/if}</div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor(section) as _n, i (i)}
-						<div class="flex gap-2 items-start">
-							<textarea
-								bind:value={pillarNotes[section][i]}
-								onkeydown={(e) => handleNoteKeydown(e, section, i)}
-								rows="2"
-								placeholder="Tab to indent"
-								class="flex-1 rounded-md border border-border px-2 py-1 text-sm font-mono"
-							></textarea>
-							<button type="button" onclick={() => removeNote(section, i)} class="text-muted-fg hover:text-danger mt-1">&times;</button>
+				<div class="space-y-3 mt-2">
+					{#each notesFor(section) as note, ni (ni)}
+						<div class="rounded-md border border-border p-2.5">
+							<div class="space-y-2">
+								{#each note.blocks as block, bi (bi)}
+									<div class="flex items-start gap-2">
+										{#if block.type === 'text'}
+											<textarea
+												value={block.text}
+												oninput={(e) => {
+													const text = e.currentTarget.value;
+													pillarNotes = {
+														...pillarNotes,
+														[section]: notesFor(section).map((n, idx) =>
+															idx === ni ? { blocks: n.blocks.map((b, bidx) => (bidx === bi ? { type: 'text', text } : b)) } : n
+														)
+													};
+												}}
+												onkeydown={(e) => handleBlockKeydown(e, section, ni, bi)}
+												rows="3"
+												placeholder="Write text here... (Tab to indent)"
+												class="flex-1 rounded-md border border-border px-2 py-1 text-sm font-mono"
+											></textarea>
+										{:else if block.type === 'table'}
+											<div class="flex-1 flex items-center gap-2 rounded-md border border-border bg-surface-2 px-2 py-2 text-xs">
+												<span class="text-muted-fg">Table:</span>
+												<span class="font-medium">#{block.table_id}</span>
+											</div>
+										{:else}
+											{@const qt = queuedTables.find((t) => t.id === block.queued_id)}
+											<div class="flex-1 flex items-center gap-2 rounded-md border border-border bg-surface-2 px-2 py-2 text-xs">
+												<span class="text-muted-fg">Table:</span>
+												<span class="font-medium">{qt?.built.name || '(untitled)'}</span>
+												{#if qt}<span class="text-muted-fg">{qt.built.columns.length} columns &middot; {qt.built.rows.length} rows</span
+													>{/if}
+											</div>
+										{/if}
+										<button type="button" onclick={() => removeBlock(section, ni, bi)} class="text-muted-fg hover:text-danger mt-1.5"
+											>&times;</button
+										>
+									</div>
+								{/each}
+							</div>
+							<div class="flex items-center gap-3 mt-2">
+								<button
+									type="button"
+									onclick={() => addTextBlock(section, ni)}
+									class="text-xs text-ok cursor-pointer hover:bg-ok/10 rounded-md px-2 py-1 -ml-2">+ Add Text</button
+								>
+								<button
+									type="button"
+									onclick={() => openTableBuilder(section, ni)}
+									class="text-xs text-ok cursor-pointer hover:bg-ok/10 rounded-md px-2 py-1">+ Add Table</button
+								>
+								<button
+									type="button"
+									onclick={() => removeNote(section, ni)}
+									class="text-xs text-muted-fg hover:text-danger cursor-pointer rounded-md px-2 py-1 ml-auto">Remove note</button
+								>
+							</div>
 						</div>
 					{/each}
 				</div>
-				<div class="flex items-center gap-3 mt-1">
-					<button type="button" onclick={() => addNote(section)} class="text-xs text-ok cursor-pointer hover:bg-ok/10 rounded-md px-2 py-1 -ml-2"
-						>+ Add note</button
-					>
-					<button
-						type="button"
-						onclick={() => openTableBuilder(section)}
-						class="text-xs text-ok cursor-pointer hover:bg-ok/10 rounded-md px-2 py-1">+ Add Table</button
-					>
-				</div>
+				<button type="button" onclick={() => addNote(section)} class="text-xs text-ok cursor-pointer hover:bg-ok/10 rounded-md px-2 py-1 -ml-2 mt-1"
+					>+ Add note</button
+				>
 				{@render queuedTableList(tablesForSection(section))}
 			</div>
 		{/snippet}

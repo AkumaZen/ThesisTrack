@@ -379,7 +379,13 @@ export const customNotes = pgTable('custom_notes', {
 		.notNull()
 		.references(() => companies.companyId, { onDelete: 'cascade' }),
 	heading: varchar('heading', { length: 120 }).notNull(),
+	// `body` stays as a plain-text derivation (text blocks joined with blank
+	// lines) for any old consumer that just wants a snippet - the real
+	// content lives in `blocks`, an ordered mix of free text and table
+	// references (`{type:'text',text}` / `{type:'table',table_id}`), so a
+	// note can read as Text/Table/Text/Table in whatever order it was written.
 	body: text('body').notNull(),
+	blocks: jsonb('blocks').notNull().default([]),
 	section: varchar('section', { length: 50 }),
 	createdBy: varchar('created_by', { length: 80 }).notNull(),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

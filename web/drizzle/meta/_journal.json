@@ -64,6 +64,13 @@
       "when": 1789210800000,
       "tag": "0008_drop_kill_trigger_check",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789231000066,
+      "tag": "0009_next_wallop",
+      "breakpoints": true
     }
   ]
 }

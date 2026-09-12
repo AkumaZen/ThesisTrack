@@ -70,6 +70,20 @@ export const referenceItem = z.object({
 	url: z.string().default('').transform(stripMarkdownLink)
 });
 
+// A pillar_notes entry ("Additional Notes") is a small document, not one
+// string - an ordered mix of free text and table references the analyst
+// builds up with "+ Add Text"/"+ Add Table" in whatever order they want.
+// Accepts the old plain-string shape too (pre-blocks data) and normalizes it
+// to a single text block, so nothing already saved breaks.
+const pillarNoteBlock = z.union([
+	z.object({ type: z.literal('text'), text: z.string() }),
+	z.object({ type: z.literal('table'), table_id: z.number() })
+]);
+const pillarNoteEntry = z.union([
+	z.string().transform((text) => ({ blocks: [{ type: 'text' as const, text }] })),
+	z.object({ blocks: z.array(pillarNoteBlock).default([]) })
+]);
+
 export const thesisData = z
 	.object({
 		the_business: theBusiness.default({ what_it_does: '', revenue_split: [] }),
@@ -82,7 +96,7 @@ export const thesisData = z
 		trackables: z.array(z.string().refine((value) => !!value.trim(), 'Trackable cannot be blank')).default([]),
 		buy_sell_decision: z.string().default(''),
 		references: z.array(referenceItem).default([]),
-		pillar_notes: z.record(z.string(), z.array(z.string())).default({})
+		pillar_notes: z.record(z.string(), z.array(pillarNoteEntry)).default({})
 	})
 	.superRefine((v, ctx) => {
 		// The only thing still checked here is internal consistency of data

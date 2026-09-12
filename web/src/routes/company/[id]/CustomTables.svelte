@@ -35,7 +35,8 @@
 	type TableRow = { id: number; row_data: Record<string, unknown> };
 	type TableSummary = { id: number; name: string; columns: ColumnDef[]; section: string | null; row_count: number };
 	type TableDetail = TableSummary & { rows: TableRow[] };
-	type Note = { id: number; heading: string; body: string; section: string | null; created_by: string; created_at: string };
+	type NoteBlock = { type: 'text'; text: string } | { type: 'table'; table_id: number };
+	type Note = { id: number; heading: string; body: string; blocks: NoteBlock[]; section: string | null; created_by: string; created_at: string };
 
 	let allTables = $state<TableSummary[]>([]);
 	let tables = $derived(allTables.filter((t) => (section ? t.section === section : !t.section)));
@@ -70,13 +71,25 @@
 	let builderInitialName = $state('');
 	let builderInitialColumns = $state<{ key: string; label: string; type: string; optionsCsv: string }[]>([]);
 
-	// Note-builder form state (create or edit) - heading and body are two
-	// separate fields on purpose, not one free-text block.
+	// Note-builder form state (create or edit) - a note is a heading plus an
+	// ordered sequence of blocks (free text or an embedded table), built up
+	// with "+ Add Text" / "+ Add Table" in whatever order/mix the analyst
+	// wants - not a single free-text block anymore.
 	let noteBuilderOpen = $state(false);
 	let noteBuilderEditingId = $state<number | null>(null);
 	let noteHeading = $state('');
-	let noteBody = $state('');
+	let noteBlocks = $state<NoteBlock[]>([]);
 	let noteError = $state('');
+
+	function tableSummaryById(id: number): TableSummary | undefined {
+		return allTables.find((t) => t.id === id);
+	}
+
+	// Old notes saved before blocks existed have an empty blocks array but a
+	// real body - fall back to treating that body as a single text block.
+	function blocksForDisplay(n: Note): NoteBlock[] {
+		return n.blocks?.length ? n.blocks : [{ type: 'text', text: n.body }];
+	}
 
 	// Row form state (add or edit) - targets whichever table's "+ Add Row" /
 	// "Edit" was clicked, not a single globally "open" table anymore.
@@ -205,6 +218,7 @@
 	async function handleBuilderSubmit(built: BuiltTable) {
 		try {
 			let id = builderEditingId;
+			const isNew = id == null;
 			if (id != null) {
 				await api.patchTable(id, { name: built.name, columns: built.columns });
 			} else {
@@ -217,6 +231,13 @@
 			await load();
 			expandedIds = new Set(expandedIds).add(id);
 			await loadDetail(id);
+			// Opened from inside the Add Note modal ("+ Add Table" in there) - the
+			// table is still a normal first-class table (shows in the list above
+			// like any other), but also gets referenced as a block in this note
+			// so it reads inline as part of the note's Text/Table sequence.
+			if (isNew && noteBuilderOpen) {
+				noteBlocks = [...noteBlocks, { type: 'table', table_id: id }];
+			}
 		} catch (e) {
 			throw new Error(apiErrorMessage(e));
 		}
@@ -330,11 +351,11 @@
 		if (note) {
 			noteBuilderEditingId = note.id;
 			noteHeading = note.heading;
-			noteBody = note.body;
+			noteBlocks = note.blocks?.length ? note.blocks.map((b) => ({ ...b })) : [{ type: 'text', text: note.body }];
 		} else {
 			noteBuilderEditingId = null;
 			noteHeading = '';
-			noteBody = '';
+			noteBlocks = [{ type: 'text', text: '' }];
 		}
 		noteBuilderOpen = true;
 	}
@@ -343,25 +364,38 @@
 		noteBuilderOpen = false;
 	}
 
+	function addTextBlock() {
+		noteBlocks = [...noteBlocks, { type: 'text', text: '' }];
+	}
+
+	function removeBlock(index: number) {
+		noteBlocks = noteBlocks.filter((_, i) => i !== index);
+	}
+
 	// VSCode-style Tab: inserts a literal tab at the cursor instead of jumping
 	// focus to the next field, with Shift+Tab removing one level of leading
-	// indent from the current line.
-	async function handleNoteBodyKeydown(e: KeyboardEvent) {
+	// indent from the current line. Only meaningful for text blocks.
+	async function handleBlockKeydown(e: KeyboardEvent, index: number) {
 		if (e.key !== 'Tab') return;
+		const block = noteBlocks[index];
+		if (block.type !== 'text') return;
 		e.preventDefault();
 		const el = e.currentTarget as HTMLTextAreaElement;
 		const start = el.selectionStart ?? 0;
 		const end = el.selectionEnd ?? 0;
+		const value = block.text;
 
 		if (e.shiftKey) {
-			const lineStart = noteBody.lastIndexOf('\n', start - 1) + 1;
-			if (noteBody[lineStart] === '\t') {
-				noteBody = noteBody.slice(0, lineStart) + noteBody.slice(lineStart + 1);
+			const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+			if (value[lineStart] === '\t') {
+				const next = value.slice(0, lineStart) + value.slice(lineStart + 1);
+				noteBlocks = noteBlocks.map((b, i) => (i === index ? { type: 'text', text: next } : b));
 				await tick();
 				el.selectionStart = el.selectionEnd = Math.max(lineStart, start - 1);
 			}
 		} else {
-			noteBody = noteBody.slice(0, start) + '\t' + noteBody.slice(end);
+			const next = value.slice(0, start) + '\t' + value.slice(end);
+			noteBlocks = noteBlocks.map((b, i) => (i === index ? { type: 'text', text: next } : b));
 			await tick();
 			el.selectionStart = el.selectionEnd = start + 1;
 		}
@@ -369,15 +403,16 @@
 
 	async function submitNoteBuilder() {
 		noteError = '';
-		if (!noteHeading.trim() || !noteBody.trim()) {
-			noteError = 'Both a heading and the note text are required.';
+		const blocks = noteBlocks.filter((b) => b.type === 'table' || b.text.trim());
+		if (!noteHeading.trim() || !blocks.length) {
+			noteError = 'A heading and at least one block of text or a table are required.';
 			return;
 		}
 		try {
 			if (noteBuilderEditingId != null) {
-				await api.patchNote(noteBuilderEditingId, { heading: noteHeading.trim(), body: noteBody.trim() });
+				await api.patchNote(noteBuilderEditingId, { heading: noteHeading.trim(), blocks });
 			} else {
-				await api.createNote(companyId, { heading: noteHeading.trim(), body: noteBody.trim(), section });
+				await api.createNote(companyId, { heading: noteHeading.trim(), blocks, section });
 			}
 			noteBuilderOpen = false;
 			await loadNotes();
@@ -429,7 +464,26 @@
 							<button type="button" onclick={() => deleteNoteItem(n.id)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
 						</div>
 					</div>
-					<p class="text-sm text-muted-fg mt-1 whitespace-pre-wrap">{n.body}</p>
+					<div class="mt-1 space-y-2">
+						{#each blocksForDisplay(n) as block, i (i)}
+							{#if block.type === 'text'}
+								{#if block.text.trim()}
+									<p class="text-sm text-muted-fg whitespace-pre-wrap">{block.text}</p>
+								{/if}
+							{:else}
+								{@const t = tableSummaryById(block.table_id)}
+								<button
+									type="button"
+									onclick={() => t && (expandedIds = new Set(expandedIds).add(t.id)) && loadDetail(t.id)}
+									class="flex items-center gap-2 text-xs rounded-md border border-border px-2 py-1.5 hover:bg-surface-3 cursor-pointer"
+								>
+									<span class="text-muted-fg">Table:</span>
+									<span class="font-medium text-fg">{t?.name ?? `#${block.table_id}`}</span>
+									{#if t}<span class="text-muted-fg">{t.columns.length} columns &middot; {t.row_count} rows</span>{/if}
+								</button>
+							{/if}
+						{/each}
+					</div>
 				</div>
 			{/each}
 		</div>
@@ -548,26 +602,54 @@
 				<h2 class="font-semibold">{noteBuilderEditingId != null ? 'Edit Note' : 'Add Note'}</h2>
 				<button onclick={closeNoteBuilder} class="text-muted-fg hover:text-fg text-xl leading-none">&times;</button>
 			</div>
-			<div class="p-5 space-y-3">
+			<div class="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
 				<label class="block text-sm"
 					>Heading
 					<input bind:value={noteHeading} placeholder="e.g. Management Commentary" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
 				</label>
-				<label class="block text-sm"
-					>Note
-					<textarea
-						bind:value={noteBody}
-						onkeydown={handleNoteBodyKeydown}
-						rows="6"
-						placeholder="Write the note text here... (Tab to indent)"
-						class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm font-mono"
-					></textarea>
-				</label>
-				<button
-					type="button"
-					onclick={() => openBuilder()}
-					class="text-xs text-ok px-2 py-1 -ml-2 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Table</button
-				>
+
+				<!-- The note body - an ordered list of Text/Table blocks the analyst
+				     builds up in whatever mix and order they want, not one fixed
+				     text area. -->
+				<div class="space-y-2">
+					{#each noteBlocks as block, i (i)}
+						<div class="flex items-start gap-2">
+							{#if block.type === 'text'}
+								<textarea
+									value={block.text}
+									oninput={(e) =>
+										(noteBlocks = noteBlocks.map((b, idx) => (idx === i ? { type: 'text', text: e.currentTarget.value } : b)))}
+									onkeydown={(e) => handleBlockKeydown(e, i)}
+									rows="4"
+									placeholder="Write text here... (Tab to indent)"
+									class="flex-1 rounded-md border border-border px-2 py-1.5 text-sm font-mono"
+								></textarea>
+							{:else}
+								{@const t = tableSummaryById(block.table_id)}
+								<div class="flex-1 flex items-center gap-2 rounded-md border border-border bg-surface-2 px-2 py-2 text-xs">
+									<span class="text-muted-fg">Table:</span>
+									<span class="font-medium text-fg">{t?.name ?? `#${block.table_id}`}</span>
+									{#if t}<span class="text-muted-fg">{t.columns.length} columns &middot; {t.row_count} rows</span>{/if}
+								</div>
+							{/if}
+							<button type="button" onclick={() => removeBlock(i)} class="text-muted-fg hover:text-danger mt-1.5 cursor-pointer" aria-label="Remove block"
+								>&times;</button
+							>
+						</div>
+					{/each}
+				</div>
+				<div class="flex items-center gap-3">
+					<button
+						type="button"
+						onclick={addTextBlock}
+						class="text-xs text-ok px-2 py-1 -ml-2 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Text</button
+					>
+					<button
+						type="button"
+						onclick={() => openBuilder()}
+						class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Table</button
+					>
+				</div>
 				{#if noteError}
 					<div class="rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{noteError}</div>
 				{/if}

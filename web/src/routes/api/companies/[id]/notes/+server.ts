@@ -3,13 +3,18 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
-import { createNote, listNotes } from '$lib/server/services/customNotes';
+import { createNote, listNotes, type NoteBlock } from '$lib/server/services/customNotes';
 import { NotFoundError } from '$lib/server/services/scenarios';
 import { PILLAR_KEYS } from '$lib/server/pillars';
 
+const noteBlock = z.union([
+	z.object({ type: z.literal('text'), text: z.string() }),
+	z.object({ type: z.literal('table'), table_id: z.number() })
+]);
+
 const noteCreate = z.object({
 	heading: z.string().min(1).max(120),
-	body: z.string().min(1),
+	blocks: z.array(noteBlock).min(1),
 	section: z
 		.string()
 		.nullish()
@@ -18,12 +23,23 @@ const noteCreate = z.object({
 		})
 });
 
-function noteToOut(note: { id: number; companyId: string; heading: string; body: string; section: string | null; createdBy: string; createdAt: Date; updatedAt: Date }) {
+function noteToOut(note: {
+	id: number;
+	companyId: string;
+	heading: string;
+	body: string;
+	blocks: unknown;
+	section: string | null;
+	createdBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+}) {
 	return {
 		id: note.id,
 		company_id: note.companyId,
 		heading: note.heading,
 		body: note.body,
+		blocks: note.blocks,
 		section: note.section,
 		created_by: note.createdBy,
 		created_at: note.createdAt,
@@ -38,7 +54,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const parsed = noteCreate.safeParse(body);
 		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
-		const note = await createNote(params.id!, parsed.data.heading, parsed.data.body, parsed.data.section ?? null, actor.identity);
+		const note = await createNote(params.id!, parsed.data.heading, parsed.data.blocks as NoteBlock[], parsed.data.section ?? null, actor.identity);
 		return json(noteToOut(note), { status: 201 });
 	} catch (err) {
 		if (err instanceof NotFoundError) return errorResponse(404, err.message);

@@ -147,9 +147,30 @@
 		document.getElementById(`cp-sec-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
-	function pillarNotesFor(key: string): string[] {
-		return detail?.current_thesis?.pillar_notes?.[key] ?? [];
+	type NoteBlock = { type: 'text'; text: string } | { type: 'table'; table_id: number };
+	type PillarNoteEntry = { blocks: NoteBlock[] };
+
+	function pillarNotesFor(key: string): PillarNoteEntry[] {
+		const raw = detail?.current_thesis?.pillar_notes?.[key] ?? [];
+		// Old theses saved pillar_notes as plain strings (pre-blocks) - treat
+		// each as a single text block rather than requiring a migration.
+		return raw.map((entry) => (typeof entry === 'string' ? { blocks: [{ type: 'text', text: entry }] } : entry));
 	}
+
+	// Table names for rendering a "Table: <name>" chip inside a pillar note's
+	// blocks - fetched once per company so a note doesn't need to know
+	// anything beyond the table's id.
+	let tablesById = $state<Record<number, { name: string; columns: unknown[]; row_count: number }>>({});
+	$effect(() => {
+		const id = companyId;
+		api
+			.listTables(id)
+			.then((rows) => {
+				const list = rows as { id: number; name: string; columns: unknown[]; row_count: number }[];
+				tablesById = Object.fromEntries(list.map((t) => [t.id, t]));
+			})
+			.catch(() => {});
+	});
 
 	function redlinePct(observed: number, threshold: number): number {
 		const span = Math.max(Math.abs(observed), Math.abs(threshold), 1) * 1.4;
@@ -484,6 +505,35 @@
 					</div>
 				{/if}
 
+				<!-- A pillar note is a small document - an ordered mix of text and
+				     table-reference blocks, not one line each. Text renders as a
+				     bullet; a table block renders as a name+dims chip (the table
+				     itself still lives in the section's Data Tables list below,
+				     this is just a pointer to it in reading order). -->
+				{#snippet pillarNotesDisplay(section: string)}
+					{#if pillarNotesFor(section).length}
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
+							<div class="text-xs font-medium text-muted-fg">Notes</div>
+							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
+								{#each pillarNotesFor(section) as entry, i (i)}
+									<li>
+										{#each entry.blocks as block, j (j)}
+											{#if block.type === 'text'}
+												{#if block.text.trim()}<span class="whitespace-pre-wrap">{block.text}</span>{/if}
+											{:else}
+												{@const table = tablesById[block.table_id]}
+												<span class="inline-flex items-center gap-1 rounded bg-surface-3 px-1.5 py-0.5 text-[11px] font-medium text-fg ml-1"
+													>Table: {table?.name ?? `#${block.table_id}`}</span
+												>
+											{/if}
+										{/each}
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
+				{/snippet}
+
 				<!-- 1. The Business -->
 				<section id="cp-sec-business" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
@@ -493,16 +543,7 @@
 							<div class="flex justify-between text-sm"><span>{r.segment}</span><span class="font-mono">{r.share_pct}%</span></div>
 						{/each}
 					</div>
-					{#if pillarNotesFor('the_business').length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
-							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor('the_business') as n (n)}
-									<li>{n}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+					{@render pillarNotesDisplay('the_business')}
 					<CustomTables {companyId} section="the_business" compact />
 				</section>
 
@@ -514,16 +555,7 @@
 							<li>{g}</li>
 						{/each}
 					</ul>
-					{#if pillarNotesFor('the_growth_engine').length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
-							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor('the_growth_engine') as n (n)}
-									<li>{n}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+					{@render pillarNotesDisplay('the_growth_engine')}
 					<CustomTables {companyId} section="the_growth_engine" compact />
 				</section>
 
@@ -532,16 +564,7 @@
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">3. The Big Change</h3>
 					<p class="text-sm mt-3">{t.the_big_change?.summary}</p>
 					<div class="text-xs text-muted-fg mt-3">Expected completion: <span class="font-mono">{t.the_big_change?.expected_completion}</span></div>
-					{#if pillarNotesFor('the_big_change').length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
-							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor('the_big_change') as n (n)}
-									<li>{n}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+					{@render pillarNotesDisplay('the_big_change')}
 					<CustomTables {companyId} section="the_big_change" compact />
 				</section>
 
@@ -553,16 +576,7 @@
 							<li>{e}</li>
 						{/each}
 					</ul>
-					{#if pillarNotesFor('proof_points').length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
-							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor('proof_points') as n (n)}
-									<li>{n}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+					{@render pillarNotesDisplay('proof_points')}
 					<CustomTables {companyId} section="proof_points" compact />
 				</section>
 
@@ -612,16 +626,7 @@
 					{:else}
 						<div class="text-xs text-muted-fg mt-3">None defined.</div>
 					{/if}
-					{#if pillarNotesFor('what_can_kill_it').length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
-							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor('what_can_kill_it') as n (n)}
-									<li>{n}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+					{@render pillarNotesDisplay('what_can_kill_it')}
 					<CustomTables {companyId} section="what_can_kill_it" compact />
 				</section>
 
@@ -633,16 +638,7 @@
 							<li>{w}</li>
 						{/each}
 					</ol>
-					{#if pillarNotesFor('why_we_believe_it').length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
-							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor('why_we_believe_it') as n (n)}
-									<li>{n}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+					{@render pillarNotesDisplay('why_we_believe_it')}
 					<CustomTables {companyId} section="why_we_believe_it" compact />
 				</section>
 
@@ -667,16 +663,7 @@
 							<div class="text-xs text-muted-fg">No quarterly reviews recorded yet.</div>
 						{/each}
 					</div>
-					{#if pillarNotesFor('health_check').length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
-							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor('health_check') as n (n)}
-									<li>{n}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+					{@render pillarNotesDisplay('health_check')}
 					<CustomTables {companyId} section="health_check" compact />
 					<ActionPanels {companyId} panel="monitoring" readOnly={!viewingOwnScenario || session.isReadOnly} viewedOwner={detail.scenario_owner} onChanged={reload} />
 					<ProposalReview proposals={detail.pending_proposals ?? []} readOnly={!viewingOwnScenario || session.isReadOnly} onResolved={reload} />
@@ -705,16 +692,7 @@
 							<div class="text-xs text-muted-fg">None added.</div>
 						{/each}
 					</div>
-					{#if pillarNotesFor('references').length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
-							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor('references') as n (n)}
-									<li>{n}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+					{@render pillarNotesDisplay('references')}
 					<CustomTables {companyId} section="references" compact />
 				</section>
 
