@@ -9,6 +9,7 @@
 	// button + modal - the data is the point of this section, so it should be
 	// visible without an extra click. A user can still collapse a table they
 	// don't want to see right now via the Hide/Show toggle.
+	import { tick } from 'svelte';
 	import { api, ApiError } from '$lib/api';
 	import TableBuilderModal, { type BuiltTable } from '$lib/components/TableBuilderModal.svelte';
 
@@ -342,6 +343,30 @@
 		noteBuilderOpen = false;
 	}
 
+	// VSCode-style Tab: inserts a literal tab at the cursor instead of jumping
+	// focus to the next field, with Shift+Tab removing one level of leading
+	// indent from the current line.
+	async function handleNoteBodyKeydown(e: KeyboardEvent) {
+		if (e.key !== 'Tab') return;
+		e.preventDefault();
+		const el = e.currentTarget as HTMLTextAreaElement;
+		const start = el.selectionStart ?? 0;
+		const end = el.selectionEnd ?? 0;
+
+		if (e.shiftKey) {
+			const lineStart = noteBody.lastIndexOf('\n', start - 1) + 1;
+			if (noteBody[lineStart] === '\t') {
+				noteBody = noteBody.slice(0, lineStart) + noteBody.slice(lineStart + 1);
+				await tick();
+				el.selectionStart = el.selectionEnd = Math.max(lineStart, start - 1);
+			}
+		} else {
+			noteBody = noteBody.slice(0, start) + '\t' + noteBody.slice(end);
+			await tick();
+			el.selectionStart = el.selectionEnd = start + 1;
+		}
+	}
+
 	async function submitNoteBuilder() {
 		noteError = '';
 		if (!noteHeading.trim() || !noteBody.trim()) {
@@ -381,18 +406,11 @@
 	{#if !compact}
 		<div class="flex items-center justify-between">
 			<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">{heading}</h3>
-			<div class="flex items-center gap-1">
-				<button
-					type="button"
-					onclick={() => openNoteBuilder()}
-					class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Note</button
-				>
-				<button
-					type="button"
-					onclick={() => openBuilder()}
-					class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ New Table</button
-				>
-			</div>
+			<button
+				type="button"
+				onclick={() => openNoteBuilder()}
+				class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Note</button
+			>
 		</div>
 	{/if}
 
@@ -514,26 +532,15 @@
 				onclick={() => openNoteBuilder()}
 				class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Note</button
 			>
-			<button
-				type="button"
-				onclick={() => openBuilder()}
-				class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Table</button
-			>
 		</div>
 	{/if}
 </section>
 
-<TableBuilderModal
-	bind:open={builderOpen}
-	title={builderEditingId != null ? 'Edit Data Table' : 'New Data Table'}
-	submitLabel={builderEditingId != null ? 'Save Changes' : 'Create Table'}
-	allowImport={builderEditingId == null}
-	initialName={builderInitialName}
-	initialColumns={builderInitialColumns}
-	onSubmit={handleBuilderSubmit}
-/>
-
-<!-- Note builder modal -->
+<!-- Note builder modal - "+ Add Table" now lives inside here rather than as
+     its own standalone button, since a table is almost always added while
+     writing up the note that explains it. Rendered before TableBuilderModal
+     below so the table builder (opened from the button inside this modal)
+     stacks visually on top of it, both being the same z-40 overlay. -->
 {#if noteBuilderOpen}
 	<div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" onclick={closeNoteBuilder} role="presentation">
 		<div class="bg-bg-ink rounded-xl border border-border w-full max-w-lg" onclick={(e) => e.stopPropagation()} role="presentation">
@@ -548,9 +555,19 @@
 				</label>
 				<label class="block text-sm"
 					>Note
-					<textarea bind:value={noteBody} rows="6" placeholder="Write the note text here..." class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
+					<textarea
+						bind:value={noteBody}
+						onkeydown={handleNoteBodyKeydown}
+						rows="6"
+						placeholder="Write the note text here... (Tab to indent)"
+						class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm font-mono"
 					></textarea>
 				</label>
+				<button
+					type="button"
+					onclick={() => openBuilder()}
+					class="text-xs text-ok px-2 py-1 -ml-2 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Table</button
+				>
 				{#if noteError}
 					<div class="rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{noteError}</div>
 				{/if}
@@ -564,6 +581,16 @@
 		</div>
 	</div>
 {/if}
+
+<TableBuilderModal
+	bind:open={builderOpen}
+	title={builderEditingId != null ? 'Edit Data Table' : 'New Data Table'}
+	submitLabel={builderEditingId != null ? 'Save Changes' : 'Create Table'}
+	allowImport={builderEditingId == null}
+	initialName={builderInitialName}
+	initialColumns={builderInitialColumns}
+	onSubmit={handleBuilderSubmit}
+/>
 
 <!-- Row form modal -->
 {#if rowFormOpen && rowFormTable}
