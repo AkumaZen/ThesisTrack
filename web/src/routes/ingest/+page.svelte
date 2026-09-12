@@ -9,8 +9,11 @@
 	//                                      company ("Start Your Own Thesis"):
 	//                                      Basics prefilled/locked from that company
 	//   ?mode=amend&companyId=X         - amend the caller's own thesis on X:
-	//                                      Basics hidden, Change Note required,
+	//                                      Basics hidden, Change Note optional,
 	//                                      all pillar fields prefilled
+	//
+	// Every pillar field below is optional - a thesis is built up over time,
+	// not filled out all at once, so nothing here blocks a save.
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
@@ -475,12 +478,7 @@
 		submitting = true;
 		try {
 			if (mode === 'amend') {
-				if (!changeNote.trim()) {
-					fieldErrors = ['Change Note is required when amending a thesis.'];
-					submitting = false;
-					return;
-				}
-				await api.amendThesis(prefillCompanyId, { thesis_data: buildThesisData(), change_note: changeNote.trim() });
+				await api.amendThesis(prefillCompanyId, { thesis_data: buildThesisData(), change_note: changeNote.trim() || null });
 				await createCustomSections(prefillCompanyId);
 				await goto(`/company/${encodeURIComponent(prefillCompanyId)}`);
 			} else {
@@ -717,7 +715,7 @@ My notes:
 		{#if mode === 'amend'}
 			<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 				<label class="block text-sm"
-					>Change Note <span class="text-muted-fg">(required - why is the thesis being amended?)</span>
+					>Change Note <span class="text-muted-fg">(optional - why is the thesis being amended?)</span>
 					<textarea bind:value={changeNote} rows="2" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
 					></textarea>
 				</label>
@@ -913,7 +911,9 @@ My notes:
 				<textarea bind:value={whatItDoes} rows="3" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"></textarea>
 			</label>
 			<div class="mt-3">
-				<div class="text-sm font-medium">Revenue Split <span class="text-muted-fg font-normal">(must sum to 100%)</span></div>
+				<div class="text-sm font-medium">
+					Revenue Split <span class="text-muted-fg font-normal">(optional - if used, should sum to 100%)</span>
+				</div>
 				<div class="space-y-1 mt-1">
 					{#each revenueSplit as row, i (i)}
 						<div class="flex gap-2 items-center">
@@ -1078,7 +1078,7 @@ My notes:
 
 		<!-- What Can Kill It -->
 		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
-			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">5. What Can Kill It <span class="text-muted-fg font-normal normal-case">(needs &ge; 1 severity=kill entry)</span></h2>
+			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">5. What Can Kill It <span class="text-muted-fg font-normal normal-case">(optional)</span></h2>
 			<div class="space-y-2 mt-2">
 				{#each killTriggers as t, i (i)}
 					<div class="rounded-md border border-border p-2 space-y-1">
@@ -1152,7 +1152,9 @@ My notes:
 		<!-- Why We Believe It -->
 		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">
-				6. Why We Believe It <span class="text-muted-fg font-normal normal-case">(&ge;3 entries, &ge;1 Premise, exactly 1 Conclusion)</span>
+				6. Why We Believe It <span class="text-muted-fg font-normal normal-case"
+					>(optional - typically a few Premise entries plus one Conclusion)</span
+				>
 			</h2>
 			<div class="space-y-1 mt-2">
 				{#each believeRows as row, i (i)}
