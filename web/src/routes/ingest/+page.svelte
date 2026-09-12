@@ -16,7 +16,7 @@
 	// not filled out all at once, so nothing here blocks a save.
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { api, ApiError } from '$lib/api';
 	import { operatingModelLabel } from '$lib/format';
 	import TableBuilderModal, { type BuiltTable } from '$lib/components/TableBuilderModal.svelte';
@@ -269,6 +269,33 @@
 	}
 	function removeNote(fieldKey: string, i: number) {
 		pillarNotes = { ...pillarNotes, [fieldKey]: notesFor(fieldKey).filter((_, idx) => idx !== i) };
+	}
+
+	// VSCode-style Tab: inserts a literal tab at the cursor instead of jumping
+	// focus to the next field, with Shift+Tab removing one level of leading
+	// indent from the current line.
+	async function handleNoteKeydown(e: KeyboardEvent, fieldKey: string, i: number) {
+		if (e.key !== 'Tab') return;
+		e.preventDefault();
+		const el = e.currentTarget as HTMLTextAreaElement;
+		const start = el.selectionStart ?? 0;
+		const end = el.selectionEnd ?? 0;
+		const value = notesFor(fieldKey)[i] ?? '';
+
+		if (e.shiftKey) {
+			const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+			if (value[lineStart] === '\t') {
+				const next = value.slice(0, lineStart) + value.slice(lineStart + 1);
+				pillarNotes = { ...pillarNotes, [fieldKey]: notesFor(fieldKey).map((n, idx) => (idx === i ? next : n)) };
+				await tick();
+				el.selectionStart = el.selectionEnd = Math.max(lineStart, start - 1);
+			}
+		} else {
+			const next = value.slice(0, start) + '\t' + value.slice(end);
+			pillarNotes = { ...pillarNotes, [fieldKey]: notesFor(fieldKey).map((n, idx) => (idx === i ? next : n)) };
+			await tick();
+			el.selectionStart = el.selectionEnd = start + 1;
+		}
 	}
 
 	let niches = $derived(taxonomy.find((i) => i.name === broadIndustry)?.niches ?? []);
@@ -903,6 +930,43 @@ My notes:
 			</div>
 		{/snippet}
 
+		<!-- Additional Notes + Tables, combined - "+ Add Table" lives inside this
+		     block (right under "+ Add note") rather than as its own standalone
+		     section, since a table is almost always added alongside the note
+		     that explains it. Notes are textareas (not single-line inputs) so
+		     Tab can insert real indentation like a code editor instead of only
+		     ever being one line. -->
+		{#snippet pillarNotesAndTables(section: string, hint?: string)}
+			<div class="mt-4 pt-3 border-t border-border">
+				<div class="text-sm font-medium">Additional Notes {#if hint}<span class="text-muted-fg font-normal">- {hint}</span>{/if}</div>
+				<div class="space-y-1 mt-1">
+					{#each notesFor(section) as _n, i (i)}
+						<div class="flex gap-2 items-start">
+							<textarea
+								bind:value={pillarNotes[section][i]}
+								onkeydown={(e) => handleNoteKeydown(e, section, i)}
+								rows="2"
+								placeholder="Tab to indent"
+								class="flex-1 rounded-md border border-border px-2 py-1 text-sm font-mono"
+							></textarea>
+							<button type="button" onclick={() => removeNote(section, i)} class="text-muted-fg hover:text-danger mt-1">&times;</button>
+						</div>
+					{/each}
+				</div>
+				<div class="flex items-center gap-3 mt-1">
+					<button type="button" onclick={() => addNote(section)} class="text-xs text-ok cursor-pointer hover:bg-ok/10 rounded-md px-2 py-1 -ml-2"
+						>+ Add note</button
+					>
+					<button
+						type="button"
+						onclick={() => openTableBuilder(section)}
+						class="text-xs text-ok cursor-pointer hover:bg-ok/10 rounded-md px-2 py-1">+ Add Table</button
+					>
+				</div>
+				{@render queuedTableList(tablesForSection(section))}
+			</div>
+		{/snippet}
+
 		<!-- The Business -->
 		<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 			<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h2>
@@ -927,19 +991,7 @@ My notes:
 					>+ Add segment</button
 				>
 			</div>
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes <span class="text-muted-fg font-normal">- free-text extras that don't fit the fields above</span></div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor('the_business') as _n, i (i)}
-						<div class="flex gap-2 items-center">
-							<input bind:value={pillarNotes['the_business'][i]} class="flex-1 rounded-md border border-border px-2 py-1 text-sm" />
-							<button type="button" onclick={() => removeNote('the_business', i)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-				<button type="button" onclick={() => addNote('the_business')} class="text-xs text-ok mt-1">+ Add note</button>
-			</div>
-			{@render pillarTables('the_business')}
+			{@render pillarNotesAndTables('the_business', "free-text extras that don't fit the fields above")}
 		</section>
 
 		<!-- The Growth Engine -->
@@ -954,19 +1006,7 @@ My notes:
 				{/each}
 			</div>
 			<button type="button" onclick={() => (growthEngine = addRow(growthEngine, ''))} class="text-xs text-ok mt-1">+ Add driver</button>
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes</div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor('the_growth_engine') as _n, i (i)}
-						<div class="flex gap-2 items-center">
-							<input bind:value={pillarNotes['the_growth_engine'][i]} class="flex-1 rounded-md border border-border px-2 py-1 text-sm" />
-							<button type="button" onclick={() => removeNote('the_growth_engine', i)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-				<button type="button" onclick={() => addNote('the_growth_engine')} class="text-xs text-ok mt-1">+ Add note</button>
-			</div>
-			{@render pillarTables('the_growth_engine')}
+			{@render pillarNotesAndTables('the_growth_engine')}
 		</section>
 
 		<!-- The Big Change -->
@@ -980,19 +1020,7 @@ My notes:
 				>Expected Completion
 				<input bind:value={expectedCompletion} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
 			</label>
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes</div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor('the_big_change') as _n, i (i)}
-						<div class="flex gap-2 items-center">
-							<input bind:value={pillarNotes['the_big_change'][i]} class="flex-1 rounded-md border border-border px-2 py-1 text-sm" />
-							<button type="button" onclick={() => removeNote('the_big_change', i)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-				<button type="button" onclick={() => addNote('the_big_change')} class="text-xs text-ok mt-1">+ Add note</button>
-			</div>
-			{@render pillarTables('the_big_change')}
+			{@render pillarNotesAndTables('the_big_change')}
 		</section>
 
 		<!-- Proof Points -->
@@ -1061,19 +1089,7 @@ My notes:
 					<button type="button" onclick={() => (creatingMetric = true)} class="mt-2 text-xs text-ok">+ Create a custom metric</button>
 				{/if}
 				</div>
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes</div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor('proof_points') as _n, i (i)}
-						<div class="flex gap-2 items-center">
-							<input bind:value={pillarNotes['proof_points'][i]} class="flex-1 rounded-md border border-border px-2 py-1 text-sm" />
-							<button type="button" onclick={() => removeNote('proof_points', i)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-				<button type="button" onclick={() => addNote('proof_points')} class="text-xs text-ok mt-1">+ Add note</button>
-			</div>
-			{@render pillarTables('proof_points')}
+			{@render pillarNotesAndTables('proof_points')}
 		</section>
 
 		<!-- What Can Kill It -->
@@ -1134,19 +1150,7 @@ My notes:
 					}))}
 				class="text-xs text-ok mt-1">+ Add redline</button
 			>
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes</div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor('what_can_kill_it') as _n, i (i)}
-						<div class="flex gap-2 items-center">
-							<input bind:value={pillarNotes['what_can_kill_it'][i]} class="flex-1 rounded-md border border-border px-2 py-1 text-sm" />
-							<button type="button" onclick={() => removeNote('what_can_kill_it', i)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-				<button type="button" onclick={() => addNote('what_can_kill_it')} class="text-xs text-ok mt-1">+ Add note</button>
-			</div>
-			{@render pillarTables('what_can_kill_it')}
+			{@render pillarNotesAndTables('what_can_kill_it')}
 		</section>
 
 		<!-- Why We Believe It -->
@@ -1172,19 +1176,7 @@ My notes:
 			<button type="button" onclick={() => (believeRows = addRow(believeRows, { kind: 'Premise', text: '' }))} class="text-xs text-ok mt-1"
 				>+ Add reasoning step</button
 			>
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes</div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor('why_we_believe_it') as _n, i (i)}
-						<div class="flex gap-2 items-center">
-							<input bind:value={pillarNotes['why_we_believe_it'][i]} class="flex-1 rounded-md border border-border px-2 py-1 text-sm" />
-							<button type="button" onclick={() => removeNote('why_we_believe_it', i)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-				<button type="button" onclick={() => addNote('why_we_believe_it')} class="text-xs text-ok mt-1">+ Add note</button>
-			</div>
-			{@render pillarTables('why_we_believe_it')}
+			{@render pillarNotesAndTables('why_we_believe_it')}
 		</section>
 
 		<!-- Health Check (pillar 7 / Quarterly Review) -->
@@ -1194,19 +1186,7 @@ My notes:
 				>Latest Quarter Review
 				<textarea bind:value={latestQuarterReview} rows="4" class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"></textarea>
 			</label>
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes</div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor('health_check') as _n, i (i)}
-						<div class="flex gap-2 items-center">
-							<input bind:value={pillarNotes['health_check'][i]} class="flex-1 rounded-md border border-border px-2 py-1 text-sm" />
-							<button type="button" onclick={() => removeNote('health_check', i)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-				<button type="button" onclick={() => addNote('health_check')} class="text-xs text-ok mt-1">+ Add note</button>
-			</div>
-			{@render pillarTables('health_check')}
+			{@render pillarNotesAndTables('health_check')}
 		</section>
 
 		<section class="rounded-xl border border-border bg-surface p-5">
@@ -1244,19 +1224,7 @@ My notes:
 				{/each}
 			</div>
 			<button type="button" onclick={() => (references = addRow(references, { title: '', url: '' }))} class="text-xs text-ok mt-1">+ Add reference</button>
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes</div>
-				<div class="space-y-1 mt-1">
-					{#each notesFor('references') as _n, i (i)}
-						<div class="flex gap-2 items-center">
-							<input bind:value={pillarNotes['references'][i]} class="flex-1 rounded-md border border-border px-2 py-1 text-sm" />
-							<button type="button" onclick={() => removeNote('references', i)} class="text-muted-fg hover:text-danger">&times;</button>
-						</div>
-					{/each}
-				</div>
-				<button type="button" onclick={() => addNote('references')} class="text-xs text-ok mt-1">+ Add note</button>
-			</div>
-			{@render pillarTables('references')}
+			{@render pillarNotesAndTables('references')}
 		</section>
 
 		<!-- Custom Sections - uses the exact same builder (TableBuilderModal) as
