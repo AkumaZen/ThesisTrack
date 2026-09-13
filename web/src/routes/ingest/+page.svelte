@@ -25,6 +25,20 @@
 	const STATUSES = ['on_track', 'watch_closely', 'broken'];
 	const OPERATORS = ['<', '<=', '>', '>=', '==', '!='];
 	const BELIEVE_KINDS = ['Premise', 'Inference', 'Conclusion'];
+	// Mirrors $lib/server/pillars.ts's PILLAR_KEYS - duplicated (not imported)
+	// since that module is server-only and this is client code. Used to
+	// validate a JSON-import custom_section's "pillar" tag.
+	const PILLAR_KEYS = [
+		'the_business',
+		'the_growth_engine',
+		'the_big_change',
+		'proof_points',
+		'what_can_kill_it',
+		'why_we_believe_it',
+		'health_check',
+		'buy_sell_decision',
+		'references'
+	];
 
 	type Industry = { name: string; niches: { name: string }[] };
 	type OperatingModel = { name: string };
@@ -666,28 +680,42 @@
   "custom_sections": [
     {
       "name": "Any Section Name (e.g. Shareholding Pattern, Peer Valuation, Management Bios)",
+      "pillar": "optional - one of: the_business, the_growth_engine, the_big_change, proof_points, what_can_kill_it, why_we_believe_it, health_check, buy_sell_decision, references",
+      "text": "optional - free text to show above this table, inside the same bordered Section (only used when pillar is set)",
       "columns": [{ "key": "column_key", "label": "Column Label", "type": "text|number|date|enum", "options": ["only for type=enum"] }],
       "rows": [{ "column_key": "value for row 1" }, { "column_key": "value for row 2" }]
     }
   ]
 }
 
-Rules: revenue_split share_pct must sum to ~100. what_can_kill_it needs at least one entry with severity="kill". why_we_believe_it needs at least 3 entries, at least one starting with "Premise:", and exactly one starting with "Conclusion:". "custom_sections" is optional and unbounded - use it for ANY data that doesn't fit the 7 fixed pillars above (shareholding, peer comps, management, subsidiaries, capex schedule, anything else my notes contain): add as many sections as needed, each with as many columns and rows as needed. Column "key" must be a short lowercase identifier (spaces/case get normalized automatically, but keep it clean); "type" defaults to "text" if omitted. Ask me clarifying questions if anything is ambiguous, then output ONLY the JSON.
+Rules: revenue_split share_pct must sum to ~100. what_can_kill_it needs at least one entry with severity="kill". why_we_believe_it needs at least 3 entries, at least one starting with "Premise:", and exactly one starting with "Conclusion:". "custom_sections" is optional and unbounded - use it for ANY data that doesn't fit the 7 fixed pillars above (shareholding, peer comps, management, subsidiaries, capex schedule, anything else my notes contain): add as many sections as needed, each with as many columns and rows as needed. Column "key" must be a short lowercase identifier (spaces/case get normalized automatically, but keep it clean); "type" defaults to "text" if omitted. If a table clearly belongs inside one of the 7 pillars above (e.g. a capacity-ramp table under "the_big_change", a peer-comps table under "proof_points"), set that section's "pillar" (and optionally "text" for the commentary that goes with it) so it renders as ONE combined text+table Section inside that pillar instead of a generic table at the bottom - leave "pillar" out only for data that's genuinely standalone (e.g. shareholding pattern, management bios) and doesn't belong under any single pillar. Ask me clarifying questions if anything is ambiguous, then output ONLY the JSON.
 
 My notes:
 `;
 
 	type ParsedCustomSection = {
 		name?: string;
+		// Optional: one of the pillar keys (the_business, the_growth_engine,
+		// the_big_change, proof_points, what_can_kill_it, why_we_believe_it,
+		// health_check, buy_sell_decision, references). When present, this
+		// table is embedded inline inside that pillar's Additional Sections -
+		// alongside its own "text" - as one bordered Section, exactly like the
+		// "+ Add Section" builder produces. Omitted (or an unrecognized key)
+		// falls back to the old behaviour: an untagged table in the generic
+		// "Custom Sections" block at the bottom.
+		pillar?: string;
+		// Optional free text paired with this table inside the same Section
+		// (rendered above the table, same as a "+ Add Text" block).
+		text?: string;
 		columns?: { key?: string; label?: string; type?: string; options?: string[] }[];
 		rows?: Record<string, string>[];
 	};
 
 	function applyParsedCustomSections(sections: ParsedCustomSection[]) {
-		const mapped: BuiltTable[] = sections
-			.filter((s) => s.name?.trim() && s.columns?.length)
-			.map((s) => ({
-				name: s.name!.trim(),
+		for (const s of sections) {
+			if (!s.name?.trim() || !s.columns?.length) continue;
+			const built: BuiltTable = {
+				name: s.name.trim(),
 				columns: (s.columns ?? []).map((c) => ({
 					key: c.key ?? '',
 					label: c.label ?? c.key ?? '',
@@ -695,9 +723,16 @@ My notes:
 					options: c.options
 				})),
 				rows: s.rows ?? []
-			}));
-		if (mapped.length) {
-			queuedTables = [...queuedTables, ...mapped.map((built) => ({ id: nextQueuedTableId++, section: null, built }))];
+			};
+			const pillar = s.pillar && PILLAR_KEYS.includes(s.pillar) ? s.pillar : null;
+			const queuedId = nextQueuedTableId++;
+			queuedTables = [...queuedTables, { id: queuedId, section: pillar, built }];
+			if (pillar) {
+				const blocks: IngestBlock[] = [];
+				if (s.text?.trim()) blocks.push({ type: 'text', text: s.text.trim() });
+				blocks.push({ type: 'table_pending', queued_id: queuedId });
+				pillarNotes = { ...pillarNotes, [pillar]: [...notesFor(pillar), { blocks }] };
+			}
 		}
 	}
 
