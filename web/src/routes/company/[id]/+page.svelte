@@ -10,6 +10,7 @@
 	import { STATUS_STYLES, operatingModelLabel } from '$lib/format';
 	import { session } from '$lib/session.svelte';
 	import CustomTables from './CustomTables.svelte';
+	import TableCard, { type TableSummary } from '$lib/components/TableCard.svelte';
 	import ActionPanels from './ActionPanels.svelte';
 	import Trackables from '$lib/components/Trackables.svelte';
 	import ProposalReview from '$lib/components/ProposalReview.svelte';
@@ -157,20 +158,27 @@
 		return raw.map((entry) => (typeof entry === 'string' ? { blocks: [{ type: 'text', text: entry }] } : entry));
 	}
 
-	// Table names for rendering a "Table: <name>" chip inside a pillar note's
-	// blocks - fetched once per company so a note doesn't need to know
-	// anything beyond the table's id.
-	let tablesById = $state<Record<number, { name: string; columns: unknown[]; row_count: number }>>({});
+	// Table summaries for rendering the actual table grid (via TableCard)
+	// inline inside a pillar note's blocks - fetched once per company so a
+	// note doesn't need to know anything beyond the table's id.
+	let tablesById = $state<Record<number, TableSummary>>({});
 	$effect(() => {
 		const id = companyId;
 		api
 			.listTables(id)
 			.then((rows) => {
-				const list = rows as { id: number; name: string; columns: unknown[]; row_count: number }[];
-				tablesById = Object.fromEntries(list.map((t) => [t.id, t]));
+				tablesById = Object.fromEntries((rows as TableSummary[]).map((t) => [t.id, t]));
 			})
 			.catch(() => {});
 	});
+
+	// Table ids already embedded in a pillar's Notes (thesis-level, authored
+	// on the ingest form) - CustomTables must not also render these in its
+	// own "orphan tables" list for the same pillar, or the same table shows
+	// twice on the page.
+	function pillarNoteTableIds(section: string): number[] {
+		return pillarNotesFor(section).flatMap((entry) => entry.blocks.filter((b) => b.type === 'table').map((b) => b.table_id));
+	}
 
 	function redlinePct(observed: number, threshold: number): number {
 		const span = Math.max(Math.abs(observed), Math.abs(threshold), 1) * 1.4;
@@ -506,30 +514,30 @@
 				{/if}
 
 				<!-- A pillar note is a small document - an ordered mix of text and
-				     table-reference blocks, not one line each. Text renders as a
-				     bullet; a table block renders as a name+dims chip (the table
-				     itself still lives in the section's Data Tables list below,
-				     this is just a pointer to it in reading order). -->
+				     table blocks, not one line each. Text renders as a bullet; a
+				     table block renders as the actual table grid inline, inside
+				     this same bordered card - not a chip pointing at a table
+				     rendered separately elsewhere. -->
 				{#snippet pillarNotesDisplay(section: string)}
 					{#if pillarNotesFor(section).length}
-						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5">
+						<div class="mt-3 rounded-md bg-surface-2 border border-border p-2.5 space-y-2">
 							<div class="text-xs font-medium text-muted-fg">Notes</div>
-							<ul class="list-disc list-inside text-xs leading-normal mt-1 space-y-2 text-muted-fg">
-								{#each pillarNotesFor(section) as entry, i (i)}
-									<li>
-										{#each entry.blocks as block, j (j)}
-											{#if block.type === 'text'}
-												{#if block.text.trim()}<span class="whitespace-pre-wrap">{block.text}</span>{/if}
+							{#each pillarNotesFor(section) as entry, i (i)}
+								<div class="text-xs leading-normal space-y-2 text-muted-fg">
+									{#each entry.blocks as block, j (j)}
+										{#if block.type === 'text'}
+											{#if block.text.trim()}<p class="whitespace-pre-wrap">&bull; {block.text}</p>{/if}
+										{:else}
+											{@const table = tablesById[block.table_id]}
+											{#if table}
+												<TableCard table={table as TableSummary} defaultExpanded={false} />
 											{:else}
-												{@const table = tablesById[block.table_id]}
-												<span class="inline-flex items-center gap-1 rounded bg-surface-3 px-1.5 py-0.5 text-[11px] font-medium text-fg ml-1"
-													>Table: {table?.name ?? `#${block.table_id}`}</span
-												>
+												<span class="text-danger">Table #{block.table_id} not found.</span>
 											{/if}
-										{/each}
-									</li>
-								{/each}
-							</ul>
+										{/if}
+									{/each}
+								</div>
+							{/each}
 						</div>
 					{/if}
 				{/snippet}
@@ -544,7 +552,7 @@
 						{/each}
 					</div>
 					{@render pillarNotesDisplay('the_business')}
-					<CustomTables {companyId} section="the_business" compact />
+					<CustomTables {companyId} section="the_business" compact excludeTableIds={pillarNoteTableIds('the_business')} />
 				</section>
 
 				<!-- 2. The Growth Engine -->
@@ -556,7 +564,7 @@
 						{/each}
 					</ul>
 					{@render pillarNotesDisplay('the_growth_engine')}
-					<CustomTables {companyId} section="the_growth_engine" compact />
+					<CustomTables {companyId} section="the_growth_engine" compact excludeTableIds={pillarNoteTableIds('the_growth_engine')} />
 				</section>
 
 				<!-- 3. The Big Change -->
@@ -565,7 +573,7 @@
 					<p class="text-sm mt-3">{t.the_big_change?.summary}</p>
 					<div class="text-xs text-muted-fg mt-3">Expected completion: <span class="font-mono">{t.the_big_change?.expected_completion}</span></div>
 					{@render pillarNotesDisplay('the_big_change')}
-					<CustomTables {companyId} section="the_big_change" compact />
+					<CustomTables {companyId} section="the_big_change" compact excludeTableIds={pillarNoteTableIds('the_big_change')} />
 				</section>
 
 				<!-- 4. Proof Points -->
@@ -577,7 +585,7 @@
 						{/each}
 					</ul>
 					{@render pillarNotesDisplay('proof_points')}
-					<CustomTables {companyId} section="proof_points" compact />
+					<CustomTables {companyId} section="proof_points" compact excludeTableIds={pillarNoteTableIds('proof_points')} />
 				</section>
 
 				<!-- 5. What Can Kill It -->
@@ -627,7 +635,7 @@
 						<div class="text-xs text-muted-fg mt-3">None defined.</div>
 					{/if}
 					{@render pillarNotesDisplay('what_can_kill_it')}
-					<CustomTables {companyId} section="what_can_kill_it" compact />
+					<CustomTables {companyId} section="what_can_kill_it" compact excludeTableIds={pillarNoteTableIds('what_can_kill_it')} />
 				</section>
 
 				<!-- 6. Why We Believe It -->
@@ -639,7 +647,7 @@
 						{/each}
 					</ol>
 					{@render pillarNotesDisplay('why_we_believe_it')}
-					<CustomTables {companyId} section="why_we_believe_it" compact />
+					<CustomTables {companyId} section="why_we_believe_it" compact excludeTableIds={pillarNoteTableIds('why_we_believe_it')} />
 				</section>
 
 				<!-- Thesis Performance / price + 7. Health Check -->
@@ -664,7 +672,7 @@
 						{/each}
 					</div>
 					{@render pillarNotesDisplay('health_check')}
-					<CustomTables {companyId} section="health_check" compact />
+					<CustomTables {companyId} section="health_check" compact excludeTableIds={pillarNoteTableIds('health_check')} />
 					<ActionPanels {companyId} panel="monitoring" readOnly={!viewingOwnScenario || session.isReadOnly} viewedOwner={detail.scenario_owner} onChanged={reload} />
 					<ProposalReview proposals={detail.pending_proposals ?? []} readOnly={!viewingOwnScenario || session.isReadOnly} onResolved={reload} />
 				</section>
@@ -679,7 +687,7 @@
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">9. Buy / Sell Decision</h3>
 					<p class="mt-3 text-sm whitespace-pre-wrap break-words">{t.buy_sell_decision || 'No decision reasoning added yet.'}</p>
 					<ActionPanels {companyId} readOnly={!viewingOwnScenario || session.isReadOnly} viewedOwner={detail.scenario_owner} onChanged={reload} />
-					<CustomTables {companyId} section="buy_sell_decision" compact />
+					<CustomTables {companyId} section="buy_sell_decision" compact excludeTableIds={pillarNoteTableIds('buy_sell_decision')} />
 				</section>
 
 				<!-- References -->
@@ -693,7 +701,7 @@
 						{/each}
 					</div>
 					{@render pillarNotesDisplay('references')}
-					<CustomTables {companyId} section="references" compact />
+					<CustomTables {companyId} section="references" compact excludeTableIds={pillarNoteTableIds('references')} />
 				</section>
 
 				<!-- Custom Sections (untagged tables) - each one also gets its own

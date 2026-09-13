@@ -20,6 +20,7 @@
 	import { api, ApiError } from '$lib/api';
 	import { operatingModelLabel } from '$lib/format';
 	import TableBuilderModal, { type BuiltTable } from '$lib/components/TableBuilderModal.svelte';
+	import TableCard, { type TableSummary } from '$lib/components/TableCard.svelte';
 
 	const STATUSES = ['on_track', 'watch_closely', 'broken'];
 	const OPERATORS = ['<', '<=', '>', '>=', '==', '!='];
@@ -227,6 +228,10 @@
 	// (createCustomSections).
 	type QueuedTable = { id: number; section: string | null; built: BuiltTable };
 	let queuedTables = $state<QueuedTable[]>([]);
+	// Real, already-created tables (amend mode only) - fetched so a note's
+	// real "table" blocks can render the actual grid inline via TableCard,
+	// not a name chip.
+	let tablesById = $state<Record<number, TableSummary>>({});
 	let nextQueuedTableId = 0;
 	let sectionBuilderOpen = $state(false);
 	let builderSection = $state<string | null>(null);
@@ -238,9 +243,6 @@
 	// Back-compat alias for the untagged "Custom Sections" block below.
 	let customSections = $derived(queuedTables.filter((t) => t.section === null));
 
-	function tablesForSection(section: string) {
-		return queuedTables.filter((t) => t.section === section);
-	}
 	function openTableBuilder(section: string | null, noteIndex: number | null = null) {
 		builderSection = section;
 		builderNoteIndex = noteIndex;
@@ -473,6 +475,14 @@
 					current_thesis?: ThesisDataShape;
 					has_own_scenario: boolean;
 				};
+				// So a section's already-real table blocks (saved on a previous
+				// visit) render as the actual table grid here too, not a chip.
+				api
+					.listTables(prefillCompanyId)
+					.then((rows) => {
+						tablesById = Object.fromEntries((rows as TableSummary[]).map((t) => [t.id, t]));
+					})
+					.catch(() => {});
 				nseTicker = detail.nse_ticker ?? '';
 				bseTicker = detail.bse_ticker ?? '';
 				name = detail.name;
@@ -1015,33 +1025,53 @@ My notes:
 			{/if}
 		{/snippet}
 
-		<!-- Per-pillar table button + list - same builder/tagging as the "+ Add
-		     Table" button inside each pillar's CustomTables on the company page,
-		     just deferred (queued) until the company itself is created. -->
-		{#snippet pillarTables(section: string)}
-			<div class="mt-4 pt-3 border-t border-border">
-				<div class="flex items-center justify-between">
-					<div class="text-sm font-medium">Tables <span class="text-muted-fg font-normal">- optional data tables for this section</span></div>
-					<button
-						type="button"
-						onclick={() => openTableBuilder(section)}
-						class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Table</button
-					>
+		<!-- Renders one staged (not-yet-created) table's columns + a preview of
+		     its rows, inline, in place of a name chip - the real grid doesn't
+		     exist until submit, but its actual content already does. -->
+		{#snippet stagedTablePreview(qt: QueuedTable)}
+			<div class="rounded-md border border-border">
+				<div class="px-3 py-2 text-sm font-medium">
+					{qt.built.name || '(untitled)'}
+					<span class="text-xs text-muted-fg font-normal">{qt.built.columns.length} columns &middot; {qt.built.rows.length} rows staged</span>
 				</div>
-				{@render queuedTableList(tablesForSection(section))}
+				{#if qt.built.columns.length}
+					<div class="overflow-x-auto border-t border-border">
+						<table class="w-full text-xs">
+							<thead>
+								<tr class="bg-surface-2">
+									{#each qt.built.columns as c (c.key)}
+										<th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">{c.label}</th>
+									{/each}
+								</tr>
+							</thead>
+							<tbody>
+								{#each qt.built.rows.slice(0, 5) as row, r (r)}
+									<tr class="border-t border-border">
+										{#each qt.built.columns as c (c.key)}
+											<td class="px-2 py-1.5 whitespace-nowrap">{row[c.key] ?? '-'}</td>
+										{/each}
+									</tr>
+								{:else}
+									<tr><td colspan={qt.built.columns.length} class="px-2 py-3 text-center text-muted-fg">No rows staged yet.</td></tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+					{#if qt.built.rows.length > 5}
+						<div class="px-3 py-1 text-xs text-muted-fg border-t border-border">+{qt.built.rows.length - 5} more row{qt.built.rows.length - 5 === 1 ? '' : 's'} staged</div>
+					{/if}
+				{/if}
 			</div>
 		{/snippet}
 
-		<!-- Additional Notes + Tables, combined - a note is a small ordered
-		     sequence of Text/Table blocks the analyst builds up in whatever mix
-		     and order they want, not one fixed text area. "+ Add Table" inside a
-		     note queues a table (shown here, created for real on submit) AND
-		     appends a block referencing it, so it reads inline as part of that
-		     note - it also still lists below like any other table for this
-		     section. -->
+		<!-- Additional Sections, each a small ordered sequence of Text/Table
+		     blocks the analyst builds up in whatever mix and order they want.
+		     "+ Add Table" inside a section queues a table (created for real on
+		     submit) AND appends a block referencing it, rendered right here as
+		     the actual staged table content - not a separate list elsewhere. -->
 		{#snippet pillarNotesAndTables(section: string, hint?: string)}
 			<div class="mt-4 pt-3 border-t border-border">
-				<div class="text-sm font-medium">Additional Notes {#if hint}<span class="text-muted-fg font-normal">- {hint}</span>{/if}</div>
+				<div class="text-sm font-medium">Additional Sections {#if hint}<span class="text-muted-fg font-normal">- {hint}</span>{/if}</div>
 				<div class="space-y-3 mt-2">
 					{#each notesFor(section) as note, ni (ni)}
 						<div class="rounded-md border border-border p-2.5">
@@ -1066,17 +1096,20 @@ My notes:
 												class="flex-1 rounded-md border border-border px-2 py-1 text-sm font-mono"
 											></textarea>
 										{:else if block.type === 'table'}
-											<div class="flex-1 flex items-center gap-2 rounded-md border border-border bg-surface-2 px-2 py-2 text-xs">
-												<span class="text-muted-fg">Table:</span>
-												<span class="font-medium">#{block.table_id}</span>
-											</div>
+											{@const t = tablesById[block.table_id]}
+											{#if t}
+												<div class="flex-1"><TableCard table={t} defaultExpanded={false} /></div>
+											{:else}
+												<div class="flex-1 text-xs text-danger">Table #{block.table_id} not found.</div>
+											{/if}
 										{:else}
 											{@const qt = queuedTables.find((t) => t.id === block.queued_id)}
-											<div class="flex-1 flex items-center gap-2 rounded-md border border-border bg-surface-2 px-2 py-2 text-xs">
-												<span class="text-muted-fg">Table:</span>
-												<span class="font-medium">{qt?.built.name || '(untitled)'}</span>
-												{#if qt}<span class="text-muted-fg">{qt.built.columns.length} columns &middot; {qt.built.rows.length} rows</span
-													>{/if}
+											<div class="flex-1">
+												{#if qt}
+													{@render stagedTablePreview(qt)}
+												{:else}
+													<div class="text-xs text-danger">Staged table not found.</div>
+												{/if}
 											</div>
 										{/if}
 										<button type="button" onclick={() => removeBlock(section, ni, bi)} class="text-muted-fg hover:text-danger mt-1.5"
@@ -1099,16 +1132,15 @@ My notes:
 								<button
 									type="button"
 									onclick={() => removeNote(section, ni)}
-									class="text-xs text-muted-fg hover:text-danger cursor-pointer rounded-md px-2 py-1 ml-auto">Remove note</button
+									class="text-xs text-muted-fg hover:text-danger cursor-pointer rounded-md px-2 py-1 ml-auto">Remove section</button
 								>
 							</div>
 						</div>
 					{/each}
 				</div>
 				<button type="button" onclick={() => addNote(section)} class="text-xs text-ok cursor-pointer hover:bg-ok/10 rounded-md px-2 py-1 -ml-2 mt-1"
-					>+ Add note</button
+					>+ Add Section</button
 				>
-				{@render queuedTableList(tablesForSection(section))}
 			</div>
 		{/snippet}
 
@@ -1353,7 +1385,7 @@ My notes:
 			<label class="block mt-3 text-sm" for="buy-sell-decision">Decision reasoning and conditions</label>
 			<textarea id="buy-sell-decision" bind:value={buySellDecision} rows="5" placeholder="Explain your buy/sell decision, the conditions behind it, and what would change your mind." class="mt-2 w-full rounded-md border border-border p-2 text-sm"></textarea>
 			<p class="mt-2 text-xs text-muted-fg">After saving, log actual buys and sells in this section on the company page, with price, optional quantity, date, and rationale. Logged decisions remain in the permanent history.</p>
-			{@render pillarTables('buy_sell_decision')}
+			{@render pillarNotesAndTables('buy_sell_decision')}
 		</section>
 
 		<!-- References -->
