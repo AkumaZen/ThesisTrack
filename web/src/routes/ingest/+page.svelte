@@ -200,7 +200,7 @@
 			newMetricUnit = '';
 			creatingMetric = false;
 		} catch (error) {
-			metricError = error instanceof ApiError ? String((error.body as { message?: string })?.message ?? error.message) : String(error);
+			metricError = error instanceof ApiError ? String((error.body as { detail?: string })?.detail ?? error.message) : String(error);
 		} finally {
 			metricBusy = false;
 		}
@@ -615,8 +615,18 @@
 
 	function extractErrors(e: unknown): { fieldErrors: string[]; submitError: string } {
 		if (e instanceof ApiError) {
-			const msg = typeof e.body === 'string' ? e.body : ((e.body as { message?: string })?.message ?? e.message);
-			const errs = String(msg).split('\n').filter(Boolean);
+			// Server errors come back as FastAPI-shaped {"detail": "..."} (see
+			// zodErrorMessage/errorResponse) - a validation failure's detail is
+			// one "path: message" issue per "; "-separated segment. Reading
+			// `.message` here (which doesn't exist on this body) used to fall
+			// through to `e.message`, the raw JSON.stringify'd body - dumping
+			// the whole {"detail":"..."} blob as a single unreadable bullet.
+			const body = e.body as { detail?: string } | string;
+			const msg = typeof body === 'string' ? body : (body?.detail ?? e.message);
+			const errs = String(msg)
+				.split(/;\s*|\n/)
+				.map((s) => s.trim())
+				.filter(Boolean);
 			return { fieldErrors: errs, submitError: errs.length ? '' : String(msg) };
 		}
 		return { fieldErrors: [], submitError: String(e) };
@@ -1268,18 +1278,18 @@ My notes:
 												onkeydown={(e) => handleBlockKeydown(e, section, ni, bi)}
 												rows="3"
 												placeholder="Write text here... (Tab to indent)"
-												class="flex-1 rounded-md border border-border px-2 py-1 text-sm font-mono"
+												class="flex-1 min-w-0 rounded-md border border-border px-2 py-1 text-sm font-mono"
 											></textarea>
 										{:else if block.type === 'table'}
 											{@const t = tablesById[block.table_id]}
 											{#if t}
-												<div class="flex-1"><TableCard table={t} defaultExpanded={false} /></div>
+												<div class="flex-1 min-w-0"><TableCard table={t} defaultExpanded={false} /></div>
 											{:else}
-												<div class="flex-1 text-xs text-danger">Table #{block.table_id} not found.</div>
+												<div class="flex-1 min-w-0 text-xs text-danger">Table #{block.table_id} not found.</div>
 											{/if}
 										{:else}
 											{@const qt = queuedTables.find((t) => t.id === block.queued_id)}
-											<div class="flex-1">
+											<div class="flex-1 min-w-0">
 												{#if qt}
 													{@render stagedTablePreview(qt)}
 												{:else}

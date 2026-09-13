@@ -136,8 +136,11 @@
 
 	function apiErrorMessage(e: unknown): string {
 		if (e instanceof ApiError) {
-			const body = e.body as { message?: string } | string;
-			return typeof body === 'string' ? body : (body?.message ?? e.message);
+			// Server errors are FastAPI-shaped {"detail": "..."} - reading
+			// `.message` here (a key that never exists on this body) fell
+			// through to `e.message`, the raw JSON.stringify'd body.
+			const body = e.body as { detail?: string } | string;
+			return typeof body === 'string' ? body : (body?.detail ?? e.message);
 		}
 		return String(e);
 	}

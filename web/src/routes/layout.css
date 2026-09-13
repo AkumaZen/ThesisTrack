@@ -57,8 +57,32 @@
 	color-scheme: light;
 }
 
+/*
+ * Thin, theme-colored scrollbars everywhere (not just the ones the
+ * `scrollbar-color` standard reaches) - a wide-table's horizontal scrollbar
+ * (data tables, TableCard grids) otherwise renders as a chunky default OS
+ * bar that clashes with the app's minimal look. `scrollbar-color` covers
+ * Firefox and newer Chromium; the `-webkit-scrollbar` rules give the same
+ * result on Safari and older Chromium, which ignore it.
+ */
 * {
 	scrollbar-color: var(--border) var(--bg);
+	scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+*::-webkit-scrollbar-track {
+	background: var(--bg);
+}
+*::-webkit-scrollbar-thumb {
+	background-color: var(--border);
+	border-radius: 999px;
+	border: 2px solid var(--bg);
+}
+*::-webkit-scrollbar-thumb:hover {
+	background-color: var(--muted-fg);
 }
 
 /*
