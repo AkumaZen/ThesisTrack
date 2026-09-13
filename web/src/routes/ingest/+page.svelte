@@ -24,6 +24,7 @@
 
 	const STATUSES = ['on_track', 'watch_closely', 'broken'];
 	const OPERATORS = ['<', '<=', '>', '>=', '==', '!='];
+	const SEVERITIES = ['warn', 'kill'];
 	const BELIEVE_KINDS = ['Premise', 'Inference', 'Conclusion'];
 	// Mirrors $lib/server/pillars.ts's PILLAR_KEYS - duplicated (not imported)
 	// since that module is server-only and this is client code. Used to
@@ -62,6 +63,12 @@
 	let jsonText = $state('');
 	let jsonValidateMsg = $state('');
 	let jsonValidateOk = $state(false);
+	// Fields a JSON import got wrong in a way the server would hard-reject
+	// (wrong type, value outside an enum) get auto-corrected here instead -
+	// dropped/defaulted with a note added here, so the import still loads
+	// and the reviewer sees exactly what got cleaned up rather than hitting
+	// a cryptic server validation error after Confirm.
+	let importWarnings = $state<string[]>([]);
 	// Snapshot of every field a JSON import can touch, taken right before
 	// applying one - lets the reviewer see the import rendered in the real
 	// Form tab (the actual look, not a mockup) and then either confirm it,
@@ -428,21 +435,51 @@
 		bigChangeSummary = t.the_big_change?.summary ?? '';
 		expectedCompletion = t.the_big_change?.expected_completion ?? '';
 		hardEvidence = t.proof_points?.hard_evidence?.length ? [...t.proof_points.hard_evidence] : [''];
-		selectedMetrics = Object.entries(t.proof_points?.model_specific_metrics ?? {}).map(([key, value]) => {
+		// model_specific_metrics only accepts plain finite numbers - a bad
+		// import (e.g. an LLM putting a date or null here) would otherwise
+		// silently become NaN -> null on submit and get hard-rejected by the
+		// server with a cryptic "expected number, received null". Drop it here
+		// instead, with a note, so the rest of the import still goes through.
+		selectedMetrics = Object.entries(t.proof_points?.model_specific_metrics ?? {}).flatMap(([key, value]) => {
+			if (typeof value !== 'number' || !Number.isFinite(value)) {
+				importWarnings = [
+					...importWarnings,
+					`Dropped metric "${key}" - proof-point metrics must be a plain number, got ${JSON.stringify(value)}.`
+				];
+				return [];
+			}
 			const definition = metrics.find((metric) => metric.metric_key === key);
-			return { metric_key: key, label: definition?.label ?? key, unit: definition?.unit ?? 'value', value: String(value) };
+			return [{ metric_key: key, label: definition?.label ?? key, unit: definition?.unit ?? 'value', value: String(value) }];
 		});
 		killTriggers = t.what_can_kill_it?.length
-			? t.what_can_kill_it.map((k) => ({
-					label: k.label,
-					metricKey: k.metric_key ?? '',
-					operator: k.operator ?? '<',
-					threshold: k.threshold != null ? String(k.threshold) : '',
-					action: k.action,
-					severity: k.severity,
-					gracePeriods: String(k.grace_periods ?? 1),
-					manualCheck: !!k.manual_check
-				}))
+			? t.what_can_kill_it.map((k, i) => {
+					let severity = k.severity;
+					if (!SEVERITIES.includes(severity)) {
+						importWarnings = [
+							...importWarnings,
+							`Kill trigger #${i + 1} ("${k.label || 'untitled'}") had severity "${severity}" - only "warn" or "kill" are valid, defaulted to "kill".`
+						];
+						severity = 'kill';
+					}
+					let operator = k.operator ?? '<';
+					if (operator && !OPERATORS.includes(operator)) {
+						importWarnings = [
+							...importWarnings,
+							`Kill trigger #${i + 1} ("${k.label || 'untitled'}") had operator "${operator}" - not one of ${OPERATORS.join(' ')}, defaulted to "<".`
+						];
+						operator = '<';
+					}
+					return {
+						label: k.label,
+						metricKey: k.metric_key ?? '',
+						operator,
+						threshold: k.threshold != null ? String(k.threshold) : '',
+						action: k.action,
+						severity,
+						gracePeriods: String(k.grace_periods ?? 1),
+						manualCheck: !!k.manual_check
+					};
+				})
 			: [{ label: '', metricKey: '', operator: '<', threshold: '', action: '', severity: 'kill', gracePeriods: '1', manualCheck: false }];
 		believeRows = t.why_we_believe_it?.length
 			? t.why_we_believe_it.map(splitBelieveEntry)
@@ -671,7 +708,7 @@
 	}
 
 	// ---- JSON tab ----
-	const CONVERSION_PROMPT = `Convert the investment thesis notes I paste after this prompt into a single JSON object with EXACTLY this shape (no extra keys, no markdown fencing):
+	const CONVERSION_PROMPT = `Convert the investment thesis material I paste after this prompt into a single JSON object with EXACTLY this shape (no extra top-level keys, no markdown fencing, output ONLY the JSON):
 
 {
   "nse_ticker": "NSE_TICKER (at least one of nse_ticker/bse_ticker required)",
@@ -691,22 +728,41 @@
     "trackables": ["What to monitor, in your own words"],
     "buy_sell_decision": "Your buy/sell reasoning and conditions. Actual transactions are logged separately after saving.",
     "references": [{ "title": "...", "url": "https://..." }],
-    "pillar_notes": {}
+    "pillar_notes": {
+      "the_business": [
+        { "blocks": [{ "type": "text", "text": "A standalone text-only subsection - extra commentary/context for this pillar that doesn't fit the fixed fields above and has no table attached." }] }
+      ]
+    }
   },
   "custom_sections": [
     {
-      "name": "Any Section Name (e.g. Shareholding Pattern, Peer Valuation, Management Bios)",
+      "name": "Descriptive Section Name (e.g. Capacity Ramp, Peer Valuation Comps, Shareholding Pattern, Key Financials)",
       "pillar": "optional - one of: the_business, the_growth_engine, the_big_change, proof_points, what_can_kill_it, why_we_believe_it, health_check, buy_sell_decision, references",
-      "text": "optional - free text to show above this table, inside the same bordered Section (only used when pillar is set)",
+      "text": "optional - the commentary/notes that go with this specific table, shown above it inside the same bordered Section (only used when pillar is set)",
       "columns": [{ "key": "column_key", "label": "Column Label", "type": "text|number|date|enum", "options": ["only for type=enum"] }],
       "rows": [{ "column_key": "value for row 1" }, { "column_key": "value for row 2" }]
     }
   ]
 }
 
-Rules: revenue_split share_pct must sum to ~100. what_can_kill_it needs at least one entry with severity="kill". why_we_believe_it needs at least 3 entries, at least one starting with "Premise:", and exactly one starting with "Conclusion:". "custom_sections" is optional and unbounded - use it for ANY data that doesn't fit the 7 fixed pillars above (shareholding, peer comps, management, subsidiaries, capex schedule, anything else my notes contain): add as many sections as needed, each with as many columns and rows as needed. Column "key" must be a short lowercase identifier (spaces/case get normalized automatically, but keep it clean); "type" defaults to "text" if omitted. If a table clearly belongs inside one of the 7 pillars above (e.g. a capacity-ramp table under "the_big_change", a peer-comps table under "proof_points"), set that section's "pillar" (and optionally "text" for the commentary that goes with it) so it renders as ONE combined text+table Section inside that pillar instead of a generic table at the bottom - leave "pillar" out only for data that's genuinely standalone (e.g. shareholding pattern, management bios) and doesn't belong under any single pillar. Ask me clarifying questions if anything is ambiguous, then output ONLY the JSON.
+STRUCTURE RULES:
+1. TABLES ARE MANDATORY, NOT OPTIONAL. Do not summarize tabular data as prose. If the source material has ANY numbers that vary across a dimension (years, quarters, segments, peers, capacity lines, shareholders, financials - anything with 2+ rows and 2+ columns worth of structure), it MUST become a "custom_sections" table with real columns and rows - never collapsed into a sentence.
+2. EVERY PILLAR CAN HAVE MULTIPLE SUBSECTIONS - use both kinds liberally, as many as the material supports: (a) TEXT-ONLY - extra commentary with no table, goes directly in "pillar_notes" under that pillar's key, one { "blocks": [{ "type": "text", "text": "..." }] } entry per distinct point; (b) TEXT+TABLE - goes in "custom_sections" with "pillar" and "text" set. Don't leave pillar_notes empty just because custom_sections was used - uncaptured commentary belongs in pillar_notes, not dropped.
+3. TABLES ARE DYNAMIC, NOT FIXED. Build as many "custom_sections" entries as the data supports, named descriptively (never "Table 1"). Always set "pillar" + a real "text" on each so it renders as one combined subsection under that pillar - omit "pillar" only for genuinely standalone data. Multiple custom_sections can share the same pillar.
 
-My notes:
+DATA-TYPE RULES - every one of these has caused a rejected import before, follow them exactly:
+- "model_specific_metrics" values must be a bare JSON number (e.g. 27.2), nothing else - no units, no strings, no null, no dates. If a data point isn't a clean number, do NOT put it here - put it in a custom_sections table or pillar_notes text instead. Never invent a key here for something you don't have a real numeric value for.
+- "severity" (inside what_can_kill_it) must be exactly the string "warn" or "kill" - no other value, ever (not "medium", "monitor", "high", etc).
+- "operator" (inside what_can_kill_it) must be exactly one of "<" "<=" ">" ">=" "==" "!=" , or null if manual_check is true.
+- "share_pct" (inside revenue_split) and every custom_sections column of type "number" must be a bare JSON number, not a string with a % or unit attached.
+- "grace_periods" must be a positive integer.
+- Every enum field above (operating_model, status, column "type") must be exactly one of the listed options - do not invent new ones.
+
+OTHER RULES: revenue_split share_pct must sum to ~100. what_can_kill_it needs at least one entry with severity="kill". why_we_believe_it needs at least 3 entries, at least one starting "Premise:", exactly one starting "Conclusion:". Column "key" must be a short lowercase identifier. "type" defaults to "text" if omitted.
+
+If something is genuinely ambiguous (which pillar a subsection belongs to, an unclear number, a missing unit), ask me a clarifying question before finalizing - don't guess silently on anything that affects data accuracy. Do not skip, compress, or drop any data I give you - every table becomes a table, every distinct point of commentary becomes its own subsection.
+
+My data:
 `;
 
 	type ParsedCustomSection = {
@@ -875,6 +931,7 @@ My notes:
 	function validateJson() {
 		jsonValidateMsg = '';
 		jsonValidateOk = false;
+		importWarnings = [];
 		let parsed: unknown;
 		try {
 			parsed = JSON.parse(jsonText);
@@ -932,6 +989,7 @@ My notes:
 		jsonText = '';
 		jsonValidateOk = false;
 		jsonValidateMsg = '';
+		importWarnings = [];
 	}
 
 	async function copyConversionPrompt() {
@@ -1035,6 +1093,16 @@ My notes:
 					>
 				</div>
 			</div>
+			{#if importWarnings.length}
+				<div class="mt-2 rounded-md border border-warn/40 bg-warn/10 p-3">
+					<div class="text-sm font-medium">{importWarnings.length} value{importWarnings.length === 1 ? '' : 's'} auto-corrected on import</div>
+					<ul class="list-disc list-inside text-xs mt-1 space-y-0.5 text-muted-fg">
+						{#each importWarnings as w, i (i)}
+							<li>{w}</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
 		{/if}
 		{#if mode === 'amend'}
 			<section class="mt-5 rounded-xl border border-border bg-surface p-5">
