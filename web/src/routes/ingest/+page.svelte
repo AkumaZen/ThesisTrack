@@ -62,6 +62,12 @@
 	let jsonText = $state('');
 	let jsonValidateMsg = $state('');
 	let jsonValidateOk = $state(false);
+	// Snapshot of every field a JSON import can touch, taken right before
+	// applying one - lets the reviewer see the import rendered in the real
+	// Form tab (the actual look, not a mockup) and then either confirm it,
+	// go back and edit the JSON, or discard it and start over. Non-null only
+	// while an import is pending review; null once confirmed or discarded.
+	let preImportSnapshot = $state<FormSnapshot | null>(null);
 
 	// Basics
 	let nseTicker = $state('');
@@ -763,6 +769,99 @@ My notes:
 		if (parsed.custom_sections?.length) applyParsedCustomSections(parsed.custom_sections);
 	}
 
+	// Every field a JSON import can touch - captured right before applying one
+	// so a pending import can be discarded and the form put back exactly how
+	// it was. Deep-copied (not just spread) since several of these are
+	// arrays/records of objects that later edits would otherwise mutate
+	// in place.
+	type FormSnapshot = {
+		nseTicker: string;
+		bseTicker: string;
+		name: string;
+		broadIndustry: string;
+		specificNiche: string;
+		operatingModel: string;
+		currency: string;
+		status: string;
+		lastReviewed: string;
+		whatItDoes: string;
+		revenueSplit: { segment: string; sharePct: string }[];
+		growthEngine: string[];
+		bigChangeSummary: string;
+		expectedCompletion: string;
+		hardEvidence: string[];
+		selectedMetrics: SelectedMetric[];
+		killTriggers: KillTriggerForm[];
+		believeRows: { kind: string; text: string }[];
+		latestQuarterReview: string;
+		trackables: string[];
+		buySellDecision: string;
+		references: { title: string; url: string }[];
+		pillarNotes: Record<string, IngestNote[]>;
+		queuedTables: QueuedTable[];
+	};
+
+	function captureFormSnapshot(): FormSnapshot {
+		return {
+			nseTicker,
+			bseTicker,
+			name,
+			broadIndustry,
+			specificNiche,
+			operatingModel,
+			currency,
+			status,
+			lastReviewed,
+			whatItDoes,
+			revenueSplit: revenueSplit.map((r) => ({ ...r })),
+			growthEngine: [...growthEngine],
+			bigChangeSummary,
+			expectedCompletion,
+			hardEvidence: [...hardEvidence],
+			selectedMetrics: selectedMetrics.map((m) => ({ ...m })),
+			killTriggers: killTriggers.map((k) => ({ ...k })),
+			believeRows: believeRows.map((b) => ({ ...b })),
+			latestQuarterReview,
+			trackables: [...trackables],
+			buySellDecision,
+			references: references.map((r) => ({ ...r })),
+			pillarNotes: Object.fromEntries(
+				Object.entries(pillarNotes).map(([k, notes]) => [k, notes.map((n) => ({ blocks: n.blocks.map((b) => ({ ...b })) }))])
+			),
+			queuedTables: queuedTables.map((t) => ({
+				...t,
+				built: { ...t.built, columns: t.built.columns.map((c) => ({ ...c })), rows: t.built.rows.map((r) => ({ ...r })) }
+			}))
+		};
+	}
+
+	function restoreFormSnapshot(s: FormSnapshot) {
+		nseTicker = s.nseTicker;
+		bseTicker = s.bseTicker;
+		name = s.name;
+		broadIndustry = s.broadIndustry;
+		specificNiche = s.specificNiche;
+		operatingModel = s.operatingModel;
+		currency = s.currency;
+		status = s.status;
+		lastReviewed = s.lastReviewed;
+		whatItDoes = s.whatItDoes;
+		revenueSplit = s.revenueSplit;
+		growthEngine = s.growthEngine;
+		bigChangeSummary = s.bigChangeSummary;
+		expectedCompletion = s.expectedCompletion;
+		hardEvidence = s.hardEvidence;
+		selectedMetrics = s.selectedMetrics;
+		killTriggers = s.killTriggers;
+		believeRows = s.believeRows;
+		latestQuarterReview = s.latestQuarterReview;
+		trackables = s.trackables;
+		buySellDecision = s.buySellDecision;
+		references = s.references;
+		pillarNotes = s.pillarNotes;
+		queuedTables = s.queuedTables;
+	}
+
 	function validateJson() {
 		jsonValidateMsg = '';
 		jsonValidateOk = false;
@@ -773,6 +872,11 @@ My notes:
 			jsonValidateMsg = `Not valid JSON: ${String(e)}`;
 			return;
 		}
+		// Only snapshot once per review cycle - re-validating after tweaking the
+		// JSON (still under "Edit JSON") must not overwrite the ORIGINAL
+		// pre-import state with an already-imported one, or "discard" would
+		// restore the wrong thing.
+		if (!preImportSnapshot) preImportSnapshot = captureFormSnapshot();
 		if (mode === 'amend') {
 			const obj = parsed as { thesis_data?: unknown };
 			if (!obj.thesis_data || typeof obj.thesis_data !== 'object') {
@@ -780,7 +884,8 @@ My notes:
 				// tolerate pasting a bare thesis_data object for amend
 				applyParsedPayload({ thesis_data: parsed as ThesisDataShape });
 				jsonValidateOk = true;
-				jsonValidateMsg = 'Structure loaded into the form (as thesis_data) - review each section, then Save Amendment.';
+				jsonValidateMsg = 'Loaded for preview below (as thesis_data) - review each section, then Confirm or Save Amendment.';
+				activeTab = 'form';
 				return;
 			}
 			applyParsedPayload(obj as { thesis_data: ThesisDataShape });
@@ -797,8 +902,26 @@ My notes:
 			);
 		}
 		jsonValidateOk = true;
-		jsonValidateMsg = 'Structure loaded into the Form tab - review each section, then submit.';
+		jsonValidateMsg = 'Loaded for preview below - review each section, then Confirm or submit.';
 		activeTab = 'form';
+	}
+
+	// The reviewer is done looking at the imported data rendered in the Form
+	// tab (the real look, not a mockup) and wants to keep it - just stops
+	// treating it as "pending review" so the banner goes away.
+	function confirmImport() {
+		preImportSnapshot = null;
+	}
+
+	// Throws the import away entirely - puts every touched field back to
+	// exactly how it was beforehand, and clears the pasted JSON too so the
+	// analyst can start completely fresh rather than fight leftover text.
+	function discardImport() {
+		if (preImportSnapshot) restoreFormSnapshot(preImportSnapshot);
+		preImportSnapshot = null;
+		jsonText = '';
+		jsonValidateOk = false;
+		jsonValidateMsg = '';
 	}
 
 	async function copyConversionPrompt() {
@@ -883,9 +1006,26 @@ My notes:
 			{#if jsonValidateMsg}
 				<div class="mt-2 text-xs {jsonValidateOk ? 'text-good' : 'text-danger'}">{jsonValidateMsg}</div>
 			{/if}
-			<button type="button" onclick={validateJson} class="text-xs text-ok mt-2">Validate structure</button>
+			<button type="button" onclick={validateJson} class="text-xs text-ok mt-2">Preview in Form tab</button>
 		</div>
 	{:else}
+		{#if preImportSnapshot}
+			<div class="mt-4 rounded-md border border-ok/40 bg-ok/10 p-3 flex items-center justify-between gap-3 flex-wrap">
+				<div class="text-sm">
+					<span class="font-medium">Previewing a JSON import.</span>
+					<span class="text-muted-fg">Everything below is exactly how it will look - review each section, then choose:</span>
+				</div>
+				<div class="flex items-center gap-2 shrink-0">
+					<button type="button" onclick={confirmImport} class="text-xs px-2.5 py-1 rounded-md bg-ok text-white cursor-pointer">Confirm</button>
+					<button type="button" onclick={() => (activeTab = 'json')} class="text-xs px-2.5 py-1 rounded-md border border-border hover:bg-surface-3 cursor-pointer"
+						>Edit JSON</button
+					>
+					<button type="button" onclick={discardImport} class="text-xs px-2.5 py-1 rounded-md border border-border hover:text-danger cursor-pointer"
+						>Discard &amp; remake</button
+					>
+				</div>
+			</div>
+		{/if}
 		{#if mode === 'amend'}
 			<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 				<label class="block text-sm"
