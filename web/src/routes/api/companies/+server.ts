@@ -1,9 +1,9 @@
 // Ports GET/POST /api/companies from app/routers/companies.py.
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { and, count, eq, ilike, inArray, lt } from 'drizzle-orm';
+import { and, count, eq, exists, ilike, inArray, lt, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { broadIndustries, companies, specificNiches, thesisScenarios } from '$lib/server/db/schema';
+import { broadIndustries, companies, specificNiches, thesisScenarios, thesisVersions } from '$lib/server/db/schema';
 import { errorResponse, requireActor, requireWriteActor, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { thesisCreate } from '$lib/server/schemas/thesis';
 import { createCompany, AlreadyExistsError, TaxonomyError } from '$lib/server/services/versioning';
@@ -28,7 +28,29 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		const nicheNames = params.getAll('niche');
 		const operatingModels = params.getAll('operating_model');
 
-		const conditions = [];
+		// Only companies with an actual, substantive thesis (any owner) belong
+		// on the dashboard - excludes reference/sector-comparison companies
+		// that exist purely for the Sectors feature, and excludes thin
+		// placeholder scenarios (e.g. auto-created while browsing a sector)
+		// that have a scenario row but no real authored content.
+		const conditions = [
+			exists(
+				db
+					.select({ one: sql`1` })
+					.from(thesisScenarios)
+					.innerJoin(thesisVersions, eq(thesisVersions.versionId, thesisScenarios.currentVersionId))
+					.where(
+						and(
+							eq(thesisScenarios.companyId, companies.companyId),
+							sql`(
+								length(trim(coalesce(${thesisVersions.thesisData}->'the_business'->>'what_it_does', ''))) > 0
+								or jsonb_array_length(coalesce(${thesisVersions.thesisData}->'proof_points'->'hard_evidence', '[]'::jsonb)) > 0
+								or jsonb_array_length(coalesce(${thesisVersions.thesisData}->'why_we_believe_it', '[]'::jsonb)) > 0
+							)`
+						)
+					)
+			)
+		];
 		if (q) conditions.push(ilike(companies.name, `%${q}%`));
 		if (broadIndustryNames.length) conditions.push(inArray(broadIndustries.name, broadIndustryNames));
 		if (nicheNames.length) conditions.push(inArray(specificNiches.name, nicheNames));

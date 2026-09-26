@@ -683,6 +683,8 @@
 				<section id="cp-sec-trackables" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide mb-3">8. Trackables</h3>
 					<Trackables items={readTrackables(t)} />
+					{@render pillarNotesDisplay('trackables')}
+					<CustomTables {companyId} section="trackables" compact excludeTableIds={pillarNoteTableIds('trackables')} />
 				</section>
 
 				<!-- Buy/Sell Decisions + Observations + Price/Performance + Outcome (ActionPanels) -->

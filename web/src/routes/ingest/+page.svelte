@@ -1631,6 +1631,7 @@ My data:
 				{/each}
 			</div>
 			<button type="button" onclick={() => trackables = [...trackables, '']} class="mt-3 text-sm underline">+ Add trackable</button>
+			{@render pillarNotesAndTables('trackables')}
 		</section>
 
 		<section class="rounded-xl border border-border bg-surface p-5">
