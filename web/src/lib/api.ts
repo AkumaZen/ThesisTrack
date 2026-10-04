@@ -52,6 +52,7 @@ export const api = {
 		request('GET', `/companies/${encodeURIComponent(id)}${owner ? `?owner=${encodeURIComponent(owner)}` : ''}`),
 	createCompany: (payload: unknown) => request('POST', '/companies', payload),
 	updateCompany: (id: string, payload: unknown) => request('PATCH', `/companies/${encodeURIComponent(id)}`, payload),
+	deleteCompany: (id: string) => request('DELETE', `/companies/${encodeURIComponent(id)}`),
 	amendThesis: (id: string, payload: unknown) => request('PUT', `/companies/${encodeURIComponent(id)}/thesis`, payload),
 	getVersions: (id: string, diff?: string) =>
 		request('GET', `/companies/${encodeURIComponent(id)}/versions${diff ? `?diff=${diff}` : ''}`),

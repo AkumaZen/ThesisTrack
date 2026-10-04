@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import {
 	broadIndustries,
@@ -15,6 +15,7 @@ import {
 	statusProposals,
 	thesisVersions
 } from '$lib/server/db/schema';
+import { AuthError } from '$lib/server/auth';
 import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { listScenarios } from '$lib/server/services/scenarios';
 import { latestTriggerEvaluations, scenarioToOut } from '$lib/server/services/companiesShared';
@@ -223,6 +224,24 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 	} catch (err) {
 		if (err instanceof NotFoundError) return errorResponse(404, err.message);
 		if (err instanceof TaxonomyError) return errorResponse(422, err.message);
+		return handleAuthError(err);
+	}
+};
+
+// Removes a company and everything under it (scenarios, versions, observations, notes, ...).
+// Irreversible, so admin only. thesis_versions has an append-only trigger that allows DELETE only
+// inside a transaction that sets app.allow_thesis_delete (see drizzle/0011).
+export const DELETE: RequestHandler = async ({ locals, params }) => {
+	try {
+		const actor = requireWriteActor(locals.actor);
+		if (actor.role !== 'admin') throw new AuthError('only an admin can delete a company', 403);
+		const deleted = await db.transaction(async (tx) => {
+			await tx.execute(sql`select set_config('app.allow_thesis_delete', 'on', true)`);
+			return tx.delete(companies).where(eq(companies.companyId, params.id!)).returning({ id: companies.companyId });
+		});
+		if (!deleted.length) return errorResponse(404, `company '${params.id}' not found`);
+		return new Response(null, { status: 204 });
+	} catch (err) {
 		return handleAuthError(err);
 	}
 };

@@ -9,6 +9,28 @@
 	import { api, ApiError } from '$lib/api';
 	import { STATUS_STYLES, operatingModelLabel } from '$lib/format';
 	import { session } from '$lib/session.svelte';
+
+	// Admin-only, irreversible: removes the company with every scenario, version, observation and note.
+	let deleteError = $state('');
+	async function deleteThesis() {
+		const typed = prompt(
+			`Delete "${detail.name}" and ALL its theses, versions, observations and notes?
+This cannot be undone.
+
+Type the company name to confirm:`
+		);
+		if (typed === null) return;
+		if (typed.trim() !== detail.name) {
+			deleteError = 'Name did not match - nothing was deleted.';
+			return;
+		}
+		try {
+			await api.deleteCompany(companyId);
+			await goto('/', { invalidateAll: true });
+		} catch (e) {
+			deleteError = e instanceof Error ? e.message : 'Delete failed.';
+		}
+	}
 	import CustomTables from './CustomTables.svelte';
 	import TableCard, { type TableSummary } from '$lib/components/TableCard.svelte';
 	import ActionPanels from './ActionPanels.svelte';
@@ -253,6 +275,15 @@
 				title="Open the bear / base / bull valuation for {detail.nse_ticker}">Valuation &rarr;</a
 			>
 		{/if}
+		{#if session.isAdmin}
+			<button
+				type="button"
+				class="text-sm px-3 py-1.5 border border-danger text-danger shrink-0"
+				title="Permanently delete this company and all its theses"
+				onclick={deleteThesis}>Delete</button
+			>
+		{/if}
+		{#if deleteError}<p class="text-sm text-danger w-full" role="alert">{deleteError}</p>{/if}
 		{#if detail.scenario_id}
 			<div class="flex items-center gap-2 shrink-0 relative">
 				{#if !viewingOwnScenario}
