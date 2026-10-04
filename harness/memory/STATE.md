@@ -37,6 +37,12 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
   check once at 15:00 IST (`30 9 * * 1-5`). Pro would allow the 4-a-day and 10-minute schedules.
   History is 700 days so the 200 DMA (`movingAverage.ts`) is complete over a year; stocks refreshed
   before this change keep a partial 200 DMA until their next refresh.
+- PRODUCTION DATABASE LIMIT (2026-10-04 incident): the Aiven Postgres allows only 20 connections (17 usable).
+  Vercel keeps a frozen instance's connections open, so a burst of requests filled every slot and pages
+  returned 500/502 ("remaining connection slots are reserved for roles with the SUPERUSER attribute").
+  `lib/server/db/index.ts` now holds 1 connection per Vercel instance. Proper fix, needs the Aiven console:
+  enable connection pooling (PgBouncer, transaction mode), put the pool URI in DATABASE_URL on Vercel and
+  add `prepare: false` to the postgres() options; or move to a plan with more connections.
 - Remembered browsing state (valuation sector, subsector and company views): `web/src/lib/viewMemory.ts`
   (storage, validation, per-user keys `tt:v1:<userId>:...`) and `viewMemory.svelte.ts` (save, URL mirror,
   scroll restore). sessionStorage holds tab state (open panels, scroll), localStorage the lasting display
