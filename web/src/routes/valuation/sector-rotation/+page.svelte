@@ -294,8 +294,10 @@
 		<div class="depth-note" style="margin-top:20px">
 			<strong>Rotating In</strong> = relative strength vs Nifty is accelerating (1M RS &gt; 3M RS
 			&gt; 6M RS, and positive) — money is flowing into the sector faster now than 3 or 6 months
-			ago. <strong>Rotating Out</strong> is the mirror case. Everything else reads "Neutral" — this is
-			a momentum read on price, not a fundamental judgement.
+			ago. <strong>Rotating Out</strong> is the mirror case. Otherwise the label says where 1M and 3M
+			relative strength sit: <strong>Outperforming</strong> or <strong>Underperforming</strong> (same
+			side of Nifty on both), <strong>Recovering</strong> (ahead over 1M after lagging over 3M) or
+			<strong>Fading</strong> (the reverse). This is a momentum read on price, not a fundamental judgement.
 		</div>
 
 		<StrengthPanel

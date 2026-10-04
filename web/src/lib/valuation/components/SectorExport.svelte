@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
-	import type { SectorReturn } from '$lib/valuation/sectorRotation';
+	import { rotationBadge, type SectorReturn } from '$lib/valuation/sectorRotation';
 
 	// Excel and Print / PDF for a grid of sector cards, in the order the grid shows them.
 	let {
@@ -49,7 +49,7 @@
 						const d = data && data !== 'error' ? data : null;
 						return [
 							label,
-							d ? d.signal : data === 'error' ? 'Failed to load' : null,
+							d ? rotationBadge(d).text : data === 'error' ? 'Failed to load' : null,
 							d?.return1w,
 							d?.return1m,
 							d?.return3m,

@@ -28,6 +28,57 @@ export interface SectorReturn {
 	series?: { date: string; value: number }[];
 }
 
+export interface RotationBadge {
+	text: string;
+	tone: 'in' | 'out' | 'up' | 'down' | 'flat';
+	title: string;
+}
+
+/** The label a card shows. "Rotating In/Out" is the strict momentum flip and keeps its meaning.
+ *  Everything else used to read "Neutral" even for a sector far ahead of Nifty, which contradicted
+ *  the numbers beside it, so the remainder is described by where 1M and 3M relative strength sit. */
+export function rotationBadge(row: Pick<SectorReturn, 'signal' | 'rs1m' | 'rs3m'>): RotationBadge {
+	if (row.signal === 'Rotating In')
+		return {
+			text: 'Rotating In',
+			tone: 'in',
+			title: 'Relative strength vs Nifty is accelerating: 1M above 3M above 6M, and positive.'
+		};
+	if (row.signal === 'Rotating Out')
+		return {
+			text: 'Rotating Out',
+			tone: 'out',
+			title: 'Relative strength vs Nifty is weakening: 1M below 3M below 6M, and negative.'
+		};
+	const { rs1m, rs3m } = row;
+	if (rs1m == null && rs3m == null) return { text: 'No data', tone: 'flat', title: 'Not enough history.' };
+	const m = rs1m ?? rs3m!;
+	const q = rs3m ?? rs1m!;
+	if (m >= 0 && q >= 0)
+		return {
+			text: 'Outperforming',
+			tone: 'up',
+			title: 'Ahead of Nifty over 1M and 3M, but not accelerating (not Rotating In).'
+		};
+	if (m < 0 && q < 0)
+		return {
+			text: 'Underperforming',
+			tone: 'down',
+			title: 'Behind Nifty over 1M and 3M, but not weakening further (not Rotating Out).'
+		};
+	return m >= 0
+		? { text: 'Recovering', tone: 'up', title: 'Ahead of Nifty over 1M after lagging over 3M.' }
+		: { text: 'Fading', tone: 'down', title: 'Behind Nifty over 1M after leading over 3M.' };
+}
+
+export const ROTATION_TONE_CLASS = {
+	in: 'wl-pos-badge',
+	out: 'wl-neg-badge',
+	up: 'wl-soft-pos',
+	down: 'wl-soft-neg',
+	flat: ''
+} as const;
+
 /** Trading-day lookback windows — approximate calendar equivalents (5/21/63/126/252 trading
  *  days), consistent with how the stage-analysis module already approximates a 3-month
  *  window as ~63 trading days. */

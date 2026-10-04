@@ -2,7 +2,7 @@
 	import LineChart from './LineChart.svelte';
 	import StrengthWhy from './StrengthWhy.svelte';
 	import type { StrengthEvaluation } from '$lib/valuation/strength';
-	import type { SectorReturn } from '$lib/valuation/sectorRotation';
+	import { rotationBadge, ROTATION_TONE_CLASS, type SectorReturn } from '$lib/valuation/sectorRotation';
 	import {
 		DEFAULT_SECTOR_CARD_METRICS,
 		SECTOR_CARD_METRICS,
@@ -56,13 +56,8 @@
 			<span class="sector-basket-tag">{tag}</span>
 		</div>
 		{#if row && row !== 'error'}
-			<span
-				class="wl-badge {row.signal === 'Rotating In'
-					? 'wl-pos-badge'
-					: row.signal === 'Rotating Out'
-						? 'wl-neg-badge'
-						: ''}">{row.signal}</span
-			>
+			{@const badge = rotationBadge(row)}
+			<span class="wl-badge {ROTATION_TONE_CLASS[badge.tone]}" title={badge.title}>{badge.text}</span>
 		{/if}
 	</div>
 

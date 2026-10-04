@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSectorReturns, buildEqualWeightedIndex, type Candle } from './sectorRotation';
+import { computeSectorReturns, buildEqualWeightedIndex, rotationBadge, type Candle } from './sectorRotation';
 
 // Builds a daily-candle series with a given close-price path (one entry per trading day).
 function candles(closes: number[]): Candle[] {
@@ -178,5 +178,30 @@ describe('buildEqualWeightedIndex', () => {
 
 	it('returns an empty series when given no constituents', () => {
 		expect(buildEqualWeightedIndex([])).toEqual([]);
+	});
+});
+
+describe('rotationBadge', () => {
+	const b = (signal: 'Rotating In' | 'Rotating Out' | 'Neutral', rs1m: number | null, rs3m: number | null) =>
+		rotationBadge({ signal, rs1m, rs3m }).text;
+
+	it('keeps the strict flips as they are', () => {
+		expect(b('Rotating In', 5, 2)).toBe('Rotating In');
+		expect(b('Rotating Out', -5, -2)).toBe('Rotating Out');
+	});
+
+	it('no longer calls a sector far ahead of Nifty "Neutral"', () => {
+		expect(b('Neutral', 12.5, 7)).toBe('Outperforming');
+		expect(b('Neutral', -4, -1)).toBe('Underperforming');
+	});
+
+	it('describes turns between the 1M and 3M readings', () => {
+		expect(b('Neutral', 3, -2)).toBe('Recovering');
+		expect(b('Neutral', -3, 2)).toBe('Fading');
+	});
+
+	it('falls back to whichever window exists, then to no data', () => {
+		expect(b('Neutral', null, 4)).toBe('Outperforming');
+		expect(b('Neutral', null, null)).toBe('No data');
 	});
 });

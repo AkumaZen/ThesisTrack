@@ -4,7 +4,7 @@
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
 	import { emptyStrengthView, passesStrength } from '$lib/valuation/strength';
 	import { TIMEFRAMES, type Timeframe } from '$lib/valuation/sectorRotation';
-	import type { SectorReturn } from '$lib/valuation/sectorRotation';
+	import { rotationBadge, ROTATION_TONE_CLASS, type SectorReturn } from '$lib/valuation/sectorRotation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -63,6 +63,8 @@
 		};
 	});
 
+	const summaryBadge = $derived(summary && summary !== 'error' ? rotationBadge(summary) : null);
+
 	function fmtPct(n: number | null) {
 		return n == null ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 	}
@@ -81,13 +83,11 @@
 		{#if summary && summary !== 'error'}
 			<div class="sub">
 				Basket 1M {fmtPct(summary.return1m)} · 3M {fmtPct(summary.return3m)} ·
-				<span
-					class="wl-badge {summary.signal === 'Rotating In'
-						? 'wl-pos-badge'
-						: summary.signal === 'Rotating Out'
-							? 'wl-neg-badge'
-							: ''}">{summary.signal}</span
-				>
+				{#if summaryBadge}
+					<span class="wl-badge {ROTATION_TONE_CLASS[summaryBadge.tone]}" title={summaryBadge.title}
+						>{summaryBadge.text}</span
+					>
+				{/if}
 			</div>
 		{:else}
 			<div class="sub">
