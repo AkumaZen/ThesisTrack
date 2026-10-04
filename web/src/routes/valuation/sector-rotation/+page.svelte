@@ -11,6 +11,7 @@
 	import { DEFAULT_PAGE_SIZE } from '$lib/viewMemory';
 	import { untrack } from 'svelte';
 	import { refreshSector } from '$lib/valuation/seriesRefresh';
+	import { fetchCard, peekCard } from '$lib/valuation/cardCache';
 	import SectorSearch from '$lib/valuation/components/SectorSearch.svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
@@ -155,29 +156,41 @@
 
 	// Plain $state (not .raw) keyed by major sector - each load writes only its own entry, a genuine
 	// in-place property set on the reactive proxy, so a card reading a different key never re-runs.
-	// A card is empty until someone asks for it ("Show chart"); loading it reads the stored prices
-	// from the database and never calls Angel One.
+	// A card loads when it scrolls into view (or with Load all); loading it reads the stored prices
+	// from the database and never calls Angel One. Answers are kept in the browser (cardCache.ts)
+	// and reused, so paging, sorting or coming back to the page doesn't ask again.
 	type CardState = SectorReturn | 'error' | 'loading' | undefined;
-	let majorData = $state<Record<string, CardState>>({});
+	let majorData = $state<Record<string, CardState>>(
+		untrack(() =>
+			Object.fromEntries(
+				data.majors.map((m) => m.key).flatMap((key) => {
+					const hit = peekCard<SectorReturn>(`/api/valuation/sector-rotation-major/${key}`);
+					return hit?.status === 200 && hit.body ? [[key, hit.body]] : [];
+				})
+			)
+		)
+	);
 	const isRow = (v: CardState): v is SectorReturn => v != null && v !== 'error' && v !== 'loading';
 	let loadedCount = $derived(Object.values(majorData).filter(isRow).length);
 	let systemicError = $state<string | null>(null);
 	let refreshing = $state<Record<string, string | null>>({});
 
-	async function loadMajor(key: string) {
+	async function loadMajor(key: string, fresh = false) {
 		if (majorData[key] === 'loading') return;
 		const previous = majorData[key];
 		if (!isRow(previous)) majorData[key] = 'loading';
 		try {
-			const res = await fetch(`/api/valuation/sector-rotation-major/${key}`);
+			const res = await fetchCard<SectorReturn & { message?: string }>(
+				`/api/valuation/sector-rotation-major/${key}`,
+				{ fresh }
+			);
 			if (res.status === 500) {
-				const body = await res.json().catch(() => null);
-				systemicError = body?.message ?? 'Sector data is unavailable right now.';
+				systemicError = res.body?.message ?? 'Sector data is unavailable right now.';
 				majorData[key] = previous;
 				return;
 			}
-			if (!res.ok) throw new Error('failed');
-			majorData[key] = (await res.json()) as SectorReturn;
+			if (res.status !== 200 || !res.body) throw new Error('failed');
+			majorData[key] = res.body;
 		} catch {
 			majorData[key] = isRow(previous) ? previous : 'error';
 		}
@@ -187,7 +200,7 @@
 	async function refreshMajor(key: string) {
 		refreshing[key] = 'Refreshing…';
 		await refreshSector(key, (done, total) => (refreshing[key] = `Refreshing ${done}/${total}`));
-		await loadMajor(key);
+		await loadMajor(key, true);
 		refreshing[key] = null;
 	}
 

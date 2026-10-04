@@ -6,9 +6,10 @@
 	import { sliceForTimeframe, computeConstituentGrowth, type Timeframe } from '$lib/valuation/sectorRotation';
 	import { windowWithAverage } from '$lib/valuation/movingAverage';
 	import { formatAsOf } from '$lib/valuation/priceAge';
+	import { whenVisible } from '$lib/valuation/whenVisible';
 	import { companyName } from '$lib/valuation/symbolNames';
 
-	// A card starts empty: `closes` is undefined until the person clicks "Show chart", 'loading'
+	// A card starts empty: `closes` is undefined until the card scrolls into view, 'loading'
 	// while that one request runs, null when there are no stored prices for the company. Each card
 	// owns exactly its own slot of state (see +page.svelte).
 	let {
@@ -70,7 +71,7 @@
 
 	<div class="sector-card-chart">
 		{#if closes === undefined}
-			<button type="button" class="sector-card-load" onclick={onLoad}>Show chart</button>
+			<div class="sector-card-pending" role="status" aria-label="Loading {name}" use:whenVisible={onLoad}></div>
 		{:else if closes === 'loading'}
 			<div class="sector-card-pending" role="status" aria-label="Loading {name}"></div>
 		{:else if closes === 'error'}

@@ -5,6 +5,7 @@
 	import Pagination from '$lib/valuation/components/Pagination.svelte';
 	import { untrack } from 'svelte';
 	import { refreshSymbols } from '$lib/valuation/seriesRefresh';
+	import { fetchCard, peekCard } from '$lib/valuation/cardCache';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import { DEFAULT_PAGE_SIZE } from '$lib/viewMemory';
@@ -59,32 +60,49 @@
 	const pagedSymbols = $derived(visibleSymbols.slice((page - 1) * pageSize, page * pageSize));
 
 	// Plain $state keyed by symbol - each load writes only its own entry, so a ConstituentCard
-	// reading a different symbol never re-renders when this one resolves. A card is empty until
-	// someone asks for it ("Show chart"); loading it reads the stored prices from the database and
-	// never calls Angel One.
+	// reading a different symbol never re-renders when this one resolves. A card loads when it
+	// scrolls into view (or with Load all); loading it reads the stored prices from the database
+	// and never calls Angel One. Answers are kept in the browser (cardCache.ts) and reused, so
+	// paging or coming back to the page doesn't ask again.
 	type CardState = number[] | null | 'error' | 'loading' | undefined;
-	let companyData = $state<Record<string, CardState>>({});
-	let fetchedAt = $state<Record<string, number | null>>({});
+	type SeriesBody = { closes?: number[]; fetchedAt?: number };
+	const seriesUrl = (symbol: string) =>
+		`/api/valuation/company/${encodeURIComponent(symbol)}/growth-series`;
+	const summaryUrl = (key: string) => `/api/valuation/sector-rotation/${key}`;
+	// Cards already in the browser cache show straight away.
+	const cachedSeries = untrack(() =>
+		data.symbols.flatMap((symbol) => {
+			const hit = peekCard<SeriesBody>(seriesUrl(symbol));
+			return hit ? [{ symbol, hit }] : [];
+		})
+	);
+	let companyData = $state<Record<string, CardState>>(
+		Object.fromEntries(
+			cachedSeries.map(({ symbol, hit }) => [symbol, hit.status === 404 ? null : (hit.body?.closes ?? null)])
+		)
+	);
+	let fetchedAt = $state<Record<string, number | null>>(
+		Object.fromEntries(cachedSeries.map(({ symbol, hit }) => [symbol, hit.body?.fetchedAt ?? null]))
+	);
 	let refreshing = $state<Record<string, string | null>>({});
 	let loadedCount = $derived(
 		Object.values(companyData).filter((v) => Array.isArray(v) || v === null).length
 	);
 	let summary = $state<SectorReturn | 'error' | undefined>(undefined);
 
-	async function loadCompany(symbol: string) {
+	async function loadCompany(symbol: string, fresh = false) {
 		if (companyData[symbol] === 'loading') return;
 		const previous = companyData[symbol];
 		if (!Array.isArray(previous)) companyData[symbol] = 'loading';
 		try {
-			const res = await fetch(`/api/valuation/company/${encodeURIComponent(symbol)}/growth-series`);
+			const res = await fetchCard<SeriesBody>(seriesUrl(symbol), { fresh });
 			if (res.status === 404) {
 				companyData[symbol] = null;
 				return;
 			}
-			if (!res.ok) throw new Error('failed');
-			const body = (await res.json()) as { closes?: number[]; fetchedAt?: number };
-			companyData[symbol] = body.closes ?? null;
-			fetchedAt[symbol] = body.fetchedAt ?? null;
+			if (res.status !== 200 || !res.body) throw new Error('failed');
+			companyData[symbol] = res.body.closes ?? null;
+			fetchedAt[symbol] = res.body.fetchedAt ?? null;
 		} catch {
 			companyData[symbol] = Array.isArray(previous) ? previous : 'error';
 		}
@@ -94,7 +112,7 @@
 	async function refreshCompany(symbol: string) {
 		refreshing[symbol] = 'Refreshing…';
 		await refreshSymbols([symbol], undefined, false);
-		await loadCompany(symbol);
+		await loadCompany(symbol, true);
 		refreshing[symbol] = null;
 	}
 
@@ -117,10 +135,10 @@
 		refreshingAll = 'Refreshing…';
 		await refreshSymbols(data.symbols, (done, total) => (refreshingAll = `Refreshing ${done}/${total}`));
 		await Promise.all(
-			data.symbols.filter((s) => companyData[s] !== undefined).map((s) => loadCompany(s))
+			data.symbols.filter((s) => companyData[s] !== undefined).map((s) => loadCompany(s, true))
 		);
-		void fetch(`/api/valuation/sector-rotation/${data.key}`)
-			.then((res) => (res.ok ? res.json() : Promise.reject()))
+		void fetchCard<SectorReturn>(summaryUrl(data.key), { fresh: true })
+			.then((res) => (res.status === 200 && res.body ? res.body : Promise.reject()))
 			.then((row) => (summary = row))
 			.catch(() => {});
 		refreshingAll = null;
@@ -130,8 +148,8 @@
 	// page hits — no separate live computation, just one more cheap fetch off the same cache.
 	$effect(() => {
 		let cancelled = false;
-		fetch(`/api/valuation/sector-rotation/${data.key}`)
-			.then((res) => (res.ok ? res.json() : Promise.reject()))
+		fetchCard<SectorReturn>(summaryUrl(data.key))
+			.then((res) => (res.status === 200 && res.body ? res.body : Promise.reject()))
 			.then((row) => {
 				if (!cancelled) summary = row;
 			})

@@ -5,13 +5,14 @@
 	import { rotationBadge, ROTATION_TONE_CLASS, type SectorReturn } from '$lib/valuation/sectorRotation';
 	import { windowWithAverage } from '$lib/valuation/movingAverage';
 	import { formatAsOf } from '$lib/valuation/priceAge';
+	import { whenVisible } from '$lib/valuation/whenVisible';
 	import {
 		DEFAULT_SECTOR_CARD_METRICS,
 		SECTOR_CARD_METRICS,
 		type SectorCardMetric
 	} from '$lib/valuation/prefs';
 
-	// A card starts empty: `row` is undefined until the person clicks "Show chart", 'loading' while
+	// A card starts empty: `row` is undefined until the card scrolls into view, 'loading' while
 	// that one request runs, then the stored figures (see +page.svelte). Each card owns exactly its
 	// own slice of state, so one card loading never re-renders another.
 	//
@@ -84,7 +85,7 @@
 
 	<div class="sector-card-chart">
 		{#if row === undefined}
-			<button type="button" class="sector-card-load" onclick={onLoad}>Show chart</button>
+			<div class="sector-card-pending" role="status" aria-label="Loading {label}" use:whenVisible={onLoad}></div>
 		{:else if row === 'loading'}
 			<div class="sector-card-pending" role="status" aria-label="Loading {label}"></div>
 		{:else if row === 'error'}

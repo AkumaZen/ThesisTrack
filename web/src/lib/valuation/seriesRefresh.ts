@@ -1,5 +1,6 @@
 // Fetching fresh prices from the page, one company at a time so the card can show progress.
 // Only runs when someone presses Refresh (the server also refreshes on its daily schedule).
+import { forgetCards } from './cardCache';
 
 export interface RefreshResult {
 	total: number;
@@ -35,6 +36,9 @@ export async function refreshSymbols(
 		onProgress(i + 1, symbols.length);
 	}
 	if (withBenchmark) await post('/api/valuation/refresh-benchmark');
+	// New prices change these companies' charts and every sector figure built from them.
+	for (const symbol of symbols) forgetCards(`/api/valuation/company/${encodeURIComponent(symbol)}/`);
+	forgetCards('/api/valuation/sector-rotation');
 	return result;
 }
 
