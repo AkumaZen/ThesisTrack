@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
 import { fetchDailyCandles, type Candle } from './angelone';
@@ -23,6 +23,33 @@ export async function readCachedSeries(symbol: string): Promise<CachedSeries | n
 		.from(companyGrowthSeriesCache)
 		.where(eq(companyGrowthSeriesCache.symbol, symbol.toUpperCase()));
 	return row ? { candles: row.candles as Candle[], fetchedAt: row.fetchedAt } : null;
+}
+
+export interface CachedCloses {
+	dates: string[];
+	closes: number[];
+	fetchedAt: number;
+}
+
+/** Just the dates and closing prices of every given symbol that has stored prices, in ONE query.
+ *  The database picks those two fields out of each stored record, so a sector's worth of stocks
+ *  travels as a few kilobytes each instead of the whole open/high/low/close/volume history (about
+ *  56 KB a stock) - which is what made a sector card take seconds against a remote database. */
+export async function readCachedCloses(symbols: string[]): Promise<Map<string, CachedCloses>> {
+	const out = new Map<string, CachedCloses>();
+	const wanted = [...new Set(symbols.map((s) => s.toUpperCase()))];
+	if (wanted.length === 0) return out;
+	const rows = await db
+		.select({
+			symbol: companyGrowthSeriesCache.symbol,
+			fetchedAt: companyGrowthSeriesCache.fetchedAt,
+			dates: sql<string[]>`jsonb_path_query_array(${companyGrowthSeriesCache.candles}, '$[*].date')`,
+			closes: sql<number[]>`jsonb_path_query_array(${companyGrowthSeriesCache.candles}, '$[*].close')`
+		})
+		.from(companyGrowthSeriesCache)
+		.where(inArray(companyGrowthSeriesCache.symbol, wanted));
+	for (const r of rows) out.set(r.symbol, { dates: r.dates, closes: r.closes, fetchedAt: r.fetchedAt });
+	return out;
 }
 
 /** Stored candles only (see readCachedSeries) - the shared source for the sector rotation maths,

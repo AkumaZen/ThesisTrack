@@ -1,4 +1,4 @@
-import { readCachedSeries } from './companyGrowthSeries';
+import { readCachedCloses } from './companyGrowthSeries';
 import { getBenchmarkCandles } from './benchmarkSeries';
 import type { CustomSector, MajorSector } from './customSectors';
 import { findAnyCustomSector } from './sectorStore';
@@ -21,11 +21,16 @@ export async function getSectorReturn(sector: CustomSector): Promise<SectorRetur
 	const [niftyCandles, settings, stored] = await Promise.all([
 		getBenchmarkCandles(),
 		getAnalysisSettings(),
-		Promise.all(sector.symbols.map((symbol) => readCachedSeries(symbol)))
+		readCachedCloses(sector.symbols)
 	]);
 
-	const have = stored.filter((s): s is NonNullable<typeof s> => s != null);
-	const candles = buildEqualWeightedIndex(have.map((s) => s.candles));
+	// In the basket's own order, so the averaging is exactly what it always was.
+	const have = sector.symbols
+		.map((symbol) => stored.get(symbol.toUpperCase()))
+		.filter((s): s is NonNullable<typeof s> => s != null);
+	const candles = buildEqualWeightedIndex(
+		have.map((s) => s.dates.map((date, i) => ({ date, close: s.closes[i] })))
+	);
 
 	const [row] = computeSectorReturns(
 		[{ key: sector.key, label: sector.label, candles }],
@@ -55,14 +60,12 @@ export async function getMajorSectorReturn(major: MajorSector): Promise<SectorRe
 	const [niftyCandles, settings, subsectorRows] = await Promise.all([
 		getBenchmarkCandles(),
 		getAnalysisSettings(),
-		(async () => {
-			const out: SectorReturn[] = [];
-			for (const key of major.subsectorKeys) {
+		Promise.all(
+			major.subsectorKeys.map(async (key) => {
 				const sector = await findAnyCustomSector(key);
-				if (sector) out.push(await getSectorReturn(sector));
-			}
-			return out;
-		})()
+				return sector ? getSectorReturn(sector) : null;
+			})
+		).then((rows) => rows.filter((r): r is SectorReturn => r != null))
 	]);
 
 	const perSubsector = subsectorRows

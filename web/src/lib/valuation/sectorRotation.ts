@@ -191,7 +191,7 @@ export function computeSectorReturns(
  * meant one new listing could silently wipe out 3M/6M for an entire subsector or, worse,
  * cascade up and wipe out 3M/6M for the whole major sector it rolls into.
  */
-export function buildEqualWeightedIndex(stockCandles: Candle[][]): Candle[] {
+export function buildEqualWeightedIndex(stockCandles: Pick<Candle, 'date' | 'close'>[][]): Candle[] {
 	const nonEmpty = stockCandles.filter((c) => c.length > 0);
 	if (nonEmpty.length === 0) return [];
 
