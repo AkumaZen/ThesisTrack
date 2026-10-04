@@ -178,6 +178,35 @@ export const alertUserPrefs = pgTable('alert_user_prefs', {
 	muted: jsonb('muted').notNull().$type<string[]>()
 });
 
+// Strength & Volume alert rules, shared by the team. `config` is the same StrengthConfig the filter
+// panel uses (lib/valuation/strength.ts) so a rule evaluates exactly what the filter showed.
+// level + parentKey say what is watched: all sectors, the subsectors of one sector, the companies
+// of one subsector, or one company (parentKey = symbol). Per-subject state lives in alert_state.
+export const strengthRules = pgTable('strength_rules', {
+	id: serial('id').primaryKey(),
+	name: text('name').notNull(),
+	level: text('level').notNull().$type<'sectors' | 'subsectors' | 'companies' | 'company'>(),
+	parentKey: text('parent_key'),
+	config: jsonb('config').notNull(),
+	repeat: jsonb('repeat').notNull(),
+	enabled: boolean('enabled').notNull().default(true),
+	createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+	createdAt: bigint('created_at', { mode: 'number' }).notNull()
+});
+
+// Each person's last-used Strength & Volume filter per view level, restored when they come back.
+export const strengthFilterPrefs = pgTable(
+	'strength_filter_prefs',
+	{
+		userId: integer('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		level: text('level').notNull().$type<'sectors' | 'subsectors' | 'companies' | 'company'>(),
+		config: jsonb('config').notNull()
+	},
+	(t) => [primaryKey({ columns: [t.userId, t.level] })]
+);
+
 // Tiny key/value flags for one-off facts about the database itself (e.g. "sector_seeded").
 export const appMeta = pgTable('app_meta', {
 	key: text('key').primaryKey(),

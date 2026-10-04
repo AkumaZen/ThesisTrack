@@ -14,6 +14,9 @@ import {
 	type NewAlert
 } from './alertStore';
 import { notifyByEmail } from './alertNotify';
+import { evaluateLevel } from './strengthEngine';
+import { listRules } from './strengthRulesStore';
+import { detectStrengthEntry, parseRuleState } from '../strength';
 import { fairValueFromTarget, sideOfFairValue, targetForSaved } from '../fairValue';
 import { getAnalysisSettings } from './analysisSettingsStore';
 import { detectRsBand, rsBand, rsThresholdMessage } from '../rsThresholds';
@@ -31,7 +34,7 @@ import {
 } from '../alerts';
 
 export interface CheckSummary {
-	scope: 'price' | 'sector' | 'breakout';
+	scope: 'price' | 'sector' | 'breakout' | 'strength';
 	checked: number;
 	alerts: number;
 	errors: number;
@@ -310,9 +313,76 @@ export async function runBreakoutChecks(): Promise<CheckSummary> {
 	});
 }
 
-/** Sector flips and breakouts both read the same warmed candle caches. */
+// ---------------------------------------------------------------------------------------------
+// Strength & Volume rules
+// ---------------------------------------------------------------------------------------------
+
+const strengthSubject = (level: string, key: string) =>
+	level === 'sectors' ? sectorSubject(key) : level === 'subsectors' ? basketSubject(key) : symbolSubject(key);
+
+const subjectNoun = (level: string) =>
+	level === 'sectors' ? 'sector' : level === 'subsectors' ? 'subsector' : 'company';
+
+/** Evaluates every saved rule with the same calculation the filter panel uses, and alerts when a
+ *  subject ENTERS a rule's condition. Daily candles only change once a session, so this runs
+ *  after each cache refresh (about every 2 hours) and is end-of-day by design. */
+export async function runStrengthChecks(): Promise<CheckSummary> {
+	return exclusive('strength', async (summary) => {
+		const rules = (await listRules()).filter((r) => r.enabled);
+		if (rules.length === 0) {
+			summary.skipped = 'No Strength & Volume rules are switched on.';
+			return;
+		}
+		if (!(await anyoneWants('strength_volume'))) {
+			summary.skipped = 'Strength & volume alerts are turned off for everyone.';
+			return;
+		}
+		const states = await loadStates('strength:');
+
+		for (const rule of rules) {
+			try {
+				const { asOf, calendar, rows } = await evaluateLevel(rule.level, rule.parentKey, rule.config);
+				if (!asOf) continue;
+				for (const row of rows) {
+					const ev = row.evaluation;
+					if (!ev.active) continue;
+					const key = `strength:${rule.id}:${row.key}`;
+					const prev = parseRuleState(states.get(key));
+					// A reading we could not compute (stale cache, short history) is not "no longer
+					// matching": keep the last known state so a data gap cannot cause a false re-entry.
+					if (!ev.matched && ev.unavailable.length > 0) continue;
+					summary.checked++;
+					const { next, fire } = detectStrengthEntry(prev, ev.matched, asOf, rule.repeat, calendar);
+					await setState(key, JSON.stringify(next));
+					if (!fire) continue;
+					const raised = await raise({
+						type: 'strength_volume',
+						subjectKey: strengthSubject(rule.level, row.key),
+						subjectLabel: row.label,
+						message: `${row.label} ${subjectNoun(rule.level)} entered "${rule.name}". ${ev.reasons.join(' ')}`,
+						href: row.href
+					});
+					if (raised) summary.alerts++;
+				}
+			} catch (e) {
+				summary.errors++;
+				if (isCredentialsError(e)) {
+					summary.skipped = 'Angel One credentials are not configured.';
+					return;
+				}
+				console.error(
+					`[alerts] strength rule ${rule.id} failed:`,
+					e instanceof Error ? e.message : e
+				);
+			}
+		}
+	});
+}
+
+/** Sector flips, breakouts and strength rules all read the same warmed candle caches. */
 export async function runStructuralChecks(): Promise<CheckSummary[]> {
 	const sector = await runSectorChecks();
 	const breakout = await runBreakoutChecks();
-	return [sector, breakout];
+	const strength = await runStrengthChecks();
+	return [sector, breakout, strength];
 }

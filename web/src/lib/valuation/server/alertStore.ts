@@ -23,7 +23,7 @@ export interface AlertSettings extends UserAlertPrefs {
 }
 
 function allEnabled(): Record<AlertType, boolean> {
-	return { price_fair_value: true, sector_rotation: true, near_breakout: true };
+	return { price_fair_value: true, sector_rotation: true, near_breakout: true, strength_volume: true };
 }
 
 function toPrefs(row: { enabled: unknown; muted: unknown } | undefined): UserAlertPrefs {

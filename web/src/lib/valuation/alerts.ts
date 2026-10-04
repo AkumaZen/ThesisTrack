@@ -7,14 +7,20 @@ import type { FairValueSide } from './fairValue';
 // A missing previous state (first time we've seen the thing) seeds silently so switching the
 // feature on never floods the feed with every already-true condition.
 
-export type AlertType = 'price_fair_value' | 'sector_rotation' | 'near_breakout';
+export type AlertType = 'price_fair_value' | 'sector_rotation' | 'near_breakout' | 'strength_volume';
 
-export const ALERT_TYPES: AlertType[] = ['price_fair_value', 'sector_rotation', 'near_breakout'];
+export const ALERT_TYPES: AlertType[] = [
+	'price_fair_value',
+	'sector_rotation',
+	'near_breakout',
+	'strength_volume'
+];
 
 export const ALERT_TYPE_LABELS: Record<AlertType, string> = {
 	price_fair_value: 'Price vs fair value',
 	sector_rotation: 'Sector rotation',
-	near_breakout: 'Near breakout'
+	near_breakout: 'Near breakout',
+	strength_volume: 'Strength & volume'
 };
 
 /** Fired on window by the alerts page after read/unread changes so the header bell updates at once. */

@@ -1,6 +1,11 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { runBreakoutChecks, runPriceChecks, runSectorChecks } from '$lib/valuation/server/alertChecks';
+import {
+	runBreakoutChecks,
+	runPriceChecks,
+	runSectorChecks,
+	runStrengthChecks
+} from '$lib/valuation/server/alertChecks';
 
 /** Runs checks on demand. scope: "price" (fast; falls back to last CMP when the market is
  *  closed) or "structural" (sector flips + breakouts; reads the warmed candle caches, so it can
@@ -14,7 +19,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (scope === 'structural') {
 		const sector = await runSectorChecks();
 		const breakout = await runBreakoutChecks();
-		return json({ summaries: [sector, breakout] });
+		const strength = await runStrengthChecks();
+		return json({ summaries: [sector, breakout, strength] });
 	}
 	error(400, 'scope must be "price" or "structural".');
 };
