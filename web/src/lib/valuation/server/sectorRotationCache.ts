@@ -1,4 +1,4 @@
-import { getCompanySeries } from './companyGrowthSeries';
+import { readCachedSeries } from './companyGrowthSeries';
 import { getBenchmarkCandles } from './benchmarkSeries';
 import type { CustomSector, MajorSector } from './customSectors';
 import { findAnyCustomSector } from './sectorStore';
@@ -11,30 +11,21 @@ import {
 } from '../sectorRotation';
 
 /**
- * Computes ONE sector's rotation row on demand - used by the per-sector API endpoint so the
- * overview page can render its 56 cards one at a time instead of blocking on every basket at
- * once. The expensive part (each constituent's own price history) comes from the shared,
- * persistently-cached getCompanySeries/getBenchmarkCandles - so this is cheap pure math
- * (date-align, average, diff against Nifty) whenever those are already warm, and only pays a
- * real network cost for symbols genuinely not yet cached.
+ * Computes ONE sector's rotation row from the STORED prices - used by the per-sector API
+ * endpoint when a card is opened. It never calls Angel One: prices are refreshed by the
+ * scheduled refresh or by pressing Refresh, so this is a few database reads and cheap maths
+ * (date-align, average, diff against Nifty). `asOf` is the oldest fetch among the stocks, and
+ * `missing` counts the stocks that have nothing stored.
  */
 export async function getSectorReturn(sector: CustomSector): Promise<SectorReturn> {
-	const [niftyCandles, settings, perStock] = await Promise.all([
+	const [niftyCandles, settings, stored] = await Promise.all([
 		getBenchmarkCandles(),
 		getAnalysisSettings(),
-		// Sequential, not Promise.all, for the constituents themselves - every call still queues
-		// through the same Angel One rate limiter regardless, so parallelizing here wouldn't
-		// fetch any faster, only make the queue harder to reason about.
-		(async () => {
-			const out: (Candle[] | null)[] = [];
-			for (const symbol of sector.symbols) {
-				out.push(await getCompanySeries(symbol));
-			}
-			return out;
-		})()
+		Promise.all(sector.symbols.map((symbol) => readCachedSeries(symbol)))
 	]);
 
-	const candles = buildEqualWeightedIndex(perStock.filter((c): c is Candle[] => c != null));
+	const have = stored.filter((s): s is NonNullable<typeof s> => s != null);
+	const candles = buildEqualWeightedIndex(have.map((s) => s.candles));
 
 	const [row] = computeSectorReturns(
 		[{ key: sector.key, label: sector.label, candles }],
@@ -45,7 +36,9 @@ export async function getSectorReturn(sector: CustomSector): Promise<SectorRetur
 	return {
 		...row,
 		constituents: sector.symbols,
-		series: candles.map((c) => ({ date: c.date, value: c.close }))
+		series: candles.map((c) => ({ date: c.date, value: c.close })),
+		asOf: have.length ? Math.min(...have.map((s) => s.fetchedAt)) : null,
+		missing: sector.symbols.length - have.length
 	};
 }
 
@@ -62,8 +55,6 @@ export async function getMajorSectorReturn(major: MajorSector): Promise<SectorRe
 	const [niftyCandles, settings, subsectorRows] = await Promise.all([
 		getBenchmarkCandles(),
 		getAnalysisSettings(),
-		// Sequential, not Promise.all - same reasoning as getSectorReturn's own constituent loop:
-		// every underlying stock fetch still queues through the one shared rate limiter regardless.
 		(async () => {
 			const out: SectorReturn[] = [];
 			for (const key of major.subsectorKeys) {
@@ -95,9 +86,12 @@ export async function getMajorSectorReturn(major: MajorSector): Promise<SectorRe
 		settings.rotation
 	);
 
+	const dated = subsectorRows.map((r) => r.asOf).filter((t): t is number => t != null);
 	return {
 		...row,
 		constituents: major.subsectorKeys,
-		series: candles.map((c) => ({ date: c.date, value: c.close }))
+		series: candles.map((c) => ({ date: c.date, value: c.close })),
+		asOf: dated.length ? Math.min(...dated) : null,
+		missing: subsectorRows.reduce((sum, r) => sum + (r.missing ?? 0), 0)
 	};
 }

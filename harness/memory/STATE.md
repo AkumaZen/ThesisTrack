@@ -27,7 +27,14 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
 - Strength & Volume (sector > subsector > company filters and team alerts): pure maths in
   `web/src/lib/valuation/strength.ts` (shared by the filter API and the alert checks), rules in
   `valuation.strength_rules`, per-subject state in `valuation.alert_state` (`strength:<rule>:<subject>`).
-  End-of-day signals only; alerts are checked after each ~2h cache refresh and go to the whole team.
+  End-of-day signals only; alerts are checked after each scheduled price refresh (four a day) and go to the whole team.
+- Prices (valuation sector, subsector and company cards): page views read STORED prices only and never call
+  Angel One (`readCachedSeries`, `getBenchmarkCandles`); cards start empty and load on click ("Show chart",
+  "Load all"); a card's Refresh button (`seriesRefresh.ts` -> `POST .../refresh-series`) is the only
+  user-driven fetch. Automatic refresh is four times each weekday only (`refreshSlots.ts`, IST 09:30,
+  12:30, 15:30, 16:30; vercel.json cron `0 4,7,10,11 * * 1-5`), and the alert checks run after it.
+  History is 700 days so the 200 DMA (`movingAverage.ts`) is complete over a year; stocks refreshed
+  before this change keep a partial 200 DMA until their next refresh.
 - Remembered browsing state (valuation sector, subsector and company views): `web/src/lib/viewMemory.ts`
   (storage, validation, per-user keys `tt:v1:<userId>:...`) and `viewMemory.svelte.ts` (save, URL mirror,
   scroll restore). sessionStorage holds tab state (open panels, scroll), localStorage the lasting display

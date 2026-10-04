@@ -3,39 +3,47 @@ import { db } from '$lib/server/db';
 import { companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
 import { fetchDailyCandles, type Candle } from './angelone';
 
-// 2-hour cache window — a cold fetch walks every ticker through Angel One's rate limiter
-// (minutes, not seconds), so this is set long enough that a normal working session never pays
-// that cost twice. A background job (see scheduler.ts) proactively refreshes on this same
-// cadence, so in practice a visitor rarely hits a genuinely cold entry at all.
-const TTL_MS = 2 * 60 * 60 * 1000;
-// 400 calendar days of buffer for a 252-trading-day (1Y) window, the same buffer-over-window
-// ratio sectorRotation's 6M window uses.
-const SERIES_DAYS = 400;
+// About 700 calendar days (~480 sessions): a 200-day average is complete across a full year of
+// chart (252 sessions) only with 200 more sessions behind it.
+const SERIES_DAYS = 700;
 
-/** Cached full OHLCV candles for one symbol — the shared source for both the sector rotation
- *  overview's equal-weighted basket math (needs date-aligned closes) and the constituent
- *  drill-down page's per-company chart/growth panel (needs a full year of closes). Returns
- *  null if Angel One has no listing for the symbol. */
-export async function getCompanySeries(symbol: string): Promise<Candle[] | null> {
-	const key = symbol.toUpperCase();
+export interface CachedSeries {
+	candles: Candle[];
+	/** When these prices were last fetched from Angel One (ms). */
+	fetchedAt: number;
+}
+
+/** The stored prices for one symbol, as they are - never goes to Angel One and never judges
+ *  them stale. Prices are refreshed only by the scheduled refresh (a few times a day) or when
+ *  someone presses Refresh, so a page view can never trigger a slow, rate-limited fetch.
+ *  Null when nothing is stored for the symbol. */
+export async function readCachedSeries(symbol: string): Promise<CachedSeries | null> {
 	const [row] = await db
 		.select()
 		.from(companyGrowthSeriesCache)
-		.where(eq(companyGrowthSeriesCache.symbol, key));
-	if (row && Date.now() - row.fetchedAt < TTL_MS) {
-		return row.candles as Candle[];
-	}
+		.where(eq(companyGrowthSeriesCache.symbol, symbol.toUpperCase()));
+	return row ? { candles: row.candles as Candle[], fetchedAt: row.fetchedAt } : null;
+}
 
+/** Stored candles only (see readCachedSeries) - the shared source for the sector rotation maths,
+ *  the strength filters and the breakout scanner. Null when nothing is stored. */
+export async function getCompanySeries(symbol: string): Promise<Candle[] | null> {
+	return (await readCachedSeries(symbol))?.candles ?? null;
+}
+
+/** Fetches fresh prices from Angel One and stores them. Null when Angel One has no listing for
+ *  the symbol. This is the only path that spends Angel One calls. */
+export async function refreshCompanySeries(symbol: string): Promise<CachedSeries | null> {
+	const key = symbol.toUpperCase();
 	const candles = await fetchDailyCandles(key, SERIES_DAYS);
 	if (!candles) return null;
-
+	const fetchedAt = Date.now();
 	await db
 		.insert(companyGrowthSeriesCache)
-		.values({ symbol: key, candles, fetchedAt: Date.now() })
+		.values({ symbol: key, candles, fetchedAt })
 		.onConflictDoUpdate({
 			target: companyGrowthSeriesCache.symbol,
-			set: { candles, fetchedAt: Date.now() }
+			set: { candles, fetchedAt }
 		});
-
-	return candles;
+	return { candles, fetchedAt };
 }

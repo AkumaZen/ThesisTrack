@@ -9,6 +9,7 @@
 	import Pagination from '$lib/valuation/components/Pagination.svelte';
 	import { DEFAULT_PAGE_SIZE } from '$lib/viewMemory';
 	import { untrack } from 'svelte';
+	import { refreshSector } from '$lib/valuation/seriesRefresh';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import { saveDefaultCardMetrics } from '$lib/valuation/viewReset';
@@ -63,7 +64,8 @@
 	// Once every card has loaded, the grid settles into sorted order in one smooth animated move
 	// (see `shouldSort` below and `animate:flip` on the grid). An explicit sort action jumps the
 	// gun on that and applies immediately, still via the same smooth flip transition.
-	let userSorted = $state(false);
+	// A sort restored from memory counts as chosen.
+	let userSorted = $state(memory.initial.sort !== 'rs1m' || memory.initial.dir !== 'desc');
 	let strength = $state(emptyStrengthView());
 
 	function markUserSorted() {
@@ -76,51 +78,61 @@
 		markUserSorted();
 	}
 
-	// Plain $state (not .raw) keyed by subsector — each basket's fetch writes only its own entry
-	// (sectorData[key] = ...), a genuine in-place property set on the reactive proxy. Svelte 5
-	// tracks that at the property level, so a SectorCard reading a different key never re-runs
-	// when this one resolves — updates stay scoped to the one card that actually changed.
-	let sectorData = $state<Record<string, SectorReturn | 'error' | undefined>>({});
-	let loadedCount = $derived(Object.keys(sectorData).length);
-	// A 500 (e.g. Angel One credentials not configured) means every basket will fail the same
-	// way — stop hammering the other doomed requests and show one clear banner instead of many
-	// identical per-card errors.
+	// Plain $state (not .raw) keyed by subsector - each load writes only its own entry, a genuine
+	// in-place property set on the reactive proxy, so a card reading a different key never re-runs.
+	// A card is empty until someone asks for it ("Show chart"); loading it reads the stored prices
+	// from the database and never calls Angel One.
+	type CardState = SectorReturn | 'error' | 'loading' | undefined;
+	let sectorData = $state<Record<string, CardState>>({});
+	const isRow = (v: CardState): v is SectorReturn => v != null && v !== 'error' && v !== 'loading';
+	let loadedCount = $derived(Object.values(sectorData).filter(isRow).length);
 	let systemicError = $state<string | null>(null);
+	let refreshing = $state<Record<string, string | null>>({});
 
-	// Fetched one at a time, in order — a real sequential loop, not one request per card fired at
-	// once. Every basket still ultimately queues through the same server-side Angel One rate
-	// limiter regardless of how the client requests them, so this isn't slower; it's what makes
-	// each card visibly complete on its own instead of the whole grid waiting on the slowest one.
-	$effect(() => {
-		let cancelled = false;
-		(async () => {
-			for (const s of data.subsectors) {
-				if (cancelled) return;
-				try {
-					const res = await fetch(`/api/valuation/sector-rotation/${s.key}`);
-					if (res.status === 500) {
-						const body = await res.json().catch(() => null);
-						if (!cancelled)
-							systemicError = body?.message ?? 'Sector data is unavailable right now.';
-						return;
-					}
-					if (!res.ok) throw new Error('failed');
-					const row: SectorReturn = await res.json();
-					if (!cancelled) sectorData[s.key] = row;
-				} catch {
-					if (!cancelled) sectorData[s.key] = 'error';
-				}
+	async function loadSector(key: string) {
+		if (sectorData[key] === 'loading') return;
+		const previous = sectorData[key];
+		if (!isRow(previous)) sectorData[key] = 'loading';
+		try {
+			const res = await fetch(`/api/valuation/sector-rotation/${key}`);
+			if (res.status === 500) {
+				const body = await res.json().catch(() => null);
+				systemicError = body?.message ?? 'Sector data is unavailable right now.';
+				sectorData[key] = previous;
+				return;
 			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	});
+			if (!res.ok) throw new Error('failed');
+			sectorData[key] = (await res.json()) as SectorReturn;
+		} catch {
+			sectorData[key] = isRow(previous) ? previous : 'error';
+		}
+	}
+
+	/** Fetches fresh prices for the companies in one subsector, then shows the new figures. */
+	async function refreshSectorCard(key: string) {
+		refreshing[key] = 'Refreshing…';
+		await refreshSector(key, (done, total) => (refreshing[key] = `Refreshing ${done}/${total}`));
+		await loadSector(key);
+		refreshing[key] = null;
+	}
+
+	let loadingAll = $state(false);
+	/** Loads every card from the stored prices, a few at a time (so Sort by return can rank them). */
+	async function loadAll() {
+		loadingAll = true;
+		const pending = data.subsectors.map((s) => s.key).filter((k) => !isRow(sectorData[k]));
+		await Promise.all(
+			Array.from({ length: 4 }, async () => {
+				for (let k = pending.shift(); k !== undefined; k = pending.shift()) await loadSector(k);
+			})
+		);
+		loadingAll = false;
+	}
 
 	function sortValue(key: string, sortByKey: SortKey): string | number | null {
 		const row = sectorData[key];
 		if (sortByKey === 'label') return data.subsectors.find((s) => s.key === key)?.label ?? key;
-		if (!row || row === 'error') return null;
+		if (!isRow(row)) return null;
 		return row[sortByKey];
 	}
 
@@ -177,10 +189,9 @@
 		<a class="back-link" href={resolve('/valuation/sector-rotation')}>&larr; Back to Sector Rotation</a>
 		<h1>{data.majorLabel}</h1>
 		<div class="sub">
-			Thematic sub-baskets ranked by relative strength vs Nifty 50, live via Angel One —
-			{loadedCount < data.subsectors.length
-				? `loading ${loadedCount}/${data.subsectors.length}…`
-				: 'up to date (cached up to 2h)'}
+			Thematic sub-baskets measured against Nifty 50. Charts load when you ask for them, from
+			prices stored on the server (refreshed four times each weekday, or press Refresh on a card) —
+			{loadedCount} of {data.subsectors.length} loaded
 		</div>
 	</div>
 </div>
@@ -216,6 +227,9 @@
 				{sortDir === 'asc' ? '▲ Ascending' : '▼ Descending'}
 			</button>
 			<CardMetricsChooser metrics={cardMetrics} onChange={(m) => (cardMetrics = m)} />
+			<button type="button" class="sector-sort-dir" disabled={loadingAll || allLoaded} onclick={loadAll}
+				>{loadingAll ? 'Loading…' : allLoaded ? 'All loaded' : 'Load all'}</button
+			>
 			<ViewResetButton onReset={resetThisView} />
 			<SectorExport
 				title={data.majorLabel}
@@ -238,6 +252,9 @@
 						label={s.label}
 						tag={`basket · ${s.constituentCount}`}
 						row={sectorData[s.key]}
+						onLoad={() => loadSector(s.key)}
+						onRefresh={() => refreshSectorCard(s.key)}
+						refreshing={refreshing[s.key] ?? null}
 						href={resolve('/valuation/sector-rotation/[key]/[subKey]', { key: data.majorKey, subKey: s.key })}
 						linkText={`${s.constituentCount} ${s.constituentCount === 1 ? 'company' : 'companies'}, individual charts & growth →`}
 					/>

@@ -9,8 +9,8 @@ import { decideAccess, isApiPath } from '$lib/access';
 import { startSectorRotationScheduler } from '$lib/valuation/server/sectorRotationScheduler';
 import { startAlertScheduler } from '$lib/valuation/server/alertScheduler';
 
-// Background jobs for the valuation tools: keep the sector-rotation candle caches warm every 2h
-// and check prices against fair value every 10 min in market hours. A long-running server (local
+// Background jobs for the valuation tools: refresh the stored prices four times each weekday
+// (see refreshSlots.ts) and check prices against fair value every 10 min in market hours. A long-running server (local
 // dev, a container) runs them in-process; on Vercel there is no long-running process, so
 // vercel.json's crons call /api/cron/* instead. DISABLE_BACKGROUND_JOBS turns both off (tests).
 if (!building && !env.VERCEL && env.DISABLE_BACKGROUND_JOBS !== 'true') {

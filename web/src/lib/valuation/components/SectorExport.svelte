@@ -11,14 +11,14 @@
 	}: {
 		title: string;
 		filename: string;
-		rows: { label: string; data: SectorReturn | 'error' | undefined }[];
+		rows: { label: string; data: SectorReturn | 'error' | 'loading' | undefined }[];
 		/** What `constituents` counts on this page, e.g. "Sub-sectors" or "Companies". */
 		countLabel: string;
 	} = $props();
 
 	let busy = $state(false);
 	let failed = $state(false);
-	const pending = $derived(rows.filter((r) => r.data === undefined).length);
+	const pending = $derived(rows.filter((r) => r.data === undefined || r.data === 'loading').length);
 
 	async function exportExcel() {
 		busy = true;
@@ -30,7 +30,7 @@
 					notes: [
 						`${title}, exported ${new Date().toLocaleString('en-IN')}.`,
 						'Returns are price returns in %; RS is the sector return minus Nifty 50 over the same window.' +
-							(pending ? ` ${pending} sector(s) had not loaded yet and are blank.` : '')
+							(pending ? ` ${pending} card(s) had not been loaded yet and are blank (use Load all first).` : '')
 					],
 					columns: [
 						{ header: 'Sector', width: 40 },
@@ -46,7 +46,7 @@
 						{ header: countLabel, format: FORMATS.int }
 					],
 					rows: rows.map(({ label, data }) => {
-						const d = data && data !== 'error' ? data : null;
+						const d = data && data !== 'error' && data !== 'loading' ? data : null;
 						return [
 							label,
 							d ? rotationBadge(d).text : data === 'error' ? 'Failed to load' : null,

@@ -26,6 +26,10 @@ export interface SectorReturn {
 	// use their own close price; custom baskets use their equal-weighted synthetic index. Both
 	// go through the same normalization so every sector's card chart is on a comparable scale.
 	series?: { date: string; value: number }[];
+	/** When the oldest of the stored prices behind this row were fetched (ms); null when none. */
+	asOf?: number | null;
+	/** How many of the stocks behind this row have no stored prices at all. */
+	missing?: number;
 }
 
 export interface RotationBadge {

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { benchmarkSeriesCache, companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
 import { getBenchmarkCandles } from './benchmarkSeries';
-import { getCompanySeries } from './companyGrowthSeries';
+import { readCachedSeries, refreshCompanySeries } from './companyGrowthSeries';
 import { getSymbolNames, listAllBaskets, listAllMajorSectors } from './sectorStore';
 import type { CustomSector, MajorSector } from './customSectors';
 import { buildEqualWeightedIndex, type Candle } from '../sectorRotation';
@@ -178,8 +178,9 @@ export async function evaluateLevel(
 		const symbol = (parentKey ?? '').toUpperCase();
 		let member = u.stocks.get(symbol);
 		if (!member && symbol) {
-			// Not in any basket: fall back to the shared (fetching) series cache for this one symbol.
-			const candles = await getCompanySeries(symbol);
+			// Not in any basket: use the stored prices, or fetch this one company's own (a single
+			// call for the page being viewed, never a sweep).
+			const candles = (await readCachedSeries(symbol))?.candles ?? (await refreshCompanySeries(symbol))?.candles;
 			if (candles) member = alignMember(upTo(candles, u.cutoff), u.calendar);
 		}
 		const names = await getSymbolNames([symbol]);

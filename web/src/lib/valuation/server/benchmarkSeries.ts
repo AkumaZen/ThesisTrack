@@ -4,20 +4,12 @@ import { benchmarkSeriesCache } from '$lib/server/db/valuationSchema';
 import { fetchIndexCandles, type Candle } from './angelone';
 import { BENCHMARK_INDEX } from './sectorIndices';
 
-const TTL_MS = 2 * 60 * 60 * 1000;
 const CANDLE_DAYS = 400;
 const ID = 'nifty50';
 
-/** Cached Nifty 50 candles — every sector's relative strength is measured against this one
- *  series, so it's fetched and cached once rather than once per sector (56 baskets asking for
- *  it independently would otherwise mean 56x the Angel One calls for a series that doesn't
- *  change across sectors). */
-export async function getBenchmarkCandles(): Promise<Candle[]> {
-	const [row] = await db.select().from(benchmarkSeriesCache).where(eq(benchmarkSeriesCache.id, ID));
-	if (row && Date.now() - row.fetchedAt < TTL_MS) {
-		return row.candles as Candle[];
-	}
-
+/** Fetches the Nifty 50 from Angel One and stores it (scheduled refresh, or someone pressing
+ *  Refresh). */
+export async function refreshBenchmarkCandles(): Promise<Candle[]> {
 	const candles = await fetchIndexCandles(BENCHMARK_INDEX.token, CANDLE_DAYS);
 	await db
 		.insert(benchmarkSeriesCache)
@@ -26,6 +18,14 @@ export async function getBenchmarkCandles(): Promise<Candle[]> {
 			target: benchmarkSeriesCache.id,
 			set: { candles, fetchedAt: Date.now() }
 		});
-
 	return candles;
+}
+
+/** The stored Nifty 50 candles - every sector's relative strength is measured against this one
+ *  series. Stored once and used as it is, however old; only the very first use, when nothing is
+ *  stored yet, fetches it. */
+export async function getBenchmarkCandles(): Promise<Candle[]> {
+	const [row] = await db.select().from(benchmarkSeriesCache).where(eq(benchmarkSeriesCache.id, ID));
+	if (row) return row.candles as Candle[];
+	return refreshBenchmarkCandles();
 }
