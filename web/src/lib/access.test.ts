@@ -134,6 +134,16 @@ describe('decideAccess: read only', () => {
 		expect(canWrite('read_write')).toBe(true);
 		expect(canWrite('admin')).toBe(true);
 	});
+
+	it('can keep their own display preferences and remembered filters', () => {
+		expect(d('/api/valuation/me/prefs', 'PUT', viewer)).toBe('allow');
+		expect(d('/api/valuation/me/reset', 'POST', viewer)).toBe('allow');
+		expect(d('/api/valuation/me/visit', 'POST', viewer)).toBe('allow');
+		expect(d('/api/valuation/strength/prefs', 'PUT', viewer)).toBe('allow');
+		// ...but not the team's alert rules next to them.
+		expect(d('/api/valuation/strength/rules', 'POST', viewer)).toBe('forbidden');
+		expect(d('/api/valuation/strength', 'POST', viewer)).toBe('forbidden');
+	});
 });
 
 describe('decideAccess: admin', () => {

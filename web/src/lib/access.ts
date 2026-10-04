@@ -21,6 +21,10 @@ const ADMIN_API_PREFIXES = ['/api/admin'];
  *  their handlers check that credential themselves. Everything else needs a real session. */
 const SESSION_ONLY_API_PREFIXES = ['/api/valuation', '/api/admin', '/api/account'];
 
+/** Each person's own display preferences (layout, remembered filters, last visit). Writing them
+ *  changes nothing anyone else sees, so read-only accounts may write them too. */
+const PERSONAL_API_PREFIXES = ['/api/valuation/me', '/api/valuation/strength/prefs'];
+
 /** Reachable while the password still has to be changed. */
 const CHANGE_PASSWORD_ALLOWED = ['/account/password', '/api/account/password', '/logout', '/api/auth/me'];
 
@@ -73,7 +77,8 @@ export function decideAccess(input: {
 	if (
 		user.role === 'read_only' &&
 		!isRead(method) &&
-		startsWithPath(pathname, '/api/valuation')
+		startsWithPath(pathname, '/api/valuation') &&
+		!PERSONAL_API_PREFIXES.some((p) => startsWithPath(pathname, p))
 	) {
 		return 'forbidden';
 	}
