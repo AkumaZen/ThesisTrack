@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getCoverage, setCoverage } from '$lib/server/teamStore';
+import { getCoverage, setCoverage } from '$lib/valuation/server/teamStore';
 
 /**
  * Body: { userId: number | null }. Anyone may take a company themselves or let go of their own;

@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { handleAuth, readJson, requireAdmin } from '$lib/server/authApi';
-import { resetPassword } from '$lib/server/authStore';
+import { resetPassword } from '$lib/server/accounts';
 
 /** Body: { password? } - omit to generate. Signs the user out everywhere and forces a change. */
 export const POST: RequestHandler = async ({ params, request, locals }) => {

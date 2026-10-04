@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { NamedWatchlist } from '$lib/watchlists';
+	import type { NamedWatchlist } from '$lib/valuation/watchlists';
 
 	// Puts one company on or off the team's named lists. `onChange` is awaited so the caller can
 	// refresh the lists from the server (another analyst may have changed them meanwhile).

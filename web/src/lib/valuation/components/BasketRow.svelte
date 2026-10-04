@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { sectorApi, type VerifyResponse } from '$lib/sectorClient';
-	import type { SymbolSuggestion } from '$lib/sectorEdit';
+	import { sectorApi, type VerifyResponse } from '$lib/valuation/sectorClient';
+	import type { SymbolSuggestion } from '$lib/valuation/sectorEdit';
 
 	let {
 		basket,
@@ -53,7 +53,7 @@
 
 	function saveRename() {
 		return run(async () => {
-			const res = await sectorApi('PATCH', `/api/sectors/baskets/${basket.key}`, {
+			const res = await sectorApi('PATCH', `/api/valuation/sectors/baskets/${basket.key}`, {
 				label: labelDraft
 			});
 			if (!res.ok) return { kind: 'error', text: res.message };
@@ -70,7 +70,7 @@
 		if (!typed) return Promise.resolve();
 		return run(async () => {
 			suggestions = [];
-			const verify = await sectorApi<VerifyResponse>('POST', '/api/sectors/verify', {
+			const verify = await sectorApi<VerifyResponse>('POST', '/api/valuation/sectors/verify', {
 				symbol: typed
 			});
 			if (!verify.ok) return { kind: 'error', text: verify.message };
@@ -79,7 +79,7 @@
 				return { kind: 'error', text: verify.data.reason };
 			}
 			const { symbol, name, listedOnAngelOne } = verify.data;
-			const added = await sectorApi('POST', `/api/sectors/baskets/${basket.key}/symbols`, {
+			const added = await sectorApi('POST', `/api/valuation/sectors/baskets/${basket.key}/symbols`, {
 				symbol
 			});
 			if (!added.ok) return { kind: 'error', text: added.message };
@@ -98,7 +98,7 @@
 		return run(async () => {
 			const res = await sectorApi(
 				'DELETE',
-				`/api/sectors/baskets/${basket.key}/symbols/${encodeURIComponent(symbol)}`
+				`/api/valuation/sectors/baskets/${basket.key}/symbols/${encodeURIComponent(symbol)}`
 			);
 			if (!res.ok) return { kind: 'error', text: res.message };
 			await onchanged();
@@ -119,7 +119,7 @@
 
 	function saveMove() {
 		return run(async () => {
-			const res = await sectorApi('PUT', `/api/sectors/baskets/${basket.key}/majors`, {
+			const res = await sectorApi('PUT', `/api/valuation/sectors/baskets/${basket.key}/majors`, {
 				majorKeys: moveSelection
 			});
 			if (!res.ok) return { kind: 'error', text: res.message };
@@ -131,7 +131,7 @@
 
 	function deleteBasket() {
 		return run(async () => {
-			const res = await sectorApi('DELETE', `/api/sectors/baskets/${basket.key}`);
+			const res = await sectorApi('DELETE', `/api/valuation/sectors/baskets/${basket.key}`);
 			if (!res.ok) return { kind: 'error', text: res.message };
 			await onchanged();
 			return null;
@@ -168,7 +168,7 @@
 				{#if viewMajorKey}
 					<a
 						class="sm-btn sm-btn-link"
-						href={resolve('/sector-rotation/[key]/[subKey]', {
+						href={resolve('/valuation/sector-rotation/[key]/[subKey]', {
 							key: viewMajorKey,
 							subKey: basket.key
 						})}>View rotation</a

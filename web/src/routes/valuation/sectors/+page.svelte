@@ -1,10 +1,9 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
-	import BasketRow from '$lib/components/BasketRow.svelte';
-	import NewBasketForm from '$lib/components/NewBasketForm.svelte';
-	import { sectorApi } from '$lib/sectorClient';
+	import BasketRow from '$lib/valuation/components/BasketRow.svelte';
+	import NewBasketForm from '$lib/valuation/components/NewBasketForm.svelte';
+	import { sectorApi } from '$lib/valuation/sectorClient';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -64,7 +63,7 @@
 	async function addMajor() {
 		addingMajor = true;
 		status = null;
-		const res = await sectorApi<{ key: string; label: string }>('POST', '/api/sectors/majors', {
+		const res = await sectorApi<{ key: string; label: string }>('POST', '/api/valuation/sectors/majors', {
 			label: newMajorLabel
 		});
 		addingMajor = false;
@@ -91,7 +90,7 @@
 
 	async function saveRenameMajor(key: string) {
 		majorBusy = key;
-		const res = await sectorApi('PATCH', `/api/sectors/majors/${key}`, { label: majorLabelDraft });
+		const res = await sectorApi('PATCH', `/api/valuation/sectors/majors/${key}`, { label: majorLabelDraft });
 		majorBusy = null;
 		if (!res.ok) {
 			status = { kind: 'error', text: res.message };
@@ -104,7 +103,7 @@
 
 	async function deleteMajor(key: string, label: string, basketCount: number) {
 		majorBusy = key;
-		const res = await sectorApi('DELETE', `/api/sectors/majors/${key}`);
+		const res = await sectorApi('DELETE', `/api/valuation/sectors/majors/${key}`);
 		majorBusy = null;
 		confirmDeleteMajor = null;
 		if (!res.ok) {
@@ -138,7 +137,7 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/sector-rotation')}>&larr; Back to Sector Rotation</a>
+		<a class="back-link" href={resolve('/valuation/sector-rotation')}>&larr; Back to Sector Rotation</a>
 		<h1>Manage Sectors</h1>
 		<div class="sub">
 			Edit the sector &rarr; basket &rarr; company taxonomy. Every company is verified against
@@ -237,7 +236,7 @@
 					<div class="sm-actions">
 						<a
 							class="sm-btn sm-btn-link"
-							href={resolve('/sector-rotation/[key]', { key: major.key })}>View rotation</a
+							href={resolve('/valuation/sector-rotation/[key]', { key: major.key })}>View rotation</a
 						>
 						<button
 							class="sm-btn"

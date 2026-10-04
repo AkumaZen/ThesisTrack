@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { companyGrowthSeriesCache } from './db/schema';
+import { db } from '$lib/server/db';
+import { companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
 import { fetchDailyCandles, type Candle } from './angelone';
 
 // 2-hour cache window — a cold fetch walks every ticker through Angel One's rate limiter

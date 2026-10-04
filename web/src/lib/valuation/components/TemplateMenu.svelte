@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { templateNameProblem, type ValuationTemplate } from '$lib/templates';
-	import type { MethodId, ScenarioAssumptions, ScenarioId } from '$lib/valuationEngine';
+	import { templateNameProblem, type ValuationTemplate } from '$lib/valuation/templates';
+	import type { MethodId, ScenarioAssumptions, ScenarioId } from '$lib/valuation/valuationEngine';
 
 	type Content = {
 		assumptions: Record<MethodId, Record<ScenarioId, ScenarioAssumptions>>;
@@ -32,7 +32,7 @@
 
 	async function load() {
 		try {
-			const res = await fetch('/api/templates');
+			const res = await fetch('/api/valuation/templates');
 			if (!res.ok) throw new Error();
 			const body = (await res.json()) as {
 				templates: ValuationTemplate[];
@@ -76,7 +76,7 @@
 			error = problem;
 			return;
 		}
-		if (await call('/api/templates', 'POST', { name: newName, ...current() })) newName = '';
+		if (await call('/api/valuation/templates', 'POST', { name: newName, ...current() })) newName = '';
 	}
 
 	function apply(t: ValuationTemplate) {
@@ -85,7 +85,7 @@
 	}
 
 	const setDefault = (scope: string, templateId: number | null) =>
-		call('/api/templates/defaults', 'PUT', { scope, templateId });
+		call('/api/valuation/templates/defaults', 'PUT', { scope, templateId });
 	const canDelete = (t: ValuationTemplate) => t.createdBy === me.username || me.role === 'admin';
 	const basketLabel = (key: string) => baskets.find((b) => b.key === key)?.label;
 </script>
@@ -171,7 +171,7 @@
 												type="button"
 												disabled={busy}
 												onclick={async () => {
-													await call(`/api/templates/${t.id}`, 'DELETE');
+													await call(`/api/valuation/templates/${t.id}`, 'DELETE');
 													confirmDelete = null;
 												}}>Yes, delete</button
 											>

@@ -41,7 +41,7 @@ describe('buildAlertEmail / sendAlertEmail', () => {
 		type: 'price_fair_value' as const,
 		subjectLabel: 'Acme <Ltd>',
 		message: 'Acme <Ltd> reached fair value: ₹512.00 is at or above ₹500.00.',
-		href: '/company/ACME'
+		href: '/valuation/company/ACME'
 	};
 
 	it('builds a subject, deep link and escaped html', () => {
@@ -53,7 +53,7 @@ describe('buildAlertEmail / sendAlertEmail', () => {
 	});
 
 	it('falls back to the alerts page when there is no href', () => {
-		expect(buildAlertEmail({ ...alert, href: null }, cfg).text).toContain('/alerts');
+		expect(buildAlertEmail({ ...alert, href: null }, cfg).text).toContain('/valuation/alerts');
 	});
 
 	it('actually sends through a transport (in-memory JSON transport, no network)', async () => {

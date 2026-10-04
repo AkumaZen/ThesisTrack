@@ -1,38 +1,20 @@
-// Class-based $state store (Svelte 5 best practice: prefer this over
-// writable stores for shared reactivity). Ports frontend/state.js's
-// localStorage session helpers.
+// The signed-in person, as a shared reactive store for the thesis pages. Filled from the root
+// layout's server data (the httpOnly session cookie is resolved in hooks.server.ts), so it is
+// always the same person the server sees - nothing auth-related lives in localStorage any more.
+import { canWrite, type SessionUser } from '$lib/auth';
+
 class SessionState {
-	token = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('thesis_token') || '' : '');
-	email = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('thesis_email') || '' : '');
-	role = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('thesis_role') || '' : '');
-	apiKey = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('thesis_api_key') || '' : '');
+	user = $state<SessionUser | null>(null);
 
-	isReadOnly = $derived(this.role === 'read_only');
-	isAuthenticated = $derived(Boolean(this.token || this.apiKey));
+	email = $derived(this.user?.email ?? '');
+	displayName = $derived(this.user?.username ?? '');
+	role = $derived(this.user?.role ?? '');
+	isAdmin = $derived(this.user?.role === 'admin');
+	isReadOnly = $derived(!canWrite(this.user?.role));
+	isAuthenticated = $derived(this.user !== null);
 
-	setSession(token: string, email: string, role: string) {
-		this.token = token;
-		this.email = email;
-		this.role = role;
-		localStorage.setItem('thesis_token', token);
-		localStorage.setItem('thesis_email', email);
-		localStorage.setItem('thesis_role', role);
-	}
-
-	setApiKey(key: string) {
-		this.apiKey = key;
-		localStorage.setItem('thesis_api_key', key);
-	}
-
-	clear() {
-		this.token = '';
-		this.email = '';
-		this.role = '';
-		this.apiKey = '';
-		localStorage.removeItem('thesis_token');
-		localStorage.removeItem('thesis_email');
-		localStorage.removeItem('thesis_role');
-		localStorage.removeItem('thesis_api_key');
+	set(user: SessionUser | null) {
+		this.user = user;
 	}
 }
 

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { stageScanCache } from './db/schema';
+import { db } from '$lib/server/db';
+import { stageScanCache } from '$lib/server/db/valuationSchema';
 import { getCompanySeries } from './companyGrowthSeries';
 import { getNifty500Candles } from './nifty500Series';
 import { fetchMarketDepth, type Candle } from './angelone';

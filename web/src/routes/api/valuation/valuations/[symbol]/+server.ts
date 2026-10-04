@@ -1,11 +1,11 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { assumptionsProblem, type SaveBody } from '$lib/savedValuations';
+import { assumptionsProblem, type SaveBody } from '$lib/valuation/savedValuations';
 import {
 	getSavedValuationRow,
 	saveSavedValuationRow,
 	removeSavedValuationRow
-} from '$lib/server/savedValuationsStore';
+} from '$lib/valuation/server/savedValuationsStore';
 
 export const GET: RequestHandler = async ({ params }) => {
 	const record = await getSavedValuationRow(params.symbol);

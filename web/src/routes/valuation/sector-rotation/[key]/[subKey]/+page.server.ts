@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { findAnyMajorSector, findAnyCustomSector } from '$lib/server/sectorStore';
+import { findAnyMajorSector, findAnyCustomSector } from '$lib/valuation/server/sectorStore';
 
 // Static metadata only — no live fetch, so this is instant. Each constituent's own chart/growth
 // data, and the basket summary, are fetched one at a time from the client (see +page.svelte).

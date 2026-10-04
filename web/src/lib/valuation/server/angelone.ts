@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import { loginLimiter, candlesLimiter, ltpLimiter, quoteLimiter } from './rateLimiter';
 
 /**
@@ -87,14 +88,19 @@ async function requestWithAuthRetry(
 // runs every value through dotenv-expand, which treats bare `$` as variable-interpolation
 // syntax and can silently mangle secrets that contain one (confirmed with the Groww secret
 // this app used previously). A minimal, non-expanding parser avoids that class of bug.
-// In production (bundled build) the source-relative path no longer exists, so ENV_FILE names the
-// file explicitly (the Docker setup mounts it read-only).
-let rawEnvCache: Record<string, string> | null = null;
+// ENV_FILE names the file explicitly; otherwise it is the .env next to package.json. Where there
+// is no file at all (Vercel - secrets come from the project settings, unexpanded), the process
+// environment is used as-is.
+let rawEnvCache: Record<string, string | undefined> | null = null;
 
-function readRawEnvFile(): Record<string, string> {
+function readRawEnvFile(): Record<string, string | undefined> {
 	if (rawEnvCache) return rawEnvCache;
 
-	const file = process.env.ENV_FILE || new URL('../../../../.env', import.meta.url);
+	const file = process.env.ENV_FILE || path.join(process.cwd(), '.env');
+	if (!existsSync(file)) {
+		rawEnvCache = process.env;
+		return rawEnvCache;
+	}
 	const text = readFileSync(file, 'utf-8');
 	const values: Record<string, string> = {};
 	for (const line of text.split(/\r?\n/)) {
@@ -151,14 +157,14 @@ function generateTotp(secret: string): string {
 	return (binCode % 1_000_000).toString().padStart(6, '0');
 }
 
-function buildHeaders(jwtToken: string | null, apiKey: string): HeadersInit {
+function buildHeaders(jwtToken: string | null, apiKey: string | undefined): HeadersInit {
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/json',
 		Accept: 'application/json',
 		'X-ClientLocalIP': '127.0.0.1',
 		'X-ClientPublicIP': '106.193.147.98',
 		'X-MACAddress': '00:00:00:00:00:00',
-		'X-PrivateKey': apiKey,
+		'X-PrivateKey': apiKey ?? '',
 		'X-UserType': 'USER',
 		'X-SourceID': 'WEB'
 	};

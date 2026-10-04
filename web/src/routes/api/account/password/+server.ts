@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { handleAuth, readJson } from '$lib/server/authApi';
-import { changeOwnPassword } from '$lib/server/authStore';
+import { changeOwnPassword } from '$lib/server/accounts';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) error(401, 'Sign in required.');

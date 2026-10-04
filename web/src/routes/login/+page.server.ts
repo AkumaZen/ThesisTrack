@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { SESSION_COOKIE, normalizeUsername, safeNextPath } from '$lib/auth';
-import { authenticate, createSession } from '$lib/server/authStore';
+import { SESSION_COOKIE, normalizeEmail, safeNextPath } from '$lib/auth';
+import { authenticate, createSession } from '$lib/server/accounts';
 import { loginThrottle } from '$lib/server/loginThrottle';
 
 export const load: PageServerLoad = ({ locals, url }) => {
@@ -12,25 +12,25 @@ export const load: PageServerLoad = ({ locals, url }) => {
 export const actions: Actions = {
 	default: async ({ request, cookies, url }) => {
 		const form = await request.formData();
-		const username = String(form.get('username') ?? '').trim();
+		const email = String(form.get('email') ?? '').trim();
 		const password = String(form.get('password') ?? '');
 		const next = String(form.get('next') ?? '');
 
-		const key = normalizeUsername(username);
+		const key = normalizeEmail(email);
 		const waitMs = loginThrottle.retryAfterMs(key);
 		if (waitMs > 0) {
 			const mins = Math.ceil(waitMs / 60_000);
 			return fail(429, {
-				username,
+				email,
 				error: `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`
 			});
 		}
 
-		const user = username && password ? await authenticate(username, password) : null;
+		const user = email && password ? await authenticate(email, password) : null;
 		if (!user) {
 			loginThrottle.recordFailure(key);
-			// Same message whether the user exists or not.
-			return fail(400, { username, error: 'Incorrect username or password.' });
+			// Same message whether the account exists or not.
+			return fail(400, { email, error: 'Incorrect email or password.' });
 		}
 
 		loginThrottle.recordSuccess(key);

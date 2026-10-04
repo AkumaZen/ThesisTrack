@@ -85,7 +85,7 @@ describe('sendAlertEmail over real SMTP', () => {
 				subjectLabel: 'Infosys Ltd',
 				message:
 					'Infosys Ltd entered Near Stage 2 Breakout (was Stage 1 Base). 2.1% below resistance.',
-				href: '/company/INFY'
+				href: '/valuation/company/INFY'
 			},
 			cfg
 		);

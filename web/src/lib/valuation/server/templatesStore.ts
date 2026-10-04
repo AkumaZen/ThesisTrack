@@ -1,10 +1,10 @@
 import { asc, eq, inArray, sql } from 'drizzle-orm';
-import { db } from './db';
-import { valuationTemplateDefaults, valuationTemplates } from './db/schema';
+import { db } from '$lib/server/db';
+import { valuationTemplateDefaults, valuationTemplates } from '$lib/server/db/valuationSchema';
 import { isUniqueViolation } from './watchlistsStore';
 import { listAllBaskets } from './sectorStore';
-import type { MethodId } from '$lib/valuationEngine';
-import type { StartingTemplate, ValuationTemplate } from '$lib/templates';
+import type { MethodId } from '$lib/valuation/valuationEngine';
+import type { StartingTemplate, ValuationTemplate } from '$lib/valuation/templates';
 
 type Row = typeof valuationTemplates.$inferSelect;
 

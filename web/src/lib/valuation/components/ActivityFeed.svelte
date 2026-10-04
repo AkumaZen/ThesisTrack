@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { timeAgo, type ActivityEntry } from '$lib/activity';
+	import { timeAgo, type ActivityEntry } from '$lib/valuation/activity';
 
 	let { limit = 12 }: { limit?: number } = $props();
 
@@ -19,7 +19,7 @@
 		]
 			.filter(Boolean)
 			.join('&');
-		const res = await fetch(`/api/activity?${query}`);
+		const res = await fetch(`/api/valuation/activity?${query}`);
 		if (!res.ok) throw new Error(`HTTP ${res.status}`);
 		return (await res.json()) as ActivityEntry[];
 	}
@@ -88,7 +88,7 @@
 				<li class="activity-item" data-testid="activity-item">
 					<span class="activity-who">{e.actor}</span>
 					{#if e.symbol}
-						<a href={resolve('/company/[symbol]', { symbol: e.symbol })}>{e.summary}</a>
+						<a href={resolve('/valuation/company/[symbol]', { symbol: e.symbol })}>{e.summary}</a>
 					{:else}
 						<span>{e.summary}</span>
 					{/if}

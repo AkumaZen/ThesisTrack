@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { sparklineCache } from './db/schema';
+import { db } from '$lib/server/db';
+import { sparklineCache } from '$lib/server/db/valuationSchema';
 import { fetchDailyCandles } from './angelone';
 
 // Daily candles only change once per trading session, and the sparkline is a shape indicator,

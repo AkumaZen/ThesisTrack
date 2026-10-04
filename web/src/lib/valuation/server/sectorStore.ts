@@ -1,6 +1,6 @@
 import { asc, eq, inArray, sql } from 'drizzle-orm';
-import { db } from './db';
-import { appMeta, sectorBaskets, sectorMajors, symbolNameCache, userSectors } from './db/schema';
+import { db } from '$lib/server/db';
+import { appMeta, sectorBaskets, sectorMajors, symbolNameCache, userSectors } from '$lib/server/db/valuationSchema';
 import {
 	CUSTOM_SECTORS,
 	MAJOR_SECTORS,

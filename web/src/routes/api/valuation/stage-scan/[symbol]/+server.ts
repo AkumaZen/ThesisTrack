@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getStageScanResult } from '$lib/server/stageScanEngine';
-import { getStageScanUniverse } from '$lib/server/stageScanUniverse';
+import { getStageScanResult } from '$lib/valuation/server/stageScanEngine';
+import { getStageScanUniverse } from '$lib/valuation/server/stageScanUniverse';
 
 // One stock's scan - the scanner page fetches the ones it has no fresh cached result for, one
 // at a time, so a cold universe fills in progressively instead of blocking the page.

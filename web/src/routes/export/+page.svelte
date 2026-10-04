@@ -7,7 +7,6 @@
 	// model, same as it would have against the old one) then handed to the
 	// browser as a blob so "Download JSONL" still behaves like a file download.
 	import { api, ApiError } from '$lib/api';
-	import { session } from '$lib/session.svelte';
 
 	type ExportStats = {
 		row_count: number;
@@ -44,11 +43,7 @@
 		downloading = true;
 		try {
 			const url = api.exportTrainingDataUrl({ task, format, split, include_open: includeOpen });
-			const headers: Record<string, string> = {};
-			if (session.token) headers['Authorization'] = `Bearer ${session.token}`;
-			else if (session.apiKey) headers['X-API-Key'] = session.apiKey;
-
-			const resp = await fetch(url, { headers });
+			const resp = await fetch(url);
 			if (!resp.ok) {
 				const body = await resp.text();
 				throw new ApiError(resp.status, body);

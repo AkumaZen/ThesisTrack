@@ -1,3 +1,7 @@
 {
-  "regions": ["bom1"]
+  "regions": ["bom1"],
+  "crons": [
+    { "path": "/api/cron/sector-rotation", "schedule": "0 */2 * * *" },
+    { "path": "/api/cron/alerts", "schedule": "*/10 3-10 * * 1-5" }
+  ]
 }

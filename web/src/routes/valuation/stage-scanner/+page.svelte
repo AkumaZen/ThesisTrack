@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
-	import type { Stage, StageScanResult } from '$lib/stageScan';
-	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/exportXlsx';
+	import type { Stage, StageScanResult } from '$lib/valuation/stageScan';
+	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -24,7 +24,7 @@
 				if (cancelled) return;
 				if (symbol in results) continue;
 				try {
-					const res = await fetch(`/api/stage-scan/${encodeURIComponent(symbol)}`);
+					const res = await fetch(`/api/valuation/stage-scan/${encodeURIComponent(symbol)}`);
 					if (res.ok) results[symbol] = (await res.json()) as StageScanResult;
 					else if (res.status === 404) results[symbol] = null;
 					else failed[symbol] = `HTTP ${res.status}`;
@@ -207,12 +207,12 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/')}>&larr; Back to watchlist</a>
+		<a class="back-link" href={resolve('/valuation')}>&larr; Back to watchlist</a>
 		<h1>Stage 2 breakout scanner</h1>
 		<div class="sub">
 			Every stock in the sector baskets, classified by Weinstein stage from daily closes. A breakout
 			only counts once a day closes above the base on heavy volume; live prices never confirm one on
-			their own. Thresholds are on the <a href={resolve('/settings')}>Settings</a> page.
+			their own. Thresholds are on the <a href={resolve('/valuation/settings')}>Settings</a> page.
 		</div>
 	</div>
 </div>
@@ -299,7 +299,7 @@
 				{#each rows as { symbol, r } (symbol)}
 					<tr data-testid="scan-row">
 						<td>
-							<a href={resolve('/company/[symbol]', { symbol })}>{nameOf(symbol)}</a>
+							<a href={resolve('/valuation/company/[symbol]', { symbol })}>{nameOf(symbol)}</a>
 							<span class="scan-sub">{symbol} · {data.basketsBySymbol[symbol]?.[0] ?? ''}</span>
 						</td>
 						<td>

@@ -1,7 +1,7 @@
 import { json, error, isHttpError } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { fetchMarketDepth } from '$lib/server/angelone';
-import { isMarketOpenIST } from '$lib/server/marketHours';
+import { fetchMarketDepth } from '$lib/valuation/server/angelone';
+import { isMarketOpenIST } from '$lib/valuation/server/marketHours';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {

@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { runBreakoutChecks, runPriceChecks, runSectorChecks } from '$lib/server/alertChecks';
+import { runBreakoutChecks, runPriceChecks, runSectorChecks } from '$lib/valuation/server/alertChecks';
 
 /** Runs checks on demand. scope: "price" (fast; falls back to last CMP when the market is
  *  closed) or "structural" (sector flips + breakouts; reads the warmed candle caches, so it can

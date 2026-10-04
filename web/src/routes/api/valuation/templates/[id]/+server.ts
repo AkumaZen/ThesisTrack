@@ -1,8 +1,8 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { templateContentProblem, templateNameProblem } from '$lib/templates';
-import type { MethodId } from '$lib/valuationEngine';
-import { deleteTemplate, updateTemplate } from '$lib/server/templatesStore';
+import { templateContentProblem, templateNameProblem } from '$lib/valuation/templates';
+import type { MethodId } from '$lib/valuation/valuationEngine';
+import { deleteTemplate, updateTemplate } from '$lib/valuation/server/templatesStore';
 
 function idOf(raw: string): number {
 	const id = Number(raw);

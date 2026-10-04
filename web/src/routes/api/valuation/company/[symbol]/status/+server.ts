@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { setStatus } from '$lib/server/teamStore';
-import { REVIEW_STATUSES, noteProblem, type ReviewStatus } from '$lib/team';
+import { setStatus } from '$lib/valuation/server/teamStore';
+import { REVIEW_STATUSES, noteProblem, type ReviewStatus } from '$lib/valuation/team';
 
 /** Body: { status, atVersion?, comment? }. Any signed-in analyst; who and when are recorded. */
 export const PUT: RequestHandler = async ({ params, request, locals }) => {

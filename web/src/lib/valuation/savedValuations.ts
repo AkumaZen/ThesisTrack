@@ -77,13 +77,13 @@ export type SaveResult =
  *  `src/lib/server/savedValuationsStore.ts` and `src/routes/api/valuations/`. Not localStorage:
  *  that was lost wholesale on any browser/profile switch or "clear site data" click. */
 export async function getSavedValuation(symbol: string): Promise<SavedValuationRecord | null> {
-	const res = await fetch(`/api/valuations/${symbol.toUpperCase()}`);
+	const res = await fetch(`/api/valuation/valuations/${symbol.toUpperCase()}`);
 	if (!res.ok) return null;
 	return (await res.json()) as SavedValuationRecord;
 }
 
 export async function listSavedValuations(): Promise<SavedValuationMeta[]> {
-	const res = await fetch('/api/valuations');
+	const res = await fetch('/api/valuation/valuations');
 	if (!res.ok) return [];
 	return (await res.json()) as SavedValuationMeta[];
 }
@@ -91,7 +91,7 @@ export async function listSavedValuations(): Promise<SavedValuationMeta[]> {
 /** Removes it from the watchlist. Returns the history id of the removal, which restores it
  *  (Undo), or null if the request failed. */
 export async function removeSavedValuation(symbol: string): Promise<number | null> {
-	const res = await fetch(`/api/valuations/${symbol.toUpperCase()}`, { method: 'DELETE' });
+	const res = await fetch(`/api/valuation/valuations/${symbol.toUpperCase()}`, { method: 'DELETE' });
 	if (!res.ok) return null;
 	const data = (await res.json().catch(() => null)) as { versionId?: number | null } | null;
 	return data?.versionId ?? null;
@@ -111,7 +111,7 @@ export async function restoreValuation(
 ): Promise<RestoreResult> {
 	let res: Response;
 	try {
-		res = await fetch(`/api/valuations/${symbol.toUpperCase()}/restore`, {
+		res = await fetch(`/api/valuation/valuations/${symbol.toUpperCase()}/restore`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ versionId, baseVersion })
@@ -131,7 +131,7 @@ export async function restoreValuation(
 export async function saveSavedValuation(symbol: string, body: SaveBody): Promise<SaveResult> {
 	let res: Response;
 	try {
-		res = await fetch(`/api/valuations/${symbol.toUpperCase()}`, {
+		res = await fetch(`/api/valuation/valuations/${symbol.toUpperCase()}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)

@@ -1,9 +1,9 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
-import { db } from './db';
-import { watchlistMembers, watchlists } from './db/schema';
+import { db } from '$lib/server/db';
+import { watchlistMembers, watchlists } from '$lib/server/db/valuationSchema';
 import { logActivity } from './activityStore';
 import { resolveCompanyName } from './companyNames';
-import type { NamedWatchlist } from '$lib/watchlists';
+import type { NamedWatchlist } from '$lib/valuation/watchlists';
 
 export async function listWatchlists(): Promise<NamedWatchlist[]> {
 	const [lists, members] = await Promise.all([

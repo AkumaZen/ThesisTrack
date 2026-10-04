@@ -1,7 +1,7 @@
 import { inArray, sql } from 'drizzle-orm';
-import { db } from './db';
-import { companyCache, savedValuations, symbolNameCache } from './db/schema';
-import { SYMBOL_NAMES } from '$lib/symbolNames';
+import { db } from '$lib/server/db';
+import { companyCache, savedValuations, symbolNameCache } from '$lib/server/db/valuationSchema';
+import { SYMBOL_NAMES } from '$lib/valuation/symbolNames';
 
 /** The real company name for a ticker, from what the app has already verified: the hand-checked
  *  list, a saved valuation, the Sector Manager's verified names, or the scraped company page.

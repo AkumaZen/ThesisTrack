@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { stageScanCache } from '$lib/server/db/schema';
-import { listAllBaskets, getSymbolNames } from '$lib/server/sectorStore';
-import { getAnalysisSettings } from '$lib/server/analysisSettingsStore';
+import { stageScanCache } from '$lib/server/db/valuationSchema';
+import { listAllBaskets, getSymbolNames } from '$lib/valuation/server/sectorStore';
+import { getAnalysisSettings } from '$lib/valuation/server/analysisSettingsStore';
 import {
 	combineLiveOverlay,
 	scanParamsKey,
@@ -10,7 +10,7 @@ import {
 	type LiveQuote,
 	type StageScanResult,
 	type StructuralResult
-} from '$lib/stageScan';
+} from '$lib/valuation/stageScan';
 
 // Instant: the universe, names, basket labels and every result already in the scan cache.
 // Results computed with different settings are left out so the page fetches them fresh.

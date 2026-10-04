@@ -1,12 +1,11 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { resolve } from '$app/paths';
 	import { flip } from 'svelte/animate';
-	import CardMetricsChooser from '$lib/components/CardMetricsChooser.svelte';
-	import { DEFAULT_SECTOR_CARD_METRICS } from '$lib/prefs';
-	import SectorCard from '$lib/components/SectorCard.svelte';
-	import SectorExport from '$lib/components/SectorExport.svelte';
-	import type { SectorReturn } from '$lib/sectorRotation';
+	import CardMetricsChooser from '$lib/valuation/components/CardMetricsChooser.svelte';
+	import { DEFAULT_SECTOR_CARD_METRICS } from '$lib/valuation/prefs';
+	import SectorCard from '$lib/valuation/components/SectorCard.svelte';
+	import SectorExport from '$lib/valuation/components/SectorExport.svelte';
+	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -63,7 +62,7 @@
 			for (const s of data.subsectors) {
 				if (cancelled) return;
 				try {
-					const res = await fetch(`/api/sector-rotation/${s.key}`);
+					const res = await fetch(`/api/valuation/sector-rotation/${s.key}`);
 					if (res.status === 500) {
 						const body = await res.json().catch(() => null);
 						if (!cancelled)
@@ -121,7 +120,7 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/sector-rotation')}>&larr; Back to Sector Rotation</a>
+		<a class="back-link" href={resolve('/valuation/sector-rotation')}>&larr; Back to Sector Rotation</a>
 		<h1>{data.majorLabel}</h1>
 		<div class="sub">
 			Thematic sub-baskets ranked by relative strength vs Nifty 50, live via Angel One —
@@ -168,7 +167,7 @@
 						label={s.label}
 						tag={`basket · ${s.constituentCount}`}
 						row={sectorData[s.key]}
-						href={resolve('/sector-rotation/[key]/[subKey]', { key: data.majorKey, subKey: s.key })}
+						href={resolve('/valuation/sector-rotation/[key]/[subKey]', { key: data.majorKey, subKey: s.key })}
 						linkText={`${s.constituentCount} ${s.constituentCount === 1 ? 'company' : 'companies'}, individual charts & growth →`}
 					/>
 				</div>

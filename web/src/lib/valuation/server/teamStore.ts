@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, isNull } from 'drizzle-orm';
-import { db } from './db';
-import { companyNotes, coverage, users, valuationStatus } from './db/schema';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { db } from '$lib/server/db';
+import { companyNotes, coverage, valuationStatus } from '$lib/server/db/valuationSchema';
+import { users } from '$lib/server/db/schema';
 import { logActivity } from './activityStore';
 import { resolveCompanyName } from './companyNames';
 import {
@@ -12,7 +13,7 @@ import {
 	type ReviewStatus,
 	type StatusInfo,
 	type TeamMember
-} from '$lib/team';
+} from '$lib/valuation/team';
 
 const NOTE_ACTIVITY: Record<NoteKind, string> = {
 	thesis: 'updated the investment thesis',
@@ -55,9 +56,10 @@ export async function getCompanyTeam(symbol: string): Promise<CompanyTeamData> {
 
 export async function listMembers(): Promise<TeamMember[]> {
 	return db
-		.select({ id: users.id, username: users.username })
+		.select({ id: users.id, username: users.displayName })
 		.from(users)
-		.orderBy(asc(users.usernameLower));
+		.where(eq(users.isActive, true))
+		.orderBy(sql`lower(${users.displayName})`);
 }
 
 export async function addNote(
@@ -183,7 +185,7 @@ export async function getCoverage(symbol: string): Promise<CoverageInfo | null> 
 	const [row] = await db
 		.select({
 			userId: coverage.userId,
-			username: users.username,
+			username: users.displayName,
 			assignedBy: coverage.assignedBy,
 			assignedAt: coverage.assignedAt
 		})
@@ -196,7 +198,7 @@ export async function getCoverage(symbol: string): Promise<CoverageInfo | null> 
 /** symbol -> covering analyst's username, for the watchlist's "My coverage" filter. */
 export async function coverageMap(): Promise<Record<string, string>> {
 	const rows = await db
-		.select({ symbol: coverage.symbol, username: users.username })
+		.select({ symbol: coverage.symbol, username: users.displayName })
 		.from(coverage)
 		.innerJoin(users, eq(users.id, coverage.userId));
 	return Object.fromEntries(rows.map((r) => [r.symbol, r.username]));
@@ -224,7 +226,7 @@ export async function setCoverage(
 			return null;
 		}
 		const [user] = await tx
-			.select({ username: users.username })
+			.select({ username: users.displayName })
 			.from(users)
 			.where(eq(users.id, userId));
 		if (!user) return false;

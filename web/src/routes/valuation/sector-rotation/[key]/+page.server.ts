@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { findAnyMajorSector, findAnyCustomSector } from '$lib/server/sectorStore';
+import { findAnyMajorSector, findAnyCustomSector } from '$lib/valuation/server/sectorStore';
 
 // Static metadata only — no live fetch, so this is instant regardless of cache state. The
 // actual per-subsector data (price, returns, signal) is fetched one basket at a time from the

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import {
@@ -8,8 +7,8 @@
 		ALERTS_CHANGED_EVENT,
 		type AlertRecord,
 		type AlertType
-	} from '$lib/alerts';
-	import { sectorApi } from '$lib/sectorClient';
+	} from '$lib/valuation/alerts';
+	import { sectorApi } from '$lib/valuation/sectorClient';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -36,7 +35,7 @@
 		busy = 'read';
 		const res = await sectorApi<{ unread: number }>(
 			'POST',
-			'/api/alerts/read',
+			'/api/valuation/alerts/read',
 			ids === 'all' ? { all: true, read } : { ids, read }
 		);
 		busy = null;
@@ -59,7 +58,7 @@
 				errors: number;
 				skipped?: string;
 			}[];
-		}>('POST', '/api/alerts/check', { scope });
+		}>('POST', '/api/valuation/alerts/check', { scope });
 		busy = null;
 		if (!res.ok) {
 			status = { kind: 'error', text: res.message };
@@ -72,7 +71,7 @@
 		);
 		status = { kind: 'ok', text: parts.join(' · ') };
 		await invalidateAll();
-		const count = await fetch('/api/alerts/unread-count')
+		const count = await fetch('/api/valuation/alerts/unread-count')
 			.then((r) => r.json())
 			.catch(() => null);
 		if (count) announce(count.unread);
@@ -88,7 +87,7 @@
 		thresholds?: { weeklyPct: number; monthlyPct: number };
 	}): Promise<boolean> {
 		busy = 'settings';
-		const res = await sectorApi('PUT', '/api/alerts/settings', patch);
+		const res = await sectorApi('PUT', '/api/valuation/alerts/settings', patch);
 		busy = null;
 		if (!res.ok) {
 			status = { kind: 'error', text: res.message };
@@ -141,7 +140,7 @@
 	let testing = $state(false);
 	async function sendTest() {
 		testing = true;
-		const res = await sectorApi('POST', '/api/alerts/settings/test-email');
+		const res = await sectorApi('POST', '/api/valuation/alerts/settings/test-email');
 		testing = false;
 		status = res.ok
 			? { kind: 'ok', text: 'Test email sent.' }
@@ -191,7 +190,7 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/')}>&larr; Back to search</a>
+		<a class="back-link" href={resolve('/valuation')}>&larr; Back to search</a>
 		<h1>Alerts</h1>
 		<div class="sub">
 			Price reaching fair value ({data.analysis?.valuation.fairValuePct ?? 80}% of the Base-case
@@ -277,17 +276,17 @@
 						<div class="al-meta">
 							<span class="al-type al-type-{a.type}">{ALERT_TYPE_LABELS[a.type]}</span>
 							{#if route?.kind === 'symbol'}
-								<a class="al-subject" href={resolve('/company/[symbol]', { symbol: route.symbol })}
+								<a class="al-subject" href={resolve('/valuation/company/[symbol]', { symbol: route.symbol })}
 									>{a.subjectLabel}</a
 								>
 							{:else if route?.kind === 'sector'}
-								<a class="al-subject" href={resolve('/sector-rotation/[key]', { key: route.key })}
+								<a class="al-subject" href={resolve('/valuation/sector-rotation/[key]', { key: route.key })}
 									>{a.subjectLabel}</a
 								>
 							{:else if route?.kind === 'basket'}
 								<a
 									class="al-subject"
-									href={resolve('/sector-rotation/[key]/[subKey]', {
+									href={resolve('/valuation/sector-rotation/[key]/[subKey]', {
 										key: route.key,
 										subKey: route.subKey
 									})}>{a.subjectLabel}</a

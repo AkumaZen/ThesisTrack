@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { userPrefs } from './db/schema';
-import { mergePrefs, sanitizePrefs, type UserPrefs } from '$lib/prefs';
+import { db } from '$lib/server/db';
+import { userPrefs } from '$lib/server/db/valuationSchema';
+import { mergePrefs, sanitizePrefs, type UserPrefs } from '$lib/valuation/prefs';
 
 export async function getPrefs(userId: number): Promise<UserPrefs> {
 	const [row] = await db.select().from(userPrefs).where(eq(userPrefs.userId, userId));

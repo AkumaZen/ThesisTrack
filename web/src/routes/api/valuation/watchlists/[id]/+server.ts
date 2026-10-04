@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { deleteWatchlist, renameWatchlist } from '$lib/server/watchlistsStore';
-import { watchlistNameProblem } from '$lib/watchlists';
+import { deleteWatchlist, renameWatchlist } from '$lib/valuation/server/watchlistsStore';
+import { watchlistNameProblem } from '$lib/valuation/watchlists';
 
 function idOf(raw: string) {
 	const id = Number(raw);

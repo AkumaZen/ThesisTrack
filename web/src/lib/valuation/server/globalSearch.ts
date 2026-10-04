@@ -1,11 +1,19 @@
 import { sql } from 'drizzle-orm';
-import { db } from './db';
-import { savedValuations } from './db/schema';
+import { db } from '$lib/server/db';
+import { savedValuations } from '$lib/server/db/valuationSchema';
+import { companies as thesisCompanies } from '$lib/server/db/schema';
 import { listAllBaskets, listAllMajorSectors, getSymbolNames } from './sectorStore';
 import { searchCompanies } from './search';
 import { resolveCompanyNames } from './companyNames';
-import type { GlobalSearchResults, SearchCompany, SearchNote, SearchSector } from '../globalSearch';
+import type {
+	GlobalSearchResults,
+	SearchCompany,
+	SearchNote,
+	SearchSector,
+	SearchThesis
+} from '../globalSearch';
 
+const MAX_THESES = 5;
 const MAX_COMPANIES = 8;
 const MAX_SECTORS = 6;
 const MAX_NOTES = 8;
@@ -63,6 +71,29 @@ async function companies(q: string): Promise<SearchCompany[]> {
 	return out;
 }
 
+async function theses(q: string): Promise<SearchThesis[]> {
+	const rows = await db
+		.select({
+			companyId: thesisCompanies.companyId,
+			name: thesisCompanies.name,
+			nse: thesisCompanies.nseTicker,
+			bse: thesisCompanies.bseTicker
+		})
+		.from(thesisCompanies);
+	return rows
+		.map((r) => {
+			const ticker = r.nse ?? r.bse ?? null;
+			const ranks = [rank(q, r.companyId, r.name), ticker ? rank(q, ticker, r.name) : null].filter(
+				(x): x is number => x != null
+			);
+			return ranks.length ? { t: { companyId: r.companyId, name: r.name, ticker }, r: Math.min(...ranks) } : null;
+		})
+		.filter((x) => x != null)
+		.sort((a, b) => a.r - b.r)
+		.slice(0, MAX_THESES)
+		.map((x) => x.t);
+}
+
 async function sectors(q: string): Promise<SearchSector[]> {
 	const [majors, baskets] = await Promise.all([listAllMajorSectors(), listAllBaskets()]);
 	const out: (SearchSector & { r: number })[] = [];
@@ -99,7 +130,7 @@ async function notes(q: string): Promise<SearchNote[]> {
 		select id, symbol, kind, author, created_at,
 			ts_headline('english', body, websearch_to_tsquery('english', ${q}),
 				'StartSel=<<, StopSel=>>, MaxWords=24, MinWords=10, MaxFragments=1') as snippet
-		from company_notes
+		from valuation.company_notes
 		where deleted_at is null
 			and (to_tsvector('english', body) @@ websearch_to_tsquery('english', ${q})
 				or body ilike ${like})
@@ -119,7 +150,7 @@ async function notes(q: string): Promise<SearchNote[]> {
 
 export async function globalSearch(raw: string): Promise<GlobalSearchResults> {
 	const q = raw.trim().toLowerCase().slice(0, 100);
-	if (q.length < 2) return { query: q, companies: [], sectors: [], notes: [] };
-	const [c, s, n] = await Promise.all([companies(q), sectors(q), notes(q)]);
-	return { query: q, companies: c, sectors: s, notes: n };
+	if (q.length < 2) return { query: q, theses: [], companies: [], sectors: [], notes: [] };
+	const [t, c, s, n] = await Promise.all([theses(q), companies(q), sectors(q), notes(q)]);
+	return { query: q, theses: t, companies: c, sectors: s, notes: n };
 }

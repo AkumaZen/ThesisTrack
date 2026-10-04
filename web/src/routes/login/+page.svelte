@@ -1,52 +1,96 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import type { ActionData, PageData } from './$types';
+	import AuthFrame from '$lib/components/shell/AuthFrame.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let showPassword = $state(false);
+	let submitting = $state(false);
 </script>
 
 <svelte:head>
-	<title>Sign in · Valuation Dashboard</title>
+	<title>Sign in · ThesisTrack</title>
 </svelte:head>
 
-<div class="band">
-	<div class="band-inner">
-		<h1>Valuation Dashboard</h1>
-		<div class="sub">Sign in to continue</div>
-	</div>
-</div>
-
-<div class="wrap">
-	<form class="auth-card" method="POST" aria-labelledby="signin-title">
-		<h2 id="signin-title" class="auth-title">Sign in</h2>
-
+<AuthFrame title="Sign in" subtitle="Theses, valuations and sector rotation in one place.">
+	<form method="POST" class="auth-form" onsubmit={() => (submitting = true)} aria-labelledby="auth-title">
 		{#if form?.error}
-			<p class="sm-msg sm-msg-error" role="alert" data-testid="login-error">{form.error}</p>
+			<p class="notice notice-error" role="alert" data-testid="login-error">{form.error}</p>
 		{/if}
 
-		<label class="auth-label" for="username">Username</label>
-		<input
-			class="sm-input auth-input"
-			id="username"
-			name="username"
-			autocomplete="username"
-			autocapitalize="none"
-			spellcheck="false"
-			value={form?.username ?? ''}
-			required
-		/>
+		<div class="field">
+			<label class="field-label" for="email">Email</label>
+			<input
+				class="input"
+				id="email"
+				name="email"
+				type="email"
+				autocomplete="username"
+				autocapitalize="none"
+				spellcheck="false"
+				value={form?.email ?? ''}
+				required
+			/>
+		</div>
 
-		<label class="auth-label" for="password">Password</label>
-		<input
-			class="sm-input auth-input"
-			id="password"
-			name="password"
-			type="password"
-			autocomplete="current-password"
-			required
-		/>
+		<div class="field">
+			<label class="field-label" for="password">Password</label>
+			<div class="pw">
+				<input
+					class="input"
+					id="password"
+					name="password"
+					type={showPassword ? 'text' : 'password'}
+					autocomplete="current-password"
+					required
+				/>
+				<button
+					type="button"
+					class="pw-toggle"
+					onclick={() => (showPassword = !showPassword)}
+					aria-label={showPassword ? 'Hide password' : 'Show password'}
+					aria-pressed={showPassword}
+				>
+					{showPassword ? 'Hide' : 'Show'}
+				</button>
+			</div>
+		</div>
 
 		<input type="hidden" name="next" value={data.next} />
-		<button class="sm-btn sm-btn-primary auth-submit" type="submit">Sign in</button>
+		<button class="btn btn-primary btn-block" type="submit" disabled={submitting}>
+			{submitting ? 'Signing in…' : 'Sign in'}
+		</button>
 	</form>
-</div>
+</AuthFrame>
+
+<style>
+	.auth-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+	.pw {
+		position: relative;
+	}
+	.pw .input {
+		padding-right: 64px;
+	}
+	.pw-toggle {
+		position: absolute;
+		right: 4px;
+		top: 50%;
+		transform: translateY(-50%);
+		height: 32px;
+		padding: 0 var(--space-2);
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--ink);
+		background: transparent;
+		border: 0;
+	}
+	.pw-toggle:hover {
+		background: var(--surface);
+	}
+</style>

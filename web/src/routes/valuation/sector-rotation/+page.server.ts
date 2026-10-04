@@ -1,5 +1,5 @@
 ﻿import type { PageServerLoad } from './$types';
-import { listAllMajorSectors } from '$lib/server/sectorStore';
+import { listAllMajorSectors } from '$lib/valuation/server/sectorStore';
 
 // Static metadata (built-in major sectors plus whatever's been imported via the "Import
 // Sector" panel) â€” no live fetch, so this is instant regardless of cache state. The actual

@@ -4,11 +4,20 @@ import {
 	doublePrecision,
 	integer,
 	jsonb,
-	pgTable,
+	pgSchema,
 	primaryKey,
 	serial,
 	text
 } from 'drizzle-orm/pg-core';
+import { users } from './schema';
+
+// Everything the valuation tools (watchlist, company valuation, sector rotation,
+// breakout scanner, alerts) store lives in its own Postgres schema so it can
+// never collide with the thesis tables. People are the shared `public.users`
+// (see schema.ts) - the valuation tables reference them by id, and record
+// authors by `users.display_name`. Owned by drizzle/0010_merge_valuation.sql.
+export const valuation = pgSchema('valuation');
+const pgTable = valuation.table;
 
 export const companyCache = pgTable('company_cache', {
 	symbol: text('symbol').primaryKey(),
@@ -188,29 +197,6 @@ export const alertState = pgTable('alert_state', {
 export const alertSettings = pgTable('alert_settings', {
 	key: text('key').primaryKey(),
 	value: jsonb('value').notNull()
-});
-
-// Team accounts. `usernameLower` is the unique login key (logins are case-insensitive) while
-// `username` keeps the display casing, e.g. "Rohit.Negi". `role` is 'admin' | 'member'.
-export const users = pgTable('users', {
-	id: serial('id').primaryKey(),
-	username: text('username').notNull(),
-	usernameLower: text('username_lower').notNull().unique(),
-	passwordHash: text('password_hash').notNull(),
-	role: text('role').notNull(),
-	mustChangePassword: boolean('must_change_password').notNull().default(false),
-	createdAt: bigint('created_at', { mode: 'number' }).notNull()
-});
-
-// Browser sessions. Only a SHA-256 digest of the cookie token is stored, so a database leak
-// can't be replayed as a login. Deleting a user cascades to their sessions (instant sign-out).
-export const sessions = pgTable('sessions', {
-	tokenHash: text('token_hash').primaryKey(),
-	userId: integer('user_id')
-		.notNull()
-		.references(() => users.id, { onDelete: 'cascade' }),
-	createdAt: bigint('created_at', { mode: 'number' }).notNull(),
-	expiresAt: bigint('expires_at', { mode: 'number' }).notNull()
 });
 
 // History of each company's saved valuation (migrations/0002). An autosave by the same person

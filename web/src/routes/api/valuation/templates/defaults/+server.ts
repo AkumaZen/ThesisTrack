@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { findAnyCustomSector } from '$lib/server/sectorStore';
-import { setTemplateDefault } from '$lib/server/templatesStore';
+import { findAnyCustomSector } from '$lib/valuation/server/sectorStore';
+import { setTemplateDefault } from '$lib/valuation/server/templatesStore';
 
 /** Body: { scope: 'me' | 'basket:<key>', templateId: number | null }. `me` is the caller's own
  *  default; a basket default applies to the whole team. null clears it. */

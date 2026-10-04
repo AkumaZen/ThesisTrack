@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { getAlertSettings, listAlerts, unreadCount } from '$lib/server/alertStore';
-import { emailStatus } from '$lib/server/alertNotify';
+import { getAlertSettings, listAlerts, unreadCount } from '$lib/valuation/server/alertStore';
+import { emailStatus } from '$lib/valuation/server/alertNotify';
 
 // Instant DB reads only (no live market data) - the page renders immediately and the check
 // buttons trigger the slower work on demand.

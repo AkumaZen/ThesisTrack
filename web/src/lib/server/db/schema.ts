@@ -39,7 +39,7 @@ export const proposalStateEnum = pgEnum('proposal_state', [
 	'rejected',
 	'superseded'
 ]);
-export const userRoleEnum = pgEnum('user_role', ['read_write', 'read_only']);
+export const userRoleEnum = pgEnum('user_role', ['read_write', 'read_only', 'admin']);
 
 export const broadIndustries = pgTable('broad_industries', {
 	id: serial('id').primaryKey(),
@@ -296,7 +296,25 @@ export const users = pgTable('users', {
 	role: userRoleEnum('role').notNull().default('read_write'),
 	isActive: boolean('is_active').notNull().default(true),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-	lastLoginAt: timestamp('last_login_at', { withTimezone: true })
+	lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+	// How the person is shown across the app ("Rohit.Negi"). Valuation notes,
+	// versions and templates record their author by this name (migration 0010).
+	displayName: varchar('display_name', { length: 80 }).notNull(),
+	// Set when an admin created or reset the account: the person must choose
+	// their own password before using anything else.
+	mustChangePassword: boolean('must_change_password').notNull().default(false)
+});
+
+// Browser sessions (httpOnly cookie). Only a SHA-256 digest of the cookie
+// token is stored, so a database leak can't be replayed as a login. Deleting
+// a user cascades to their sessions (instant sign-out everywhere).
+export const sessions = pgTable('sessions', {
+	tokenHash: text('token_hash').primaryKey(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	createdAt: bigint('created_at', { mode: 'number' }).notNull(),
+	expiresAt: bigint('expires_at', { mode: 'number' }).notNull()
 });
 
 export const trainingSplits = pgTable('training_splits', {

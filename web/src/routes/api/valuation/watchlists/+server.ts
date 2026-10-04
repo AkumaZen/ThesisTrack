@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { createWatchlist, listWatchlists } from '$lib/server/watchlistsStore';
-import { watchlistNameProblem } from '$lib/watchlists';
+import { createWatchlist, listWatchlists } from '$lib/valuation/server/watchlistsStore';
+import { watchlistNameProblem } from '$lib/valuation/watchlists';
 
 export const GET: RequestHandler = async () => json(await listWatchlists());
 

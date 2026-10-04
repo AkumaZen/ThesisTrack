@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { alertSettings } from './db/schema';
+import { db } from '$lib/server/db';
+import { alertSettings } from '$lib/server/db/valuationSchema';
 import { storedAnalysisSettings, type AnalysisSettings } from '../analysisSettings';
 
 // Stored as one row of the shared key/value settings table (the same one that holds the RS alert

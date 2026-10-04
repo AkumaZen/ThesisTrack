@@ -4,10 +4,10 @@ import {
 	getAlertSettings,
 	saveAlertSettings,
 	type AlertSettingsPatch
-} from '$lib/server/alertStore';
-import { emailStatus } from '$lib/server/alertNotify';
-import { ALERT_TYPES, type AlertType } from '$lib/alerts';
-import { parseThresholds } from '$lib/rsThresholds';
+} from '$lib/valuation/server/alertStore';
+import { emailStatus } from '$lib/valuation/server/alertNotify';
+import { ALERT_TYPES, type AlertType } from '$lib/valuation/alerts';
+import { parseThresholds } from '$lib/valuation/rsThresholds';
 
 async function snapshot(userId: number) {
 	return { ...(await getAlertSettings(userId)), email: emailStatus() };

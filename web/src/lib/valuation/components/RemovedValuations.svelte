@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { timeAgo } from '$lib/activity';
-	import { restoreValuation, type RemovedValuation } from '$lib/savedValuations';
+	import { timeAgo } from '$lib/valuation/activity';
+	import { restoreValuation, type RemovedValuation } from '$lib/valuation/savedValuations';
 
 	// Companies removed from the watchlist in the last 30 days, each one click from restored with
 	// its full valuation. `refreshKey` changes whenever the watchlist itself changed.
@@ -12,7 +12,7 @@
 	let message = $state<string | null>(null);
 
 	async function load() {
-		const res = await fetch('/api/valuations/removed');
+		const res = await fetch('/api/valuation/valuations/removed');
 		if (res.ok) items = (await res.json()) as RemovedValuation[];
 	}
 

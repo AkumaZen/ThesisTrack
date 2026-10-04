@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DEFAULT_COLUMNS, WATCHLIST_COLUMNS, moveColumn, type ColumnId } from '$lib/prefs';
+	import { DEFAULT_COLUMNS, WATCHLIST_COLUMNS, moveColumn, type ColumnId } from '$lib/valuation/prefs';
 
 	// Which watchlist columns to show and in what order. Shown columns are listed first in their
 	// order (with move buttons), then the hidden ones. Every change is reported via onChange.

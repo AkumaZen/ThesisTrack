@@ -1,11 +1,11 @@
 <script lang="ts">
 	import LineChart from './LineChart.svelte';
-	import type { SectorReturn } from '$lib/sectorRotation';
+	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import {
 		DEFAULT_SECTOR_CARD_METRICS,
 		SECTOR_CARD_METRICS,
 		type SectorCardMetric
-	} from '$lib/prefs';
+	} from '$lib/valuation/prefs';
 
 	// `row` is undefined while this basket's own fetch hasn't resolved yet — each SectorCard
 	// instance owns exactly the slice of state that changes it, so one card resolving never

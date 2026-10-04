@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { setRead, unreadCount } from '$lib/server/alertStore';
+import { setRead, unreadCount } from '$lib/valuation/server/alertStore';
 
 /** Body: { read: boolean, ids?: number[] } or { read: boolean, all: true }. */
 export const POST: RequestHandler = async ({ request, locals }) => {

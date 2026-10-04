@@ -1,5 +1,4 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { resolve } from '$app/paths';
 	import { tick } from 'svelte';
 	import type { PageData } from './$types';
@@ -14,29 +13,29 @@
 		freshAllAssumptions,
 		type MethodId,
 		type ScenarioId
-	} from '$lib/valuationEngine';
+	} from '$lib/valuation/valuationEngine';
 	import {
 		getSavedValuation,
 		saveSavedValuation,
 		type SavedValuationRecord
-	} from '$lib/savedValuations';
-	import { diffValuations } from '$lib/valuationDiff';
-	import { diagnoseValuationMethod } from '$lib/valuationDiagnosis';
-	import { assessBusinessQuality } from '$lib/businessQuality';
-	import { runIntegrityChecks, worstIntegrityStatus } from '$lib/dataIntegrity';
-	import { analyzePeg } from '$lib/pegAnalysis';
-	import type { StageAnalysisResult } from '$lib/stageAnalysis';
-	import CompanyTeam from '$lib/components/CompanyTeam.svelte';
-	import ListMenu from '$lib/components/ListMenu.svelte';
-	import TemplateMenu from '$lib/components/TemplateMenu.svelte';
-	import type { ValuationTemplate } from '$lib/templates';
-	import type { NamedWatchlist } from '$lib/watchlists';
+	} from '$lib/valuation/savedValuations';
+	import { diffValuations } from '$lib/valuation/valuationDiff';
+	import { diagnoseValuationMethod } from '$lib/valuation/valuationDiagnosis';
+	import { assessBusinessQuality } from '$lib/valuation/businessQuality';
+	import { runIntegrityChecks, worstIntegrityStatus } from '$lib/valuation/dataIntegrity';
+	import { analyzePeg } from '$lib/valuation/pegAnalysis';
+	import type { StageAnalysisResult } from '$lib/valuation/stageAnalysis';
+	import CompanyTeam from '$lib/valuation/components/CompanyTeam.svelte';
+	import ListMenu from '$lib/valuation/components/ListMenu.svelte';
+	import TemplateMenu from '$lib/valuation/components/TemplateMenu.svelte';
+	import type { ValuationTemplate } from '$lib/valuation/templates';
+	import type { NamedWatchlist } from '$lib/valuation/watchlists';
 	import {
 		REVIEW_STATUS_LABELS,
 		statusIsStale,
 		type CoverageInfo,
 		type StatusInfo
-	} from '$lib/team';
+	} from '$lib/valuation/team';
 
 	interface DepthLevel {
 		price: number;
@@ -136,8 +135,8 @@
 		exportError = null;
 		try {
 			const [{ downloadWorkbook, todayStamp }, { valuationSheets }] = await Promise.all([
-				import('$lib/exportXlsx'),
-				import('$lib/valuationWorkbook')
+				import('$lib/valuation/exportXlsx'),
+				import('$lib/valuation/valuationWorkbook')
 			]);
 			await downloadWorkbook(
 				`valuation-${company.symbol}-${todayStamp()}`,
@@ -368,7 +367,7 @@
 	// The team's named lists ("Q4 ideas", "Defence"...), for the Lists menu in the header.
 	let namedLists = $state<NamedWatchlist[]>([]);
 	async function loadLists() {
-		const res = await fetch('/api/watchlists');
+		const res = await fetch('/api/valuation/watchlists');
 		if (res.ok) namedLists = (await res.json()) as NamedWatchlist[];
 	}
 	$effect(() => {
@@ -376,7 +375,7 @@
 	});
 	async function setListMembership(listId: number, member: boolean): Promise<string | null> {
 		try {
-			const res = await fetch(`/api/watchlists/${listId}/members`, {
+			const res = await fetch(`/api/valuation/watchlists/${listId}/members`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ symbol: company.symbol, member })
@@ -451,7 +450,7 @@
 		priceRefreshing = true;
 		priceRefreshError = null;
 		try {
-			const res = await fetch(`/api/company/${company.symbol}/refresh-price`, { method: 'POST' });
+			const res = await fetch(`/api/valuation/company/${company.symbol}/refresh-price`, { method: 'POST' });
 			const body = await res.json().catch(() => null);
 			if (!res.ok) {
 				throw new Error(body?.message ?? `Request failed (${res.status})`);
@@ -480,7 +479,7 @@
 		stageLoading = true;
 		stageError = null;
 		try {
-			const res = await fetch(`/api/company/${company.symbol}/stage-analysis`);
+			const res = await fetch(`/api/valuation/company/${company.symbol}/stage-analysis`);
 			const body = await res.json().catch(() => null);
 			if (!res.ok) throw new Error(body?.message ?? `Request failed (${res.status})`);
 			stageResult = body;
@@ -499,7 +498,7 @@
 		depthLoading = true;
 		depthError = null;
 		try {
-			const res = await fetch(`/api/company/${company.symbol}/depth`);
+			const res = await fetch(`/api/valuation/company/${company.symbol}/depth`);
 			const body = await res.json().catch(() => null);
 			if (!res.ok) throw new Error(body?.message ?? `Request failed (${res.status})`);
 			depthResult = body;
@@ -572,7 +571,7 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/')}>&larr; Back to search</a>
+		<a class="back-link" href={resolve('/valuation')}>&larr; Back to search</a>
 		<button class="print-btn" onclick={handlePrint}>🖨 Print / PDF</button>
 		<button
 			class="print-btn print-btn-gap"
@@ -597,10 +596,10 @@
 			{/if}
 		</div>
 		<div class="co-links" data-testid="company-links">
-			<a href={resolve(`/compare?symbols=${company.symbol}`)}>Compare with peers &rarr;</a>
+			<a href={resolve(`/valuation/compare?symbols=${company.symbol}`)}>Compare with peers &rarr;</a>
 			{#each data.sectors as path (path.majorKey + path.basketKey)}
 				<a
-					href={resolve('/sector-rotation/[key]/[subKey]', {
+					href={resolve('/valuation/sector-rotation/[key]/[subKey]', {
 						key: path.majorKey,
 						subKey: path.basketKey
 					})}>{path.majorLabel} &rsaquo; {path.basketLabel} &rarr;</a

@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { SESSION_COOKIE } from '$lib/auth';
-import { deleteSession } from '$lib/server/authStore';
+import { deleteSession } from '$lib/server/accounts';
 
 // POST only: a plain link (GET) must never be able to sign someone out, e.g. via an <img> tag.
 export const POST: RequestHandler = async ({ cookies }) => {

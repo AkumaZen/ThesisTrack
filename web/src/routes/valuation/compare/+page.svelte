@@ -1,11 +1,10 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
-	import { diagnoseValuationMethod } from '$lib/valuationDiagnosis';
-	import { assessBusinessQuality } from '$lib/businessQuality';
-	import { analyzePeg } from '$lib/pegAnalysis';
+	import { diagnoseValuationMethod } from '$lib/valuation/valuationDiagnosis';
+	import { assessBusinessQuality } from '$lib/valuation/businessQuality';
+	import { analyzePeg } from '$lib/valuation/pegAnalysis';
 
 	let { data }: { data: PageData } = $props();
 
@@ -20,7 +19,7 @@
 			.filter(Boolean)
 			.slice(0, data.maxSymbols)
 			.join(',');
-		goto(resolve(symbols ? `/compare?symbols=${symbols}` : '/compare'));
+		goto(resolve(symbols ? `/valuation/compare?symbols=${symbols}` : '/valuation/compare'));
 	}
 
 	function cagrPct(first: number, last: number, periods: number): number | null {
@@ -89,7 +88,7 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/')}>&larr; Back to search</a>
+		<a class="back-link" href={resolve('/valuation')}>&larr; Back to search</a>
 		<h1>Compare Companies</h1>
 		<div class="sub">
 			Side-by-side comparison since Screener's own peer table isn't reachable without a real browser
@@ -124,7 +123,7 @@
 						{#each rows as r (r.symbol)}
 							<th>
 								{#if r.company}
-									<a href={resolve('/company/[symbol]', { symbol: r.symbol })}>{r.symbol}</a>
+									<a href={resolve('/valuation/company/[symbol]', { symbol: r.symbol })}>{r.symbol}</a>
 								{:else}
 									{r.symbol}
 								{/if}

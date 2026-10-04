@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { timeAgo } from '$lib/activity';
+	import { timeAgo } from '$lib/valuation/activity';
 	import {
 		REVIEW_STATUSES,
 		REVIEW_STATUS_LABELS,
@@ -11,13 +11,13 @@
 		type NoteKind,
 		type ReviewStatus,
 		type StatusInfo
-	} from '$lib/team';
+	} from '$lib/valuation/team';
 	import {
 		restoreValuation,
 		type ValuationContent,
 		type ValuationVersionInfo
-	} from '$lib/savedValuations';
-	import { diffValuations } from '$lib/valuationDiff';
+	} from '$lib/valuation/savedValuations';
+	import { diffValuations } from '$lib/valuation/valuationDiff';
 
 	interface Props {
 		symbol: string;
@@ -59,7 +59,7 @@
 	async function loadTeam(forSymbol: string) {
 		loadError = null;
 		try {
-			const res = await fetch(`/api/company/${forSymbol}/team`);
+			const res = await fetch(`/api/valuation/company/${forSymbol}/team`);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			const data = (await res.json()) as CompanyTeamData;
 			if (forSymbol !== symbol) return;
@@ -133,7 +133,7 @@
 			return;
 		}
 		busy = true;
-		const err = await send('POST', `/api/company/${symbol}/notes`, { kind, body: drafts[kind] });
+		const err = await send('POST', `/api/valuation/company/${symbol}/notes`, { kind, body: drafts[kind] });
 		busy = false;
 		formError[kind] = err;
 		if (err) return;
@@ -154,7 +154,7 @@
 			return;
 		}
 		busy = true;
-		const err = await send('PATCH', `/api/notes/${note.id}`, { body: editText });
+		const err = await send('PATCH', `/api/valuation/notes/${note.id}`, { body: editText });
 		busy = false;
 		formError[`edit-${note.id}`] = err;
 		if (err) return;
@@ -164,7 +164,7 @@
 
 	async function remove(note: CompanyNote) {
 		busy = true;
-		const err = await send('DELETE', `/api/notes/${note.id}`);
+		const err = await send('DELETE', `/api/valuation/notes/${note.id}`);
 		busy = false;
 		confirmDeleteId = null;
 		formError[`edit-${note.id}`] = err;
@@ -181,7 +181,7 @@
 	async function applyStatus() {
 		if (!statusDraft) return;
 		busy = true;
-		const err = await send('PUT', `/api/company/${symbol}/status`, {
+		const err = await send('PUT', `/api/valuation/company/${symbol}/status`, {
 			status: statusDraft,
 			atVersion: inWatchlist ? currentVersion : null,
 			comment: statusComment
@@ -197,7 +197,7 @@
 	// --- Coverage ---------------------------------------------------------------------------------
 	async function assign(userId: number | null) {
 		busy = true;
-		const err = await send('PUT', `/api/company/${symbol}/coverage`, { userId });
+		const err = await send('PUT', `/api/valuation/company/${symbol}/coverage`, { userId });
 		busy = false;
 		formError.coverage = err;
 		if (!err) await loadTeam(symbol);
@@ -213,7 +213,7 @@
 	async function loadHistory(forSymbol: string) {
 		historyError = null;
 		try {
-			const res = await fetch(`/api/valuations/${forSymbol}/history`);
+			const res = await fetch(`/api/valuation/valuations/${forSymbol}/history`);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			const data = (await res.json()) as ValuationVersionInfo[];
 			if (forSymbol === symbol) history = data;
@@ -235,7 +235,7 @@
 			compare = null;
 			return;
 		}
-		const res = await fetch(`/api/valuations/${symbol}/history/${entry.id}`);
+		const res = await fetch(`/api/valuation/valuations/${symbol}/history/${entry.id}`);
 		if (!res.ok) {
 			historyError = 'Could not load that version.';
 			return;

@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getMajorSectorReturn } from '$lib/server/sectorRotationCache';
-import { findAnyMajorSector } from '$lib/server/sectorStore';
+import { getMajorSectorReturn } from '$lib/valuation/server/sectorRotationCache';
+import { findAnyMajorSector } from '$lib/valuation/server/sectorStore';
 
 // One major sector's rolled-up rotation data — the major-sector grid fetches these one at a
 // time (see +page.svelte), same progressive-load reasoning as /api/sector-rotation/[key].

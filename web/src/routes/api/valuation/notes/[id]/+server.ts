@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { deleteNote, editNote, type NoteChange } from '$lib/server/teamStore';
-import { noteProblem } from '$lib/team';
+import { deleteNote, editNote, type NoteChange } from '$lib/valuation/server/teamStore';
+import { noteProblem } from '$lib/valuation/team';
 
 function idOf(raw: string): number {
 	const id = Number(raw);

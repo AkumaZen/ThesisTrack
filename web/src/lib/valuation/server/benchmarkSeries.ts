@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { benchmarkSeriesCache } from './db/schema';
+import { db } from '$lib/server/db';
+import { benchmarkSeriesCache } from '$lib/server/db/valuationSchema';
 import { fetchIndexCandles, type Candle } from './angelone';
 import { BENCHMARK_INDEX } from './sectorIndices';
 

@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { handleEdit, readBody, requireVerified } from '$lib/server/sectorApi';
-import { addSymbolToBasket } from '$lib/server/sectorStore';
+import { handleEdit, readBody, requireVerified } from '$lib/valuation/server/sectorApi';
+import { addSymbolToBasket } from '$lib/valuation/server/sectorStore';
 
 /** Adds a company to a basket - only after the server itself has verified the symbol. */
 export const POST: RequestHandler = async ({ params, request }) => {

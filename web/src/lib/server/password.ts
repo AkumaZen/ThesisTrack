@@ -1,31 +1,30 @@
-import { randomBytes, scrypt as scryptCb, timingSafeEqual, createHash } from 'node:crypto';
+import { createHash, pbkdf2 as pbkdf2Cb, randomBytes, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 
-// No third-party dependency: Node's built-in scrypt (a memory-hard KDF) with a per-password
-// random salt. Stored as `scrypt$N$r$p$<salt b64>$<hash b64>` so parameters can be raised later
-// without invalidating existing hashes.
+// PBKDF2-HMAC-SHA256, 260k iterations, stored as "saltHex$digestHex" - byte-for-byte the format
+// the original Python backend wrote, so every existing account keeps working. Async so a login
+// never blocks the event loop for the ~100ms the derivation takes.
 
-const scrypt = promisify(scryptCb) as (
-	password: string,
-	salt: Buffer,
-	keylen: number
-) => Promise<Buffer>;
+const pbkdf2 = promisify(pbkdf2Cb);
+const ITERATIONS = 260_000;
+const KEY_LEN = 32;
 
-const N = 16384;
-const KEY_LEN = 64;
+async function derive(password: string, salt: Buffer): Promise<Buffer> {
+	return pbkdf2(password, salt, ITERATIONS, KEY_LEN, 'sha256');
+}
 
 export async function hashPassword(password: string): Promise<string> {
 	const salt = randomBytes(16);
-	const hash = await scrypt(password, salt, KEY_LEN);
-	return `scrypt$${N}$8$1$${salt.toString('base64')}$${hash.toString('base64')}`;
+	return `${salt.toString('hex')}$${(await derive(password, salt)).toString('hex')}`;
 }
 
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
-	const [scheme, n, r, p, saltB64, hashB64] = stored.split('$');
-	if (scheme !== 'scrypt' || Number(n) !== N || Number(r) !== 8 || Number(p) !== 1) return false;
-	if (!saltB64 || !hashB64) return false;
-	const expected = Buffer.from(hashB64, 'base64');
-	const actual = await scrypt(password, Buffer.from(saltB64, 'base64'), expected.length);
+	const parts = stored.split('$');
+	if (parts.length !== 2) return false;
+	const [saltHex, digestHex] = parts;
+	if (!/^[0-9a-f]{32}$/.test(saltHex) || !/^[0-9a-f]{64}$/.test(digestHex)) return false;
+	const expected = Buffer.from(digestHex, 'hex');
+	const actual = await derive(password, Buffer.from(saltHex, 'hex'));
 	return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 

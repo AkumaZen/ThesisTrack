@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { handleEdit, readBody } from '$lib/server/sectorApi';
-import { deleteMajor, renameMajor } from '$lib/server/sectorStore';
+import { handleEdit, readBody } from '$lib/valuation/server/sectorApi';
+import { deleteMajor, renameMajor } from '$lib/valuation/server/sectorStore';
 
 export const PATCH: RequestHandler = async ({ params, request }) => {
 	const body = await readBody(request);

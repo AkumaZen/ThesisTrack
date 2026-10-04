@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { readBody } from '$lib/server/sectorApi';
-import { verifySymbol } from '$lib/server/symbolVerify';
+import { readBody } from '$lib/valuation/server/sectorApi';
+import { verifySymbol } from '$lib/valuation/server/symbolVerify';
 
 export const POST: RequestHandler = async ({ request }) => {
 	const body = await readBody(request);

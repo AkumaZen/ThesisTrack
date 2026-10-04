@@ -1,13 +1,16 @@
+// People and browser sessions for the whole app (thesis + valuation tools share one login).
 import { and, asc, eq, lt, ne, sql } from 'drizzle-orm';
-import { env } from '$env/dynamic/private';
 import { db } from './db';
 import { sessions, users } from './db/schema';
 import {
+	ROLES,
 	SESSION_TTL_MS,
-	normalizeUsername,
+	displayNameFromEmail,
+	normalizeEmail,
 	removalBlocked,
+	validateDisplayName,
+	validateEmail,
 	validatePassword,
-	validateUsername,
 	type Role,
 	type SessionUser,
 	type UserRow
@@ -33,97 +36,80 @@ export class AuthError extends Error {
 
 const toRow = (r: typeof users.$inferSelect): UserRow => ({
 	id: r.id,
-	username: r.username,
+	email: r.email,
+	username: r.displayName,
 	role: r.role as Role,
 	mustChangePassword: r.mustChangePassword,
-	createdAt: r.createdAt
+	isActive: r.isActive,
+	createdAt: r.createdAt.getTime(),
+	lastLoginAt: r.lastLoginAt ? r.lastLoginAt.getTime() : null
 });
 
-// ---------------------------------------------------------------------------------------------
-// Seeding: the very first run (empty users table) creates the two team accounts. Passwords come
-// from SEED_ADMIN_PASSWORD / SEED_MEMBER_PASSWORD in .env; if one is missing a random one is
-// generated and printed once to the server log. Seeding never runs again once any user exists,
-// so those env values are useless afterwards and can be deleted.
-// ---------------------------------------------------------------------------------------------
-
-let seeding: Promise<void> | null = null;
-
-export function ensureSeedUsers(): Promise<void> {
-	seeding ??= seed().catch((e) => {
-		seeding = null;
-		throw e;
-	});
-	return seeding;
-}
-
-async function seed(): Promise<void> {
-	const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(users);
-	if (n > 0) return;
-
-	const accounts: { username: string; role: Role; envKey: string }[] = [
-		{ username: 'Rohit.Negi', role: 'admin', envKey: 'SEED_ADMIN_PASSWORD' },
-		{ username: 'Siddhesh.Dige', role: 'member', envKey: 'SEED_MEMBER_PASSWORD' }
-	];
-	for (const a of accounts) {
-		const configured = env[a.envKey];
-		const password = configured && !validatePassword(configured) ? configured : null;
-		const final = password ?? generateTemporaryPassword();
-		await db
-			.insert(users)
-			.values({
-				username: a.username,
-				usernameLower: normalizeUsername(a.username),
-				passwordHash: await hashPassword(final),
-				role: a.role,
-				mustChangePassword: false,
-				createdAt: Date.now()
-			})
-			.onConflictDoNothing();
-		if (!password) {
-			console.warn(`[auth] ${a.envKey} not set - generated a password for ${a.username}: ${final}`);
-		}
-	}
-	console.log('[auth] seeded the initial team accounts');
-}
+const toSessionUser = (r: typeof users.$inferSelect): SessionUser => ({
+	id: r.id,
+	email: r.email,
+	username: r.displayName,
+	role: r.role as Role,
+	mustChangePassword: r.mustChangePassword
+});
 
 // ---------------------------------------------------------------------------------------------
 // Users
 // ---------------------------------------------------------------------------------------------
 
+/** Active accounts only - a removed account is kept (theses and valuation history still name
+ *  its owner) but never listed or able to sign in. */
 export async function listUsers(): Promise<UserRow[]> {
-	const rows = await db.select().from(users).orderBy(asc(users.createdAt), asc(users.id));
+	const rows = await db
+		.select()
+		.from(users)
+		.where(eq(users.isActive, true))
+		.orderBy(asc(users.createdAt), asc(users.id));
 	return rows.map(toRow);
 }
 
 export async function createUser(input: {
-	username: string;
+	email: string;
+	displayName?: string;
 	role: Role;
 	/** Omit to have a temporary password generated. */
 	password?: string;
 }): Promise<{ user: UserRow; temporaryPassword: string }> {
-	const nameError = validateUsername(input.username);
+	const emailError = validateEmail(input.email);
+	if (emailError) throw new AuthError(400, emailError);
+	const email = normalizeEmail(input.email);
+	const displayName = input.displayName?.trim() || displayNameFromEmail(email);
+	const nameError = validateDisplayName(displayName);
 	if (nameError) throw new AuthError(400, nameError);
-	if (input.role !== 'admin' && input.role !== 'member') throw new AuthError(400, 'Unknown role.');
+	if (!ROLES.includes(input.role)) throw new AuthError(400, 'Unknown role.');
 
 	const temporaryPassword = input.password?.trim() ? input.password : generateTemporaryPassword();
 	const passwordError = validatePassword(temporaryPassword);
 	if (passwordError) throw new AuthError(400, passwordError);
 
-	const username = input.username.trim();
-	const [row] = await db
-		.insert(users)
-		.values({
-			username,
-			usernameLower: normalizeUsername(username),
-			passwordHash: await hashPassword(temporaryPassword),
-			role: input.role,
-			// A password someone else chose is only ever temporary.
-			mustChangePassword: true,
-			createdAt: Date.now()
-		})
-		.onConflictDoNothing()
-		.returning();
-	if (!row) throw new AuthError(409, `A user named "${username}" already exists.`);
+	const [existing] = await db.select().from(users).where(eq(users.email, email));
+	const [sameName] = await db
+		.select({ id: users.id })
+		.from(users)
+		.where(sql`lower(${users.displayName}) = lower(${displayName})`);
+	if (sameName && sameName.id !== existing?.id) {
+		throw new AuthError(409, `Someone is already shown as "${displayName}". Pick another display name.`);
+	}
+	if (existing?.isActive) throw new AuthError(409, `${email} already has an account.`);
+
+	const values = {
+		email,
+		displayName,
+		passwordHash: await hashPassword(temporaryPassword),
+		role: input.role,
+		isActive: true,
+		// A password someone else chose is only ever temporary.
+		mustChangePassword: true
+	};
+	// A previously removed account comes back (same id, so its history reattaches).
+	const [row] = existing
+		? await db.update(users).set(values).where(eq(users.id, existing.id)).returning()
+		: await db.insert(users).values(values).returning();
 	return { user: toRow(row), temporaryPassword };
 }
 
@@ -131,14 +117,14 @@ async function adminCount(): Promise<number> {
 	const [{ n }] = await db
 		.select({ n: sql<number>`count(*)::int` })
 		.from(users)
-		.where(eq(users.role, 'admin'));
+		.where(and(eq(users.role, 'admin'), eq(users.isActive, true)));
 	return n;
 }
 
-/** Removes the account and (via cascade) signs it out everywhere, immediately. */
+/** Removes the account from the team and signs it out everywhere, immediately. */
 export async function deleteUser(id: number, actingUserId: number): Promise<UserRow> {
 	const [target] = await db.select().from(users).where(eq(users.id, id));
-	if (!target) throw new AuthError(404, 'No such user.');
+	if (!target || !target.isActive) throw new AuthError(404, 'No such user.');
 	const blocked = removalBlocked({
 		targetId: id,
 		actingId: actingUserId,
@@ -146,8 +132,22 @@ export async function deleteUser(id: number, actingUserId: number): Promise<User
 		adminCount: await adminCount()
 	});
 	if (blocked) throw new AuthError(403, blocked);
-	await db.delete(users).where(eq(users.id, id));
+	await db.update(users).set({ isActive: false }).where(eq(users.id, id));
+	await db.delete(sessions).where(eq(sessions.userId, id));
 	return toRow(target);
+}
+
+/** Changes someone's role. The last admin can't be demoted, or nobody could manage the team. */
+export async function setRole(id: number, role: Role, actingUserId: number): Promise<UserRow> {
+	if (!ROLES.includes(role)) throw new AuthError(400, 'Unknown role.');
+	const [target] = await db.select().from(users).where(eq(users.id, id));
+	if (!target || !target.isActive) throw new AuthError(404, 'No such user.');
+	if (target.role === 'admin' && role !== 'admin') {
+		if (id === actingUserId) throw new AuthError(403, "You can't remove your own admin role.");
+		if ((await adminCount()) <= 1) throw new AuthError(403, "You can't demote the last admin.");
+	}
+	const [row] = await db.update(users).set({ role }).where(eq(users.id, id)).returning();
+	return toRow(row);
 }
 
 /** Admin reset: sets a new temporary password, forces a change on next login, and signs the
@@ -163,7 +163,7 @@ export async function resetPassword(
 	const [row] = await db
 		.update(users)
 		.set({ passwordHash: await hashPassword(temporaryPassword), mustChangePassword: true })
-		.where(eq(users.id, id))
+		.where(and(eq(users.id, id), eq(users.isActive, true)))
 		.returning();
 	if (!row) throw new AuthError(404, 'No such user.');
 	await db.delete(sessions).where(eq(sessions.userId, id));
@@ -199,19 +199,18 @@ export async function changeOwnPassword(
 // Login and sessions
 // ---------------------------------------------------------------------------------------------
 
-// Verifying against this when the username doesn't exist keeps response time similar for
-// "no such user" and "wrong password", so login can't be used to discover which names exist.
+// Verifying against this when the email doesn't exist keeps response time similar for
+// "no such user" and "wrong password", so login can't be used to discover which emails exist.
 let dummyHash: Promise<string> | null = null;
 const getDummyHash = () => (dummyHash ??= hashPassword('not-a-real-password'));
 
 /** Returns the user on success, null on any failure (deliberately indistinguishable). */
-export async function authenticate(username: string, password: string): Promise<UserRow | null> {
-	const [row] = await db
-		.select()
-		.from(users)
-		.where(eq(users.usernameLower, normalizeUsername(username)));
+export async function authenticate(email: string, password: string): Promise<SessionUser | null> {
+	const [row] = await db.select().from(users).where(eq(users.email, normalizeEmail(email)));
 	const ok = await verifyPassword(password, row?.passwordHash ?? (await getDummyHash()));
-	return row && ok ? toRow(row) : null;
+	if (!row || !ok || !row.isActive) return null;
+	await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, row.id));
+	return toSessionUser(row);
 }
 
 export async function createSession(userId: number): Promise<{ token: string; expiresAt: number }> {
@@ -233,17 +232,12 @@ export async function getSessionUser(token: string | undefined): Promise<Session
 		.from(sessions)
 		.innerJoin(users, eq(sessions.userId, users.id))
 		.where(eq(sessions.tokenHash, hashToken(token)));
-	if (!row) return null;
+	if (!row || !row.user.isActive) return null;
 	if (row.expiresAt <= Date.now()) {
 		await deleteSession(token);
 		return null;
 	}
-	return {
-		id: row.user.id,
-		username: row.user.username,
-		role: row.user.role as Role,
-		mustChangePassword: row.user.mustChangePassword
-	};
+	return toSessionUser(row.user);
 }
 
 export async function deleteSession(token: string): Promise<void> {

@@ -1,5 +1,5 @@
 import { error, json } from '@sveltejs/kit';
-import { AuthError } from './authStore';
+import { AuthError } from './accounts';
 
 /** Runs an auth/admin mutation, mapping expected failures to their 4xx status. */
 export async function handleAuth<T>(fn: () => Promise<T>, status = 200): Promise<Response> {

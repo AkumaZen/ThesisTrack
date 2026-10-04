@@ -8,7 +8,7 @@
 		SCAN_FIELDS,
 		VALUATION_FIELDS,
 		type AnalysisSettings
-	} from '$lib/analysisSettings';
+	} from '$lib/valuation/analysisSettings';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -57,7 +57,7 @@
 		busy = true;
 		message = null;
 		try {
-			const res = await fetch('/api/settings', {
+			const res = await fetch('/api/valuation/settings', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
@@ -85,12 +85,12 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/')}>&larr; Back to watchlist</a>
+		<a class="back-link" href={resolve('/valuation')}>&larr; Back to watchlist</a>
 		<h1>Settings</h1>
 		<div class="sub">
 			Team-wide thresholds behind the rotation signals and the breakout scanner. Everyone sees the
 			same signals, so only the admin can change them. Relative-strength alert levels are on the
-			<a href={resolve('/alerts')}>Alerts</a> page.
+			<a href={resolve('/valuation/alerts')}>Alerts</a> page.
 		</div>
 	</div>
 </div>

@@ -4,8 +4,8 @@ import {
 	validateUserSectorInput,
 	createUserSector,
 	SectorEditError
-} from '$lib/server/sectorStore';
-import { requireVerified } from '$lib/server/sectorApi';
+} from '$lib/valuation/server/sectorStore';
+import { requireVerified } from '$lib/valuation/server/sectorApi';
 
 export const POST: RequestHandler = async ({ request }) => {
 	let raw: unknown;

@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getSparklineCloses } from '$lib/server/sparklineCache';
+import { getSparklineCloses } from '$lib/valuation/server/sparklineCache';
 
 // Lightweight endpoint for the watchlist screener's trend sparkline — just closing prices,
 // not the full candle/OHLCV payload stage-analysis needs. Cached (see sparklineCache.ts) so

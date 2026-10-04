@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { nifty500SeriesCache } from './db/schema';
+import { db } from '$lib/server/db';
+import { nifty500SeriesCache } from '$lib/server/db/valuationSchema';
 import { fetchIndexCandles, type Candle } from './angelone';
 import { NIFTY500_INDEX } from './sectorIndices';
 

@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { getCompanyData } from '$lib/server/companyCache';
-import type { CompanyFinancials } from '$lib/server/scraper';
+import { getCompanyData } from '$lib/valuation/server/companyCache';
+import type { CompanyFinancials } from '$lib/valuation/server/scraper';
 
 export interface CompareResult {
 	symbol: string;

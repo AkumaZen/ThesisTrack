@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { sectorApi, type VerifyResponse } from '$lib/sectorClient';
-	import type { SymbolSuggestion } from '$lib/sectorEdit';
+	import { sectorApi, type VerifyResponse } from '$lib/valuation/sectorClient';
+	import type { SymbolSuggestion } from '$lib/valuation/sectorEdit';
 
 	let {
 		majorKey,
@@ -26,7 +26,7 @@
 		error = null;
 		suggestions = [];
 		try {
-			const verify = await sectorApi<VerifyResponse>('POST', '/api/sectors/verify', {
+			const verify = await sectorApi<VerifyResponse>('POST', '/api/valuation/sectors/verify', {
 				symbol: typed
 			});
 			if (!verify.ok) {
@@ -39,7 +39,7 @@
 				return;
 			}
 			const verified = verify.data;
-			const res = await sectorApi('POST', '/api/sectors/baskets', {
+			const res = await sectorApi('POST', '/api/valuation/sectors/baskets', {
 				label,
 				majorKey,
 				symbol: verified.symbol

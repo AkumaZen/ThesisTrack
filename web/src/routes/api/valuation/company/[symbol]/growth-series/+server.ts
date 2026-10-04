@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getCompanySeries } from '$lib/server/companyGrowthSeries';
+import { getCompanySeries } from '$lib/valuation/server/companyGrowthSeries';
 
 // ~400 calendar days of closes for one company — backs the sector constituent drill-down
 // page's per-company chart/growth panel. Separate from /sparkline (90 days, watchlist-tuned).

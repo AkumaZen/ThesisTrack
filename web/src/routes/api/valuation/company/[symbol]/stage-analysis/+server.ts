@@ -1,8 +1,8 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { fetchDailyCandles, fetchIndexCandles } from '$lib/server/angelone';
-import { BENCHMARK_INDEX } from '$lib/server/sectorIndices';
-import { computeStageAnalysis } from '$lib/stageAnalysis';
+import { fetchDailyCandles, fetchIndexCandles } from '$lib/valuation/server/angelone';
+import { BENCHMARK_INDEX } from '$lib/valuation/server/sectorIndices';
+import { computeStageAnalysis } from '$lib/valuation/stageAnalysis';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {

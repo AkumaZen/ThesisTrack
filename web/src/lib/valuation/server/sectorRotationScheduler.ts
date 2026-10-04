@@ -9,7 +9,7 @@ import { runStructuralChecks } from './alertChecks';
 // the background on a fixed schedule instead.
 const REFRESH_INTERVAL_MS = 2 * 60 * 60 * 1000;
 
-async function warmAllSectors() {
+export async function warmAllSectors() {
 	try {
 		await getBenchmarkCandles();
 	} catch (e) {

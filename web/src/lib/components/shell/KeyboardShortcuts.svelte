@@ -5,12 +5,16 @@
 	// Site-wide keys. "?" shows this list; "g" then a letter jumps to a page ("/" for search lives
 	// in GlobalSearch). Ignored while typing in a field, and with Ctrl/Cmd/Alt held.
 	const PAGES = [
-		{ key: 'w', label: 'Watchlist', href: resolve('/') },
-		{ key: 'c', label: 'Compare', href: resolve('/compare') },
-		{ key: 's', label: 'Sector rotation', href: resolve('/sector-rotation') },
-		{ key: 'b', label: 'Breakout scanner', href: resolve('/stage-scanner') },
-		{ key: 'a', label: 'Alerts', href: resolve('/alerts') },
-		{ key: 't', label: 'Settings', href: resolve('/settings') }
+		{ key: 'h', label: 'Companies (theses)', href: resolve('/') },
+		{ key: 'r', label: 'Review queue', href: resolve('/review') },
+		{ key: 'u', label: 'Guidance', href: resolve('/guidance') },
+		{ key: 'i', label: 'Ingest', href: resolve('/ingest') },
+		{ key: 'w', label: 'Watchlist', href: resolve('/valuation') },
+		{ key: 'c', label: 'Compare', href: resolve('/valuation/compare') },
+		{ key: 's', label: 'Sector rotation', href: resolve('/valuation/sector-rotation') },
+		{ key: 'b', label: 'Breakout scanner', href: resolve('/valuation/stage-scanner') },
+		{ key: 'a', label: 'Alerts', href: resolve('/valuation/alerts') },
+		{ key: 't', label: 'Settings', href: resolve('/valuation/settings') }
 	];
 
 	let dialog = $state<HTMLDialogElement>();
@@ -62,7 +66,7 @@
 	<h2 id="kbd-title">Keyboard shortcuts</h2>
 	<dl>
 		<dt><kbd>/</kbd></dt>
-		<dd>Search companies, sectors and notes</dd>
+		<dd>Search theses, companies, sectors and notes</dd>
 		{#each PAGES as p (p.key)}
 			<dt><kbd>g</kbd> then <kbd>{p.key}</kbd></dt>
 			<dd>Go to {p.label}</dd>
@@ -72,5 +76,5 @@
 		<dt><kbd>Esc</kbd></dt>
 		<dd>Close a menu or this list</dd>
 	</dl>
-	<form method="dialog"><button class="wl-strip-btn">Close</button></form>
+	<form method="dialog"><button class="btn btn-sm">Close</button></form>
 </dialog>

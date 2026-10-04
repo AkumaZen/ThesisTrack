@@ -1,7 +1,7 @@
 import { and, desc, eq, lt, sql } from 'drizzle-orm';
-import { db } from './db';
-import { activityLog } from './db/schema';
-import type { ActivityEntry } from '$lib/activity';
+import { db } from '$lib/server/db';
+import { activityLog } from '$lib/server/db/valuationSchema';
+import type { ActivityEntry } from '$lib/valuation/activity';
 
 /** A database handle or an open transaction (both expose the same query builder). */
 export type Tx = Pick<typeof db, 'select' | 'insert' | 'update' | 'delete' | 'execute'>;

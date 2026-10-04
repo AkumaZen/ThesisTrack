@@ -1,34 +1,67 @@
-// Pure auth helpers shared by the server and unit tests - no I/O.
+// Pure auth helpers shared by the server, the pages and unit tests - no I/O.
 
-export type Role = 'admin' | 'member';
+/**
+ * admin: everything, plus managing people and shared configuration.
+ * read_write: the normal analyst account.
+ * read_only: can look at everything, change nothing.
+ */
+export type Role = 'admin' | 'read_write' | 'read_only';
+export const ROLES: Role[] = ['admin', 'read_write', 'read_only'];
+export const ROLE_LABELS: Record<Role, string> = {
+	admin: 'Admin',
+	read_write: 'Analyst',
+	read_only: 'Read only'
+};
 
 export interface SessionUser {
 	id: number;
+	email: string;
+	/** Display name, e.g. "Rohit.Negi" - how the person is shown and how authors are recorded. */
 	username: string;
 	role: Role;
-	/** True right after an admin created/reset the account: the user must pick their own
+	/** True right after an admin created/reset the account: the person must pick their own
 	 *  password before using anything else. */
 	mustChangePassword: boolean;
 }
 
-export const SESSION_COOKIE = 'vd_session';
+export const SESSION_COOKIE = 'tt_session';
 export const SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
-
-/** Display usernames look like "Rohit.Negi". Logins are matched case-insensitively. */
-const USERNAME_RE = /^[A-Za-z][A-Za-z0-9._-]{1,31}$/;
 
 export const MIN_PASSWORD_LENGTH = 8;
 export const MAX_PASSWORD_LENGTH = 128;
 
-export function normalizeUsername(raw: string): string {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Display names look like "Rohit.Negi". */
+const DISPLAY_NAME_RE = /^[A-Za-z][A-Za-z0-9._ -]{1,39}$/;
+
+export const canWrite = (role: Role | null | undefined) => role === 'admin' || role === 'read_write';
+
+export function normalizeEmail(raw: string): string {
 	return raw.trim().toLowerCase();
 }
 
-/** Returns an error message, or null when the username is acceptable. */
-export function validateUsername(raw: unknown): string | null {
-	if (typeof raw !== 'string' || raw.trim() === '') return 'Enter a username.';
-	if (!USERNAME_RE.test(raw.trim())) {
-		return 'Usernames are 2-32 characters: letters, numbers, dot, dash or underscore, starting with a letter.';
+/** rohit.negi@rdc.in -> "Rohit.Negi": the default display name for a new account. */
+export function displayNameFromEmail(email: string): string {
+	return normalizeEmail(email)
+		.split('@')[0]
+		.split('.')
+		.filter(Boolean)
+		.map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+		.join('.');
+}
+
+/** Returns an error message, or null when the email is acceptable. */
+export function validateEmail(raw: unknown): string | null {
+	if (typeof raw !== 'string' || raw.trim() === '') return 'Enter an email address.';
+	if (raw.trim().length > 255 || !EMAIL_RE.test(raw.trim())) return 'Enter a valid email address.';
+	return null;
+}
+
+/** Returns an error message, or null when the display name is acceptable. */
+export function validateDisplayName(raw: unknown): string | null {
+	if (typeof raw !== 'string' || raw.trim() === '') return 'Enter a display name.';
+	if (!DISPLAY_NAME_RE.test(raw.trim())) {
+		return 'Display names are 2-40 characters: letters, numbers, dot, dash, underscore or space, starting with a letter.';
 	}
 	return null;
 }
@@ -54,10 +87,13 @@ export function safeNextPath(next: string | null | undefined): string {
 /** A user as shown on the admin page - never includes the password hash. */
 export interface UserRow {
 	id: number;
+	email: string;
 	username: string;
 	role: Role;
 	mustChangePassword: boolean;
+	isActive: boolean;
 	createdAt: number;
+	lastLoginAt: number | null;
 }
 
 /** Why an account can't be removed, or null if it can. Keeps the team from locking itself out:

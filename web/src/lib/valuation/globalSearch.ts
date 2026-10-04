@@ -1,4 +1,4 @@
-// Shapes returned by /api/search/all, shared by the server and the nav search box.
+// Shapes returned by /api/valuation/search/all, shared by the server and the nav search box.
 
 export interface SearchCompany {
 	symbol: string;
@@ -25,8 +25,16 @@ export interface SearchNote {
 	snippet: string;
 }
 
+/** A company with an investment thesis (the thesis module). */
+export interface SearchThesis {
+	companyId: string;
+	name: string;
+	ticker: string | null;
+}
+
 export interface GlobalSearchResults {
 	query: string;
+	theses: SearchThesis[];
 	companies: SearchCompany[];
 	sectors: SearchSector[];
 	notes: SearchNote[];

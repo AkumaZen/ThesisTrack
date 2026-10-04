@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNull, lt, notInArray, like, sql, type SQL } from 'drizzle-orm';
-import { db } from './db';
-import { alertReads, alertSettings, alertState, alertUserPrefs, alerts, users } from './db/schema';
+import { db } from '$lib/server/db';
+import { alertReads, alertSettings, alertState, alertUserPrefs, alerts } from '$lib/server/db/valuationSchema';
+import { users } from '$lib/server/db/schema';
 import { ALERT_TYPES, type AlertRecord, type AlertType } from '../alerts';
 import { DEFAULT_RS_THRESHOLDS, parseThresholds, type RsThresholds } from '../rsThresholds';
 
@@ -103,9 +104,9 @@ async function patchUserPrefs(userId: number, patch: AlertSettingsPatch): Promis
  *  atomic jsonb merge, so a partial update keeps the other value even under concurrent saves. */
 async function patchThresholds(patch: Partial<RsThresholds>): Promise<void> {
 	await db.execute(sql`
-		insert into alert_settings (key, value)
+		insert into valuation.alert_settings (key, value)
 		values ('thresholds', ${JSON.stringify({ ...DEFAULT_RS_THRESHOLDS, ...patch })}::jsonb)
-		on conflict (key) do update set value = alert_settings.value || ${JSON.stringify(patch)}::jsonb`);
+		on conflict (key) do update set value = valuation.alert_settings.value || ${JSON.stringify(patch)}::jsonb`);
 }
 
 export async function saveAlertSettings(
@@ -120,8 +121,17 @@ export async function saveAlertSettings(
 /** Whether at least one team member would see this alert (their type is on and the subject isn't
  *  muted). Nobody wanting it means there's no point raising it or sending an email. */
 export async function anyoneWants(type: AlertType, subjectKey?: string): Promise<boolean> {
-	const [{ n: total }] = await db.select({ n: sql<number>`count(*)::int` }).from(users);
-	const prefs = await db.select().from(alertUserPrefs);
+	const [{ n: total }] = await db
+		.select({ n: sql<number>`count(*)::int` })
+		.from(users)
+		.where(eq(users.isActive, true));
+	const prefs = (
+		await db
+			.select({ p: alertUserPrefs })
+			.from(alertUserPrefs)
+			.innerJoin(users, eq(users.id, alertUserPrefs.userId))
+			.where(eq(users.isActive, true))
+	).map((r) => r.p);
 	if (total > prefs.length) return true; // someone has never changed a setting: everything is on
 	return prefs.some((p) => {
 		const u = toPrefs(p);
@@ -263,8 +273,8 @@ export async function setRead(
 async function markRead(userId: number, ids: number[]): Promise<void> {
 	if (ids.length === 0) return;
 	await db.execute(sql`
-		insert into alert_reads (user_id, alert_id)
-		select ${userId}::int, id from alerts where id in (${sql.join(
+		insert into valuation.alert_reads (user_id, alert_id)
+		select ${userId}::int, id from valuation.alerts where id in (${sql.join(
 			ids.map((i) => sql`${i}`),
 			sql`, `
 		)})

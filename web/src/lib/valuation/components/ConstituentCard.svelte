@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import LineChart from './LineChart.svelte';
-	import { sliceForTimeframe, computeConstituentGrowth, type Timeframe } from '$lib/sectorRotation';
-	import { companyName } from '$lib/symbolNames';
+	import { sliceForTimeframe, computeConstituentGrowth, type Timeframe } from '$lib/valuation/sectorRotation';
+	import { companyName } from '$lib/valuation/symbolNames';
 
 	// `closes` is undefined while this company's own fetch hasn't resolved yet — each card owns
 	// exactly its own slot of state, so one company's data arriving never re-renders any other
@@ -38,7 +38,7 @@
 		</div>
 		<a
 			class="sector-constituent-open"
-			href={resolve('/company/[symbol]', { symbol })}
+			href={resolve('/valuation/company/[symbol]', { symbol })}
 			title="Open {name}'s valuation page">Open valuation ↗</a
 		>
 	</div>

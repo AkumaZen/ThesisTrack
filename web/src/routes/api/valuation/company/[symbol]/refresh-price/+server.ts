@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { refreshPrice } from '$lib/server/companyCache';
+import { refreshPrice } from '$lib/valuation/server/companyCache';
 
 export const POST: RequestHandler = async ({ params }) => {
 	try {

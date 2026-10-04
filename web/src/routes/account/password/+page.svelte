@@ -1,9 +1,8 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { sectorApi } from '$lib/sectorClient';
 	import { MIN_PASSWORD_LENGTH } from '$lib/auth';
+	import AuthFrame from '$lib/components/shell/AuthFrame.svelte';
+	import PageHeader from '$lib/components/shell/PageHeader.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -14,7 +13,9 @@
 	let busy = $state(false);
 	let message = $state<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
+	const forced = $derived(data.user?.mustChangePassword ?? false);
 	const mismatch = $derived(confirmPassword !== '' && newPassword !== confirmPassword);
+	const tooShort = $derived(newPassword !== '' && newPassword.length < MIN_PASSWORD_LENGTH);
 
 	async function submit() {
 		message = null;
@@ -23,92 +24,144 @@
 			return;
 		}
 		busy = true;
-		const res = await sectorApi('POST', '/api/account/password', { currentPassword, newPassword });
-		busy = false;
-		if (!res.ok) {
-			message = { kind: 'error', text: res.message };
+		try {
+			const res = await fetch('/api/account/password', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ currentPassword, newPassword })
+			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}));
+				message = { kind: 'error', text: body.message ?? 'Could not change the password.' };
+				return;
+			}
+		} catch {
+			message = { kind: 'error', text: 'Could not reach the server. Try again.' };
 			return;
+		} finally {
+			busy = false;
 		}
 		currentPassword = newPassword = confirmPassword = '';
 		message = { kind: 'ok', text: 'Password changed. Other devices were signed out.' };
 		// Leave the forced-change screen once the temporary password has been replaced.
-		if (data.user?.mustChangePassword) await goto(resolve('/'), { invalidateAll: true });
+		if (forced) await goto('/', { invalidateAll: true });
 	}
 </script>
 
 <svelte:head>
-	<title>Change password · Valuation Dashboard</title>
+	<title>Change password · ThesisTrack</title>
 </svelte:head>
 
-<div class="band">
-	<div class="band-inner">
-		{#if !data.user?.mustChangePassword}
-			<a class="back-link" href={resolve('/')}>&larr; Back to search</a>
-		{/if}
-		<h1>Change password</h1>
-		<div class="sub">Signed in as {data.user?.username}</div>
-	</div>
-</div>
-
-<div class="wrap">
+{#snippet passwordForm()}
 	<form
-		class="auth-card"
-		aria-labelledby="pw-title"
+		class="pw-form"
 		onsubmit={(e) => {
 			e.preventDefault();
 			submit();
 		}}
 	>
-		<h2 id="pw-title" class="auth-title">Choose a new password</h2>
-		{#if data.user?.mustChangePassword}
-			<p class="sm-msg sm-msg-warn" data-testid="must-change">
+		{#if forced}
+			<p class="notice notice-warn" data-testid="must-change">
 				Your password is temporary. Choose your own to continue.
 			</p>
 		{/if}
 		{#if message}
-			<p class="sm-msg sm-msg-{message.kind}" role="status">{message.text}</p>
+			<p class="notice notice-{message.kind}" role={message.kind === 'error' ? 'alert' : 'status'}>
+				{message.text}
+			</p>
 		{/if}
 
-		<label class="auth-label" for="current">Current password</label>
-		<input
-			class="sm-input auth-input"
-			id="current"
-			type="password"
-			autocomplete="current-password"
-			bind:value={currentPassword}
-			required
-		/>
+		<div class="field">
+			<label class="field-label" for="current">Current password</label>
+			<input
+				class="input"
+				id="current"
+				type="password"
+				autocomplete="current-password"
+				bind:value={currentPassword}
+				required
+			/>
+		</div>
+		<div class="field">
+			<label class="field-label" for="new">New password</label>
+			<input
+				class="input"
+				id="new"
+				type="password"
+				autocomplete="new-password"
+				minlength={MIN_PASSWORD_LENGTH}
+				bind:value={newPassword}
+				aria-invalid={tooShort}
+				aria-describedby="new-hint"
+				required
+			/>
+			<span class="field-hint" class:field-error={tooShort} id="new-hint"
+				>At least {MIN_PASSWORD_LENGTH} characters.</span
+			>
+		</div>
+		<div class="field">
+			<label class="field-label" for="confirm">Confirm new password</label>
+			<input
+				class="input"
+				id="confirm"
+				type="password"
+				autocomplete="new-password"
+				bind:value={confirmPassword}
+				aria-invalid={mismatch}
+				required
+			/>
+			{#if mismatch}<span class="field-error">Passwords don't match yet.</span>{/if}
+		</div>
 
-		<label class="auth-label" for="new">New password</label>
-		<input
-			class="sm-input auth-input"
-			id="new"
-			type="password"
-			autocomplete="new-password"
-			minlength={MIN_PASSWORD_LENGTH}
-			bind:value={newPassword}
-			required
-		/>
-		<p class="sm-hint">At least {MIN_PASSWORD_LENGTH} characters.</p>
-
-		<label class="auth-label" for="confirm">Confirm new password</label>
-		<input
-			class="sm-input auth-input"
-			id="confirm"
-			type="password"
-			autocomplete="new-password"
-			bind:value={confirmPassword}
-			aria-invalid={mismatch}
-			required
-		/>
-		{#if mismatch}<p class="sm-hint signal-bad">Passwords don't match yet.</p>{/if}
-
-		<button
-			class="sm-btn sm-btn-primary auth-submit"
-			type="submit"
-			disabled={busy || !currentPassword || !newPassword || mismatch}
-		>
-			{busy ? 'Saving…' : 'Change password'}
-		</button>
+		<div class="pw-actions">
+			<button
+				class="btn btn-primary"
+				class:btn-block={forced}
+				type="submit"
+				disabled={busy || !currentPassword || !newPassword || mismatch || tooShort}
+			>
+				{busy ? 'Saving…' : 'Change password'}
+			</button>
+		</div>
 	</form>
-</div>
+	{#if forced}
+		<form method="POST" action="/logout" class="signout">
+			<button type="submit" class="btn btn-ghost btn-sm">Sign out instead</button>
+		</form>
+	{/if}
+{/snippet}
+
+{#if forced}
+	<AuthFrame title="Choose a password" subtitle="Signed in as {data.user?.email}">
+		{@render passwordForm()}
+	</AuthFrame>
+{:else}
+	<PageHeader title="Change password" subtitle="Signed in as {data.user?.email}" />
+	<div class="pw-card card">
+		{@render passwordForm()}
+	</div>
+{/if}
+
+<style>
+	.pw-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+	.pw-card {
+		max-width: 480px;
+		padding: var(--space-4);
+	}
+	.pw-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-2);
+		margin-top: var(--space-1);
+	}
+	.signout {
+		display: flex;
+		justify-content: center;
+		margin-top: var(--space-3);
+	}
+</style>

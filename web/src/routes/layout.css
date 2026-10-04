@@ -1,72 +1,158 @@
 @import 'tailwindcss';
 
+/*
+ * ThesisTrack design system - polished neo-brutalism.
+ *
+ * One palette for the whole app (thesis + valuation tools): white paper, near-black ink, one
+ * cobalt accent, light grey secondary surfaces. Square corners, crisp 2px ink borders on
+ * prominent elements, restrained hard offset shadows, no gradients or soft shadows. Status
+ * colours (good / warn / danger) exist only to carry meaning and are used as text or small
+ * markers, never as large fills.
+ *
+ * Type: Space Grotesk for headings, Plus Jakarta Sans for body, JetBrains Mono for numbers and
+ * metadata. Spacing scale: 4 8 16 24 32 48 64.
+ */
 @theme {
-	--font-sans:
-		'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	--font-mono: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
 	--color-bg: var(--bg);
-	--color-bg-ink: var(--bg-ink);
+	--color-bg-ink: var(--bg);
 	--color-surface: var(--surface);
-	--color-surface-2: var(--surface-2);
+	--color-surface-2: var(--surface);
 	--color-surface-3: var(--surface-3);
-	--color-border: var(--border);
-	--color-fg: var(--fg);
-	--color-muted-fg: var(--muted-fg);
-	--color-white: var(--white);
+	--color-border: var(--ink);
+	--color-rule: var(--rule);
+	--color-fg: var(--ink);
+	--color-muted-fg: var(--muted);
+	--color-white: var(--bg);
 	--color-accent: var(--accent);
-	--color-accent-2: var(--accent-2);
-	--color-accent-3: var(--accent-3);
-	--color-accent-4: var(--accent-4);
+	--color-accent-2: var(--accent);
+	--color-accent-3: var(--accent);
+	--color-accent-4: var(--accent);
 	--color-accent-ink: var(--accent-ink);
 	--color-good: var(--good);
-	--color-ok: var(--ok);
+	--color-ok: var(--ink);
 	--color-warn: var(--warn);
 	--color-danger: var(--danger);
+
+	/* Square everything (status dots keep rounded-full). */
+	--radius-xs: 0;
+	--radius-sm: 0;
+	--radius-md: 0;
+	--radius-lg: 0;
+	--radius-xl: 0;
+	--radius-2xl: 0;
+	--radius-3xl: 0;
+	--radius: 0;
+
+	/* Hard offset shadows only. */
+	--shadow-sm: 2px 2px 0 0 var(--ink);
+	--shadow: 3px 3px 0 0 var(--ink);
+	--shadow-md: 4px 4px 0 0 var(--ink);
+	--shadow-lg: 5px 5px 0 0 var(--ink);
+	--shadow-xl: 6px 6px 0 0 var(--ink);
+	--shadow-2xl: 6px 6px 0 0 var(--ink);
+
+	--animate-nav-progress: nav-progress 1s ease-in-out infinite;
 }
 
-/*
- * Exactly three neutrals (paper #faf9f5, ink #141412, cream #f1eee7) plus one
- * signal accent (lime #ccff00) - no other hues anywhere. Light and dark are
- * genuine inversions of the same four values, not two separate palettes:
- * --fg and --bg always swap, --ok/--warn/--danger/--accent-2/-3/-4 track
- * --fg (so a "status" fill always reads as "the ink stamp," light or dark),
- * and --good stays lime in both since on-track already owns the one accent.
- * bg-ink also always equals bg (nav/header/modal never get a separate dark
- * plate - see the original light-theme convention this restores).
- */
 :root {
-	--bg: #faf9f5;
-	--bg-ink: #faf9f5;
-	--surface: #f1eee7;
-	--surface-2: color-mix(in srgb, #141412 5%, #faf9f5);
-	--surface-3: color-mix(in srgb, #141412 9%, #faf9f5);
-	--border: color-mix(in srgb, #141412 18%, #faf9f5);
-	--fg: #141412;
-	--muted-fg: color-mix(in srgb, #141412 58%, #faf9f5);
-	--white: #f1eee7;
-	--accent: var(--fg);
-	--accent-2: var(--fg);
-	--accent-3: var(--fg);
-	--accent-4: var(--fg);
-	--accent-ink: var(--bg);
-	--good: var(--fg);
-	--ok: var(--fg);
-	--warn: var(--fg);
-	--danger: var(--fg);
+	--bg: #ffffff;
+	--ink: #0a0a0a;
+	--accent: #2563eb;
+	--accent-strong: #1d4ed8;
+	--accent-soft: #eff4ff;
+	--accent-ink: #ffffff;
+	--surface: #f4f4f5;
+	--surface-3: #e4e4e7;
+	--rule: #d4d4d8;
+	--muted: #52525b;
+	--good: #15803d;
+	--good-soft: #ecfdf3;
+	--warn: #a16207;
+	--warn-soft: #fef9e7;
+	--danger: #dc2626;
+	--danger-soft: #fef2f2;
+
+	--border-w: 2px;
+	--shadow-hard: 4px 4px 0 0 var(--ink);
+	--shadow-hard-sm: 2px 2px 0 0 var(--ink);
+	--shadow-hard-lg: 6px 6px 0 0 var(--ink);
+	--focus-ring: 0 0 0 3px var(--accent);
+	--ease: cubic-bezier(0.2, 0, 0, 1);
+	--dur: 160ms;
+
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 16px;
+	--space-4: 24px;
+	--space-5: 32px;
+	--space-6: 48px;
+	--space-7: 64px;
+
+	--header-h: 56px;
+	--content-max: 1280px;
+
 	color-scheme: light;
 }
 
-/*
- * Thin, theme-colored scrollbars everywhere (not just the ones the
- * `scrollbar-color` standard reaches) - a wide-table's horizontal scrollbar
- * (data tables, TableCard grids) otherwise renders as a chunky default OS
- * bar that clashes with the app's minimal look. `scrollbar-color` covers
- * Firefox and newer Chromium; the `-webkit-scrollbar` rules give the same
- * result on Safari and older Chromium, which ignore it.
- */
+/* ------------------------------------------------------------------------------------------ */
+/* Base                                                                                         */
+/* ------------------------------------------------------------------------------------------ */
+
+html {
+	/* Same content width on short and long pages - the header never shifts sideways. */
+	scrollbar-gutter: stable;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	font-family: var(--font-sans);
+	background: var(--bg);
+	color: var(--ink);
+	min-height: 100vh;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	font-feature-settings: 'cv11';
+}
+
+h1,
+h2,
+h3,
+h4 {
+	font-family: var(--font-display);
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+}
+
+/* Every button is clickable by definition; the UA arrow cursor reads as inert. */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+summary {
+	cursor: pointer;
+}
+button:disabled {
+	cursor: not-allowed;
+}
+
+a {
+	text-underline-offset: 3px;
+}
+
+:focus-visible {
+	outline: 3px solid var(--accent);
+	outline-offset: 2px;
+}
+
+::selection {
+	background: var(--accent);
+	color: var(--accent-ink);
+}
+
 * {
-	scrollbar-color: var(--border) var(--bg);
+	scrollbar-color: var(--muted) var(--surface);
 	scrollbar-width: thin;
 }
 *::-webkit-scrollbar {
@@ -74,154 +160,259 @@
 	height: 10px;
 }
 *::-webkit-scrollbar-track {
-	background: var(--bg);
+	background: var(--surface);
 }
 *::-webkit-scrollbar-thumb {
-	background-color: var(--border);
-	border-radius: 999px;
-	border: 2px solid var(--bg);
-}
-*::-webkit-scrollbar-thumb:hover {
-	background-color: var(--muted-fg);
+	background-color: var(--muted);
+	border: 2px solid var(--surface);
 }
 
 /*
- * Chrome's UA stylesheet gives <button> `cursor: default` (an arrow), not
- * `pointer` - only <a> gets that for free. Every button in this app is
- * clickable by definition, so the arrow cursor over "+ Add Table"/"+ Add
- * Note"/etc. reads as non-interactive even though it isn't. One rule fixes
- * every button app-wide instead of hand-adding `cursor-pointer` per button.
+ * Full-box borders are the 2px ink frame of a card, input or button. A single-side border is a
+ * divider inside one of those, so it stays a light 1px rule - otherwise every list row would be
+ * a heavy black line.
  */
-button:not(:disabled) {
-	cursor: pointer;
+.border {
+	border-width: var(--border-w);
+}
+.border-t.border-border,
+.border-b.border-border,
+.border-l.border-border,
+.border-r.border-border,
+.border-y.border-border,
+.divide-border > * + * {
+	border-color: var(--rule);
 }
 
-/*
- * Reserve the scrollbar's width on every page, not just the ones tall
- * enough to need it - otherwise the centered max-w-7xl header/content
- * shifts a few pixels sideways every time navigation lands on a page
- * short enough that the scrollbar disappears (Ingest) vs one that isn't
- * (Companies), which reads as the whole navbar jumping between tabs.
- */
-html {
-	scrollbar-gutter: stable;
-}
-
-input,
+/* Native form controls: square, 2px ink, visible focus. */
+input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color'])),
 select,
 textarea {
-	background: var(--surface-2);
-	color: var(--fg);
-	border-color: var(--border);
+	background: var(--bg);
+	color: var(--ink);
+	border-color: var(--ink);
+	border-radius: 0;
+	transition:
+		box-shadow var(--dur) var(--ease),
+		border-color var(--dur) var(--ease);
 }
 input::placeholder,
 textarea::placeholder {
-	color: var(--muted-fg);
+	color: #71717a;
 }
 input:focus,
 select:focus,
 textarea:focus {
 	outline: none;
-	border-color: var(--fg);
-	box-shadow: 0 0 0 2px color-mix(in srgb, var(--fg) 25%, transparent);
+	border-color: var(--ink);
+	box-shadow: var(--focus-ring);
+}
+input:disabled,
+select:disabled,
+textarea:disabled {
+	background: var(--surface);
+	color: var(--muted);
+}
+input[type='checkbox'],
+input[type='radio'] {
+	accent-color: var(--accent);
+	width: 16px;
+	height: 16px;
 }
 
-/*
- * The native <select> arrow is unthemeable browser chrome that clashes with
- * every other control on the page (craft-floor: "the parts you did not draw
- * still carry the design"). Replace it with a drawn chevron in the same
- * muted-fg tone as the rest of the UI, keeping native listbox behavior.
- */
+/* The native <select> arrow is unthemeable chrome - draw a square chevron instead. */
 select {
 	appearance: none;
 	-webkit-appearance: none;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23757471' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.8' stroke-linecap='square'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
-	background-position: right 0.6rem center;
+	background-position: right 0.7rem center;
 	background-size: 10px 6px;
+	padding-right: 2rem;
 }
-:root[data-theme='light'] select {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23757471' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+/* Numbers and metadata. */
+.num,
+.font-mono {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
 }
-@media (prefers-color-scheme: light) {
-	:root:not([data-theme='dark']) select {
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23757471' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
 	}
 }
-:root[data-theme='dark'] select {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238e8c87' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-}
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme='light']) select {
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238e8c87' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-	}
-}
 
-.nav-tab {
-	font-size: 0.875rem;
-	font-weight: 500;
-	padding: 0.4rem 0.75rem;
-	border-radius: 0.375rem;
-	color: var(--muted-fg);
-}
-.nav-tab:hover {
-	color: var(--fg);
-	background: var(--surface-3);
-}
-.nav-tab.active {
-	color: var(--fg);
-	background: var(--surface-2);
-}
+/* ------------------------------------------------------------------------------------------ */
+/* Components shared by both modules                                                            */
+/* ------------------------------------------------------------------------------------------ */
 
-.facet-group-label {
-	font-family: var(--font-sans);
-	font-size: 0.75rem;
-	font-weight: 600;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	color: var(--muted-fg);
-	margin-bottom: 0.5rem;
-}
-
-.facet-chip {
-	position: relative;
+.btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.4rem;
-	font-size: 0.75rem;
-	padding: 0.3rem 0.7rem;
-	border-radius: 9999px;
-	border: 1px solid var(--border);
-	color: var(--muted-fg);
-	cursor: pointer;
-	user-select: none;
-	transition: border-color 0.12s ease, color 0.12s ease, background-color 0.12s ease;
+	justify-content: center;
+	gap: var(--space-2);
+	min-height: 40px;
+	padding: 0 var(--space-3);
+	font-family: var(--font-sans);
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1;
+	white-space: nowrap;
+	color: var(--ink);
+	background: var(--bg);
+	border: var(--border-w) solid var(--ink);
+	text-decoration: none;
+	transition:
+		transform var(--dur) var(--ease),
+		box-shadow var(--dur) var(--ease),
+		background-color var(--dur) var(--ease);
 }
-.facet-chip:hover {
-	color: var(--fg);
-	border-color: var(--muted-fg);
+.btn:hover:not(:disabled) {
+	box-shadow: var(--shadow-hard-sm);
+	transform: translate(-1px, -1px);
 }
-.facet-chip:has(:checked) {
-	color: var(--fg);
-	background: var(--surface-3);
-	border-color: var(--fg);
+.btn:active:not(:disabled) {
+	box-shadow: none;
+	transform: translate(1px, 1px);
 }
-.facet-chip:has(:focus-visible) {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
+.btn:disabled {
+	opacity: 0.45;
 }
-.facet-chip input {
-	position: absolute;
-	opacity: 0;
-	width: 1px;
-	height: 1px;
+.btn-primary {
+	background: var(--accent);
+	border-color: var(--ink);
+	color: var(--accent-ink);
+}
+.btn-primary:hover:not(:disabled) {
+	background: var(--accent-strong);
+}
+.btn-dark {
+	background: var(--ink);
+	color: var(--bg);
+}
+.btn-ghost {
+	border-color: transparent;
+	background: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+	background: var(--surface);
+	box-shadow: none;
+	transform: none;
+}
+.btn-danger {
+	color: var(--danger);
+}
+.btn-sm {
+	min-height: 32px;
+	padding: 0 var(--space-2);
+	font-size: 0.8125rem;
+}
+.btn-block {
+	width: 100%;
 }
 
-/*
- * Thin indeterminate progress bar shown in the header while `navigating.to`
- * is set (see +layout.svelte) - covers the brief wait for a route's load()
- * to resolve now that navigation blocks on data instead of racing it.
- */
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+}
+.field-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--ink);
+}
+.field-hint {
+	font-size: 0.75rem;
+	color: var(--muted);
+}
+.field-error {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--danger);
+}
+.input {
+	width: 100%;
+	min-height: 40px;
+	padding: 0 var(--space-2);
+	font-size: 0.875rem;
+	border: var(--border-w) solid var(--ink);
+}
+textarea.input {
+	padding: var(--space-2);
+	min-height: 96px;
+}
+
+.card {
+	background: var(--bg);
+	border: var(--border-w) solid var(--ink);
+}
+.card-raised {
+	box-shadow: var(--shadow-hard);
+}
+
+.eyebrow {
+	font-family: var(--font-mono);
+	font-size: 0.6875rem;
+	font-weight: 500;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.notice {
+	display: flex;
+	gap: var(--space-2);
+	align-items: flex-start;
+	padding: var(--space-2) var(--space-3);
+	font-size: 0.875rem;
+	border: var(--border-w) solid var(--ink);
+	background: var(--surface);
+}
+.notice-error {
+	border-color: var(--danger);
+	background: var(--danger-soft);
+	color: #991b1b;
+}
+.notice-ok {
+	border-color: var(--good);
+	background: var(--good-soft);
+	color: #14532d;
+}
+.notice-warn {
+	border-color: var(--warn);
+	background: var(--warn-soft);
+	color: #713f12;
+}
+
+.tag {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	padding: 1px 6px;
+	font-family: var(--font-mono);
+	font-size: 0.6875rem;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	border: 1.5px solid var(--ink);
+	background: var(--bg);
+	white-space: nowrap;
+}
+.tag-accent {
+	background: var(--accent);
+	color: var(--accent-ink);
+	border-color: var(--ink);
+}
+
+/* Thin indeterminate progress bar under the header while a route's data loads. */
 @keyframes nav-progress {
 	0% {
 		transform: translateX(-100%);
@@ -234,74 +425,69 @@ select {
 	animation: nav-progress 1s ease-in-out infinite;
 }
 
-.drawer-jump {
-	color: var(--muted-fg);
+/* ------------------------------------------------------------------------------------------ */
+/* Thesis-module classes that predate the redesign                                              */
+/* ------------------------------------------------------------------------------------------ */
+
+.facet-group-label {
+	font-family: var(--font-mono);
+	font-size: 0.6875rem;
 	font-weight: 500;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--muted);
+	margin-bottom: var(--space-2);
+}
+
+.facet-chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-height: 32px;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	padding: 0 0.75rem;
+	border: 1.5px solid var(--ink);
+	background: var(--bg);
+	color: var(--ink);
+	cursor: pointer;
+	user-select: none;
+	transition:
+		background-color var(--dur) var(--ease),
+		box-shadow var(--dur) var(--ease),
+		transform var(--dur) var(--ease);
+}
+.facet-chip:hover {
+	box-shadow: var(--shadow-hard-sm);
+	transform: translate(-1px, -1px);
+}
+.facet-chip:has(:checked) {
+	color: var(--accent-ink);
+	background: var(--accent);
+}
+.facet-chip:has(:focus-visible) {
+	outline: 3px solid var(--accent);
+	outline-offset: 2px;
+}
+.facet-chip input {
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+}
+
+.drawer-jump {
+	color: var(--muted);
+	font-weight: 600;
 	white-space: nowrap;
-	padding: 0.2rem 0;
+	padding: 0.25rem 0;
 	border-bottom: 2px solid transparent;
+	transition:
+		color var(--dur) var(--ease),
+		border-color var(--dur) var(--ease);
 }
 .drawer-jump:hover {
-	color: var(--fg);
-}
-
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme='light']) {
-		--bg: #141412;
-		--bg-ink: #141412;
-		--surface: color-mix(in srgb, #f1eee7 10%, #141412);
-		--surface-2: color-mix(in srgb, #f1eee7 4%, #141412);
-		--surface-3: color-mix(in srgb, #f1eee7 16%, #141412);
-		--border: color-mix(in srgb, #f1eee7 22%, #141412);
-		--fg: #f1eee7;
-		--muted-fg: color-mix(in srgb, #f1eee7 55%, #141412);
-		--white: #141412;
-		color-scheme: dark;
-	}
-}
-:root[data-theme='light'] {
-	--bg: #faf9f5;
-	--bg-ink: #faf9f5;
-	--surface: #f1eee7;
-	--surface-2: color-mix(in srgb, #141412 5%, #faf9f5);
-	--surface-3: color-mix(in srgb, #141412 9%, #faf9f5);
-	--border: color-mix(in srgb, #141412 18%, #faf9f5);
-	--fg: #141412;
-	--muted-fg: color-mix(in srgb, #141412 58%, #faf9f5);
-	--white: #f1eee7;
-	color-scheme: light;
-}
-:root[data-theme='dark'] {
-	--bg: #141412;
-	--bg-ink: #141412;
-	--surface: color-mix(in srgb, #f1eee7 10%, #141412);
-	--surface-2: color-mix(in srgb, #f1eee7 4%, #141412);
-	--surface-3: color-mix(in srgb, #f1eee7 16%, #141412);
-	--border: color-mix(in srgb, #f1eee7 22%, #141412);
-	--fg: #f1eee7;
-	--muted-fg: color-mix(in srgb, #f1eee7 55%, #141412);
-	--white: #141412;
-	color-scheme: dark;
-}
-
-body {
-	font-family: var(--font-sans);
-	background: var(--color-bg);
-	color: var(--color-fg);
-	min-height: 100vh;
-	line-height: 1.55;
-	-webkit-font-smoothing: antialiased;
-}
-
-/*
- * The Inter/Poppins pairing is a full split, not a font-mono-only accent:
- * every structural heading (page title, nav brand, section/modal headers,
- * a company's name) carries the Poppins "headline" voice, while running
- * prose, labels, and controls stay on Inter. See DESIGN.md's Typography
- * section for the full role breakdown.
- */
-h1,
-h2,
-h3 {
-	font-family: var(--font-mono);
+	color: var(--ink);
+	border-bottom-color: var(--ink);
 }

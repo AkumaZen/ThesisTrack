@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { setMembership } from '$lib/server/watchlistsStore';
+import { setMembership } from '$lib/valuation/server/watchlistsStore';
 
 const SYMBOL = /^[A-Z0-9&.-]{1,20}$/;
 

@@ -1,8 +1,9 @@
 import { and, desc, eq, lt, sql } from 'drizzle-orm';
-import { db } from './db';
-import { coverage, savedValuations, users, valuationStatus, valuationVersions } from './db/schema';
+import { db } from '$lib/server/db';
+import { coverage, savedValuations, valuationStatus, valuationVersions } from '$lib/server/db/valuationSchema';
+import { users } from '$lib/server/db/schema';
 import { logActivity, type Tx } from './activityStore';
-import { diffValuations } from '$lib/valuationDiff';
+import { diffValuations } from '$lib/valuation/valuationDiff';
 import type {
 	RemovedValuation,
 	SaveBody,
@@ -10,7 +11,7 @@ import type {
 	SavedValuationRecord,
 	ValuationContent,
 	ValuationVersionInfo
-} from '$lib/savedValuations';
+} from '$lib/valuation/savedValuations';
 
 /** Autosaves by the same person closer together than this are one editing session (one version). */
 export const EDIT_SESSION_MS = 10 * 60 * 1000;
@@ -58,7 +59,7 @@ export async function listSavedValuationRows(): Promise<SavedValuationMeta[]> {
 			version: savedValuations.version,
 			status: valuationStatus.status,
 			statusAtVersion: valuationStatus.atVersion,
-			coveredBy: users.username
+			coveredBy: users.displayName
 		})
 		.from(savedValuations)
 		.leftJoin(valuationStatus, eq(valuationStatus.symbol, savedValuations.symbol))
@@ -289,11 +290,11 @@ export async function listRemovedValuations(): Promise<RemovedValuation[]> {
 		select * from (
 			select distinct on (v.symbol) v.id, v.symbol, v.action, v.snapshot->>'name' as name,
 			       v.saved_by, v.saved_at
-			from valuation_versions v
+			from valuation.valuation_versions v
 			order by v.symbol, v.id desc
 		) latest
 		where latest.action = 'delete' and latest.saved_at >= ${since}
-		  and not exists (select 1 from saved_valuations s where s.symbol = latest.symbol)
+		  and not exists (select 1 from valuation.saved_valuations s where s.symbol = latest.symbol)
 		order by latest.saved_at desc`);
 	return rows.map((r) => ({
 		versionId: r.id,

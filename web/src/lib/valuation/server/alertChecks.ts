@@ -115,7 +115,7 @@ export async function runPriceChecks(opts: { force?: boolean } = {}): Promise<Ch
 						subjectKey: symbolSubject(symbol),
 						subjectLabel: record.name,
 						message: fairValueMessage(crossing, record.name, price, fairValue),
-						href: `/company/${symbol}`
+						href: `/valuation/company/${symbol}`
 					});
 					if (raised) summary.alerts++;
 				}
@@ -214,7 +214,7 @@ export async function runSectorChecks(): Promise<CheckSummary> {
 					sectorSubject(major.key),
 					major.label,
 					'sector',
-					`/sector-rotation/${major.key}`,
+					`/valuation/sector-rotation/${major.key}`,
 					() => getMajorSectorReturn(major)
 				);
 			} catch (e) {
@@ -240,7 +240,7 @@ export async function runSectorChecks(): Promise<CheckSummary> {
 					basketSubject(basket.key),
 					basket.label,
 					'basket',
-					`/sector-rotation/${parent.key}/${basket.key}`,
+					`/valuation/sector-rotation/${parent.key}/${basket.key}`,
 					() => getSectorReturn(basket)
 				);
 			} catch (e) {
@@ -291,7 +291,7 @@ export async function runBreakoutChecks(): Promise<CheckSummary> {
 						subjectKey: symbolSubject(symbol),
 						subjectLabel: name,
 						message: nearBreakoutMessage(name, prev, result.distanceToBreakoutPct),
-						href: `/company/${symbol}`
+						href: `/valuation/company/${symbol}`
 					});
 					if (raised) summary.alerts++;
 				}

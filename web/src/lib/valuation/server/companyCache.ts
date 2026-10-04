@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { companyCache } from './db/schema';
+import { db } from '$lib/server/db';
+import { companyCache } from '$lib/server/db/valuationSchema';
 import { fetchCompanyFinancials, type CompanyFinancials } from './scraper';
 import { fetchLtp } from './angelone';
 import { isMarketOpenIST } from './marketHours';

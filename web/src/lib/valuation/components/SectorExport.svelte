@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/exportXlsx';
-	import type { SectorReturn } from '$lib/sectorRotation';
+	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
+	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 
 	// Excel and Print / PDF for a grid of sector cards, in the order the grid shows them.
 	let {

@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { listAlerts, unreadCount } from '$lib/server/alertStore';
-import { ALERT_TYPES, type AlertType } from '$lib/alerts';
+import { listAlerts, unreadCount } from '$lib/valuation/server/alertStore';
+import { ALERT_TYPES, type AlertType } from '$lib/valuation/alerts';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
 	const typeParam = url.searchParams.get('type');

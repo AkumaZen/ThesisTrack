@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { listActivity } from '$lib/server/activityStore';
+import { listActivity } from '$lib/valuation/server/activityStore';
 
 /** The team activity feed, newest first. ?limit (1-200, default 30), ?before=<timestamp> to page
  *  back, ?symbol= for one company, ?others=1 to leave out the signed-in user's own actions. */

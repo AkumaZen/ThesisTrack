@@ -1,6 +1,6 @@
 // Ports frontend/api.js's request()/ApiError pattern - grows one method per
-// backend phase, same as the original file did.
-import { session } from './session.svelte';
+// backend phase, same as the original file did. Auth is the httpOnly session
+// cookie, which the browser sends with every same-origin fetch on its own.
 
 const API_BASE = '/api';
 
@@ -29,11 +29,6 @@ function buildQuery(params?: Record<string, unknown>): string {
 
 async function request(method: string, path: string, body?: unknown) {
 	const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-	if (session.token) {
-		headers['Authorization'] = `Bearer ${session.token}`;
-	} else if (session.apiKey) {
-		headers['X-API-Key'] = session.apiKey;
-	}
 	const resp = await fetch(`${API_BASE}${path}`, {
 		method,
 		headers,
@@ -41,20 +36,17 @@ async function request(method: string, path: string, body?: unknown) {
 	});
 	const isJson = resp.headers.get('content-type')?.includes('application/json');
 	const data = isJson ? await resp.json() : await resp.text();
-	if (resp.status === 401 && (session.token || session.apiKey)) {
-		// Stale/expired credentials - drop back to the login screen instead of
-		// leaving pages stuck mid-fetch with no way to recover.
-		session.clear();
+	if (resp.status === 401 && typeof location !== 'undefined') {
+		// Session expired or signed out elsewhere - go back to the login screen
+		// instead of leaving pages stuck mid-fetch with no way to recover.
+		location.assign(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
 	}
 	if (!resp.ok) throw new ApiError(resp.status, data);
 	return data;
 }
 
 export const api = {
-	login: (email: string, password: string) => request('POST', '/auth/login', { email, password }),
 	me: () => request('GET', '/auth/me'),
-	changePassword: (oldPassword: string, newPassword: string) =>
-		request('POST', '/auth/change-password', { old_password: oldPassword, new_password: newPassword }),
 	listCompanies: (params?: Record<string, unknown>) => request('GET', `/companies?${buildQuery(params)}`),
 	getCompany: (id: string, owner?: string | null) =>
 		request('GET', `/companies/${encodeURIComponent(id)}${owner ? `?owner=${encodeURIComponent(owner)}` : ''}`),

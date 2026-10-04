@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { restoreValuationVersion } from '$lib/server/savedValuationsStore';
+import { restoreValuationVersion } from '$lib/valuation/server/savedValuationsStore';
 
 /** Body: { versionId, baseVersion? }. Makes that version current again (as a new version). With
  *  baseVersion, refused with 409 + the current record if someone saved since. */

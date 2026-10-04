@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getValuationVersion } from '$lib/server/savedValuationsStore';
+import { getValuationVersion } from '$lib/valuation/server/savedValuationsStore';
 
 /** The full content of one version, for comparing against the current valuation. */
 export const GET: RequestHandler = async ({ params }) => {

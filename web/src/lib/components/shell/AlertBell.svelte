@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { ALERTS_CHANGED_EVENT } from '$lib/alerts';
+	import { ALERTS_CHANGED_EVENT } from '$lib/valuation/alerts';
 
 	// The alerts page announces changes (mark read etc.) via ALERTS_CHANGED_EVENT so the badge
 	// updates immediately instead of waiting for the next poll.
@@ -9,7 +9,7 @@
 
 	async function refresh() {
 		try {
-			const res = await fetch('/api/alerts/unread-count');
+			const res = await fetch('/api/valuation/alerts/unread-count');
 			if (res.ok) unread = (await res.json()).unread ?? 0;
 		} catch {
 			/* the badge is best-effort - keep the last known count */
@@ -34,13 +34,14 @@
 		};
 	});
 
-	const onAlertsPage = $derived(page.url.pathname === '/alerts');
+	const onAlertsPage = $derived(page.url.pathname === '/valuation/alerts');
 </script>
 
 <a
-	class="alert-bell"
-	class:alert-bell-active={onAlertsPage}
-	href={resolve('/alerts')}
+	class="icon-btn"
+	class:icon-btn-active={onAlertsPage}
+	aria-current={onAlertsPage ? 'page' : undefined}
+	href={resolve('/valuation/alerts')}
 	aria-label={unread > 0 ? `Alerts, ${unread} unread` : 'Alerts'}
 	data-testid="alert-bell"
 >
@@ -50,9 +51,9 @@
 		viewBox="0 0 16 16"
 		fill="none"
 		stroke="currentColor"
-		stroke-width="1.4"
-		stroke-linecap="round"
-		stroke-linejoin="round"
+		stroke-width="1.6"
+		stroke-linecap="square"
+		stroke-linejoin="miter"
 		aria-hidden="true"
 	>
 		<path
@@ -61,7 +62,7 @@
 		<path d="M6.5 13a1.5 1.5 0 0 0 3 0" />
 	</svg>
 	{#if unread > 0}
-		<span class="alert-bell-count" data-testid="alert-bell-count"
+		<span class="icon-btn-count num" data-testid="alert-bell-count"
 			>{unread > 99 ? '99+' : unread}</span
 		>
 	{/if}

@@ -4,7 +4,7 @@
 		SECTOR_CARD_METRICS,
 		DEFAULT_SECTOR_CARD_METRICS,
 		type SectorCardMetric
-	} from '$lib/prefs';
+	} from '$lib/valuation/prefs';
 
 	// Which figures each sector card shows. Saved for this person only; at least one stays on.
 	let {
@@ -16,7 +16,7 @@
 		// Keep the canonical order so cards read the same left to right everywhere.
 		const ordered = SECTOR_CARD_METRICS.map((m) => m.id).filter((id) => next.includes(id));
 		onChange(ordered);
-		await fetch('/api/me/prefs', {
+		await fetch('/api/valuation/me/prefs', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ sectorCard: { metrics: ordered } })

@@ -1,9 +1,8 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { resolve } from '$app/paths';
-	import ConstituentCard from '$lib/components/ConstituentCard.svelte';
-	import { TIMEFRAMES, type Timeframe } from '$lib/sectorRotation';
-	import type { SectorReturn } from '$lib/sectorRotation';
+	import ConstituentCard from '$lib/valuation/components/ConstituentCard.svelte';
+	import { TIMEFRAMES, type Timeframe } from '$lib/valuation/sectorRotation';
+	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -25,7 +24,7 @@
 			for (const symbol of data.symbols) {
 				if (cancelled) return;
 				try {
-					const res = await fetch(`/api/company/${symbol}/growth-series`);
+					const res = await fetch(`/api/valuation/company/${symbol}/growth-series`);
 					if (res.status === 404) {
 						if (!cancelled) companyData[symbol] = null;
 						continue;
@@ -47,7 +46,7 @@
 	// page hits — no separate live computation, just one more cheap fetch off the same cache.
 	$effect(() => {
 		let cancelled = false;
-		fetch(`/api/sector-rotation/${data.key}`)
+		fetch(`/api/valuation/sector-rotation/${data.key}`)
 			.then((res) => (res.ok ? res.json() : Promise.reject()))
 			.then((row) => {
 				if (!cancelled) summary = row;
@@ -71,7 +70,7 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/sector-rotation/[key]', { key: data.majorKey })}>
+		<a class="back-link" href={resolve('/valuation/sector-rotation/[key]', { key: data.majorKey })}>
 			&larr; Back to {data.majorLabel}
 		</a>
 		<h1>{data.label}</h1>

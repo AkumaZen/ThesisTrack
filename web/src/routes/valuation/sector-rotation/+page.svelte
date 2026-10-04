@@ -1,13 +1,12 @@
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import { flip } from 'svelte/animate';
-	import CardMetricsChooser from '$lib/components/CardMetricsChooser.svelte';
-	import { DEFAULT_SECTOR_CARD_METRICS } from '$lib/prefs';
-	import SectorCard from '$lib/components/SectorCard.svelte';
-	import SectorExport from '$lib/components/SectorExport.svelte';
-	import type { SectorReturn } from '$lib/sectorRotation';
+	import CardMetricsChooser from '$lib/valuation/components/CardMetricsChooser.svelte';
+	import { DEFAULT_SECTOR_CARD_METRICS } from '$lib/valuation/prefs';
+	import SectorCard from '$lib/valuation/components/SectorCard.svelte';
+	import SectorExport from '$lib/valuation/components/SectorExport.svelte';
+	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -65,7 +64,7 @@
 		}
 
 		try {
-			const res = await fetch('/api/sector-rotation-import', {
+			const res = await fetch('/api/valuation/sector-rotation-import', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(parsed)
@@ -138,7 +137,7 @@
 			for (const m of data.majors) {
 				if (cancelled) return;
 				try {
-					const res = await fetch(`/api/sector-rotation-major/${m.key}`);
+					const res = await fetch(`/api/valuation/sector-rotation-major/${m.key}`);
 					if (res.status === 500) {
 						const body = await res.json().catch(() => null);
 						if (!cancelled)
@@ -196,7 +195,7 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/')}>&larr; Back to search</a>
+		<a class="back-link" href={resolve('/valuation')}>&larr; Back to search</a>
 		<h1>Sector Rotation</h1>
 		<div class="sub">
 			Major sectors ranked by relative strength vs Nifty 50, each rolled up from its own thematic
@@ -211,7 +210,7 @@
 <div class="wrap">
 	<!-- Editing the shared sector taxonomy is admin-only (enforced server-side too). -->
 	{#if data.user?.role === 'admin'}
-		<a class="sm-manage-link" href={resolve('/sectors')}
+		<a class="sm-manage-link" href={resolve('/valuation/sectors')}
 			>Manage sectors, baskets &amp; companies &rarr;</a
 		>
 		<div class="integrity-panel" style="margin-top:12px">
@@ -328,7 +327,7 @@
 						label={m.label}
 						tag={`sector · ${m.subsectorCount}`}
 						row={majorData[m.key]}
-						href={resolve('/sector-rotation/[key]', { key: m.key })}
+						href={resolve('/valuation/sector-rotation/[key]', { key: m.key })}
 						linkText={`${m.subsectorCount} sub-basket${m.subsectorCount === 1 ? '' : 's'} →`}
 					/>
 				</div>

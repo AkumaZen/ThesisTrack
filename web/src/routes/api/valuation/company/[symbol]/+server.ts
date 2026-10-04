@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getCompanyData } from '$lib/server/companyCache';
+import { getCompanyData } from '$lib/valuation/server/companyCache';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {

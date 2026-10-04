@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
-import { getPrefs } from '$lib/server/prefsStore';
-import { getAnalysisSettings } from '$lib/server/analysisSettingsStore';
+import { getPrefs } from '$lib/valuation/server/prefsStore';
+import { getAnalysisSettings } from '$lib/valuation/server/analysisSettingsStore';
 
 // Makes the signed-in user (or null on /login) and their own preferences available to every
 // page, plus the team's analysis settings (fair value %, etc.). Pages that change either call

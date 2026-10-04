@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getCompanyData } from '$lib/server/companyCache';
-import { listAllBaskets, listAllMajorSectors } from '$lib/server/sectorStore';
-import { startingTemplateFor } from '$lib/server/templatesStore';
+import { getCompanyData } from '$lib/valuation/server/companyCache';
+import { listAllBaskets, listAllMajorSectors } from '$lib/valuation/server/sectorStore';
+import { startingTemplateFor } from '$lib/valuation/server/templatesStore';
 
 /** Every sector -> basket path this company sits on, so the page can link to where it is ranked. */
 async function sectorsFor(symbol: string) {

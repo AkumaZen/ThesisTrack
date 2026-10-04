@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getSectorReturn } from '$lib/server/sectorRotationCache';
-import { findAnyCustomSector } from '$lib/server/sectorStore';
+import { getSectorReturn } from '$lib/valuation/server/sectorRotationCache';
+import { findAnyCustomSector } from '$lib/valuation/server/sectorStore';
 
 // One sector's rotation data — the overview page fetches these one at a time (see
 // +page.svelte) so 56 baskets render progressively instead of blocking on all of them at once.

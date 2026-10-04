@@ -1,8 +1,8 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { templateContentProblem, templateNameProblem } from '$lib/templates';
-import type { MethodId } from '$lib/valuationEngine';
-import { createTemplate, listTemplates, userDefaultTemplateId } from '$lib/server/templatesStore';
+import { templateContentProblem, templateNameProblem } from '$lib/valuation/templates';
+import type { MethodId } from '$lib/valuation/valuationEngine';
+import { createTemplate, listTemplates, userDefaultTemplateId } from '$lib/valuation/server/templatesStore';
 
 export const GET: RequestHandler = async ({ locals }) =>
 	json({

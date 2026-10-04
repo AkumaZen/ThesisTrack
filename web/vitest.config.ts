@@ -5,6 +5,6 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
 		environment: 'node',
-		include: ['tests/**/*.{test,spec}.ts']
+		include: ['tests/**/*.{test,spec}.ts', 'src/**/*.{test,spec}.ts']
 	}
 });

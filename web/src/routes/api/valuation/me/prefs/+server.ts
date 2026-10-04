@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getPrefs, updatePrefs } from '$lib/server/prefsStore';
+import { getPrefs, updatePrefs } from '$lib/valuation/server/prefsStore';
 
 /** The signed-in user's own preferences (columns, sort, view, sector card metrics). */
 export const GET: RequestHandler = async ({ locals }) => json(await getPrefs(locals.user!.id));

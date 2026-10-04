@@ -1,13 +1,39 @@
 <script lang="ts">
-	// Needed now that page data comes from load() functions (see +page.ts
-	// files) - a failed load() throws here instead of being caught inline by
-	// the old onMount try/catch, so this boundary is what a user actually
-	// sees on a fetch failure during navigation.
+	// A failed load() lands here. Unexpected (500) errors carry an id that matches the server log.
 	import { page } from '$app/state';
+
+	const home = $derived(page.url.pathname.startsWith('/valuation') ? '/valuation' : '/');
 </script>
 
-<div class="max-w-md mx-auto mt-16 rounded-xl border border-border bg-surface p-6 text-center">
-	<div class="text-sm text-muted-fg">Error {page.status}</div>
-	<h1 class="text-lg font-semibold mt-1">{page.error?.message ?? 'Something went wrong'}</h1>
-	<a href="/" class="inline-block mt-4 text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90">Back to Companies</a>
-</div>
+<svelte:head><title>Error {page.status} · ThesisTrack</title></svelte:head>
+
+<section class="error-card card card-raised" role="alert">
+	<div class="eyebrow">Error {page.status}</div>
+	<h1>{page.error?.message ?? 'Something went wrong'}</h1>
+	{#if page.error?.errorId}
+		<p class="ref">Reference <code class="num">{page.error.errorId}</code>. Give this to the admin.</p>
+	{/if}
+	<a class="btn btn-dark" href={home}>{home === '/' ? 'Back to companies' : 'Back to watchlist'}</a>
+</section>
+
+<style>
+	.error-card {
+		max-width: 480px;
+		margin: var(--space-6) auto;
+		padding: var(--space-5);
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-2);
+	}
+	h1 {
+		font-size: 1.5rem;
+		font-weight: 700;
+		margin-bottom: var(--space-2);
+	}
+	.ref {
+		font-size: 0.875rem;
+		color: var(--muted);
+		margin-bottom: var(--space-2);
+	}
+</style>

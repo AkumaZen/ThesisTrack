@@ -1,11 +1,10 @@
 <script lang="ts" module>
-	import type { UserPrefs } from '$lib/prefs';
+	import type { UserPrefs } from '$lib/valuation/prefs';
 	// The watchlist layout last chosen in this tab (see savePrefs).
 	let latestWatchlistPrefs: UserPrefs['watchlist'] | null = null;
 </script>
 
 <script lang="ts">
-	import '$lib/styles/dashboard.css';
 	import { untrack } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -16,37 +15,37 @@
 		saveSavedValuation,
 		restoreValuation,
 		type SavedValuationMeta
-	} from '$lib/savedValuations';
+	} from '$lib/valuation/savedValuations';
 	import {
 		project,
 		cagr,
 		METHOD_LABELS,
 		type MethodId,
 		type ScenarioAssumptions
-	} from '$lib/valuationEngine';
-	import { diagnoseValuationMethod } from '$lib/valuationDiagnosis';
+	} from '$lib/valuation/valuationEngine';
+	import { diagnoseValuationMethod } from '$lib/valuation/valuationDiagnosis';
 	import {
 		parseImportPayload,
 		validateCandidate,
 		buildImportedRecord,
 		type ImportOutcome
-	} from '$lib/importValuation';
-	import { getCachedRow, setCachedRow, evictCachedRow } from '$lib/watchlistCache';
-	import { DEFAULT_FAIR_VALUE_PCT, fairValueFromTarget, upsidePct } from '$lib/fairValue';
-	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/exportXlsx';
+	} from '$lib/valuation/importValuation';
+	import { getCachedRow, setCachedRow, evictCachedRow } from '$lib/valuation/watchlistCache';
+	import { DEFAULT_FAIR_VALUE_PCT, fairValueFromTarget, upsidePct } from '$lib/valuation/fairValue';
+	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
 	import {
 		DEFAULT_PREFS,
 		WATCHLIST_COLUMNS,
 		type ColumnId,
 		type SortKey,
 		type WatchlistView
-	} from '$lib/prefs';
-	import { REVIEW_STATUS_LABELS, type ReviewStatus } from '$lib/team';
-	import type { NamedWatchlist } from '$lib/watchlists';
-	import { timeAgo } from '$lib/activity';
-	import ActivityFeed from '$lib/components/ActivityFeed.svelte';
-	import RemovedValuations from '$lib/components/RemovedValuations.svelte';
-	import ColumnChooser from '$lib/components/ColumnChooser.svelte';
+	} from '$lib/valuation/prefs';
+	import { REVIEW_STATUS_LABELS, type ReviewStatus } from '$lib/valuation/team';
+	import type { NamedWatchlist } from '$lib/valuation/watchlists';
+	import { timeAgo } from '$lib/valuation/activity';
+	import ActivityFeed from '$lib/valuation/components/ActivityFeed.svelte';
+	import RemovedValuations from '$lib/valuation/components/RemovedValuations.svelte';
+	import ColumnChooser from '$lib/valuation/components/ColumnChooser.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -137,7 +136,7 @@
 
 	async function loadRow(symbol: string) {
 		try {
-			const res = await fetch(`/api/company/${symbol}`);
+			const res = await fetch(`/api/valuation/company/${symbol}`);
 			if (!res.ok) throw new Error('failed to load');
 			const data = await res.json();
 
@@ -214,7 +213,7 @@
 			// Best-effort: not every saved symbol is Angel One-listed, and a missing sparkline
 			// shouldn't fail the whole row.
 			try {
-				const sparkRes = await fetch(`/api/company/${symbol}/sparkline`);
+				const sparkRes = await fetch(`/api/valuation/company/${symbol}/sparkline`);
 				const sparkline: number[] | null = sparkRes.ok
 					? ((await sparkRes.json()).closes ?? null)
 					: null;
@@ -298,7 +297,7 @@
 	let prefsTimer: ReturnType<typeof setTimeout> | undefined;
 	function sendPrefs() {
 		prefsTimer = undefined;
-		void fetch('/api/me/prefs', {
+		void fetch('/api/valuation/me/prefs', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -363,7 +362,7 @@
 	// "Changed since you last looked": rows a teammate saved after this person's previous visit.
 	let previousVisit = $state<number | null>(null);
 	$effect(() => {
-		void fetch('/api/me/visit', { method: 'POST' })
+		void fetch('/api/valuation/me/visit', { method: 'POST' })
 			.then((r) => (r.ok ? r.json() : null))
 			.then((d: { previous: number | null } | null) => (previousVisit = d?.previous ?? null))
 			.catch(() => {});
@@ -606,7 +605,7 @@
 	let listError = $state<string | null>(null);
 
 	async function refreshLists() {
-		const res = await fetch('/api/watchlists');
+		const res = await fetch('/api/valuation/watchlists');
 		if (res.ok) lists = (await res.json()) as NamedWatchlist[];
 	}
 
@@ -628,7 +627,7 @@
 	async function createList() {
 		let res: Response;
 		try {
-			res = await fetch('/api/watchlists', {
+			res = await fetch('/api/valuation/watchlists', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ name: newListName })
@@ -652,14 +651,14 @@
 
 	async function renameList() {
 		if (!activeList) return;
-		listError = await send('PATCH', `/api/watchlists/${activeList.id}`, { name: renameText });
+		listError = await send('PATCH', `/api/valuation/watchlists/${activeList.id}`, { name: renameText });
 		if (!listError) renaming = false;
 		await refreshLists();
 	}
 
 	async function deleteList() {
 		if (!activeList) return;
-		const err = await send('DELETE', `/api/watchlists/${activeList.id}`);
+		const err = await send('DELETE', `/api/valuation/watchlists/${activeList.id}`);
 		confirmDeleteList = false;
 		if (!err) setView('all');
 		listError = err;
@@ -667,7 +666,7 @@
 	}
 
 	async function setMembership(symbol: string, listId: number, member: boolean) {
-		const err = await send('PUT', `/api/watchlists/${listId}/members`, { symbol, member });
+		const err = await send('PUT', `/api/valuation/watchlists/${listId}/members`, { symbol, member });
 		await refreshLists();
 		return err;
 	}
@@ -741,7 +740,7 @@
 			// Screener (typo, wrong exchange, delisted) — confirm it resolves before saving,
 			// rather than silently adding a watchlist row that can never load any data.
 			try {
-				const res = await fetch(`/api/company/${symbol}`);
+				const res = await fetch(`/api/valuation/company/${symbol}`);
 				if (!res.ok) {
 					const body = await res.json().catch(() => null);
 					outcomes.push({
@@ -805,7 +804,7 @@
 			}
 			loading = true;
 			try {
-				const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+				const res = await fetch(`/api/valuation/search?q=${encodeURIComponent(query)}`);
 				results = await res.json();
 			} finally {
 				loading = false;
@@ -814,11 +813,11 @@
 	}
 
 	function select(symbol: string) {
-		goto(resolve('/company/[symbol]', { symbol }));
+		goto(resolve('/valuation/company/[symbol]', { symbol }));
 	}
 
 	function goDirect() {
-		if (query.trim()) goto(resolve('/company/[symbol]', { symbol: query.trim().toUpperCase() }));
+		if (query.trim()) goto(resolve('/valuation/company/[symbol]', { symbol: query.trim().toUpperCase() }));
 	}
 </script>
 
@@ -828,8 +827,8 @@
 
 <div class="band">
 	<div class="band-inner">
-		<h1>Valuation Dashboard</h1>
-		<div class="sub">Build your own Bear / Base / Bull valuation model for any listed company</div>
+		<h1>Watchlist</h1>
+		<div class="sub">Bear, base and bull valuations for the companies you follow.</div>
 	</div>
 </div>
 
@@ -857,13 +856,6 @@
 		</div>
 	{:else if loading}
 		<div style="margin-top:8px;color:var(--muted);font-size:13px">Searching…</div>
-	{/if}
-	<a class="compare-link no-print" href={resolve('/compare')}
-		>Compare companies side by side &rarr;</a
-	>
-	<a class="compare-link no-print" href={resolve('/sector-rotation')}>Sector rotation &rarr;</a>
-	{#if data.user?.role === 'admin'}
-		<a class="compare-link no-print" href={resolve('/sectors')}>Manage sectors &rarr;</a>
 	{/if}
 </div>
 
@@ -1161,7 +1153,7 @@
 									}}
 								>
 									<td class="left">
-										<a class="wl-name" href={resolve('/company/[symbol]', { symbol: r.symbol })}
+										<a class="wl-name" href={resolve('/valuation/company/[symbol]', { symbol: r.symbol })}
 											>{r.name}</a
 										>
 										{#if changedSinceVisit(r)}<span
@@ -1179,7 +1171,7 @@
 									{#if r.error}
 										<td colspan={columns.length} class="wl-error">
 											⚠ Couldn't load this company — the symbol may be wrong, delisted, or not on
-											Screener. <a href={resolve('/company/[symbol]', { symbol: r.symbol })}
+											Screener. <a href={resolve('/valuation/company/[symbol]', { symbol: r.symbol })}
 												>Open it directly</a
 											> to see the exact error.
 										</td>

@@ -7,7 +7,7 @@ const PRICE_CHECK_INTERVAL_MS = 10 * 60 * 1000;
 // Let the dev server finish starting before the first pass touches Screener / Angel One.
 const FIRST_RUN_DELAY_MS = 60 * 1000;
 
-async function priceCheck() {
+export async function priceCheck() {
 	try {
 		const summary = await runPriceChecks();
 		if (summary.alerts > 0 || summary.errors > 0) {

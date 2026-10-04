@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { parseAnalysisSettings } from '$lib/analysisSettings';
-import { getAnalysisSettings, saveAnalysisSettings } from '$lib/server/analysisSettingsStore';
+import { parseAnalysisSettings } from '$lib/valuation/analysisSettings';
+import { getAnalysisSettings, saveAnalysisSettings } from '$lib/valuation/server/analysisSettingsStore';
 
 export const GET: RequestHandler = async () => json(await getAnalysisSettings());
 

@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { addNote } from '$lib/server/teamStore';
-import { noteProblem, type NoteKind } from '$lib/team';
+import { addNote } from '$lib/valuation/server/teamStore';
+import { noteProblem, type NoteKind } from '$lib/valuation/team';
 
 const KINDS: NoteKind[] = ['thesis', 'note', 'comment'];
 
