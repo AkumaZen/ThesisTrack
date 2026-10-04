@@ -132,13 +132,12 @@
 </script>
 
 <svelte:head>
-	<title>Manage Sectors · Valuation Dashboard</title>
+	<title>Manage Sectors · ThesisTrack</title>
 </svelte:head>
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/valuation/sector-rotation')}>&larr; Back to Sector Rotation</a>
-		<h1>Manage Sectors</h1>
+		<h1>Sector baskets</h1>
 		<div class="sub">
 			Edit the sector &rarr; basket &rarr; company taxonomy. Every company is verified against
 			Screener.in before it's added, and changes apply immediately for everyone.

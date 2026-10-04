@@ -93,6 +93,8 @@
 	--space-7: 64px;
 
 	--header-h: 56px;
+	/* Full sticky app header: bar + tools row + its 2px bottom rule. Sticky page bars sit below it. */
+	--shell-h: 102px;
 	--content-max: 1280px;
 
 	color-scheme: light;
@@ -490,4 +492,85 @@ textarea.input {
 .drawer-jump:hover {
 	color: var(--ink);
 	border-bottom-color: var(--ink);
+}
+
+/* ------------------------------------------------------------------------------------------ */
+/* Tailwind markup in the thesis pages, mapped onto the system                                  */
+/* ------------------------------------------------------------------------------------------ */
+
+.page-title {
+	font-size: clamp(1.5rem, 2.4vw, 2rem);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+}
+
+/* A bordered panel is a card: white paper. Grey is for borderless secondary surfaces (toolbars,
+   empty states), so a panel never reads as both at once. */
+.border.border-border.bg-surface,
+.border.border-border.bg-surface-2,
+.border.border-border.bg-bg-ink {
+	background-color: var(--bg);
+}
+
+/* Main actions: the solid ink buttons become the cobalt primary button. */
+:is(button, a).bg-fg.text-bg {
+	background: var(--accent);
+	color: var(--accent-ink);
+	border: var(--border-w) solid var(--ink);
+	font-weight: 600;
+	transition:
+		transform var(--dur) var(--ease),
+		box-shadow var(--dur) var(--ease);
+}
+:is(button, a).bg-fg.text-bg:hover:not(:disabled) {
+	filter: none;
+	background: var(--accent-strong);
+	box-shadow: var(--shadow-hard-sm);
+	transform: translate(-1px, -1px);
+}
+:is(button, a).bg-fg.text-bg:active:not(:disabled) {
+	box-shadow: none;
+	transform: translate(1px, 1px);
+}
+:is(button, a).bg-fg.text-bg:disabled {
+	opacity: 0.45;
+}
+
+/* Secondary buttons drawn as "border border-border": square ink frame with the same lift. */
+button.border.border-border:not(:disabled):hover,
+a.border.border-border:hover {
+	box-shadow: var(--shadow-hard-sm);
+	transform: translate(-1px, -1px);
+}
+button.border.border-border,
+a.border.border-border {
+	transition:
+		transform var(--dur) var(--ease),
+		box-shadow var(--dur) var(--ease),
+		background-color var(--dur) var(--ease);
+}
+
+/* Pills: square tags with a thin ink frame; status dots (no padding) stay round. */
+.rounded-full[class*='px-'] {
+	border-radius: 0;
+	box-shadow: none;
+	border: 1.5px solid currentColor;
+	font-family: var(--font-mono);
+	letter-spacing: 0.01em;
+}
+
+/* Card hover lift. */
+.hover\:shadow-md:hover {
+	transform: translate(-2px, -2px);
+}
+.transition-shadow {
+	transition:
+		box-shadow var(--dur) var(--ease),
+		transform var(--dur) var(--ease);
+}
+
+/* Modal scrims: flat ink wash, no blur. */
+.bg-black\/50 {
+	background-color: rgba(10, 10, 10, 0.45);
 }

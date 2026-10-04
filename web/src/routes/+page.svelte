@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/shell/PageHeader.svelte';
 	// Ports the dashboard portion of frontend/app.js (loadCards/refreshCompanies)
 	// + renderCards/renderFacetBar/renderHeaderStats. Initial data now comes
 	// from +page.ts's load() (see that file for why) instead of onMount, so
@@ -18,12 +19,14 @@
 	let filteredCompanies = $derived(filterCompaniesByName(companies, companyQuery));
 </script>
 
-<div class="flex items-center justify-between">
-	<div class="flex-1"><HeaderStats {companies} /></div>
-	<a href="/ingest" class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 shrink-0 ml-3">+ New Company</a>
-</div>
+<PageHeader title="Companies" subtitle="Every company with an investment thesis, and how each one is tracking.">
+	{#snippet actions()}
+		<a href="/ingest" class="btn btn-primary">+ New company</a>
+	{/snippet}
+</PageHeader>
+<HeaderStats {companies} />
 
-<div class="my-5 rounded-xl border border-border bg-surface p-3">
+<div class="my-5">
 	<div class="flex items-center gap-3">
 		<div class="relative min-w-0 flex-1">
 			<svg

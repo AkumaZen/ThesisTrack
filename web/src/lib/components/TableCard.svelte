@@ -187,13 +187,13 @@
 </script>
 
 <div class="rounded-md border border-border">
-	<div class="flex items-center justify-between px-3 py-2">
+	<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
 		<button type="button" onclick={toggle} class="flex items-center gap-2 text-left cursor-pointer" aria-expanded={expanded}>
 			<span class="text-muted-fg text-xs transition-transform" class:rotate-90={expanded}>&#9656;</span>
 			<span class="text-sm font-medium">{table.name}</span>
 			<span class="text-xs text-muted-fg">{(detail ?? table).columns.length} columns &middot; {detail?.rows.length ?? table.row_count} rows</span>
 		</button>
-		<div class="flex items-center gap-2">
+		<div class="flex flex-wrap items-center gap-2">
 			<button type="button" onclick={toggle} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3 cursor-pointer">
 				{expanded ? 'Hide' : 'Show'}
 			</button>

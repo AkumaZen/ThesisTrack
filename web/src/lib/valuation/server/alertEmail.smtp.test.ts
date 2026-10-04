@@ -94,9 +94,9 @@ describe('sendAlertEmail over real SMTP', () => {
 		const mail = sink.received[0];
 		expect(mail.from).toBe('alerts@example.com');
 		expect(mail.to).toEqual(['a@example.com', 'b@example.org']);
-		expect(mail.data).toContain('Subject: [Valuation Dashboard] Near breakout: Infosys Ltd');
+		expect(mail.data).toContain('Subject: [ThesisTrack] Near breakout: Infosys Ltd');
 		expect(mail.data).toContain('entered Near Stage 2 Breakout');
-		expect(mail.data).toContain('http://localhost:5173/company/INFY');
+		expect(mail.data).toContain('http://localhost:5173/valuation/company/INFY');
 	});
 
 	it('rejects (so callers can report it) when the server is unreachable', async () => {

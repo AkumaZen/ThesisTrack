@@ -561,3 +561,13 @@ kbd {
 		padding: var(--space-3) var(--space-3) var(--space-6);
 	}
 }
+
+.drawer-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: calc(var(--space-2) * -1);
+}
+.drawer-close {
+	border-color: var(--ink);
+}

@@ -330,7 +330,10 @@
 		font-size: 1.25rem;
 		font-weight: 600;
 	}
+	/* Positioned, so the visually hidden labels inside are clipped by this scroller instead of
+	   widening the page. */
 	.table-wrap {
+		position: relative;
 		overflow-x: auto;
 	}
 	.team {

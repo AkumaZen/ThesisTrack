@@ -190,13 +190,12 @@
 </script>
 
 <svelte:head>
-	<title>Sector Rotation · Valuation Dashboard</title>
+	<title>Sector Rotation · ThesisTrack</title>
 </svelte:head>
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/valuation')}>&larr; Back to search</a>
-		<h1>Sector Rotation</h1>
+		<h1>Sector rotation</h1>
 		<div class="sub">
 			Major sectors ranked by relative strength vs Nifty 50, each rolled up from its own thematic
 			sub-baskets, live via Angel One —

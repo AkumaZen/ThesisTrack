@@ -66,7 +66,7 @@
 </script>
 
 <div class="max-w-2xl">
-	<h1 class="font-semibold text-lg mb-1">Export Training Data</h1>
+	<h1 class="page-title mb-1">Export training data</h1>
 	<p class="text-sm text-muted-fg mb-4">
 		Export reviewed thesis/verdict/redline data as SFT training rows (BUILD_PLAN.md §7).
 	</p>

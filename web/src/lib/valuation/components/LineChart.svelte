@@ -47,6 +47,7 @@
 		<svg
 			viewBox="0 0 {width} {height}"
 			preserveAspectRatio="none"
+			style:height="{height}px"
 			class:pos={tone}
 			class:neg={!tone}
 		>
@@ -64,9 +65,10 @@
 	.line-chart {
 		width: 100%;
 	}
+	/* Full width, fixed height (the `height` prop): the line stretches horizontally rather than
+	   the chart growing taller as the card gets wider. */
 	.line-chart svg {
 		width: 100%;
-		height: auto;
 		display: block;
 	}
 	.line-chart polyline {
@@ -81,7 +83,7 @@
 		stroke: var(--red);
 	}
 	.line-chart-change {
-		font-family: 'IBM Plex Mono', monospace;
+		font-family: var(--font-mono);
 		font-size: 12px;
 		margin-top: 6px;
 	}

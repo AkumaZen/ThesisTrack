@@ -177,6 +177,14 @@
 {#if drawerOpen}
 	<div class="drawer-scrim" role="presentation" onclick={() => (drawerOpen = false)}></div>
 	<div class="drawer" id="mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu">
+		<div class="drawer-head">
+			<span class="brand-name">ThesisTrack</span>
+			<button class="icon-btn drawer-close" type="button" aria-label="Close menu" onclick={() => (drawerOpen = false)}>
+				<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"
+					><path d="M3 3l12 12M15 3L3 15" stroke="currentColor" stroke-width="2" /></svg
+				>
+			</button>
+		</div>
 		<div class="drawer-search"><GlobalSearch compact /></div>
 		{#each [{ name: 'Thesis', list: visible(THESIS) }, { name: 'Valuation', list: visible(VALUATION) }] as group (group.name)}
 			<div class="drawer-group">

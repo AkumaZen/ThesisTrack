@@ -38,6 +38,8 @@ export type ThesisData = {
 export type CompanyDetail = {
 	company_id: string;
 	name: string;
+	nse_ticker: string | null;
+	bse_ticker: string | null;
 	broad_industry: string;
 	specific_niche: string;
 	operating_model: string;

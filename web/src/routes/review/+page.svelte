@@ -13,7 +13,7 @@
 	});
 </script>
 
-<h2 class="text-xl font-semibold mb-1">Review Queue</h2>
+<h1 class="page-title mb-1">Review queue</h1>
 <p class="text-sm text-muted-fg mb-5">Trackables from your current theses, grouped by company. Amend a company's Trackables section to update this queue.</p>
 <div class="space-y-4">
 	{#each groups as group (group.id)}

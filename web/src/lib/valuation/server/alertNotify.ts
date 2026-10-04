@@ -36,7 +36,7 @@ export async function sendTestEmail(): Promise<{ ok: true } | { ok: false; messa
 				{
 					type: 'price_fair_value',
 					subjectLabel: 'Test email',
-					message: 'This is a test email from the Valuation Dashboard. Email alerts are working.',
+					message: 'This is a test email from ThesisTrack. Email alerts are working.',
 					href: null
 				},
 				cfg

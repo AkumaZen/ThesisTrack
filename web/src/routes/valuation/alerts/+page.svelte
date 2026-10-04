@@ -185,12 +185,11 @@
 </script>
 
 <svelte:head>
-	<title>Alerts · Valuation Dashboard</title>
+	<title>Alerts · ThesisTrack</title>
 </svelte:head>
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/valuation')}>&larr; Back to search</a>
 		<h1>Alerts</h1>
 		<div class="sub">
 			Price reaching fair value ({data.analysis?.valuation.fairValuePct ?? 80}% of the Base-case

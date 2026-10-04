@@ -83,16 +83,14 @@
 </script>
 
 <svelte:head>
-	<title>Compare Companies · Valuation Dashboard</title>
+	<title>Compare Companies · ThesisTrack</title>
 </svelte:head>
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/valuation')}>&larr; Back to search</a>
-		<h1>Compare Companies</h1>
+		<h1>Compare companies</h1>
 		<div class="sub">
-			Side-by-side comparison since Screener's own peer table isn't reachable without a real browser
-			— pick your own comparison set instead.
+			Pick up to {data.maxSymbols} companies and see their numbers side by side.
 		</div>
 	</div>
 </div>
@@ -101,17 +99,19 @@
 	<div class="company-search" style="margin-top:20px">
 		<label
 			for="compareSymbols"
-			style="font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);display:block;margin-bottom:6px"
+			class="field-label" style="display:block;margin-bottom:6px"
 		>
 			Symbols to compare (comma-separated, up to {data.maxSymbols})
 		</label>
-		<input
-			id="compareSymbols"
-			placeholder="e.g. TCS, INFY, WIPRO"
-			bind:value={symbolInput}
-			onkeydown={(e) => e.key === 'Enter' && submit()}
-		/>
-		<button class="diagnosis-apply" style="margin-top:8px" onclick={submit}>Compare</button>
+		<div class="compare-row">
+			<input
+				id="compareSymbols"
+				placeholder="e.g. TCS, INFY, WIPRO"
+				bind:value={symbolInput}
+				onkeydown={(e) => e.key === 'Enter' && submit()}
+			/>
+			<button class="btn btn-primary compare-go" onclick={submit}>Compare</button>
+		</div>
 	</div>
 
 	{#if rows.length > 0}

@@ -54,15 +54,15 @@ export function buildAlertEmail(
 	cfg: Pick<SmtpConfig, 'from' | 'to' | 'appUrl'>
 ): SendMailOptions {
 	const typeLabel = ALERT_TYPE_LABELS[alert.type];
-	const link = alert.href ? `${cfg.appUrl}${alert.href}` : `${cfg.appUrl}/alerts`;
+	const link = alert.href ? `${cfg.appUrl}${alert.href}` : `${cfg.appUrl}/valuation/alerts`;
 	return {
 		from: cfg.from,
 		to: cfg.to,
-		subject: `[Valuation Dashboard] ${typeLabel}: ${alert.subjectLabel}`,
+		subject: `[ThesisTrack] ${typeLabel}: ${alert.subjectLabel}`,
 		text: `${alert.message}\n\nOpen: ${link}\n`,
 		html:
 			`<p style="font:14px/1.5 sans-serif">${esc(alert.message)}</p>` +
-			`<p style="font:13px sans-serif"><a href="${esc(link)}">Open in Valuation Dashboard</a></p>`
+			`<p style="font:13px sans-serif"><a href="${esc(link)}">Open in ThesisTrack</a></p>`
 	};
 }
 

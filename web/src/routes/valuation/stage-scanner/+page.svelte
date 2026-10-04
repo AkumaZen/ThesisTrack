@@ -202,12 +202,11 @@
 </script>
 
 <svelte:head>
-	<title>Breakout scanner · Valuation Dashboard</title>
+	<title>Breakout scanner · ThesisTrack</title>
 </svelte:head>
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/valuation')}>&larr; Back to watchlist</a>
 		<h1>Stage 2 breakout scanner</h1>
 		<div class="sub">
 			Every stock in the sector baskets, classified by Weinstein stage from daily closes. A breakout

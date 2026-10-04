@@ -1,4 +1,27 @@
 # STATE
+Phase: BUILD_PLAN.md v1 complete; ongoing user-requested work.
+
+## 2026-10-04: Valuation Dashboard merged into ThesisTrack (branch merge-valuation, NOT pushed or deployed)
+
+One app now: thesis module at `/`, valuation tools (watchlist, company valuation, compare,
+sector rotation, breakout scanner, alerts, sector baskets, settings) at `/valuation/*` with
+APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/src/routes/valuation/`.
+- One DB: valuation tables are in Postgres schema `valuation` (migration `web/drizzle/0010_merge_valuation.sql`,
+  applied to LOCAL thesis DB only). `web/scripts/merge-valuation-data.mjs` copies an old
+  dashboard DB across (done locally; backups in Desktop/db-backups-merge).
+- One login: email + password, httpOnly cookie `tt_session` (`public.sessions`), roles admin /
+  read_write / read_only, users have `display_name` + `must_change_password`. Scripts still use
+  X-API-Key / Bearer on thesis APIs only. Admin UI at `/admin/users`.
+- Vercel: schedulers are `/api/cron/*` (vercel.json crons, need CRON_SECRET); in-process otherwise.
+- Design: neo-brutalist system in `web/src/routes/layout.css` + `lib/styles/shell.css`; valuation CSS
+  is scoped under `.vd` in `lib/valuation/styles/dashboard.css`.
+- Verified: svelte-check 0 errors, 291 tests pass, pages checked visually at 1440/820/390.
+  `vite build` compiles; the Windows adapter-vercel finalization step still fails (EPERM, known).
+- BEFORE DEPLOY: run 0010 + merge-valuation-data.mjs against production (needs the dashboard's
+  production data), set ANGEL_*, CRON_SECRET, SMTP_*, APP_BASE_URL on Vercel, and tell the
+  team to sign in with their thesis email (valuation usernames no longer exist).
+
+## Earlier history
 Phase: BUILD_PLAN.md v1 (P0-P6) COMPLETE. Now building user-requested work
 explicitly outside the original harness mandate (see below) - this has
 grown into an ongoing sequence of features, not a fixed TODO list anymore.

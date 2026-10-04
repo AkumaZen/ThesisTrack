@@ -232,7 +232,7 @@
 </script>
 
 <!-- Persistent action header -->
-	<div class="flex items-center gap-3 flex-wrap -mx-4 sm:mx-0 px-4 sm:px-0 py-3 border-b border-border sticky top-0 z-10 bg-bg-ink">
+	<div class="flex items-center gap-3 flex-wrap -mx-4 sm:mx-0 px-4 sm:px-0 py-3 border-b border-border sticky top-[var(--shell-h)] z-10 bg-bg-ink">
 		<a href="/" class="text-sm px-2 py-1.5 rounded-md hover:bg-surface-3 text-muted-fg hover:text-fg shrink-0">&larr; Back</a>
 		{#if detail.scenario_id}
 			<span class="inline-block h-2 w-2 rounded-full {style.dot} shrink-0"></span>
@@ -245,7 +245,14 @@
 				>
 			{/if}
 		{/if}
-		<h1 class="font-semibold text-base flex-1 min-w-0 truncate">{detail.name}</h1>
+		<h1 class="text-xl font-bold flex-1 min-w-0 sm:truncate">{detail.name}</h1>
+		{#if detail.nse_ticker}
+			<a
+				href={`/valuation/company/${encodeURIComponent(detail.nse_ticker)}`}
+				class="text-sm px-3 py-1.5 border border-border shrink-0"
+				title="Open the bear / base / bull valuation for {detail.nse_ticker}">Valuation &rarr;</a
+			>
+		{/if}
 		{#if detail.scenario_id}
 			<div class="flex items-center gap-2 shrink-0 relative">
 				{#if !viewingOwnScenario}
@@ -274,6 +281,7 @@
 							class="absolute right-0 top-full mt-1 w-56 rounded-md border border-border bg-bg-ink shadow-xl z-20 py-1"
 							onmouseleave={() => (moreMenuOpen = false)}
 							role="menu"
+							tabindex="-1"
 						>
 							<button type="button" onclick={() => runFromMenu(() => scrollTo('decisions'))} class="w-full text-left px-3 py-2 text-sm hover:bg-surface-3" role="menuitem"
 								>Post Observations</button
@@ -465,7 +473,7 @@
 		{@const t = detail.current_thesis ?? {}}
 		<div class="mt-3 flex gap-6">
 			<!-- Left section nav -->
-			<nav class="hidden lg:flex flex-col gap-0.5 w-52 shrink-0 sticky top-16 self-start max-h-[calc(100vh-5rem)] overflow-y-auto">
+			<nav class="hidden lg:flex flex-col gap-0.5 w-52 shrink-0 sticky top-[calc(var(--shell-h)+4.5rem)] self-start max-h-[calc(100vh-var(--shell-h)-5.5rem)] overflow-y-auto">
 				{#each SECTIONS as s, si (si)}
 					<button
 						type="button"
@@ -499,7 +507,7 @@
 				{/if}
 
 				{#if !viewingOwnScenario && !detail.has_own_scenario}
-					<div class="mt-3 rounded-md border border-dashed border-border p-3 flex items-center justify-between gap-3">
+					<div class="mt-3 rounded-md border border-dashed border-border p-3 flex flex-wrap items-center justify-between gap-3">
 						<p class="text-xs text-muted-fg">You haven't started your own thesis on this company yet.</p>
 						<button
 							type="button"

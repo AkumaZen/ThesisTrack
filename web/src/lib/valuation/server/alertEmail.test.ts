@@ -46,8 +46,8 @@ describe('buildAlertEmail / sendAlertEmail', () => {
 
 	it('builds a subject, deep link and escaped html', () => {
 		const m = buildAlertEmail(alert, cfg);
-		expect(m.subject).toBe('[Valuation Dashboard] Price vs fair value: Acme <Ltd>');
-		expect(m.text).toContain('https://dash.example.com/company/ACME');
+		expect(m.subject).toBe('[ThesisTrack] Price vs fair value: Acme <Ltd>');
+		expect(m.text).toContain('https://dash.example.com/valuation/company/ACME');
 		expect(String(m.html)).toContain('Acme &lt;Ltd&gt;');
 		expect(String(m.html)).not.toContain('<Ltd>');
 	});

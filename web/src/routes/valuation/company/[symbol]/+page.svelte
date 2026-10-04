@@ -564,14 +564,14 @@
 </script>
 
 <svelte:head>
-	<title>{company.name} · Valuation Dashboard</title>
+	<title>{company.name} · ThesisTrack</title>
 </svelte:head>
 
 <svelte:window onbeforeprint={onBeforePrint} onafterprint={onAfterPrint} />
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/valuation')}>&larr; Back to search</a>
+		<a class="back-link" href={resolve('/valuation')}>&larr; Watchlist</a>
 		<button class="print-btn" onclick={handlePrint}>🖨 Print / PDF</button>
 		<button
 			class="print-btn print-btn-gap"
@@ -585,7 +585,7 @@
 			<span class="quality-badge quality-{quality.rating.toLowerCase()}">{quality.rating}</span>
 		</h1>
 		<div class="sub">
-			Extended P&amp;L &amp; Multi-Method Valuation — Bear / Base / Bull Scenario Model ·
+			{company.symbol} · Bear / base / bull valuation ·
 			{company.basis === 'consolidated'
 				? 'Consolidated'
 				: company.basis === 'standalone'
@@ -596,6 +596,9 @@
 			{/if}
 		</div>
 		<div class="co-links" data-testid="company-links">
+			{#if data.thesisId}
+				<a href={resolve('/company/[id]', { id: data.thesisId })}>Investment thesis &rarr;</a>
+			{/if}
 			<a href={resolve(`/valuation/compare?symbols=${company.symbol}`)}>Compare with peers &rarr;</a>
 			{#each data.sectors as path (path.majorKey + path.basketKey)}
 				<a

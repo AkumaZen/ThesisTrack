@@ -33,7 +33,7 @@ function sheetName(name: string): string {
 export async function buildWorkbook(sheets: Sheet[]): Promise<ArrayBuffer> {
 	const { default: ExcelJS } = await import('exceljs');
 	const wb = new ExcelJS.Workbook();
-	wb.creator = 'Valuation Dashboard';
+	wb.creator = 'ThesisTrack';
 	wb.created = new Date();
 	for (const s of sheets) {
 		const ws = wb.addWorksheet(sheetName(s.name));

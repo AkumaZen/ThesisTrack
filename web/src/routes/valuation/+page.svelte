@@ -822,7 +822,7 @@
 </script>
 
 <svelte:head>
-	<title>Valuation Dashboard</title>
+	<title>Watchlist · ThesisTrack</title>
 </svelte:head>
 
 <div class="band">
@@ -835,7 +835,7 @@
 <div class="company-search">
 	<label
 		for="companySearch"
-		style="font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);display:block;margin-bottom:6px"
+		class="field-label" style="display:block;margin-bottom:6px"
 	>
 		Search company
 	</label>

@@ -203,7 +203,7 @@
 </script>
 
 <div class="flex items-center justify-between mb-1">
-	<h2 class="text-xl font-semibold">Guidance</h2>
+	<h1 class="page-title">Guidance</h1>
 	{#if !session.isReadOnly}
 		<button onclick={openAddForm} class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90"
 			>+ Add Guidance</button
@@ -216,7 +216,7 @@
 	<div class="mb-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{error}</div>
 {/if}
 
-<div class="rounded-lg border border-border bg-surface p-4 mb-4 flex flex-wrap items-end gap-4">
+<div class="bg-surface p-4 mb-4 flex flex-wrap items-end gap-4">
 	<label class="text-sm"
 		>Company
 		<select bind:value={filterCompany} class="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm">

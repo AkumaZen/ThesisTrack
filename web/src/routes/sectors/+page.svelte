@@ -164,7 +164,7 @@
 </script>
 
 <div class="flex items-center justify-between mb-1">
-	<h2 class="text-xl font-semibold">Sectors</h2>
+	<h1 class="page-title">Sectors</h1>
 	{#if !session.isReadOnly}
 		<button onclick={openCreate} class="text-sm px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90"
 			>+ Create Sector</button
@@ -181,19 +181,19 @@
 	<div class="mb-3 rounded-md bg-danger/10 border border-danger/30 p-2 text-sm text-danger">{error}</div>
 {/if}
 
-<div class="rounded-lg border border-border bg-surface p-3 mb-4 flex flex-wrap items-center gap-3">
+<div class="bg-surface p-3 mb-4 flex flex-wrap items-center gap-3">
 	<input
 		bind:value={q}
 		placeholder="Search sectors by name..."
-		class="flex-1 min-w-[200px] rounded-md border border-border px-2 py-1.5 text-sm"
+		class="flex-1 min-w-[200px] max-w-full rounded-md border border-border px-2 py-1.5 text-sm"
 	/>
-	<select bind:value={sectorFilter} class="rounded-md border border-border px-2 py-1.5 text-sm">
+	<select bind:value={sectorFilter} class="min-w-0 max-w-full rounded-md border border-border px-2 py-1.5 text-sm">
 		<option value="">All sectors</option>
 		{#each sectorNames as n (n)}
 			<option value={n}>{n}</option>
 		{/each}
 	</select>
-	<select bind:value={nicheFilter} class="rounded-md border border-border px-2 py-1.5 text-sm">
+	<select bind:value={nicheFilter} class="min-w-0 max-w-full rounded-md border border-border px-2 py-1.5 text-sm">
 		<option value="">All niches</option>
 		{#each nicheNames as n (n)}
 			<option value={n}>{n}</option>

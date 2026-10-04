@@ -1008,7 +1008,7 @@ My data:
 <div class="mt-3 max-w-5xl mx-auto">
 	<div class="flex items-center justify-between gap-3 flex-wrap">
 		<div>
-			<h1 class="text-xl font-semibold">{mode === 'amend' ? `Amend Thesis - ${name || prefillCompanyId}` : isExistingCompany ? `Start Your Own Thesis - ${name || prefillCompanyId}` : 'New Company / Thesis'}</h1>
+			<h1 class="page-title">{mode === 'amend' ? `Amend Thesis - ${name || prefillCompanyId}` : isExistingCompany ? `Start Your Own Thesis - ${name || prefillCompanyId}` : 'New Company / Thesis'}</h1>
 			<p class="text-sm text-muted-fg mt-0.5">
 				{mode === 'amend'
 					? 'Amend the 9 default sections and explain why. References remain separate.'

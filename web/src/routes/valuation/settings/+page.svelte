@@ -80,12 +80,11 @@
 </script>
 
 <svelte:head>
-	<title>Settings · Valuation Dashboard</title>
+	<title>Settings · ThesisTrack</title>
 </svelte:head>
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/valuation')}>&larr; Back to watchlist</a>
 		<h1>Settings</h1>
 		<div class="sub">
 			Team-wide thresholds behind the rotation signals and the breakout scanner. Everyone sees the

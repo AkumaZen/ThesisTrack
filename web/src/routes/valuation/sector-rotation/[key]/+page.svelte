@@ -115,7 +115,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.majorLabel} · Sector Rotation · Valuation Dashboard</title>
+	<title>{data.majorLabel} · Sector Rotation · ThesisTrack</title>
 </svelte:head>
 
 <div class="band">
