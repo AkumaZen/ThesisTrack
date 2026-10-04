@@ -54,6 +54,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		if (message.startsWith('NOT_FOUND')) {
 			error(404, `Company symbol not found on Screener: ${params.symbol}`);
 		}
+		// A database failure (e.g. no free connection) is not the company's fault, and its message
+		// is the SQL itself - show something a person can act on instead.
+		if (message.startsWith('Failed query'))
+			error(503, 'The database is busy right now. Wait a moment and reload this page.');
 		error(502, message);
 	}
 };

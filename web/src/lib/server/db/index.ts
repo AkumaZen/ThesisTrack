@@ -14,8 +14,17 @@ const connectionString = env.DATABASE_URL;
 // client connects lazily, so skipping the check while building is safe.
 if (!building && !connectionString) throw new Error('DATABASE_URL is not set');
 
+// Every serverless instance keeps its own pool, and a managed Postgres allows only a few dozen
+// connections in total, so a burst of instances used to fill every slot ("remaining connection
+// slots are reserved for roles with the SUPERUSER attribute") and the whole site returned 500s.
+// On Vercel each instance therefore holds at most two connections and lets idle ones go after a
+// few seconds, instead of keeping them open for as long as the instance lives.
+const serverless = Boolean(env.VERCEL);
 const client = postgres(connectionString ?? '', {
-	max: 3,
+	max: serverless ? 2 : 3,
+	idle_timeout: serverless ? 5 : 30,
+	max_lifetime: 10 * 60,
+	connect_timeout: 15,
 	ssl: connectionString?.includes('sslmode=require') ? 'require' : undefined,
 	onnotice: () => {}
 });
