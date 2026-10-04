@@ -202,9 +202,11 @@ export const strengthFilterPrefs = pgTable(
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
 		level: text('level').notNull().$type<'sectors' | 'subsectors' | 'companies' | 'company'>(),
+		/** The place within the level: the sector, subsector or company key ('' for every sector). */
+		scope: text('scope').notNull().default(''),
 		config: jsonb('config').notNull()
 	},
-	(t) => [primaryKey({ columns: [t.userId, t.level] })]
+	(t) => [primaryKey({ columns: [t.userId, t.level, t.scope] })]
 );
 
 // Tiny key/value flags for one-off facts about the database itself (e.g. "sector_seeded").

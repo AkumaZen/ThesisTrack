@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
+	import { beforeNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
 		DEFAULT_STRENGTH_CONFIG,
@@ -44,6 +45,8 @@
 
 	let config = $state<StrengthConfig>(structuredClone(DEFAULT_STRENGTH_CONFIG));
 	let loadedPrefs = $state(false);
+	// The place whose saved filter is on screen ("level|scope"); changes are saved only for it.
+	let loadedFor = $state('');
 	// Open by default for a single company with filters on; otherwise closed until opened.
 	let openByDefault = $state(false);
 	const open = $derived(openState === 'auto' ? openByDefault : openState === 'open');
@@ -66,19 +69,74 @@
 			Number(kind === 'group' && config.spreading.enabled)
 	);
 
-	// What the server last stored for this level, so only a real change is sent.
+	// The filter is remembered per person for each place it is used: every sector, each sector's
+	// subsectors, each subsector's companies and each company keep their own settings.
+	const scope = $derived(parentKey ?? '');
+	const prefsUrl = '/api/valuation/strength/prefs';
+
+	// What the server holds for the place shown, so only a real change is sent; and a change not
+	// yet sent, so leaving the page straight after a change still keeps it.
 	let savedSnapshot = '';
-	function savePref(snapshot: string, lvl: StrengthLevel) {
-		if (snapshot === savedSnapshot) return;
-		savedSnapshot = snapshot;
-		// Remembered for next time (including "no filter"). Read-only people cannot write, so
-		// failure is fine.
-		void fetch('/api/valuation/strength/prefs', {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ level: lvl, config: JSON.parse(snapshot) })
-		}).catch(() => {});
+	let unsaved: { level: StrengthLevel; scope: string; snapshot: string } | null = null;
+	let saveTimer: ReturnType<typeof setTimeout> | undefined;
+	let saveError = $state(false);
+
+	async function sendPref(pending: NonNullable<typeof unsaved>, leaving = false) {
+		try {
+			const res = await fetch(prefsUrl, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ level: pending.level, scope: pending.scope, config: JSON.parse(pending.snapshot) }),
+				// Still delivered when the page is being left.
+				keepalive: leaving
+			});
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			if (leaving) return;
+			if (pending.level === level && pending.scope === scope) savedSnapshot = pending.snapshot;
+			saveError = false;
+		} catch {
+			// Kept as unsaved (unless a newer change replaced it): leaving the page tries again.
+			unsaved ??= pending;
+			if (!leaving) saveError = true;
+		}
 	}
+	/** Sends a change not yet sent, at once (and once only). */
+	function flushPref(leaving: boolean) {
+		clearTimeout(saveTimer);
+		saveTimer = undefined;
+		const pending = unsaved;
+		unsaved = null;
+		if (pending) void sendPref(pending, leaving);
+	}
+
+	// Remember each change shortly after it is made (including "no filter").
+	$effect(() => {
+		if (loadedFor !== `${level}|${scope}`) return;
+		const snapshot = JSON.stringify(config);
+		if (snapshot === savedSnapshot) {
+			// Back to what is saved: nothing is left to send.
+			unsaved = null;
+			saveError = false;
+			clearTimeout(saveTimer);
+			return;
+		}
+		unsaved = { level, scope, snapshot };
+		clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => flushPref(false), 500);
+	});
+
+	beforeNavigate(() => flushPref(true));
+	onMount(() => {
+		const onHide = () => flushPref(true);
+		const onVisibility = () => document.visibilityState === 'hidden' && onHide();
+		window.addEventListener('pagehide', onHide);
+		document.addEventListener('visibilitychange', onVisibility);
+		return () => {
+			window.removeEventListener('pagehide', onHide);
+			document.removeEventListener('visibilitychange', onVisibility);
+			flushPref(true);
+		};
+	});
 
 	/** Back to the default filter (everything off). Used by the page's "Reset this view". */
 	export function reset() {
@@ -86,20 +144,41 @@
 		customPeriod = false;
 	}
 
-	onMount(async () => {
-		try {
-			const res = await fetch(`/api/valuation/strength/prefs?level=${level}`);
-			if (res.ok) {
-				const body = (await res.json()) as { config: unknown };
-				if (body.config) config = parseStrengthConfig(body.config);
+	// Load the saved filter for this place (again when the same page moves to another sector).
+	$effect(() => {
+		const lvl = level;
+		const sc = scope;
+		let cancelled = false;
+		const shownBefore = untrack(() => JSON.stringify(config));
+		(async () => {
+			let saved: StrengthConfig | null = null;
+			try {
+				const res = await fetch(`${prefsUrl}?${new URLSearchParams({ level: lvl, scope: sc })}`);
+				if (res.ok) {
+					const body = (await res.json()) as { config: unknown };
+					if (body.config) saved = parseStrengthConfig(body.config);
+				}
+			} catch {
+				// no saved settings: start from the defaults
 			}
-		} catch {
-			// no saved settings: start from the defaults
-		}
-		savedSnapshot = JSON.stringify(config);
-		customPeriod = !PERIOD_PRESETS.some((p) => p.days === config.periodDays);
-		openByDefault = isStrengthActive(config, kind) && kind === 'company';
-		loadedPrefs = true;
+			if (cancelled) return;
+			untrack(() => {
+				// A change made while this was loading is the person's latest choice: it stays (and is
+				// then saved for this place). Otherwise the saved filter, or the defaults, are shown.
+				if (JSON.stringify(config) === shownBefore)
+					config = saved ?? structuredClone(DEFAULT_STRENGTH_CONFIG);
+				savedSnapshot = JSON.stringify(saved ?? DEFAULT_STRENGTH_CONFIG);
+				customPeriod = !PERIOD_PRESETS.some((p) => p.days === config.periodDays);
+				openByDefault = isStrengthActive(config, kind) && kind === 'company';
+				loadedPrefs = true;
+				loadedFor = `${lvl}|${sc}`;
+			});
+		})();
+		return () => {
+			cancelled = true;
+			// Moving to another place: what was changed here is still saved for here.
+			untrack(() => flushPref(false));
+		};
 	});
 
 	// Re-evaluate shortly after the last change; an older in-flight request is dropped.
@@ -113,8 +192,7 @@
 			view = emptyStrengthView();
 			total = matches = unavailableCount = 0;
 			loading = false;
-			const quiet = setTimeout(() => savePref(snapshot, lvl), 600);
-			return () => clearTimeout(quiet);
+			return;
 		}
 		const controller = new AbortController();
 		loading = true;
@@ -130,7 +208,6 @@
 				matches = result.rows.filter((r) => r.evaluation.matched).length;
 				unavailableCount = result.rows.filter((r) => r.evaluation.unavailable.length > 0).length;
 				view = { active: true, ready: true, error: null, asOf: result.asOf, byKey };
-				savePref(snapshot, lvl);
 			} catch (e) {
 				if ((e as Error).name === 'AbortError') return;
 				view = { ...emptyStrengthView(), active: true, error: 'Could not calculate this filter.' };
@@ -239,6 +316,11 @@
 			>
 		{/if}
 	</div>
+	{#if saveError}
+		<p class="sv-save-error" role="status">
+			This filter could not be saved for next time. It is tried again with your next change.
+		</p>
+	{/if}
 
 	{#if open}
 		<div class="sv-body" id={fieldId('body')}>
@@ -410,7 +492,7 @@
 			<p class="sv-foot">
 				Based on daily closes and volume vs Nifty 50, completed sessions only
 				{view.asOf ? `(latest: ${view.asOf})` : ''}. These are price and trading-activity readings, not
-				business growth or a forecast. Data refreshes about every 2 hours.
+				business growth or a forecast. Data refreshes after each weekday's close.
 			</p>
 
 			<div class="sv-alert">
@@ -455,7 +537,7 @@
 						</div>
 						<p class="sv-foot sv-grow">
 							Watches {scopeLabel}. Fires when something enters this condition, using end-of-day
-							data checked about every 2 hours. Goes to the whole team.
+							data checked after each weekday's close. Goes to the whole team.
 						</p>
 					</div>
 				{/if}

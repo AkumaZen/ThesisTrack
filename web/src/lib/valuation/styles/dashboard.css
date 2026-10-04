@@ -4399,6 +4399,12 @@
 	font-size: 13px;
 	color: var(--muted);
 }
+.vd .sv-save-error {
+	margin: 0;
+	padding: 0 var(--space-3) var(--space-2);
+	font-size: 13px;
+	color: var(--red);
+}
 .vd .sv-chips {
 	display: flex;
 	flex-wrap: wrap;

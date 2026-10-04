@@ -1,4 +1,4 @@
-import { and, asc, eq, like } from 'drizzle-orm';
+import { and, asc, eq, inArray, like } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { alertState, strengthFilterPrefs, strengthRules } from '$lib/server/db/valuationSchema';
 import { users } from '$lib/server/db/schema';
@@ -91,24 +91,44 @@ export async function deleteRule(id: number): Promise<boolean> {
 	return rows.length > 0;
 }
 
-export async function getFilterPref(userId: number, level: StrengthLevel): Promise<StrengthConfig | null> {
-	const [row] = await db
+/** A place within a level (a sector, subsector or company key), or '' for the level as a whole. */
+export const isFilterScope = (v: unknown): v is string =>
+	typeof v === 'string' && v.length <= 120 && /^[A-Za-z0-9&._%/-]*$/.test(v);
+
+/**
+ * The person's filter for one place. A place with none of its own starts from the one kept for
+ * the whole level (what was saved before filters were kept per place).
+ */
+export async function getFilterPref(
+	userId: number,
+	level: StrengthLevel,
+	scope = ''
+): Promise<StrengthConfig | null> {
+	const rows = await db
 		.select()
 		.from(strengthFilterPrefs)
-		.where(and(eq(strengthFilterPrefs.userId, userId), eq(strengthFilterPrefs.level, level)));
+		.where(
+			and(
+				eq(strengthFilterPrefs.userId, userId),
+				eq(strengthFilterPrefs.level, level),
+				inArray(strengthFilterPrefs.scope, [...new Set([scope, ''])])
+			)
+		);
+	const row = rows.find((r) => r.scope === scope) ?? rows.find((r) => r.scope === '');
 	return row ? parseStrengthConfig(row.config) : null;
 }
 
 export async function saveFilterPref(
 	userId: number,
 	level: StrengthLevel,
-	config: StrengthConfig
+	config: StrengthConfig,
+	scope = ''
 ): Promise<void> {
 	await db
 		.insert(strengthFilterPrefs)
-		.values({ userId, level, config })
+		.values({ userId, level, scope, config })
 		.onConflictDoUpdate({
-			target: [strengthFilterPrefs.userId, strengthFilterPrefs.level],
+			target: [strengthFilterPrefs.userId, strengthFilterPrefs.level, strengthFilterPrefs.scope],
 			set: { config }
 		});
 }
