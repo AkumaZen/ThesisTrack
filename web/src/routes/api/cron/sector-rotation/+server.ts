@@ -4,8 +4,8 @@ import type { RequestHandler } from './$types';
 import { requireCronSecret } from '$lib/server/cron';
 import { warmAllSectors } from '$lib/valuation/server/sectorRotationScheduler';
 
-// Vercel stand-in for the in-process price refresh (see hooks.server.ts), run four times each
-// weekday (vercel.json; the moments are listed in refreshSlots.ts). Every symbol is
+// Vercel stand-in for the in-process price refresh (see hooks.server.ts). Hobby plan: once each
+// weekday after the close (vercel.json; the moments are listed in refreshSlots.ts). Every symbol is
 // cached as soon as it is fetched, so a run cut short by the time limit still leaves the caches
 // warmer and the next run carries on from there.
 export const config: Config = { maxDuration: 300 };

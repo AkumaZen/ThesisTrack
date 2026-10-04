@@ -31,8 +31,10 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
 - Prices (valuation sector, subsector and company cards): page views read STORED prices only and never call
   Angel One (`readCachedSeries`, `getBenchmarkCandles`); cards start empty and load on click ("Show chart",
   "Load all"); a card's Refresh button (`seriesRefresh.ts` -> `POST .../refresh-series`) is the only
-  user-driven fetch. Automatic refresh is four times each weekday only (`refreshSlots.ts`, IST 09:30,
-  12:30, 15:30, 16:30; vercel.json cron `0 4,7,10,11 * * 1-5`), and the alert checks run after it.
+  user-driven fetch. Automatic refresh: a long-running server runs four slots each weekday (`refreshSlots.ts`, IST 09:30,
+  12:30, 15:30, 16:30); PRODUCTION is on Vercel Hobby, where crons may run once a day, so vercel.json runs
+  the refresh once at 16:30 IST (`0 11 * * 1-5`, alert checks run after it) and the price-vs-fair-value
+  check once at 15:00 IST (`30 9 * * 1-5`). Pro would allow the 4-a-day and 10-minute schedules.
   History is 700 days so the 200 DMA (`movingAverage.ts`) is complete over a year; stocks refreshed
   before this change keep a partial 200 DMA until their next refresh.
 - Remembered browsing state (valuation sector, subsector and company views): `web/src/lib/viewMemory.ts`

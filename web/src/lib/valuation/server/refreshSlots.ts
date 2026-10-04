@@ -4,7 +4,9 @@
 //   09:30  before the market settles     12:30  midday
 //   15:30  near the close                16:30  after the close (the day's bar is complete)
 //
-// vercel.json runs the same four moments as UTC crons (04:00, 07:00, 10:00 and 11:00).
+// A long-running server (local dev) runs all four. On Vercel's Hobby plan crons may run only once a
+// day, so vercel.json runs just the last one (16:30 IST = 11:00 UTC); on Pro it can list all four
+// (UTC 04:00, 07:00, 10:00 and 11:00).
 export const REFRESH_SLOTS_IST = ['09:30', '12:30', '15:30', '16:30'] as const;
 
 /** The refresh slot that is due at `now` (within the hour after it begins), as "YYYY-MM-DDTHH:MM"
