@@ -20,6 +20,12 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
 - BEFORE DEPLOY: run 0010 + merge-valuation-data.mjs against production (needs the dashboard's
   production data), set ANGEL_*, CRON_SECRET, SMTP_*, APP_BASE_URL on Vercel, and tell the
   team to sign in with their thesis email (valuation usernames no longer exist).
+- ALSO BEFORE DEPLOY: apply `web/drizzle/0011_allow_thesis_delete.sql` (admin delete of a company) and
+  `web/drizzle/0012_strength_volume.sql` (Strength & Volume rules and filter prefs) to production.
+- Strength & Volume (sector > subsector > company filters and team alerts): pure maths in
+  `web/src/lib/valuation/strength.ts` (shared by the filter API and the alert checks), rules in
+  `valuation.strength_rules`, per-subject state in `valuation.alert_state` (`strength:<rule>:<subject>`).
+  End-of-day signals only; alerts are checked after each ~2h cache refresh and go to the whole team.
 
 ## Earlier history
 Phase: BUILD_PLAN.md v1 (P0-P6) COMPLETE. Now building user-requested work

@@ -6,6 +6,8 @@
 	import { DEFAULT_SECTOR_CARD_METRICS } from '$lib/valuation/prefs';
 	import SectorCard from '$lib/valuation/components/SectorCard.svelte';
 	import SectorExport from '$lib/valuation/components/SectorExport.svelte';
+	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import { emptyStrengthView, passesStrength } from '$lib/valuation/strength';
 	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import type { PageData } from './$types';
 
@@ -105,6 +107,7 @@
 	// (see `shouldSort` below and `animate:flip` on the grid). An explicit sort action jumps the
 	// gun on that and applies immediately, still via the same smooth flip transition.
 	let userSorted = $state(false);
+	let strength = $state(emptyStrengthView());
 
 	function markUserSorted() {
 		userSorted = true;
@@ -169,7 +172,7 @@
 	// the user has explicitly picked a sort — otherwise the grid stays in its original order.
 	const shouldSort = $derived(allLoaded || userSorted);
 
-	const sortedMajors = $derived(
+	const sortedAll = $derived(
 		shouldSort
 			? [...data.majors].sort((a, b) => {
 					const av = sortValue(a.key, sortKey);
@@ -187,6 +190,7 @@
 				})
 			: data.majors
 	);
+	const sortedMajors = $derived(sortedAll.filter((m) => passesStrength(strength, m.key)));
 </script>
 
 <svelte:head>
@@ -294,6 +298,14 @@
 			a momentum read on price, not a fundamental judgement.
 		</div>
 
+		<StrengthPanel
+			level="sectors"
+			kind="group"
+			scopeLabel="every sector"
+			canSave={data.user?.role !== 'read_only'}
+			bind:view={strength}
+		/>
+
 		<div class="sector-sort-bar">
 			<span class="sector-sort-label">Sort by</span>
 			<select
@@ -318,11 +330,16 @@
 			/>
 		</div>
 
+		{#if strength.active && strength.ready && !strength.error && sortedMajors.length === 0}
+			<div class="depth-note" role="status">No sector matches these filters. Loosen a threshold or clear the filters.</div>
+		{/if}
+
 		<div class="sector-card-grid">
 			{#each sortedMajors as m (m.key)}
 				<div class="sector-card-grid-item" animate:flip={{ duration: 350 }}>
 					<SectorCard
 						metrics={cardMetrics}
+						evaluation={strength.active ? strength.byKey[m.key] : undefined}
 						label={m.label}
 						tag={`sector · ${m.subsectorCount}`}
 						row={majorData[m.key]}

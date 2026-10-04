@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ConstituentCard from '$lib/valuation/components/ConstituentCard.svelte';
+	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import { emptyStrengthView, passesStrength } from '$lib/valuation/strength';
 	import { TIMEFRAMES, type Timeframe } from '$lib/valuation/sectorRotation';
 	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import type { PageData } from './$types';
@@ -8,6 +10,8 @@
 	let { data }: { data: PageData } = $props();
 
 	let timeframe = $state<Timeframe>('3M');
+	let strength = $state(emptyStrengthView());
+	const visibleSymbols = $derived(data.symbols.filter((s) => passesStrength(strength, s)));
 
 	// Plain $state keyed by symbol — each company's own fetch writes only its own entry, so a
 	// ConstituentCard reading a different symbol never re-renders when this one resolves.
@@ -96,6 +100,17 @@
 </div>
 
 <div class="wrap">
+	<div style="margin-top:20px">
+		<StrengthPanel
+			level="companies"
+			parentKey={data.key}
+			kind="company"
+			scopeLabel={`the companies in ${data.label}`}
+			canSave={data.user?.role !== 'read_only'}
+			bind:view={strength}
+		/>
+	</div>
+
 	<div class="timeframe-bar" style="margin-top:20px">
 		<span class="sector-sort-label">Chart range</span>
 		{#each TIMEFRAMES as tf (tf)}
@@ -108,9 +123,18 @@
 		{/each}
 	</div>
 
+	{#if strength.active && strength.ready && !strength.error && visibleSymbols.length === 0}
+		<div class="depth-note" role="status">No company matches these filters. Loosen a threshold or clear the filters.</div>
+	{/if}
+
 	<div class="constituent-grid">
-		{#each data.symbols as symbol (symbol)}
-			<ConstituentCard {symbol} closes={companyData[symbol]} {timeframe} />
+		{#each visibleSymbols as symbol (symbol)}
+			<ConstituentCard
+				{symbol}
+				closes={companyData[symbol]}
+				{timeframe}
+				evaluation={strength.active ? strength.byKey[symbol] : undefined}
+			/>
 		{/each}
 	</div>
 </div>

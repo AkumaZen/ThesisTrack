@@ -9,6 +9,7 @@
 		type AlertType
 	} from '$lib/valuation/alerts';
 	import { sectorApi } from '$lib/valuation/sectorClient';
+	import { describeStrengthConfig } from '$lib/valuation/strength';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -75,6 +76,33 @@
 			.then((r) => r.json())
 			.catch(() => null);
 		if (count) announce(count.unread);
+	}
+
+	// ---- Strength & Volume rules ----
+	let rulesOpen = $state(false);
+	const LEVEL_WORDS = {
+		sectors: 'Every sector',
+		subsectors: 'Subsectors',
+		companies: 'Companies',
+		company: 'Company'
+	} as const;
+	const ruleKind = (level: string) => (level === 'sectors' || level === 'subsectors' ? 'group' : 'company');
+
+	async function toggleRule(id: number, enabled: boolean) {
+		busy = 'rule';
+		const res = await sectorApi('PATCH', `/api/valuation/strength/rules/${id}`, { enabled });
+		busy = null;
+		if (!res.ok) status = { kind: 'error', text: res.message };
+		else await invalidateAll();
+	}
+
+	async function removeRule(id: number, name: string) {
+		if (!confirm(`Delete the alert rule "${name}"? Its past alerts stay in the feed.`)) return;
+		busy = 'rule';
+		const res = await sectorApi('DELETE', `/api/valuation/strength/rules/${id}`);
+		busy = null;
+		if (!res.ok) status = { kind: 'error', text: res.message };
+		else await invalidateAll();
 	}
 
 	// ---- settings ----
@@ -193,7 +221,7 @@
 		<h1>Alerts</h1>
 		<div class="sub">
 			Price reaching fair value ({data.analysis?.valuation.fairValuePct ?? 80}% of the Base-case
-			FY+2E target), sectors flipping to Rotating In/Out, and stocks entering Near Stage 2 Breakout.
+			FY+2E target), sectors flipping to Rotating In/Out, stocks entering Near Stage 2 Breakout, and anything entering a Strength &amp; Volume rule you saved.
 			Alerts are raised for the whole team; what you have read, which types you see and what you
 			mute are yours alone.
 		</div>
@@ -320,6 +348,60 @@
 			{/each}
 		</ul>
 	{/if}
+
+	<div class="integrity-panel al-settings">
+		<button class="integrity-toggle" type="button" onclick={() => (rulesOpen = !rulesOpen)}>
+			<span>Strength &amp; Volume rules ({data.rules.length})</span>
+			<span class="integrity-caret">{rulesOpen ? '▲' : '▼'}</span>
+		</button>
+		{#if rulesOpen}
+			<div class="import-body">
+				{#if data.rules.length === 0}
+					<p class="sm-hint">
+						No rules yet. Open the Strength &amp; Volume panel on a sector, subsector or company
+						view, switch on a signal and choose "Create alert from this filter".
+					</p>
+				{:else}
+					<ul class="sv-rule-list">
+						{#each data.rules as r (r.id)}
+							<li class="sv-rule" class:sv-rule-off={!r.enabled}>
+								<div class="sv-rule-main">
+									<strong>{r.name}</strong>
+									<span class="sm-hint"
+										>{LEVEL_WORDS[r.level]}{r.parentKey ? ` · ${r.parentKey}` : ''} · {describeStrengthConfig(
+											r.config,
+											ruleKind(r.level)
+										).join(', ')} · {r.repeat.mode === 'once'
+											? 'first time only'
+											: `re-alerts after ${r.repeat.cooldownSessions} sessions`}{r.createdBy
+											? ` · by ${r.createdBy}`
+											: ''}</span
+									>
+								</div>
+								<button
+									type="button"
+									class="sm-btn"
+									disabled={busy === 'rule'}
+									onclick={() => toggleRule(r.id, !r.enabled)}>{r.enabled ? 'Pause' : 'Resume'}</button
+								>
+								<button
+									type="button"
+									class="sm-btn"
+									disabled={busy === 'rule'}
+									onclick={() => removeRule(r.id, r.name)}>Delete</button
+								>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+				<p class="sm-hint">
+					Rules use end-of-day data and are checked about every 2 hours, after the sector data
+					refreshes. Everyone on the team receives the alerts. "Check sectors &amp; breakouts now" runs them
+					immediately.
+				</p>
+			</div>
+		{/if}
+	</div>
 
 	<div class="integrity-panel al-settings">
 		<button class="integrity-toggle" type="button" onclick={() => (settingsOpen = !settingsOpen)}>

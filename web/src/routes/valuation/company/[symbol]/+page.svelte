@@ -25,6 +25,9 @@
 	import { runIntegrityChecks, worstIntegrityStatus } from '$lib/valuation/dataIntegrity';
 	import { analyzePeg } from '$lib/valuation/pegAnalysis';
 	import type { StageAnalysisResult } from '$lib/valuation/stageAnalysis';
+	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import StrengthWhy from '$lib/valuation/components/StrengthWhy.svelte';
+	import { emptyStrengthView } from '$lib/valuation/strength';
 	import CompanyTeam from '$lib/valuation/components/CompanyTeam.svelte';
 	import ListMenu from '$lib/valuation/components/ListMenu.svelte';
 	import TemplateMenu from '$lib/valuation/components/TemplateMenu.svelte';
@@ -471,6 +474,7 @@
 	// Stage analysis and order book both hit Angel One live (not the 24h Screener cache), so
 	// they're loaded on demand rather than blocking the initial page render — same pattern as
 	// refreshPrice above.
+	let strengthView = $state(emptyStrengthView());
 	let stageResult = $state<StageAnalysisResult | null>(null);
 	let stageLoading = $state(false);
 	let stageError = $state<string | null>(null);
@@ -922,6 +926,21 @@
 			{/if}
 		</div>
 	{/if}
+
+	<div class="sv-company">
+		<StrengthPanel
+			level="company"
+			parentKey={company.symbol}
+			kind="company"
+			title="Track strength & volume"
+			scopeLabel={`${company.symbol}`}
+			canSave={data.user?.role !== 'read_only'}
+			bind:view={strengthView}
+		/>
+		{#if strengthView.active}
+			<StrengthWhy evaluation={strengthView.byKey[company.symbol.toUpperCase()]} all />
+		{/if}
+	</div>
 
 	<div class="stage-panel">
 		<div class="depth-head">

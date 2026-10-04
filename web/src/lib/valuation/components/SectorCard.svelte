@@ -1,5 +1,7 @@
 <script lang="ts">
 	import LineChart from './LineChart.svelte';
+	import StrengthWhy from './StrengthWhy.svelte';
+	import type { StrengthEvaluation } from '$lib/valuation/strength';
 	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import {
 		DEFAULT_SECTOR_CARD_METRICS,
@@ -22,7 +24,8 @@
 		row,
 		href,
 		linkText,
-		metrics = DEFAULT_SECTOR_CARD_METRICS
+		metrics = DEFAULT_SECTOR_CARD_METRICS,
+		evaluation
 	}: {
 		label: string;
 		tag: string;
@@ -31,6 +34,8 @@
 		linkText: string;
 		/** Which figures to show, in order (the person's own choice; see lib/prefs.ts). */
 		metrics?: SectorCardMetric[];
+		/** Strength & Volume result for this card while a filter is active. */
+		evaluation?: StrengthEvaluation;
 	} = $props();
 
 	const shown = $derived(SECTOR_CARD_METRICS.filter((m) => metrics.includes(m.id)));
@@ -88,6 +93,8 @@
 		href is built by the caller via resolve() (see +page.svelte at each layer); the rule can't
 		see across the prop boundary. -->
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+	<StrengthWhy {evaluation} />
+
 	<a class="sector-card-link" {href}>
 		{linkText}
 	</a>

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import LineChart from './LineChart.svelte';
+	import StrengthWhy from './StrengthWhy.svelte';
+	import type { StrengthEvaluation } from '$lib/valuation/strength';
 	import { sliceForTimeframe, computeConstituentGrowth, type Timeframe } from '$lib/valuation/sectorRotation';
 	import { companyName } from '$lib/valuation/symbolNames';
 
@@ -10,11 +12,14 @@
 	let {
 		symbol,
 		closes,
-		timeframe
+		timeframe,
+		evaluation
 	}: {
 		symbol: string;
 		closes: number[] | null | 'error' | undefined;
 		timeframe: Timeframe;
+		/** Strength & Volume result for this company while a filter is active. */
+		evaluation?: StrengthEvaluation;
 	} = $props();
 
 	// Practitioner audience still wants the ticker, but the *name* is the card's primary label —
@@ -87,4 +92,6 @@
 			</div>
 		</div>
 	{/if}
+
+	<StrengthWhy {evaluation} />
 </div>

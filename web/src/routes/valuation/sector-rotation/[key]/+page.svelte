@@ -5,6 +5,8 @@
 	import { DEFAULT_SECTOR_CARD_METRICS } from '$lib/valuation/prefs';
 	import SectorCard from '$lib/valuation/components/SectorCard.svelte';
 	import SectorExport from '$lib/valuation/components/SectorExport.svelte';
+	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import { emptyStrengthView, passesStrength } from '$lib/valuation/strength';
 	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import type { PageData } from './$types';
 
@@ -31,6 +33,7 @@
 	// (see `shouldSort` below and `animate:flip` on the grid). An explicit sort action jumps the
 	// gun on that and applies immediately, still via the same smooth flip transition.
 	let userSorted = $state(false);
+	let strength = $state(emptyStrengthView());
 
 	function markUserSorted() {
 		userSorted = true;
@@ -94,7 +97,7 @@
 	// the user has explicitly picked a sort — otherwise the grid stays in its original order.
 	const shouldSort = $derived(allLoaded || userSorted);
 
-	const sortedSubsectors = $derived(
+	const sortedAll = $derived(
 		shouldSort
 			? [...data.subsectors].sort((a, b) => {
 					const av = sortValue(a.key, sortKey);
@@ -112,6 +115,7 @@
 				})
 			: data.subsectors
 	);
+	const sortedSubsectors = $derived(sortedAll.filter((s) => passesStrength(strength, s.key)));
 </script>
 
 <svelte:head>
@@ -135,6 +139,15 @@
 	{#if systemicError}
 		<div class="price-error" style="margin-top:20px">{systemicError}</div>
 	{:else}
+		<StrengthPanel
+			level="subsectors"
+			parentKey={data.majorKey}
+			kind="group"
+			scopeLabel={`the subsectors of ${data.majorLabel}`}
+			canSave={data.user?.role !== 'read_only'}
+			bind:view={strength}
+		/>
+
 		<div class="sector-sort-bar">
 			<span class="sector-sort-label">Sort by</span>
 			<select
@@ -159,11 +172,16 @@
 			/>
 		</div>
 
+		{#if strength.active && strength.ready && !strength.error && sortedSubsectors.length === 0}
+			<div class="depth-note" role="status">No subsector matches these filters. Loosen a threshold or clear the filters.</div>
+		{/if}
+
 		<div class="sector-card-grid">
 			{#each sortedSubsectors as s (s.key)}
 				<div class="sector-card-grid-item" animate:flip={{ duration: 350 }}>
 					<SectorCard
 						metrics={cardMetrics}
+						evaluation={strength.active ? strength.byKey[s.key] : undefined}
 						label={s.label}
 						tag={`basket · ${s.constituentCount}`}
 						row={sectorData[s.key]}
