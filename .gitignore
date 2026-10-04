@@ -16,3 +16,4 @@ production-creds.md
 !.claude/agents/product-review.md
 node_modules/
 web/.svelte-kit/
+.neon

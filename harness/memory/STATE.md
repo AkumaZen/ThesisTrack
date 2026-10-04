@@ -37,12 +37,20 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
   check once at 15:00 IST (`30 9 * * 1-5`). Pro would allow the 4-a-day and 10-minute schedules.
   History is 700 days so the 200 DMA (`movingAverage.ts`) is complete over a year; stocks refreshed
   before this change keep a partial 200 DMA until their next refresh.
-- PRODUCTION DATABASE LIMIT (2026-10-04 incident): the Aiven Postgres allows only 20 connections (17 usable).
-  Vercel keeps a frozen instance's connections open, so a burst of requests filled every slot and pages
-  returned 500/502 ("remaining connection slots are reserved for roles with the SUPERUSER attribute").
-  `lib/server/db/index.ts` now holds 1 connection per Vercel instance. Proper fix, needs the Aiven console:
-  enable connection pooling (PgBouncer, transaction mode), put the pool URI in DATABASE_URL on Vercel and
-  add `prepare: false` to the postgres() options; or move to a plan with more connections.
+- PRODUCTION DATABASE IS NOW NEON (moved 2026-10-04, project holy-leaf-50072157, branch production,
+  PostgreSQL 18, Singapore ap-southeast-1). Reason: the old Aiven database allowed only 17 usable
+  connections and Vercel instances filled them (500/502 "remaining connection slots are reserved for
+  roles with the SUPERUSER attribute"); Aiven pooling needs a paid plan. Vercel's DATABASE_URL (Production)
+  is Neon's POOLED address (host has "-pooler", PgBouncer transaction mode), so `lib/server/db/index.ts`
+  turns prepared statements off for it; scripts and pg_dump/restore use the direct address (drop "-pooler").
+  The repo-root `.env` has NEON_DB_URL (pooled); `.production.env` still holds the OLD Aiven URL and is
+  stale. The Aiven database was left untouched as a rollback (data as of the move; delete it when happy).
+  Backups: `Desktop/db-backups-merge/prod-aiven-final-*.dump` (pg_dump) and `prod-before-deploy-*.json`.
+  The Vercel project's function region is sin1 (set via the API; vercel.json "regions" alone did not apply),
+  next to the database - it was iad1 and every query crossed the world. Neon CLI is linked (`.neon`,
+  neon.ts); `neon link` and `neon deploy` pull Neon variables into the repo-root `.env`, which would
+  replace the local DATABASE_URL: use `--no-env-pull` and check `.env` afterwards.
+  Hobby plan notes: cron jobs run once a day only (see vercel.json).
 - Remembered browsing state (valuation sector, subsector and company views): `web/src/lib/viewMemory.ts`
   (storage, validation, per-user keys `tt:v1:<userId>:...`) and `viewMemory.svelte.ts` (save, URL mirror,
   scroll restore). sessionStorage holds tab state (open panels, scroll), localStorage the lasting display
