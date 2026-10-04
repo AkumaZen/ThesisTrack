@@ -50,6 +50,8 @@ describe('loadView', () => {
 			dir: 'asc',
 			strength: 'open',
 			importer: true,
+			page: 1,
+			pageSize: 24,
 			scrollY: 420
 		});
 	});
@@ -77,6 +79,22 @@ describe('loadView', () => {
 		const s = fresh();
 		saveView('sector', 1, '', { sort: 'return3m' }, s);
 		expect(loadView('sector', 1, '', new URLSearchParams('sort=banana'), s).sort).toBe('return3m');
+	});
+
+	it('reads page and page size from the URL, and only accepts the offered sizes', () => {
+		const s = fresh();
+		const ok = loadView('sector', 1, '', new URLSearchParams('page=3&size=48'), s);
+		expect([ok.page, ok.pageSize]).toEqual([3, 48]);
+		const bad = loadView('sector', 1, '', new URLSearchParams('page=0&size=7'), s);
+		expect([bad.page, bad.pageSize]).toEqual([1, 24]);
+	});
+
+	it('remembers the page size across sessions but not the page', () => {
+		const s = fresh();
+		saveView('subsector', 1, 'a/b', { page: 4, pageSize: 12 }, s);
+		s.session.map.clear();
+		const next = loadView('subsector', 1, 'a/b', undefined, s);
+		expect([next.page, next.pageSize]).toEqual([1, 12]);
 	});
 
 	it('keeps views and scopes apart', () => {

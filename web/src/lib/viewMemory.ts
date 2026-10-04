@@ -82,6 +82,16 @@ export const TIMEFRAME_KEYS = ['1W', '1M', '3M', '6M', '1Y'] as const;
 export const CHART_RANGE_KEYS = ['3M', '6M', '1Y'] as const;
 
 const scrollY = field.int(0, 10_000_000, 0);
+/** How many cards a list shows per page, and which page this tab is on. */
+export const PAGE_SIZES = [12, 24, 48, 96] as const;
+export const DEFAULT_PAGE_SIZE = 24;
+const pageSize: FieldSpec<number> = {
+	fallback: DEFAULT_PAGE_SIZE,
+	parse: (raw) => (typeof raw === 'number' && (PAGE_SIZES as readonly number[]).includes(raw) ? raw : undefined),
+	lasting: true,
+	url: 'size'
+};
+const pageNo = field.int(1, 1000, 1, { url: 'page' });
 /** A collapsible panel: 'auto' follows the panel's own default until the person opens or closes it. */
 export const PANEL_STATES = ['auto', 'open', 'closed'] as const;
 export type PanelState = (typeof PANEL_STATES)[number];
@@ -97,11 +107,15 @@ export const VIEWS = {
 		dir: field.oneOf(['asc', 'desc'] as const, 'desc', { lasting: true, url: 'dir' }),
 		strength: panel(),
 		importer: field.flag(false),
+		page: pageNo,
+		pageSize,
 		scrollY
 	},
 	subsector: {
 		timeframe: field.oneOf(TIMEFRAME_KEYS, '3M', { lasting: true, url: 'tf' }),
 		strength: panel(),
+		page: pageNo,
+		pageSize,
 		scrollY
 	},
 	company: {
@@ -200,7 +214,9 @@ export function loadView<V extends ViewName>(
 			const name = (spec as FieldSpec<unknown>).url;
 			const raw = name ? params.get(name) : null;
 			if (raw == null) continue;
-			const parsed = (spec as FieldSpec<unknown>).parse(raw);
+			const parse = (spec as FieldSpec<unknown>).parse;
+			// Numbers arrive from the address bar as text.
+			const parsed = parse(raw) ?? (/^\d{1,9}$/.test(raw) ? parse(Number(raw)) : undefined);
 			if (parsed !== undefined) state[k] = parsed;
 		}
 	}

@@ -7,6 +7,9 @@
 	import SectorCard from '$lib/valuation/components/SectorCard.svelte';
 	import SectorExport from '$lib/valuation/components/SectorExport.svelte';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import Pagination from '$lib/valuation/components/Pagination.svelte';
+	import { DEFAULT_PAGE_SIZE } from '$lib/viewMemory';
+	import { untrack } from 'svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import { saveDefaultCardMetrics } from '$lib/valuation/viewReset';
@@ -28,12 +31,14 @@
 	const memory: ViewTracker<'sector'> = trackView({
 		view: 'sector',
 		userId: () => data.user?.id,
-		read: () => ({ sort: sortKey, dir: sortDir, strength: strengthPanel, importer: importOpen }),
+		read: () => ({ sort: sortKey, dir: sortDir, strength: strengthPanel, importer: importOpen, page, pageSize }),
 		apply: (s) => {
 			sortKey = s.sort;
 			sortDir = s.dir;
 			strengthPanel = s.strength;
 			importOpen = s.importer;
+			page = 1;
+			pageSize = DEFAULT_PAGE_SIZE;
 			userSorted = false;
 		}
 	});
@@ -137,6 +142,7 @@
 
 	function markUserSorted() {
 		userSorted = true;
+		page = 1;
 	}
 
 	function toggleSortDir() {
@@ -217,6 +223,24 @@
 			: data.majors
 	);
 	const sortedMajors = $derived(sortedAll.filter((m) => passesStrength(strength, m.key)));
+
+	// Pagination: which page, and how many cards per page (remembered; see lib/viewMemory.ts).
+	let page = $state(memory.initial.page);
+	let pageSize = $state(memory.initial.pageSize);
+	let strengthSeen = false;
+	// A changed filter starts again from page 1 (the first result, when it was restored, is left alone).
+	$effect(() => {
+		const s = strength;
+		untrack(() => {
+			if (!strengthSeen) strengthSeen = s.ready;
+			else page = 1;
+		});
+	});
+	const pageCount = $derived(Math.max(1, Math.ceil(sortedMajors.length / pageSize)));
+	$effect(() => {
+		if (page > pageCount) page = pageCount;
+	});
+	const pagedMajors = $derived(sortedMajors.slice((page - 1) * pageSize, page * pageSize));
 </script>
 
 <svelte:head>
@@ -366,7 +390,7 @@
 		{/if}
 
 		<div class="sector-card-grid">
-			{#each sortedMajors as m (m.key)}
+			{#each pagedMajors as m (m.key)}
 				<div class="sector-card-grid-item" animate:flip={{ duration: 350 }}>
 					<SectorCard
 						metrics={cardMetrics}
@@ -380,5 +404,6 @@
 				</div>
 			{/each}
 		</div>
+		<Pagination total={sortedMajors.length} bind:page bind:pageSize noun="sectors" />
 	{/if}
 </div>

@@ -2,8 +2,11 @@
 	import { resolve } from '$app/paths';
 	import ConstituentCard from '$lib/valuation/components/ConstituentCard.svelte';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import Pagination from '$lib/valuation/components/Pagination.svelte';
+	import { untrack } from 'svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
+	import { DEFAULT_PAGE_SIZE } from '$lib/viewMemory';
 	import { emptyStrengthView, passesStrength } from '$lib/valuation/strength';
 	import { TIMEFRAMES, type Timeframe } from '$lib/valuation/sectorRotation';
 	import { rotationBadge, ROTATION_TONE_CLASS, type SectorReturn } from '$lib/valuation/sectorRotation';
@@ -22,10 +25,12 @@
 		view: 'subsector',
 		userId: () => data.user?.id,
 		scope: () => `${data.majorKey}/${data.key}`,
-		read: () => ({ timeframe, strength: strengthPanel }),
+		read: () => ({ timeframe, strength: strengthPanel, page, pageSize }),
 		apply: (s) => {
 			timeframe = s.timeframe;
 			strengthPanel = s.strength;
+			page = 1;
+			pageSize = DEFAULT_PAGE_SIZE;
 		}
 	});
 
@@ -33,6 +38,24 @@
 	let strengthPanel = $state(memory.initial.strength);
 	let strength = $state(emptyStrengthView());
 	const visibleSymbols = $derived(data.symbols.filter((s) => passesStrength(strength, s)));
+
+	// Pagination: which page, and how many cards per page (remembered; see lib/viewMemory.ts).
+	let page = $state(memory.initial.page);
+	let pageSize = $state(memory.initial.pageSize);
+	let strengthSeen = false;
+	// A changed filter starts again from page 1 (the first result, when it was restored, is left alone).
+	$effect(() => {
+		const s = strength;
+		untrack(() => {
+			if (!strengthSeen) strengthSeen = s.ready;
+			else page = 1;
+		});
+	});
+	const pageCount = $derived(Math.max(1, Math.ceil(visibleSymbols.length / pageSize)));
+	$effect(() => {
+		if (page > pageCount) page = pageCount;
+	});
+	const pagedSymbols = $derived(visibleSymbols.slice((page - 1) * pageSize, page * pageSize));
 
 	// Plain $state keyed by symbol — each company's own fetch writes only its own entry, so a
 	// ConstituentCard reading a different symbol never re-renders when this one resolves.
@@ -100,7 +123,7 @@
 		<a class="back-link" href={resolve('/valuation/sector-rotation/[key]', { key: data.majorKey })}>
 			&larr; Back to {data.majorLabel}
 		</a>
-		<h1>{data.label}</h1>
+		<h1 data-parent={data.majorLabel}>{data.label}</h1>
 		{#if summary && summary !== 'error'}
 			<div class="sub">
 				Basket 1M {fmtPct(summary.return1m)} · 3M {fmtPct(summary.return3m)} ·
@@ -152,7 +175,7 @@
 	{/if}
 
 	<div class="constituent-grid">
-		{#each visibleSymbols as symbol (symbol)}
+		{#each pagedSymbols as symbol (symbol)}
 			<ConstituentCard
 				{symbol}
 				closes={companyData[symbol]}
@@ -161,4 +184,5 @@
 			/>
 		{/each}
 	</div>
+	<Pagination total={visibleSymbols.length} bind:page bind:pageSize noun="companies" />
 </div>

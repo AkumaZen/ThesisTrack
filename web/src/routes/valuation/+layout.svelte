@@ -10,16 +10,18 @@
 	const COMPANY = /^\/valuation\/company\/([^/]+)$/;
 	const LANDING = ['/valuation', '/valuation/sector-rotation'];
 
-	/** The page's own title: the heading's text, without badges and other markup inside it. */
+	/** The page's own title: the heading's text, without badges and other markup inside it,
+	 *  led by its parent when it has one ("Insurance › Insurance" for a subsector). */
 	function pageTitle(): string {
-		const h1 = document.querySelector('.vd .band h1');
+		const h1 = document.querySelector<HTMLElement>('.vd .band h1');
 		if (!h1) return '';
-		return [...h1.childNodes]
+		const title = [...h1.childNodes]
 			.filter((n) => n.nodeType === Node.TEXT_NODE)
 			.map((n) => n.textContent ?? '')
 			.join(' ')
 			.replace(/\s+/g, ' ')
 			.trim();
+		return title && h1.dataset.parent ? `${h1.dataset.parent} › ${title}` : title;
 	}
 
 	// Opening a company from a list: remember the list (with its sort), so the company's back
