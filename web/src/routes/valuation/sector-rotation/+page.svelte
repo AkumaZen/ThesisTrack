@@ -191,12 +191,12 @@
 	}
 
 	let loadingAll = $state(false);
-	/** Loads every card from the stored prices, a few at a time (so Sort by return can rank them). */
+	/** Loads every card from the stored prices, two at a time (so Sort by return can rank them). */
 	async function loadAll() {
 		loadingAll = true;
 		const pending = data.majors.map((m) => m.key).filter((k) => !isRow(majorData[k]));
 		await Promise.all(
-			Array.from({ length: 4 }, async () => {
+			Array.from({ length: 2 }, async () => {
 				for (let k = pending.shift(); k !== undefined; k = pending.shift()) await loadMajor(k);
 			})
 		);

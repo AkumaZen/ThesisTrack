@@ -8,6 +8,7 @@ import { SESSION_COOKIE } from '$lib/auth';
 import { decideAccess, isApiPath } from '$lib/access';
 import { startSectorRotationScheduler } from '$lib/valuation/server/sectorRotationScheduler';
 import { startAlertScheduler } from '$lib/valuation/server/alertScheduler';
+import { IDLE_GRACE_MS } from '$lib/server/db';
 
 // Background jobs for the valuation tools: refresh the stored prices four times each weekday
 // (see refreshSlots.ts) and check prices against fair value every 10 min in market hours. A long-running server (local
@@ -16,6 +17,22 @@ import { startAlertScheduler } from '$lib/valuation/server/alertScheduler';
 if (!building && !env.VERCEL && env.DISABLE_BACKGROUND_JOBS !== 'true') {
 	startSectorRotationScheduler();
 	startAlertScheduler();
+}
+
+/**
+ * Vercel freezes an instance as soon as it has replied, and a frozen instance cannot run the
+ * database client's idle timer - so its connection would stay open (and counted against the
+ * database's small connection limit) until the instance is thrown away. Asking Vercel to keep the
+ * instance awake for a moment after the reply lets that timer close the connection first. This is
+ * the same request-context hook the @vercel/functions `waitUntil` helper uses; elsewhere (local
+ * dev, tests) there is no such context and this does nothing.
+ */
+function holdInstanceForIdleConnections() {
+	if (!env.VERCEL) return;
+	const context = (globalThis as Record<symbol, unknown>)[Symbol.for('@vercel/request-context')] as
+		| { get?: () => { waitUntil?: (promise: Promise<unknown>) => void } | undefined }
+		| undefined;
+	context?.get?.()?.waitUntil?.(new Promise((done) => setTimeout(done, IDLE_GRACE_MS)));
 }
 
 /**
@@ -66,7 +83,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		});
 	}
 
-	return resolve(event);
+	const response = await resolve(event);
+	holdInstanceForIdleConnections();
+	return response;
 };
 
 /**

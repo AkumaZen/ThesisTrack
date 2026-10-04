@@ -99,12 +99,12 @@
 	}
 
 	let loadingAll = $state(false);
-	/** Loads every company in the basket from the stored prices, a few at a time. */
+	/** Loads every company in the basket from the stored prices, two at a time. */
 	async function loadAll() {
 		loadingAll = true;
 		const pending = data.symbols.filter((s) => !Array.isArray(companyData[s]) && companyData[s] !== null);
 		await Promise.all(
-			Array.from({ length: 4 }, async () => {
+			Array.from({ length: 2 }, async () => {
 				for (let k = pending.shift(); k !== undefined; k = pending.shift()) await loadCompany(k);
 			})
 		);
