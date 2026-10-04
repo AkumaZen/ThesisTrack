@@ -9,6 +9,8 @@ import type { SymbolHit } from '../symbolSearch';
 const MAX = 8;
 const TTL_MS = 10 * 60 * 1000;
 const cache = new Map<string, { at: number; hits: SymbolHit[] }>();
+const sameCompany = (a: string, b: string) =>
+	a.toLowerCase().replace(/[^a-z0-9]/g, '') === b.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 /**
  * Suggestions for the company picker as someone types a name or ticker. Companies the team already
@@ -48,6 +50,9 @@ export async function searchSymbols(raw: string): Promise<SymbolHit[]> {
 			for (const r of await searchCompanies(q)) {
 				if (found.length >= MAX) break;
 				if (found.some((f) => f.symbol === r.symbol)) continue;
+				// Screener also lists some companies under their BSE code; when the same company is
+				// already here by its NSE ticker, the BSE-code entry would only add a duplicate.
+				if (/^\d{6}$/.test(r.symbol) && found.some((f) => sameCompany(f.name, r.name))) continue;
 				found.push({ symbol: r.symbol, name: r.name, tracked: known.has(r.symbol) });
 			}
 		} catch {

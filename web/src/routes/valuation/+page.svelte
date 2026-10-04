@@ -805,7 +805,11 @@
 	</div>
 </div>
 
-<AddCompanyPanel canWrite={data.user?.role !== 'read_only'} isAdmin={data.user?.role === 'admin'} />
+<AddCompanyPanel
+	canWrite={data.user?.role !== 'read_only'}
+	isAdmin={data.user?.role === 'admin'}
+	onAdded={refreshSaved}
+/>
 
 <div class="wrap wrap-wide">
 	<div class="integrity-panel no-print">
@@ -1160,8 +1164,8 @@
 		</div>
 	{:else if savedLoaded}
 		<p class="wl-empty" data-testid="watchlist-empty">
-			Your watchlist is empty. Search for a company above, open it, and click
-			<strong>Add to watchlist</strong> to start tracking its target, fair value and upside here - or
+			Your watchlist is empty. Use <strong>+ Add company</strong> above, or open a company and click
+			<strong>Add to watchlist</strong>, to start tracking its target, fair value and upside here - or
 			import valuations from JSON.
 		</p>
 	{/if}

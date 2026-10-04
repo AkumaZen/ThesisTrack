@@ -7,9 +7,18 @@
 
 	// The watchlist's company box: find any listed company by name and open it, or add one with its
 	// history filled in (financial statements from Screener.in, ~700 days of prices from Angel One)
-	// and, for an admin, put it straight into a sector basket. The valuation itself is then made on
-	// the company page, where it always lives.
-	let { canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean } = $props();
+	// and put it on the watchlist with its starting valuation; an admin can also put it straight
+	// into a sector basket. The valuation is then refined on the company page.
+	let {
+		canWrite,
+		isAdmin,
+		onAdded
+	}: {
+		canWrite: boolean;
+		isAdmin: boolean;
+		/** Called once a company has been put on the watchlist, so the list can show it. */
+		onAdded?: () => void;
+	} = $props();
 
 	let adding = $state(false);
 	let chosen = $state<SymbolHit | null>(null);
@@ -82,6 +91,16 @@
 						? { text: `Price history filled in: ${body.priceSessions} trading days.`, tone: 'ok' }
 						: { text: `Prices could not be fetched: ${body.pricesError}`, tone: 'bad' }
 			);
+			out.push(
+				body.watchlist === 'added'
+					? { text: 'Added to the watchlist.', tone: 'ok' }
+					: body.watchlist === 'already'
+						? { text: 'Already on the watchlist; its valuation is unchanged.', tone: 'ok' }
+						: {
+								text: `Not added to the watchlist: ${body.watchlistError ?? 'its financial statements are needed first.'}`,
+								tone: 'bad'
+							}
+			);
 			if (basketKey) {
 				const added = await sectorApi('POST', `/api/valuation/sectors/baskets/${basketKey}/symbols`, {
 					symbol: body.symbol
@@ -95,6 +114,7 @@
 			}
 			steps = out;
 			done = { symbol: body.symbol, name: body.name };
+			if (body.watchlist === 'added') onAdded?.();
 		} catch (e) {
 			steps = [{ text: e instanceof Error ? e.message : 'Could not add it.', tone: 'bad' }];
 		} finally {
@@ -124,8 +144,8 @@
 					<button type="button" class="link-btn" onclick={() => ((adding = false), reset())}>Close</button>
 				</div>
 				<p class="ac-hint">
-					Pick the company by name. Its financial statements and price history are filled in for you;
-					the valuation is then made on its page.
+					Pick the company by name. Its financial statements and price history are filled in for you,
+					and it goes on the watchlist. Refine its valuation on its page.
 				</p>
 
 				<label for="addCompanyPick" class="ac-label">Company</label>
