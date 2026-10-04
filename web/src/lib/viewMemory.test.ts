@@ -246,6 +246,20 @@ describe('where a company was opened from', () => {
 		expect(readOrigin(2, 'TCS', s)).toBeNull();
 	});
 
+	it('remembers the breakout scanner, compare, alerts and sector baskets too', () => {
+		const s = fresh();
+		const places = [
+			{ path: '/valuation/stage-scanner', label: 'Stage 2 breakout scanner' },
+			{ path: '/valuation/compare?symbols=TCS,INFY', label: 'Compare companies' },
+			{ path: '/valuation/alerts', label: 'Alerts' },
+			{ path: '/valuation/sectors', label: 'Sector baskets' }
+		];
+		for (const place of places) {
+			rememberOrigin(1, 'TCS', place, s);
+			expect(readOrigin(1, 'TCS', s)).toEqual(place);
+		}
+	});
+
 	it('refuses an origin that is not a valuation list', () => {
 		const s = fresh();
 		rememberOrigin(1, 'TCS', { path: '/valuation/company/INFY', label: 'x' }, s);

@@ -290,8 +290,12 @@ export interface Place {
 }
 const VISIT_PATH =
 	/^\/valuation\/(sector-rotation(\/[A-Za-z0-9_-]{1,80}){1,2}|company\/[A-Za-z0-9&._%-]{1,60})$/;
-const ORIGIN_PATH = /^\/valuation(\/sector-rotation(\/[A-Za-z0-9_-]{1,80}){0,2})?$/;
-const ORIGIN_QUERY = /^[A-Za-z0-9_=&.%-]{0,200}$/;
+// Every valuation list a company can be opened from: the watchlist, sector rotation (any level),
+// the breakout scanner, compare, alerts and sector baskets.
+const ORIGIN_PATH =
+	/^\/valuation(\/sector-rotation(\/[A-Za-z0-9_-]{1,80}){0,2}|\/stage-scanner|\/compare|\/alerts|\/sectors)?$/;
+// Compare keeps its companies in the address as a comma-separated list.
+const ORIGIN_QUERY = /^[A-Za-z0-9_=&.,%-]{0,200}$/;
 const originOk = (path: string) => {
 	const [pathname, query = '', ...rest] = path.split('?');
 	return rest.length === 0 && ORIGIN_PATH.test(pathname) && ORIGIN_QUERY.test(query);
