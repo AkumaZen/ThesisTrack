@@ -19,7 +19,7 @@ const MAX_SECTORS = 6;
 const MAX_NOTES = 8;
 
 /** Lower is better: exact ticker, then names/tickers starting with the query, then contains. */
-function rank(q: string, symbol: string, name: string): number | null {
+export function rank(q: string, symbol: string, name: string): number | null {
 	const s = symbol.toLowerCase();
 	const n = name.toLowerCase();
 	if (s === q) return 0;

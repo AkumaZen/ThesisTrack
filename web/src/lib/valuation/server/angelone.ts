@@ -284,6 +284,20 @@ async function getScripIndex(): Promise<Map<string, ScripEntry>> {
 
 /** Whether Angel One's scrip master has a live NSE listing for `symbol` (i.e. whether charts and
  *  rotation data can actually be fetched for it). Used by the Sector Manager's verification. */
+/** Which of these symbols Angel One lists, or null when its instrument list is not loaded within
+ *  `waitMs` (a cold server downloads it first). The download carries on regardless, so the next
+ *  call answers at once. For hints (a "no price chart" badge), never for a decision. */
+export async function angelListings(symbols: string[], waitMs = 2500): Promise<Map<string, boolean> | null> {
+	const loading = getScripIndex();
+	loading.catch(() => {});
+	const index = await Promise.race([
+		loading,
+		new Promise<null>((done) => setTimeout(() => done(null), waitMs))
+	]).catch(() => null);
+	if (!index) return null;
+	return new Map(symbols.map((s) => [s.toUpperCase(), index.has(s.toUpperCase())]));
+}
+
 export async function isListedOnAngelOne(symbol: string): Promise<boolean> {
 	const index = await getScripIndex();
 	return index.has(symbol.toUpperCase());

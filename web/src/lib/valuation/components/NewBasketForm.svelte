@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { sectorApi, type VerifyResponse } from '$lib/valuation/sectorClient';
 	import type { SymbolSuggestion } from '$lib/valuation/sectorEdit';
+	import CompanyPicker from '$lib/components/CompanyPicker.svelte';
 
 	let {
 		majorKey,
@@ -16,6 +17,7 @@
 
 	let label = $state('');
 	let symbol = $state('');
+	let symbolName = $state('');
 	let busy = $state(false);
 	let error = $state<string | null>(null);
 	let suggestions = $state<SymbolSuggestion[]>([]);
@@ -51,6 +53,7 @@
 			oncreated(`Created basket "${label.trim()}" with ${verified.name}.`);
 			label = '';
 			symbol = '';
+			symbolName = '';
 			await onchanged();
 		} finally {
 			busy = false;
@@ -75,15 +78,23 @@
 			bind:value={label}
 			disabled={busy}
 		/>
-		<input
-			class="sm-input sm-input-symbol"
-			aria-label="First NSE symbol for the new basket in {majorLabel}"
-			placeholder="First NSE symbol"
-			autocapitalize="characters"
-			spellcheck="false"
-			bind:value={symbol}
-			disabled={busy}
-		/>
+		{#if symbol}
+			<span class="sm-chosen">
+				{symbolName} <span class="sm-chip-ticker">{symbol}</span>
+				<button type="button" class="sm-chip-x" aria-label="Choose another company" disabled={busy}
+					onclick={() => ((symbol = ''), (symbolName = ''))}>×</button
+				>
+			</span>
+		{:else}
+			<CompanyPicker
+				id="new-basket-{majorKey}"
+				label="First company for the new basket in {majorLabel}"
+				placeholder="First company: type a name or ticker"
+				inputClass="sm-input"
+				disabled={busy}
+				onPick={(hit) => ((symbol = hit.symbol), (symbolName = hit.name))}
+			/>
+		{/if}
 		<button
 			class="sm-btn sm-btn-primary"
 			type="submit"

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CompanyPicker from '$lib/components/CompanyPicker.svelte';
 	// New-company/initial-thesis form, amend-thesis form, and JSON-paste import,
 	// all in one route. Ports frontend/components/ingest.js's Form/JSON tabs and
 	// its create/amend mode switch into Svelte 5.
@@ -1118,6 +1119,24 @@ My data:
 			<!-- Basics -->
 			<section class="mt-5 rounded-xl border border-border bg-surface p-5">
 				<h2 class="font-medium text-sm text-muted-fg uppercase tracking-wide">Basics</h2>
+				{#if !isExistingCompany}
+					<!-- Picking the company fills in its ticker and name, so nobody has to look them up. -->
+					<label for="ingest-company-pick" class="block text-sm mt-2">Find the company</label>
+					<div class="mt-1">
+						<CompanyPicker
+							id="ingest-company-pick"
+							label="Find the company by name or ticker"
+							placeholder="Type a name or ticker, e.g. Reliance Industries"
+							inputClass="rounded-md text-sm"
+							onPick={(hit) => {
+								// A company listed only on BSE comes back as its numeric BSE scrip code.
+								if (/^\d+$/.test(hit.symbol)) bseTicker = hit.symbol;
+								else nseTicker = hit.symbol;
+								name = hit.name;
+							}}
+						/>
+					</div>
+				{/if}
 				<div class="grid grid-cols-2 gap-3 mt-2">
 					<label class="text-sm"
 						>NSE Ticker <span class="text-muted-fg font-normal">(at least one of NSE/BSE required)</span>

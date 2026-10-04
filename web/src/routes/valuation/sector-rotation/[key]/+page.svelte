@@ -190,7 +190,7 @@
 		<h1>{data.majorLabel}</h1>
 		<div class="sub">
 			Thematic sub-baskets measured against Nifty 50. Charts load when you ask for them, from
-			prices stored on the server (refreshed four times each weekday, or press Refresh on a card) —
+			prices stored on the server (refreshed automatically after each weekday's close, or press Refresh on a card) —
 			{loadedCount} of {data.subsectors.length} loaded
 		</div>
 	</div>

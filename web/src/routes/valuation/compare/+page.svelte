@@ -2,21 +2,32 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
+	import CompanyPicker from '$lib/components/CompanyPicker.svelte';
+	import type { SymbolHit } from '$lib/valuation/symbolSearch';
 	import { diagnoseValuationMethod } from '$lib/valuation/valuationDiagnosis';
 	import { assessBusinessQuality } from '$lib/valuation/businessQuality';
 	import { analyzePeg } from '$lib/valuation/pegAnalysis';
 
 	let { data }: { data: PageData } = $props();
 
-	// Writable derived: resets to the URL's symbol list whenever `data` changes (new
-	// navigation), but stays as whatever the user typed in between.
-	let symbolInput = $derived(data.results.map((r) => r.symbol).join(', '));
+	// The companies to compare, as chips: starts from the address (a new navigation resets it) and
+	// grows as companies are picked by name. Compare loads the comparison for exactly these.
+	let chosen = $derived(
+		data.results.map((r) => ({ symbol: r.symbol, name: r.company?.name ?? r.symbol }))
+	);
+	const full = $derived(chosen.length >= data.maxSymbols);
+
+	function addCompany(hit: SymbolHit) {
+		if (full || chosen.some((c) => c.symbol === hit.symbol)) return;
+		chosen = [...chosen, { symbol: hit.symbol, name: hit.name }];
+	}
+	function removeCompany(symbol: string) {
+		chosen = chosen.filter((c) => c.symbol !== symbol);
+	}
 
 	function submit() {
-		const symbols = symbolInput
-			.split(',')
-			.map((s) => s.trim().toUpperCase())
-			.filter(Boolean)
+		const symbols = chosen
+			.map((c) => c.symbol)
 			.slice(0, data.maxSymbols)
 			.join(',');
 		goto(resolve(symbols ? `/valuation/compare?symbols=${symbols}` : '/valuation/compare'));
@@ -97,20 +108,28 @@
 
 <div class="wrap">
 	<div class="company-search" style="margin-top:20px">
-		<label
-			for="compareSymbols"
-			class="field-label" style="display:block;margin-bottom:6px"
-		>
-			Symbols to compare (comma-separated, up to {data.maxSymbols})
+		<label for="compareSymbols" class="field-label" style="display:block;margin-bottom:6px">
+			Companies to compare (up to {data.maxSymbols})
 		</label>
+		{#if chosen.length}
+			<ul class="cmp-chips" aria-label="Companies chosen">
+				{#each chosen as c (c.symbol)}
+					<li class="cmp-chip">
+						{c.name} <span class="cmp-chip-ticker">{c.symbol}</span>
+						<button type="button" aria-label="Remove {c.name}" onclick={() => removeCompany(c.symbol)}>×</button>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 		<div class="compare-row">
-			<input
+			<CompanyPicker
 				id="compareSymbols"
-				placeholder="e.g. TCS, INFY, WIPRO"
-				bind:value={symbolInput}
-				onkeydown={(e) => e.key === 'Enter' && submit()}
+				label="Add a company to compare"
+				placeholder={full ? `Up to ${data.maxSymbols} companies` : 'Add a company: type a name or ticker'}
+				disabled={full}
+				onPick={addCompany}
 			/>
-			<button class="btn btn-primary compare-go" onclick={submit}>Compare</button>
+			<button class="btn btn-primary compare-go" onclick={submit} disabled={chosen.length === 0}>Compare</button>
 		</div>
 	</div>
 

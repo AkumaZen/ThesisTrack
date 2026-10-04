@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { sectorApi, type VerifyResponse } from '$lib/valuation/sectorClient';
 	import type { SymbolSuggestion } from '$lib/valuation/sectorEdit';
+	import CompanyPicker from '$lib/components/CompanyPicker.svelte';
 
 	let {
 		basket,
@@ -84,9 +85,22 @@
 			});
 			if (!added.ok) return { kind: 'error', text: added.message };
 			symbolDraft = '';
+			// Fill in its price history now, so its chart works straight away.
+			let days = 0;
+			if (listedOnAngelOne) {
+				const res = await fetch(`/api/valuation/company/${encodeURIComponent(symbol)}/refresh-series`, {
+					method: 'POST'
+				}).catch(() => null);
+				days = res?.ok ? ((await res.json()) as { sessions: number }).sessions : 0;
+			}
 			await onchanged();
 			return listedOnAngelOne
-				? { kind: 'ok', text: `Added ${name} (${symbol}).` }
+				? {
+						kind: 'ok',
+						text: days
+							? `Added ${name} (${symbol}) with ${days} days of prices.`
+							: `Added ${name} (${symbol}). Its prices will arrive with the next refresh.`
+					}
 				: {
 						kind: 'warn',
 						text: `Added ${name} (${symbol}), but Angel One doesn't list it - no live chart for this one.`
@@ -250,26 +264,16 @@
 		{/each}
 	</ul>
 
-	<form
-		class="sm-inline-form sm-add"
-		onsubmit={(e) => {
-			e.preventDefault();
-			addSymbol();
-		}}
-	>
-		<input
-			class="sm-input sm-input-symbol"
-			aria-label="Add NSE symbol to {basket.label}"
-			placeholder="Add NSE symbol, e.g. TCS"
-			bind:value={symbolDraft}
-			autocapitalize="characters"
-			spellcheck="false"
+	<div class="sm-inline-form sm-add">
+		<CompanyPicker
+			id="add-{basket.key}"
+			label="Add a company to {basket.label}"
+			placeholder={busy ? 'Adding…' : 'Add a company: type a name or ticker'}
+			inputClass="sm-input"
 			disabled={busy}
+			onPick={(hit) => addSymbol(hit.symbol)}
 		/>
-		<button class="sm-btn sm-btn-primary" type="submit" disabled={busy || !symbolDraft.trim()}>
-			{busy ? 'Working…' : 'Verify & add'}
-		</button>
-	</form>
+	</div>
 
 	{#if message}
 		<p class="sm-msg sm-msg-{message.kind}" role="status">{message.text}</p>

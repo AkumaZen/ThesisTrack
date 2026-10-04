@@ -4786,3 +4786,55 @@
 }
 .vd .sector-card-refresh:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
 .vd .sector-card-refresh:disabled { opacity: 0.5; cursor: default; }
+
+/* The company picker inside the sector basket forms. */
+.vd .sm-inline-form > .cp,
+.vd .sm-inline-form .cp {
+	flex: 1 1 240px;
+}
+.vd .sm-chosen {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 0 var(--space-2);
+	border: var(--border-w) solid var(--ink);
+	background: var(--accent-soft);
+	font-size: 0.875rem;
+}
+
+/* Compare: the chosen companies as removable chips above the picker. */
+.vd .cmp-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	list-style: none;
+	margin: 0 0 var(--space-2);
+	padding: 0;
+}
+.vd .cmp-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 4px 4px 10px;
+	border: var(--border-w) solid var(--ink);
+	background: var(--accent-soft);
+	font-size: 0.875rem;
+}
+.vd .cmp-chip-ticker {
+	font-family: var(--font-mono);
+	font-size: 12px;
+	color: var(--muted);
+}
+.vd .cmp-chip button {
+	border: none;
+	background: none;
+	font-size: 16px;
+	line-height: 1;
+	padding: 0 6px;
+	cursor: pointer;
+	color: var(--ink);
+}
+.vd .compare-row .cp {
+	flex: 1 1 auto;
+}

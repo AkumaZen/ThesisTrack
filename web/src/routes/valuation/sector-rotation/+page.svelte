@@ -11,6 +11,7 @@
 	import { DEFAULT_PAGE_SIZE } from '$lib/viewMemory';
 	import { untrack } from 'svelte';
 	import { refreshSector } from '$lib/valuation/seriesRefresh';
+	import SectorSearch from '$lib/valuation/components/SectorSearch.svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import { saveDefaultCardMetrics } from '$lib/valuation/viewReset';
@@ -263,14 +264,16 @@
 		<h1>Sector rotation</h1>
 		<div class="sub">
 			Major sectors, each rolled up from its own thematic sub-baskets, measured against Nifty 50.
-			Charts load when you ask for them, from prices stored on the server (refreshed four times
-			each weekday, or press Refresh on a card) —
+			Charts load when you ask for them, from prices stored on the server (refreshed automatically after
+			each weekday's close, or press Refresh on a card) —
 			{loadedCount} of {data.majors.length} loaded
 		</div>
 	</div>
 </div>
 
 <div class="wrap">
+	<SectorSearch entries={data.search} />
+
 	<!-- Editing the shared sector taxonomy is admin-only (enforced server-side too). -->
 	{#if data.user?.role === 'admin'}
 		<a class="sm-manage-link" href={resolve('/valuation/sectors')}

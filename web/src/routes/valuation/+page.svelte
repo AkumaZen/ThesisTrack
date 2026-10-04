@@ -5,6 +5,7 @@
 </script>
 
 <script lang="ts">
+	import AddCompanyPanel from '$lib/valuation/components/AddCompanyPanel.svelte';
 	import { untrack } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -50,9 +51,6 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let query = $state('');
-	let results = $state<{ name: string; symbol: string }[]>([]);
-	let loading = $state(false);
 	let saved = $state<SavedValuationMeta[]>([]);
 	// False until the first load answers, so the empty-state message never flashes before data.
 	let savedLoaded = $state(false);
@@ -794,31 +792,6 @@
 		});
 	}
 
-	let timer: ReturnType<typeof setTimeout>;
-	function onInput() {
-		clearTimeout(timer);
-		timer = setTimeout(async () => {
-			if (query.trim().length < 2) {
-				results = [];
-				return;
-			}
-			loading = true;
-			try {
-				const res = await fetch(`/api/valuation/search?q=${encodeURIComponent(query)}`);
-				results = await res.json();
-			} finally {
-				loading = false;
-			}
-		}, 300);
-	}
-
-	function select(symbol: string) {
-		goto(resolve('/valuation/company/[symbol]', { symbol }));
-	}
-
-	function goDirect() {
-		if (query.trim()) goto(resolve('/valuation/company/[symbol]', { symbol: query.trim().toUpperCase() }));
-	}
 </script>
 
 <svelte:head>
@@ -832,32 +805,7 @@
 	</div>
 </div>
 
-<div class="company-search">
-	<label
-		for="companySearch"
-		class="field-label" style="display:block;margin-bottom:6px"
-	>
-		Search company
-	</label>
-	<input
-		id="companySearch"
-		placeholder="e.g. Reliance, AHCL, TCS..."
-		bind:value={query}
-		oninput={onInput}
-		onkeydown={(e) => e.key === 'Enter' && goDirect()}
-	/>
-	{#if results.length > 0}
-		<div class="search-results">
-			{#each results as r (r.symbol)}
-				<button onclick={() => select(r.symbol)}
-					>{r.name} <span style="color:var(--muted)">({r.symbol})</span></button
-				>
-			{/each}
-		</div>
-	{:else if loading}
-		<div style="margin-top:8px;color:var(--muted);font-size:13px">Searching…</div>
-	{/if}
-</div>
+<AddCompanyPanel canWrite={data.user?.role !== 'read_only'} isAdmin={data.user?.role === 'admin'} />
 
 <div class="wrap wrap-wide">
 	<div class="integrity-panel no-print">
@@ -1149,7 +1097,7 @@
 										const t = e.target as HTMLElement;
 										if (t.closest('a, button, summary, details, input, label, [role="button"]'))
 											return;
-										select(r.symbol);
+										goto(resolve('/valuation/company/[symbol]', { symbol: r.symbol }));
 									}}
 								>
 									<td class="left">
