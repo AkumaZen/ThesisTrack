@@ -7,6 +7,7 @@
 	// company page (CustomTables.svelte) and the company page's pillar-notes
 	// display (thesis-level notes authored on the ingest form). One table must
 	// never render as two different things in two different places.
+	import { untrack } from 'svelte';
 	import { api, ApiError } from '$lib/api';
 	import TableBuilderModal, { type BuiltTable } from './TableBuilderModal.svelte';
 
@@ -47,7 +48,8 @@
 		return lines.map((l) => l.split(delimiter).map((c) => c.trim()));
 	}
 
-	let expanded = $state(defaultExpanded);
+	// The starting state only; the card is opened and closed by hand afterwards.
+	let expanded = $state(untrack(() => defaultExpanded));
 	let detail = $state<TableDetail | null>(null);
 	let detailError = $state('');
 	let loadingDetail = $state(false);

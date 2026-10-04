@@ -5,6 +5,7 @@
 	// NOT NULL) - there is no "global" guidance concept to port. Initial data
 	// (default filters) comes from +page.ts's load(); changing a filter still
 	// refetches directly via refresh(), same as before.
+	import { untrack } from 'svelte';
 	import { api, ApiError } from '$lib/api';
 	import { session } from '$lib/session.svelte';
 	import type { PageData } from './$types';
@@ -96,7 +97,8 @@
 	let filterStatus = $state('open');
 
 	let showAddForm = $state(false);
-	let addCompany = $state(data.companies[0]?.company_id ?? '');
+	// The form's starting choice only; the person picks the company afterwards.
+	let addCompany = $state(untrack(() => data.companies[0]?.company_id ?? ''));
 	let addBlock = $state('general');
 	let addNote = $state('');
 	let addTargetMetric = $state<'' | 'revenue' | 'margin' | 'other'>('');
