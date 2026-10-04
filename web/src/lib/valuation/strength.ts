@@ -8,12 +8,17 @@
 // A signal that cannot be computed (short history, stale or missing data) is reported as
 // 'unavailable' with the reason and never counts as a match.
 
-export const MIN_SAMPLES_FOR_Z = 30;
+/** Fewest baseline readings a z-score is computed from. A short-history stock (a recent listing)
+ *  may have fewer than the full baseline; between this and the full length it is still evaluated
+ *  and the note says the baseline is short. */
+export const MIN_SAMPLES_FOR_Z = 20;
 /** Floor on the baseline spread (in percentage points) so a near-flat history cannot turn a tiny
  *  move into a huge z-score. */
 export const MIN_SIGMA_PTS = 0.25;
 /** Share of a window's sessions that must carry usable data for a constituent to be counted. */
 const MIN_WINDOW_COVERAGE = 0.8;
+/** Breadth over fewer stocks than this is just one or two yes/no answers, not participation. */
+export const MIN_SPREADING_STOCKS = 3;
 
 export interface StrengthConfig {
 	/** Measurement period in sessions for sudden strength: 1 daily, 5 weekly, 21 monthly, or custom. */
@@ -284,6 +289,28 @@ function mean(values: number[]): number {
 	return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
+/** Why a subject's price series cannot be used, in words: never fetched, behind the market, or
+ *  too short. Used for every "unavailable" reason so it says what is actually wrong. */
+function priceGap(input: StrengthInput): string {
+	const { calendar, price } = input;
+	const n = calendar.length;
+	let last = -1;
+	let bars = 0;
+	for (let i = 0; i < n; i++) {
+		if (price[i] != null) {
+			bars++;
+			last = i;
+		}
+	}
+	if (bars === 0)
+		return input.kind === 'company'
+			? "No price history is stored for this symbol (it may not be on Angel One's equity list, or has not been fetched yet)."
+			: 'No price history is stored for any constituent yet.';
+	if (last < n - 1)
+		return `Latest price is from ${calendar[last]}, ${n - 1 - last} session${n - 1 - last === 1 ? '' : 's'} behind the market (stale data).`;
+	return `Only ${bars} sessions of price history so far (recent listing or gaps).`;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Sudden strength
 // ---------------------------------------------------------------------------------------------
@@ -301,7 +328,7 @@ export function suddenStrength(input: StrengthInput, c: StrengthConfig): SignalR
 		return unavailable(`Needs ${need} sessions of history for a ${L}-session baseline, has ${n}.`);
 
 	const current = rsAt(input.price, input.benchmark, t, m);
-	if (current == null) return unavailable('Latest price data is missing or stale.');
+	if (current == null) return unavailable(priceGap(input));
 
 	if (c.sudden.mode === 'explicit') {
 		const matched = current >= c.sudden.explicitRsPct;
@@ -320,8 +347,9 @@ export function suddenStrength(input: StrengthInput, c: StrengthConfig): SignalR
 	}
 	if (samples.length < MIN_SAMPLES_FOR_Z)
 		return unavailable(
-			`Only ${samples.length} usable baseline readings, needs ${MIN_SAMPLES_FOR_Z}.`
+			`${priceGap(input)} Needs at least ${MIN_SAMPLES_FOR_Z} baseline readings, has ${samples.length}.`
 		);
+	const short = samples.length < Math.floor(L * 0.8);
 
 	const med = median(samples);
 	const mad = median(samples.map((v) => Math.abs(v - med)));
@@ -331,7 +359,7 @@ export function suddenStrength(input: StrengthInput, c: StrengthConfig): SignalR
 	return {
 		status: 'ok',
 		matched,
-		detail: `${m}-session relative strength ${sgn(current)} pts vs Nifty (usual ${sgn(med)}, z-score ${z.toFixed(1)}; needs ${c.sudden.z.toFixed(1)} and at least ${sgn(c.sudden.minRsPct)} pts).`,
+		detail: `${m}-session relative strength ${sgn(current)} pts vs Nifty (usual ${sgn(med)}, z-score ${z.toFixed(1)}; needs ${c.sudden.z.toFixed(1)} and at least ${sgn(c.sudden.minRsPct)} pts).${short ? ` Short history: baseline uses ${samples.length} readings, not ${L}.` : ''}`,
 		metrics: { rs: current, z, baselineMedian: med, sigma, samples: samples.length }
 	};
 }
@@ -352,8 +380,7 @@ export function gradualStrength(input: StrengthInput, c: StrengthConfig): Signal
 	for (let i = t - D; i <= t; i++) {
 		const p = input.price[i];
 		const b = input.benchmark[i];
-		if (p == null || b == null || p <= 0 || b <= 0)
-			return unavailable('A session in the window has missing price data.');
+		if (p == null || b == null || p <= 0 || b <= 0) return unavailable(priceGap(input));
 		rl.push(Math.log(p / b));
 	}
 	const steps = rl.slice(1).map((v, i) => v - rl[i]);
@@ -386,7 +413,11 @@ export function spreadingStrength(input: StrengthInput, c: StrengthConfig): Sign
 	const t = n - 1;
 	const D = c.spreading.days;
 	const total = input.members.length;
-	if (total === 0) return unavailable('No constituents to measure.');
+	if (total === 0) return unavailable('No constituents have price history stored.');
+	if (total < MIN_SPREADING_STOCKS)
+		return unavailable(
+			`Spreading needs at least ${MIN_SPREADING_STOCKS} stocks, this has ${total}.`
+		);
 	if (n < 2 * D + 1) return unavailable(`Needs ${2 * D + 1} sessions of history, has ${n}.`);
 
 	let valid = 0;
@@ -400,7 +431,7 @@ export function spreadingStrength(input: StrengthInput, c: StrengthConfig): Sign
 		if (now > 0) beatNow++;
 		if (then > 0) beatThen++;
 	}
-	const needed = Math.max(4, Math.ceil(0.7 * total));
+	const needed = Math.min(total, Math.max(MIN_SPREADING_STOCKS, Math.ceil(0.7 * total)));
 	if (valid < needed)
 		return unavailable(`Only ${valid} of ${total} constituents have full data, needs ${needed}.`);
 
@@ -441,7 +472,7 @@ export function volumeConfirmation(input: StrengthInput, c: StrengthConfig): Sig
 	const D = c.volume.days;
 	const B = c.volume.baselineDays;
 	const total = input.members.length;
-	if (total === 0) return unavailable('No volume data.');
+	if (total === 0) return unavailable('No volume history is stored for this symbol.');
 	if (n < D + B) return unavailable(`Needs ${D + B} sessions of history, has ${n}.`);
 
 	const ratios: number[] = [];
@@ -456,7 +487,7 @@ export function volumeConfirmation(input: StrengthInput, c: StrengthConfig): Sig
 
 	const ratio = median(ratios);
 	const rs = rsAt(input.price, input.benchmark, t, D);
-	if (rs == null) return unavailable('Latest price data is missing or stale.');
+	if (rs == null) return unavailable(priceGap(input));
 
 	const high = ratio >= c.volume.minRatio;
 	const matched = high && rs > 0;

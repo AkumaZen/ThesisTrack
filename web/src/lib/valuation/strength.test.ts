@@ -476,3 +476,57 @@ describe('saved filters and alerts share one config', () => {
 		expect(passesStrength(emptyStrengthView(), 'b')).toBe(true); // no filter
 	});
 });
+
+describe('short history and unavailable reasons', () => {
+	const sudden = withSudden();
+
+	it('evaluates a recent listing on a shorter baseline and says so', () => {
+		const full = noisy(7, (i) => (i > N - 4 ? 2 : 0));
+		const listed = full.map((v, i) => (i < N - 40 ? null : v)); // only 40 sessions of history
+		const r = suddenStrength(input(listed), sudden);
+		expect(r.status).toBe('ok');
+		expect(r.metrics.samples).toBeLessThan(DEFAULT_STRENGTH_CONFIG.baselineDays * 0.8);
+		expect(r.detail).toMatch(/Short history: baseline uses \d+ readings, not 126/);
+		expect(r.matched).toBe(true);
+	});
+
+	it('still refuses when there is too little history for any baseline, naming the cause', () => {
+		const listed = noisy(8).map((v, i) => (i < N - 12 ? null : v));
+		const r = suddenStrength(input(listed), sudden);
+		expect(r.status).toBe('unavailable');
+		expect(r.detail).toMatch(/Only 12 sessions of price history/);
+	});
+
+	it('says when a symbol has no stored price history at all', () => {
+		const r = suddenStrength(input(calendar.map(() => null), [], 'company'), sudden);
+		expect(r.detail).toMatch(/No price history is stored for this symbol/);
+	});
+
+	it('says how far behind a stale series is', () => {
+		const stale = noisy(9).map((v, i) => (i > N - 4 ? null : v));
+		const r = gradualStrength(input(stale), cfg({ gradual: { ...DEFAULT_STRENGTH_CONFIG.gradual, enabled: true } }));
+		expect(r.status).toBe('unavailable');
+		expect(r.detail).toMatch(/3 sessions behind the market/);
+	});
+
+	it('measures spreading for a three-stock group (needs all three), not "3 of 3, needs 4"', () => {
+		const three = Array.from({ length: 3 }, () => stock({ riseFrom: N - 10, rise: 0.5 }));
+		const r = spreadingStrength(
+			input(flatBench, three),
+			cfg({ spreading: { ...DEFAULT_STRENGTH_CONFIG.spreading, enabled: true } })
+		);
+		expect(r.status).toBe('ok');
+		expect(r.metrics.valid).toBe(3);
+		expect(r.matched).toBe(true);
+	});
+
+	it('explains that one or two stocks cannot show spreading', () => {
+		const one = [stock({ riseFrom: N - 10, rise: 0.5 })];
+		const r = spreadingStrength(
+			input(flatBench, one),
+			cfg({ spreading: { ...DEFAULT_STRENGTH_CONFIG.spreading, enabled: true } })
+		);
+		expect(r.status).toBe('unavailable');
+		expect(r.detail).toBe('Spreading needs at least 3 stocks, this has 1.');
+	});
+});
