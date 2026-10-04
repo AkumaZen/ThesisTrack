@@ -1,7 +1,10 @@
 // Browser-side cache for the sector rotation cards. A card's figures come from prices already
 // stored on the server, so once fetched they are kept here and reused when the person pages,
-// sorts or comes back to the page, instead of asking again. Refresh (which fetches new prices)
+// sorts, comes back to the page or reloads it, instead of asking again: in memory, and in this
+// tab's storage (tabCache.ts) so a reload finds them too. Refresh (which fetches new prices)
 // bypasses it. Requests are capped so a screenful of cards doesn't fire all at once.
+
+import { forgetTab, readTab, writeTab } from '$lib/tabCache';
 
 export interface CachedResponse<T = unknown> {
 	status: number;
@@ -31,10 +34,17 @@ async function slot<T>(work: () => Promise<T>): Promise<T> {
 /** Statuses worth remembering: an answer (200) or "no prices for it" (404). */
 const keep = (status: number) => status === 200 || status === 404;
 
+const tabKey = (url: string) => `card:${url}`;
+
 /** The remembered answer for `url`, if it is still fresh. */
 export function peekCard<T>(url: string, now = Date.now()): CachedResponse<T> | undefined {
 	const hit = store.get(url);
-	return hit && now - hit.at < CARD_CACHE_TTL_MS ? (hit.res as CachedResponse<T>) : undefined;
+	if (hit) return now - hit.at < CARD_CACHE_TTL_MS ? (hit.res as CachedResponse<T>) : undefined;
+	// Not in memory (the page was reloaded): what this tab kept, if still fresh.
+	const kept = readTab<{ at: number; res: CachedResponse }>(tabKey(url), CARD_CACHE_TTL_MS, now);
+	if (!kept) return undefined;
+	store.set(url, kept);
+	return kept.res as CachedResponse<T>;
 }
 
 /**
@@ -52,7 +62,11 @@ export function fetchCard<T>(url: string, { fresh = false } = {}): Promise<Cache
 		const res = await fetch(url);
 		const body = (await res.json().catch(() => null)) as T | null;
 		const out: CachedResponse<T> = { status: res.status, body };
-		if (keep(res.status)) store.set(url, { at: Date.now(), res: out });
+		if (keep(res.status)) {
+			const entry = { at: Date.now(), res: out };
+			store.set(url, entry);
+			writeTab(tabKey(url), entry, entry.at);
+		}
 		return out;
 	}).finally(() => inFlight.delete(url));
 	inFlight.set(url, request);
@@ -62,4 +76,5 @@ export function fetchCard<T>(url: string, { fresh = false } = {}): Promise<Cache
 /** Forgets remembered answers whose URL starts with `prefix` (all of them when omitted). */
 export function forgetCards(prefix = '') {
 	for (const url of store.keys()) if (url.startsWith(prefix)) store.delete(url);
+	forgetTab(tabKey(prefix));
 }
