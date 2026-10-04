@@ -8,6 +8,7 @@
 	import HeaderStats from '$lib/components/HeaderStats.svelte';
 	import CompanyCard from '$lib/components/CompanyCard.svelte';
 	import { filterCompaniesByName } from '$lib/companySearch';
+	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import type { PageData } from './$types';
 	import type { Company, MetricDef } from './+page';
 
@@ -15,7 +16,14 @@
 
 	let companies: Company[] = $derived(data.companies);
 	let metricDefsByKey: Record<string, MetricDef> = $derived(data.metricDefsByKey);
-	let companyQuery = $state('');
+	// The search and the place on the page are remembered for this tab (lib/viewMemory.ts).
+	const memory: ViewTracker<'theses'> = trackView({
+		view: 'theses',
+		userId: () => data.user?.id,
+		read: () => ({ query: companyQuery }),
+		apply: (s) => (companyQuery = s.query)
+	});
+	let companyQuery = $state(memory.initial.query);
 	let filteredCompanies = $derived(filterCompaniesByName(companies, companyQuery));
 </script>
 

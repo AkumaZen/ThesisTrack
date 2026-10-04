@@ -8,7 +8,6 @@
 	import { fetchCard, peekCard } from '$lib/valuation/cardCache';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
-	import { DEFAULT_PAGE_SIZE } from '$lib/viewMemory';
 	import { emptyStrengthView, passesStrength } from '$lib/valuation/strength';
 	import { TIMEFRAMES, type Timeframe } from '$lib/valuation/sectorRotation';
 	import { rotationBadge, ROTATION_TONE_CLASS, type SectorReturn } from '$lib/valuation/sectorRotation';
@@ -31,8 +30,8 @@
 		apply: (s) => {
 			timeframe = s.timeframe;
 			strengthPanel = s.strength;
-			page = 1;
-			pageSize = DEFAULT_PAGE_SIZE;
+			page = s.page;
+			pageSize = s.pageSize;
 		}
 	});
 
@@ -85,8 +84,9 @@
 		Object.fromEntries(cachedSeries.map(({ symbol, hit }) => [symbol, hit.body?.fetchedAt ?? null]))
 	);
 	let refreshing = $state<Record<string, string | null>>({});
+	// This subsector's companies only: the page is reused when moving to another subsector.
 	let loadedCount = $derived(
-		Object.values(companyData).filter((v) => Array.isArray(v) || v === null).length
+		data.symbols.filter((s) => Array.isArray(companyData[s]) || companyData[s] === null).length
 	);
 	let summary = $state<SectorReturn | 'error' | undefined>(undefined);
 

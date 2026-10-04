@@ -62,6 +62,15 @@ export const field = {
 	flag(fallback: boolean, opts: Opts = {}): FieldSpec<boolean> {
 		return { fallback, parse: (raw) => (typeof raw === 'boolean' ? raw : undefined), ...opts };
 	},
+	/** Free text such as a search box, capped in length and without control characters. */
+	text(maxLength: number, opts: Opts = {}): FieldSpec<string> {
+		return {
+			fallback: '',
+			parse: (raw) =>
+				typeof raw === 'string' && raw.length <= maxLength && !/[\u0000-\u001f]/.test(raw) ? raw : undefined,
+			...opts
+		};
+	},
 	int(min: number, max: number, fallback: number, opts: Opts = {}): FieldSpec<number> {
 		return {
 			fallback,
@@ -80,6 +89,11 @@ export type StateOf<S extends Schema> = {
 export const SECTOR_SORT_KEYS = ['rs1m', 'return1w', 'return1m', 'return3m', 'return6m', 'label'] as const;
 export const TIMEFRAME_KEYS = ['1W', '1M', '3M', '6M', '1Y'] as const;
 export const CHART_RANGE_KEYS = ['3M', '6M', '1Y'] as const;
+/** The breakout scanner's stage chips, by short name (the scanner page maps them to stages). */
+export const SCANNER_STAGE_KEYS = ['all', 'breakout', 'near', 'stage2', 'stage1', 'stage3', 'stage4', 'unclassified'] as const;
+export const SCANNER_SORT_KEYS = ['name', 'stage', 'price', 'distance', 'base', 'volume', 'rs', 'breakout'] as const;
+// The alert types of lib/valuation/alerts.ts, plus 'all' (a test keeps the two in step).
+export const ALERT_FILTER_KEYS = ['all', 'price_fair_value', 'sector_rotation', 'near_breakout', 'strength_volume'] as const;
 
 const scrollY = field.int(0, 10_000_000, 0);
 /** How many cards a list shows per page, and which page this tab is on. */
@@ -123,6 +137,32 @@ export const VIEWS = {
 		strength: panel(),
 		integrity: field.flag(false),
 		scrollY
+	},
+	/** The watchlist's columns and sort are saved on the server; only the place on the page is kept here. */
+	watchlist: { scrollY },
+	scanner: {
+		stage: field.oneOf(SCANNER_STAGE_KEYS, 'near', { lasting: true, url: 'stage' }),
+		sort: field.oneOf(SCANNER_SORT_KEYS, 'distance', { lasting: true, url: 'sort' }),
+		dir: field.oneOf(['asc', 'desc'] as const, 'asc', { lasting: true, url: 'dir' }),
+		basket: field.text(120, { lasting: true, url: 'basket' }),
+		query: field.text(80),
+		scrollY
+	},
+	alerts: {
+		type: field.oneOf(ALERT_FILTER_KEYS, 'all', { lasting: true, url: 'type' }),
+		unread: field.flag(false, { lasting: true }),
+		scrollY
+	},
+	/** Sector baskets (the manager), not sector rotation. */
+	baskets: { query: field.text(80), scrollY },
+	/** The thesis companies on the home page. */
+	theses: { query: field.text(80), scrollY },
+	thesisSectors: {
+		query: field.text(80),
+		layout: field.oneOf(['cards', 'table'] as const, 'cards', { lasting: true }),
+		sector: field.text(120),
+		niche: field.text(120),
+		scrollY
 	}
 } as const;
 export type ViewName = keyof typeof VIEWS;
@@ -161,8 +201,11 @@ function readJson(store: StorageLike | null, key: string): Record<string, unknow
 	}
 	return null;
 }
+// Set while signing out, so a last save as the page unloads cannot put back what was just cleared.
+let signingOut = false;
+
 function writeJson(store: StorageLike | null, key: string, value: unknown) {
-	if (!store) return;
+	if (!store || signingOut) return;
 	try {
 		store.setItem(key, JSON.stringify(value));
 	} catch {
@@ -277,9 +320,21 @@ export function resetAll(userId: number | null | undefined, stores: Stores = bro
 	removeWithPrefix(stores.local, `${PREFIX}${userId}:`);
 }
 
-/** On sign-out: no temporary state of anyone is left behind in this tab. */
+/** No temporary state of anyone is left behind in this tab (the sign-in page calls this too). */
 export function clearSessionState(stores: Stores = browserStores()) {
 	removeWithPrefix(stores.session, PREFIX);
+}
+
+/** On sign-out: clears this tab's state and saves nothing more until the page unloads. */
+export function endSession(stores: Stores = browserStores()) {
+	signingOut = true;
+	clearSessionState(stores);
+}
+/** True once signing out has begun: nothing more is written to this tab's storage. */
+export const savingStopped = () => signingOut;
+/** For tests: saving again after endSession. */
+export function _resumeSaving() {
+	signingOut = false;
 }
 
 // ---- last visited context and where a company was opened from ---------------------------
@@ -288,8 +343,10 @@ export interface Place {
 	path: string;
 	label: string;
 }
+// A sector or subsector, a company, or one of the other valuation tools. The two landing pages (the
+// watchlist and the list of sectors) are where "continue where you left off" is offered instead.
 const VISIT_PATH =
-	/^\/valuation\/(sector-rotation(\/[A-Za-z0-9_-]{1,80}){1,2}|company\/[A-Za-z0-9&._%-]{1,60})$/;
+	/^\/valuation\/(sector-rotation(\/[A-Za-z0-9_-]{1,80}){1,2}|company\/[A-Za-z0-9&._%-]{1,60}|stage-scanner|compare|alerts|sectors)$/;
 // Every valuation list a company can be opened from: the watchlist, sector rotation (any level),
 // the breakout scanner, compare, alerts and sector baskets.
 const ORIGIN_PATH =
@@ -300,11 +357,16 @@ const originOk = (path: string) => {
 	const [pathname, query = '', ...rest] = path.split('?');
 	return rest.length === 0 && ORIGIN_PATH.test(pathname) && ORIGIN_QUERY.test(query);
 };
+/** A place to continue from; the address may carry its query (sort, filters, compared companies). */
+const visitOk = (path: string) => {
+	const [pathname, query = '', ...rest] = path.split('?');
+	return rest.length === 0 && VISIT_PATH.test(pathname) && ORIGIN_QUERY.test(query);
+};
 const cleanLabel = (raw: unknown) =>
 	typeof raw === 'string' ? raw.replace(/\s+/g, ' ').trim().slice(0, 80) : '';
 
 export function rememberVisit(userId: number | null | undefined, place: Place, stores: Stores = browserStores(), now = Date.now()) {
-	if (!idOk(userId) || !VISIT_PATH.test(place.path)) return;
+	if (!idOk(userId) || !visitOk(place.path)) return;
 	const label = cleanLabel(place.label);
 	if (!label) return;
 	writeJson(stores.local, visitKey(userId), { v: 1, path: place.path, label, at: now });
@@ -316,7 +378,7 @@ export function readVisit(userId: number | null | undefined, stores: Stores = br
 	const label = cleanLabel(entry?.label);
 	const at = entry?.at;
 	const fresh = typeof at === 'number' && at <= now + 60_000 && now - at <= MAX_VISIT_AGE_MS;
-	if (entry?.v === 1 && typeof entry.path === 'string' && VISIT_PATH.test(entry.path) && label && fresh)
+	if (entry?.v === 1 && typeof entry.path === 'string' && visitOk(entry.path) && label && fresh)
 		return { path: entry.path, label };
 	if (entry) remove(stores.local, visitKey(userId)); // outdated or malformed
 	return null;
@@ -337,4 +399,26 @@ export function readOrigin(userId: number | null | undefined, symbol: string, st
 	if (entry?.v === 1 && typeof entry.path === 'string' && originOk(entry.path) && label)
 		return { path: entry.path, label };
 	return null;
+}
+
+// ---- arriving by a back link ------------------------------------------------------------
+
+const returnKey = (uid: number) => `${PREFIX}${uid}:return`;
+
+/**
+ * A back link to `path` was followed: the page there should open where the person left it, as
+ * the browser's own Back button does, rather than at the top.
+ */
+export function markReturn(userId: number | null | undefined, path: string, stores: Stores = browserStores()) {
+	if (!idOk(userId) || !path.startsWith('/')) return;
+	writeJson(stores.session, returnKey(userId), { v: 1, path: path.split(/[?#]/)[0] });
+}
+
+/** True, once, when the page at `pathname` was reached by a back link (see markReturn). */
+export function takeReturn(userId: number | null | undefined, pathname: string, stores: Stores = browserStores()): boolean {
+	if (!idOk(userId)) return false;
+	const entry = readJson(stores.session, returnKey(userId));
+	if (!entry) return false;
+	remove(stores.session, returnKey(userId));
+	return entry.v === 1 && entry.path === pathname;
 }

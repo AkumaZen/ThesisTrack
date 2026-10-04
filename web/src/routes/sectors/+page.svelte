@@ -6,6 +6,7 @@
 	// Write actions (create/add/remove/delete) still call refresh() directly.
 	import { api, ApiError } from '$lib/api';
 	import { session } from '$lib/session.svelte';
+	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import { OPERATING_MODEL_LABELS, STATUS_STYLES } from '$lib/format';
 	import type { PageData } from './$types';
 	import type { Sector, Company } from './+page';
@@ -18,13 +19,31 @@
 	let allCompanies = $derived(data.allCompanies);
 	let error = $state('');
 
-	let q = $state('');
-	let view = $state<'cards' | 'table'>('cards');
-	let sectorFilter = $state('');
-	let nicheFilter = $state('');
+	// Filters and the place on the page are remembered for this tab, cards or table for good
+	// (lib/viewMemory.ts).
+	const memory: ViewTracker<'thesisSectors'> = trackView({
+		view: 'thesisSectors',
+		userId: () => data.user?.id,
+		read: () => ({ query: q, layout: view, sector: sectorFilter, niche: nicheFilter }),
+		apply: (s) => {
+			q = s.query;
+			view = s.layout;
+			sectorFilter = s.sector;
+			nicheFilter = s.niche;
+		}
+	});
+	let q = $state(memory.initial.query);
+	let view = $state<'cards' | 'table'>(memory.initial.layout);
+	let sectorFilter = $state(memory.initial.sector);
+	let nicheFilter = $state(memory.initial.niche);
 
 	let sectorNames = $derived([...new Set(sectors.map((s) => s.name))].sort());
 	let nicheNames = $derived([...new Set(sectors.flatMap((s) => s.companies.map((c) => c.specific_niche)))].sort());
+	// A remembered sector or niche that no longer exists means no filter.
+	$effect(() => {
+		if (sectorFilter && !sectorNames.includes(sectorFilter)) sectorFilter = '';
+		if (nicheFilter && !nicheNames.includes(nicheFilter)) nicheFilter = '';
+	});
 
 	let filtered = $derived(
 		sectors

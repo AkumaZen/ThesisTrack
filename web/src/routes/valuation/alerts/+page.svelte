@@ -10,12 +10,24 @@
 	} from '$lib/valuation/alerts';
 	import { sectorApi } from '$lib/valuation/sectorClient';
 	import { describeStrengthConfig } from '$lib/valuation/strength';
+	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
+	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
-	let typeFilter = $state<AlertType | 'all'>('all');
-	let unreadOnly = $state(false);
+	// The type filter and "Unread only" are remembered for this person (lib/viewMemory.ts).
+	const memory: ViewTracker<'alerts'> = trackView({
+		view: 'alerts',
+		userId: () => data.user?.id,
+		read: () => ({ type: typeFilter, unread: unreadOnly }),
+		apply: (s) => {
+			typeFilter = s.type;
+			unreadOnly = s.unread;
+		}
+	});
+	let typeFilter = $state<AlertType | 'all'>(memory.initial.type);
+	let unreadOnly = $state(memory.initial.unread);
 
 	const visible = $derived(
 		data.alerts.filter(
@@ -258,6 +270,7 @@
 			disabled={busy === 'read' || data.unread === 0}
 			onclick={() => setRead('all', true)}>Mark all read</button
 		>
+		<ViewResetButton onReset={() => memory.reset()} />
 	</div>
 
 	<div class="al-checks">
@@ -395,7 +408,7 @@
 					</ul>
 				{/if}
 				<p class="sm-hint">
-					Rules use end-of-day data and are checked about every 2 hours, after the sector data
+					Rules use end-of-day data and are checked after each weekday's close, once the sector data
 					refreshes. Everyone on the team receives the alerts. "Check sectors &amp; breakouts now" runs them
 					immediately.
 				</p>

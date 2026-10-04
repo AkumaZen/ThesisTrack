@@ -3,6 +3,9 @@
 	import { untrack } from 'svelte';
 	import type { Stage, StageScanResult } from '$lib/valuation/stageScan';
 	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
+	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
+	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
+	import type { SCANNER_STAGE_KEYS } from '$lib/viewMemory';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -38,27 +41,56 @@
 		};
 	});
 
-	const STAGES: { id: Stage; short: string; tone: string }[] = [
-		{ id: 'Confirmed Stage 2 Breakout', short: 'Breakout', tone: 'good' },
-		{ id: 'Near Stage 2 Breakout', short: 'Near breakout', tone: 'watch' },
-		{ id: 'Stage 2 Advancing', short: 'Stage 2', tone: 'good-soft' },
-		{ id: 'Stage 1 Base', short: 'Stage 1 base', tone: 'neutral' },
-		{ id: 'Stage 3', short: 'Stage 3', tone: 'warn' },
-		{ id: 'Stage 4', short: 'Stage 4', tone: 'bad' },
-		{ id: 'Not classified / insufficient data', short: 'Unclassified', tone: 'neutral' }
+	type StageKey = Exclude<(typeof SCANNER_STAGE_KEYS)[number], 'all'>;
+	const STAGES: { id: Stage; key: StageKey; short: string; tone: string }[] = [
+		{ id: 'Confirmed Stage 2 Breakout', key: 'breakout', short: 'Breakout', tone: 'good' },
+		{ id: 'Near Stage 2 Breakout', key: 'near', short: 'Near breakout', tone: 'watch' },
+		{ id: 'Stage 2 Advancing', key: 'stage2', short: 'Stage 2', tone: 'good-soft' },
+		{ id: 'Stage 1 Base', key: 'stage1', short: 'Stage 1 base', tone: 'neutral' },
+		{ id: 'Stage 3', key: 'stage3', short: 'Stage 3', tone: 'warn' },
+		{ id: 'Stage 4', key: 'stage4', short: 'Stage 4', tone: 'bad' },
+		{ id: 'Not classified / insufficient data', key: 'unclassified', short: 'Unclassified', tone: 'neutral' }
 	];
 	const stageInfo = (s: Stage) => STAGES.find((x) => x.id === s)!;
-
-	let stageFilter = $state<Stage | 'all'>('Near Stage 2 Breakout');
-	let basketFilter = $state('');
-	let query = $state('');
+	const stageOf = (key: StageKey | 'all'): Stage | 'all' =>
+		key === 'all' ? 'all' : STAGES.find((s) => s.key === key)!.id;
+	const keyOf = (stage: Stage | 'all'): StageKey | 'all' =>
+		stage === 'all' ? 'all' : stageInfo(stage).key;
 
 	type SortKey = 'name' | 'stage' | 'price' | 'distance' | 'base' | 'volume' | 'rs' | 'breakout';
-	let sort = $state<{ key: SortKey; dir: 1 | -1 }>({ key: 'distance', dir: 1 });
 
 	const baskets = $derived(
 		[...new Set(Object.values(data.basketsBySymbol).flat())].sort((a, b) => a.localeCompare(b))
 	);
+	// A remembered basket that no longer exists means every basket.
+	const knownBasket = (b: string) => (b && baskets.includes(b) ? b : '');
+
+	// Stage, sort and basket are remembered for this person, the search and scroll for this tab
+	// (lib/viewMemory.ts); stage, sort and basket also show in the address, so a view can be shared.
+	const memory: ViewTracker<'scanner'> = trackView({
+		view: 'scanner',
+		userId: () => data.user?.id,
+		read: () => ({
+			stage: keyOf(stageFilter),
+			sort: sort.key,
+			dir: sort.dir === 1 ? 'asc' : 'desc',
+			basket: basketFilter,
+			query
+		}),
+		apply: (s) => {
+			stageFilter = stageOf(s.stage);
+			sort = { key: s.sort, dir: s.dir === 'asc' ? 1 : -1 };
+			basketFilter = knownBasket(s.basket);
+			query = s.query;
+		}
+	});
+	let stageFilter = $state<Stage | 'all'>(stageOf(memory.initial.stage));
+	let basketFilter = $state(untrack(() => knownBasket(memory.initial.basket)));
+	let query = $state(memory.initial.query);
+	let sort = $state<{ key: SortKey; dir: 1 | -1 }>({
+		key: memory.initial.sort,
+		dir: memory.initial.dir === 'asc' ? 1 : -1
+	});
 	const nameOf = (s: string) => data.names[s] ?? s;
 
 	const loaded = $derived(
@@ -261,6 +293,7 @@
 			disabled={exporting || rows.length === 0}
 			onclick={exportExcel}>{exporting ? 'Exporting…' : 'Excel'}</button
 		>
+		<ViewResetButton onReset={() => memory.reset()} />
 		<span class="hint" aria-live="polite" data-testid="scan-progress">
 			{#if pending.length > 0}
 				Scanning… {data.symbols.length - pending.length} of {data.symbols.length} done

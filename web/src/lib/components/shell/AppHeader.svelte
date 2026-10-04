@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page, navigating } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
-	import { clearSessionState } from '$lib/viewMemory';
+	import { endSession } from '$lib/viewMemory';
 	import { ROLE_LABELS, type SessionUser } from '$lib/auth';
 	import GlobalSearch from './GlobalSearch.svelte';
 	import AlertBell from './AlertBell.svelte';
@@ -135,7 +135,7 @@
 						{#if user.role === 'admin'}
 							<a href="/admin/users">Team and access</a>
 						{/if}
-						<form method="POST" action="/logout" onsubmit={() => clearSessionState()}>
+						<form method="POST" action="/logout" onsubmit={() => endSession()}>
 							<button type="submit" data-testid="logout">Sign out</button>
 						</form>
 					</div>
@@ -201,7 +201,7 @@
 			<div class="eyebrow">{user.username} · {ROLE_LABELS[user.role]}</div>
 			<a href="/account/password" class="drawer-link">Change password</a>
 			{#if user.role === 'admin'}<a href="/admin/users" class="drawer-link">Team and access</a>{/if}
-			<form method="POST" action="/logout" onsubmit={() => clearSessionState()}>
+			<form method="POST" action="/logout" onsubmit={() => endSession()}>
 				<button type="submit" class="drawer-link">Sign out</button>
 			</form>
 		</div>

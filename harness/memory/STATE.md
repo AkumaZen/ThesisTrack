@@ -23,6 +23,8 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
 - ALSO BEFORE DEPLOY: apply `web/drizzle/0011_allow_thesis_delete.sql` (admin delete of a company) and
   `web/drizzle/0012_strength_volume.sql` (Strength & Volume rules and filter prefs) and
   `web/drizzle/0013_fix_basket_symbols.sql` (renamed tickers in baskets: AGREVOIND, SPEL, AMIORG, TATAMOTORS) to production.
+- BEFORE DEPLOYING the view-memory fixes (2026-10-04): apply `web/drizzle/0014_strength_prefs_per_place.sql` to production
+  FIRST (adds `scope` to valuation.strength_filter_prefs; idempotent). Code without it fails to read or save Strength filters.
 - Known symbols with no price source: GUJGASLTD (Gujarat Gas, merged) and INDLMETER are in no Angel One list; remove or replace them in Sector baskets.
 - Strength & Volume (sector > subsector > company filters and team alerts): pure maths in
   `web/src/lib/valuation/strength.ts` (shared by the filter API and the alert checks), rules in
@@ -51,12 +53,14 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
   neon.ts); `neon link` and `neon deploy` pull Neon variables into the repo-root `.env`, which would
   replace the local DATABASE_URL: use `--no-env-pull` and check `.env` afterwards.
   Hobby plan notes: cron jobs run once a day only (see vercel.json).
-- Remembered browsing state (valuation sector, subsector and company views): `web/src/lib/viewMemory.ts`
-  (storage, validation, per-user keys `tt:v1:<userId>:...`) and `viewMemory.svelte.ts` (save, URL mirror,
-  scroll restore). sessionStorage holds tab state (open panels, scroll), localStorage the lasting display
-  preferences and last visited place; an explicit URL parameter wins. "Reset this view" is on each page,
-  "Reset all preferences" on Settings (`POST /api/valuation/me/reset`). Sign-out and the login page clear
-  temporary state. No migration needed.
+- Remembered browsing state: `web/src/lib/viewMemory.ts` (views: sector, subsector, company, watchlist, scanner,
+  alerts, baskets, theses, thesisSectors; per-user keys `tt:v1:<userId>:...`) and `viewMemory.svelte.ts` (save,
+  URL mirror, scroll restore on Back, refresh and `a.back-link` clicks via markReturn). sessionStorage holds tab
+  state, localStorage lasting preferences and the last visited place; the address wins, also on same-page links.
+  Sign-out (`endSession`) clears tab state and blocks later writes. Strength filters are saved per place
+  (level + scope) on the server; read-only accounts may write their own prefs (`PERSONAL_API_PREFIXES` in access.ts).
+  Downloaded card and watchlist figures are also kept in sessionStorage (`lib/tabCache.ts`, ~2.5 MB budget,
+  oldest dropped first) so a reload reuses them.
 
 ## Earlier history
 Phase: BUILD_PLAN.md v1 (P0-P6) COMPLETE. Now building user-requested work

@@ -1,15 +1,18 @@
 // Connects a page to the remembered view state in viewMemory.ts. Call trackView() once while the
 // component initialises: it returns the state to start from, then keeps it saved, mirrors the
 // shareable parts into the URL, and puts the scroll position back after back navigation or a
-// refresh (lists fill in progressively, so it waits for the page to be tall enough).
+// refresh, or after following a back link (lists fill in progressively, so it waits for the page
+// to be tall enough). A link that changes the address on the same page (another sector, or a
+// filter in the query) puts that place's state on the page.
 import { afterNavigate, beforeNavigate, replaceState } from '$app/navigation';
 import { page } from '$app/state';
-import { onMount } from 'svelte';
+import { onMount, untrack } from 'svelte';
 import {
 	defaultsOf,
 	loadView,
 	resetView,
 	saveView,
+	takeReturn,
 	VIEWS,
 	type FieldSpec,
 	type Schema,
@@ -71,20 +74,29 @@ export function trackView<V extends ViewName>(opts: {
 		if (url.search !== page.url.search) replaceState(url.pathname + url.search + url.hash, page.state);
 	}
 
+	/** The state the address asks for: its parameters, and the defaults for those it leaves out. */
+	function fromUrl(params: URLSearchParams): Tracked<V> {
+		// With no one's saved state, loadView gives exactly that: the address over the defaults.
+		const asked = loadView(view, null, '', params) as Record<string, unknown>;
+		const state: Record<string, unknown> = { ...opts.read() };
+		for (const [key, spec] of Object.entries(schema))
+			if ((spec as FieldSpec<unknown>).url) state[key] = asked[key];
+		return state as Tracked<V>;
+	}
+	const urlNames = Object.values(schema)
+		.map((spec) => (spec as FieldSpec<unknown>).url)
+		.filter((n): n is string => !!n);
+
 	// Save shortly after any change (and tell the URL).
 	$effect(() => {
 		const state = opts.read();
 		JSON.stringify(state); // read every field so the effect follows each of them
-		const sc = scopeNow();
-		if (!ready) return;
-		if (sc !== scope) {
-			// The same page component now shows another sector: start from what was saved for it.
-			scope = sc;
-			scrollY = 0;
-			opts.apply(loadView(view, userId, sc, page.url.searchParams) as Tracked<V>);
-			return;
-		}
-		mirrorToUrl(state);
+		// Another sector is arriving in this same component: afterNavigate puts its state on the
+		// page, and nothing is saved under the old one meanwhile.
+		if (!ready || scopeNow() !== scope) return;
+		// Only a change of state runs this, never a change of address: during a navigation the
+		// state on screen is still the old page's until afterNavigate puts the new one on.
+		untrack(() => mirrorToUrl(state));
 		clearTimeout(timer);
 		timer = setTimeout(persist, SAVE_DELAY_MS);
 		return () => clearTimeout(timer);
@@ -129,16 +141,38 @@ export function trackView<V extends ViewName>(opts: {
 	}
 
 	afterNavigate((nav) => {
+		const first = !ready;
 		ready = true;
-		// Back navigation and a refresh return to where the person was; opening the page from a
-		// link or the menu starts at the top as usual.
-		if (nav.type === 'popstate' || nav.type === 'enter') {
+		const params = nav.to?.url.searchParams ?? page.url.searchParams;
+		const sc = scopeNow();
+		if (sc !== scope) {
+			// The same page component now shows another sector: start from what was saved for it.
+			scope = sc;
+			opts.apply(stripScroll(loadView(view, userId, sc, params)));
+		} else if (!first && nav.from?.url.search !== nav.to?.url.search) {
+			// Same page, new address: what the address asks for wins. A plain link with no parameters
+			// (the menu entry for the page already open) leaves the page as it is.
+			if (nav.type === 'popstate' || urlNames.some((n) => params.has(n))) opts.apply(fromUrl(params));
+		}
+		// The address shows what is on screen from the start, so it can be copied and shared as is.
+		mirrorToUrl(opts.read());
+		// Back navigation, a refresh and a back link return to where the person was; opening the
+		// page from any other link or the menu starts at the top as usual.
+		const returning =
+			nav.type === 'popstate' || nav.type === 'enter' || takeReturn(userId, page.url.pathname);
+		if (returning) {
 			scrollY = (loadView(view, userId, scope) as { scrollY: number }).scrollY;
 			restoreScroll(scrollY);
 		} else {
 			scrollY = 0;
 		}
 	});
+
+	function stripScroll(state: ViewState<V>): Tracked<V> {
+		const rest: Record<string, unknown> = { ...state };
+		delete rest.scrollY;
+		return rest as Tracked<V>;
+	}
 
 	beforeNavigate(() => {
 		scrollY = Math.round(window.scrollY);
@@ -176,10 +210,7 @@ export function trackView<V extends ViewName>(opts: {
 		reset() {
 			resetView(view, userId, scope);
 			scrollY = 0;
-			const rest = Object.fromEntries(
-				Object.entries(defaultsOf(view)).filter(([key]) => key !== 'scrollY')
-			);
-			opts.apply(rest as unknown as Tracked<V>);
+			opts.apply(stripScroll(defaultsOf(view)));
 		}
 	};
 }

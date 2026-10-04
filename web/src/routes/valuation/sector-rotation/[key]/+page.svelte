@@ -7,7 +7,6 @@
 	import SectorExport from '$lib/valuation/components/SectorExport.svelte';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
 	import Pagination from '$lib/valuation/components/Pagination.svelte';
-	import { DEFAULT_PAGE_SIZE } from '$lib/viewMemory';
 	import { untrack } from 'svelte';
 	import { refreshSector } from '$lib/valuation/seriesRefresh';
 	import { fetchCard, peekCard } from '$lib/valuation/cardCache';
@@ -38,9 +37,10 @@
 			sortKey = s.sort;
 			sortDir = s.dir;
 			strengthPanel = s.strength;
-			page = 1;
-			pageSize = DEFAULT_PAGE_SIZE;
-			userSorted = false;
+			page = s.page;
+			pageSize = s.pageSize;
+			// A sort put back from memory counts as chosen, as on first load.
+			userSorted = s.sort !== 'rs1m' || s.dir !== 'desc';
 		}
 	});
 
@@ -96,7 +96,8 @@
 		)
 	);
 	const isRow = (v: CardState): v is SectorReturn => v != null && v !== 'error' && v !== 'loading';
-	let loadedCount = $derived(Object.values(sectorData).filter(isRow).length);
+	// This sector's cards only: the page is reused when moving to another sector.
+	let loadedCount = $derived(data.subsectors.filter((s) => isRow(sectorData[s.key])).length);
 	let systemicError = $state<string | null>(null);
 	let refreshing = $state<Record<string, string | null>>({});
 
@@ -202,9 +203,9 @@
 		<a class="back-link" href={resolve('/valuation/sector-rotation')}>&larr; Back to Sector Rotation</a>
 		<h1>{data.majorLabel}</h1>
 		<div class="sub">
-			Thematic sub-baskets measured against Nifty 50. Charts load when you ask for them, from
-			prices stored on the server (refreshed automatically after each weekday's close, or press Refresh on a card) —
-			{loadedCount} of {data.subsectors.length} loaded
+			Thematic sub-baskets measured against Nifty 50. Charts load as they scroll into view, from
+			prices stored on the server (refreshed automatically after each weekday's close, or press Refresh on a card).
+			{loadedCount} of {data.subsectors.length} loaded.
 		</div>
 	</div>
 </div>

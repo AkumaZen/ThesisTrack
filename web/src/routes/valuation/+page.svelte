@@ -1,12 +1,8 @@
-<script lang="ts" module>
-	import type { UserPrefs } from '$lib/valuation/prefs';
-	// The watchlist layout last chosen in this tab (see savePrefs).
-	let latestWatchlistPrefs: UserPrefs['watchlist'] | null = null;
-</script>
-
 <script lang="ts">
 	import AddCompanyPanel from '$lib/valuation/components/AddCompanyPanel.svelte';
 	import { untrack } from 'svelte';
+	import { tabWatchlistPrefs } from '$lib/valuation/tabPrefs';
+	import { trackView } from '$lib/viewMemory.svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -284,7 +280,7 @@
 	// The person's own layout, saved on the server (see lib/prefs.ts): which columns, in what
 	// order, the sort, and which view. Initial values come from the page load.
 	// svelte-ignore state_referenced_locally
-	const initialPrefs = latestWatchlistPrefs ?? (data.prefs ?? DEFAULT_PREFS).watchlist;
+	const initialPrefs = tabWatchlistPrefs.get() ?? (data.prefs ?? DEFAULT_PREFS).watchlist;
 	let columns = $state<ColumnId[]>(initialPrefs.columns);
 	let sortKey = $state<SortKey>(initialPrefs.sort.key);
 	let sortDir = $state<'asc' | 'desc'>(initialPrefs.sort.dir);
@@ -293,9 +289,11 @@
 	let lists = $state<NamedWatchlist[]>(data.watchlists);
 
 	let prefsTimer: ReturnType<typeof setTimeout> | undefined;
+	// True while a layout change could not be saved; it is sent again with the next change.
+	let prefsUnsaved = $state(false);
 	function sendPrefs() {
 		prefsTimer = undefined;
-		void fetch('/api/valuation/me/prefs', {
+		fetch('/api/valuation/me/prefs', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -303,12 +301,14 @@
 			}),
 			// Still delivered if the page is being left.
 			keepalive: true
-		}).catch(() => {});
+		})
+			.then((res) => (prefsUnsaved = !res.ok))
+			.catch(() => (prefsUnsaved = true));
 	}
 	function savePrefs() {
 		// Remembered for this browser tab too: the layout's copy of the preferences is not
 		// reloaded on client-side navigation, so coming back must not start from that stale copy.
-		latestWatchlistPrefs = { columns, sort: { key: sortKey, dir: sortDir }, view };
+		tabWatchlistPrefs.set({ columns, sort: { key: sortKey, dir: sortDir }, view });
 		clearTimeout(prefsTimer);
 		prefsTimer = setTimeout(sendPrefs, 300);
 	}
@@ -319,6 +319,9 @@
 			sendPrefs();
 		}
 	});
+
+	// The place on the page, so the Back button or a company's "Back to Watchlist" link returns to it.
+	trackView({ view: 'watchlist', userId: () => data.user?.id, read: () => ({}), apply: () => {} });
 
 	function sortBy(key: SortKey) {
 		if (sortKey === key) {
@@ -968,6 +971,11 @@
 					>
 				</div>
 				{#if exportError}<p class="team-error" role="alert">{exportError}</p>{/if}
+				{#if prefsUnsaved}
+					<p class="team-error" role="status">
+						Your layout could not be saved for next time. It is tried again with your next change.
+					</p>
+				{/if}
 			</div>
 
 			{#if activeList}

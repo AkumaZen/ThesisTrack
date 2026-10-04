@@ -2,7 +2,7 @@
 	import '$lib/valuation/styles/dashboard.css';
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { readVisit, rememberOrigin, rememberVisit, type Place } from '$lib/viewMemory';
+	import { markReturn, readVisit, rememberOrigin, rememberVisit, type Place } from '$lib/viewMemory';
 	import type { LayoutData } from './$types';
 
 	let { children, data }: { children: import('svelte').Snippet; data: LayoutData } = $props();
@@ -46,11 +46,24 @@
 		here = path;
 		lastPlace = readVisit(data.user?.id);
 		const label = pageTitle();
-		if (label && !LANDING.includes(path)) rememberVisit(data.user?.id, { path, label });
+		// With the query, so a compare or a filtered scanner comes back the same.
+		if (label && !LANDING.includes(path)) rememberVisit(data.user?.id, { path: path + (to?.url.search ?? ''), label });
 	});
 
-	const offer = $derived(lastPlace && LANDING.includes(here) && lastPlace.path !== here ? lastPlace : null);
+	// A "Back to ..." link returns to where the person was on that page, like the Back button.
+	function onClick(event: MouseEvent) {
+		const link = (event.target as Element | null)?.closest?.('a.back-link');
+		if (!(link instanceof HTMLAnchorElement) || event.button !== 0) return;
+		if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+		markReturn(data.user?.id, new URL(link.href).pathname);
+	}
+
+	const offer = $derived(
+		lastPlace && LANDING.includes(here) && lastPlace.path.split('?')[0] !== here ? lastPlace : null
+	);
 </script>
+
+<svelte:document onclick={onClick} />
 
 <!-- The valuation tools' stylesheet is scoped to .vd so it can never restyle thesis pages. -->
 <div class="vd">

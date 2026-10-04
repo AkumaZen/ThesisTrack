@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { ALERT_TYPES } from './valuation/alerts';
 import {
+	_resumeSaving,
+	ALERT_FILTER_KEYS,
 	clearSessionState,
 	defaultsOf,
+	endSession,
+	markReturn,
+	takeReturn,
 	loadView,
 	readOrigin,
 	readVisit,
@@ -233,6 +239,95 @@ describe('last visited context', () => {
 		const s = fresh();
 		s.local.setItem('tt:v1:1:last', JSON.stringify({ v: 1, path: '//evil.example', label: 'x', at: Date.now() }));
 		expect(readVisit(1, s)).toBeNull();
+	});
+});
+
+describe('the other valuation tools', () => {
+	it('can be continued from, with their address', () => {
+		const s = fresh();
+		for (const path of [
+			'/valuation/stage-scanner?stage=stage4',
+			'/valuation/compare?symbols=TCS,INFY',
+			'/valuation/alerts',
+			'/valuation/sectors'
+		]) {
+			rememberVisit(1, { path, label: 'Somewhere' }, s);
+			expect(readVisit(1, s)?.path).toBe(path);
+		}
+	});
+
+	it('refuse an address with odd characters', () => {
+		const s = fresh();
+		rememberVisit(1, { path: '/valuation/stage-scanner?x=<script>', label: 'x' }, s);
+		expect(readVisit(1, s)).toBeNull();
+	});
+});
+
+describe('breakout scanner', () => {
+	it('keeps stage, sort and basket for good, the search for the tab only', () => {
+		const s = fresh();
+		saveView('scanner', 1, '', { stage: 'stage4', sort: 'rs', dir: 'desc', basket: 'Banks', query: 'hdfc', scrollY: 50 }, s);
+		expect(loadView('scanner', 1, '', undefined, s)).toMatchObject({ stage: 'stage4', sort: 'rs', basket: 'Banks', query: 'hdfc' });
+		s.session.map.clear();
+		expect(loadView('scanner', 1, '', undefined, s)).toMatchObject({
+			stage: 'stage4',
+			sort: 'rs',
+			dir: 'desc',
+			basket: 'Banks',
+			query: ''
+		});
+	});
+
+	it('takes the stage and sort from the address', () => {
+		const s = fresh();
+		saveView('scanner', 1, '', { stage: 'stage4' }, s);
+		const v = loadView('scanner', 1, '', new URLSearchParams('stage=breakout&sort=volume&dir=desc'), s);
+		expect(v).toMatchObject({ stage: 'breakout', sort: 'volume', dir: 'desc' });
+		expect(loadView('scanner', 1, '', new URLSearchParams('stage=bogus'), s).stage).toBe('stage4');
+	});
+
+	it('drops search text that is too long or holds control characters', () => {
+		const s = fresh();
+		s.session.setItem('tt:v1:1:scanner::s', JSON.stringify({ v: 1, s: { query: 'a'.repeat(81) } }));
+		expect(loadView('scanner', 1, '', undefined, s).query).toBe('');
+		s.session.setItem('tt:v1:1:scanner::s', JSON.stringify({ v: 1, s: { query: 'a\u0007b' } }));
+		expect(loadView('scanner', 1, '', undefined, s).query).toBe('');
+	});
+});
+
+describe('alerts filter', () => {
+	it('covers every alert type', () => {
+		expect([...ALERT_FILTER_KEYS].sort()).toEqual(['all', ...ALERT_TYPES].sort());
+	});
+});
+
+describe('signing out', () => {
+	afterEach(() => _resumeSaving());
+
+	it('clears this tab and saves nothing more, even a last save as the page unloads', () => {
+		const s = fresh();
+		saveView('sector', 1, '', { sort: 'label' }, s);
+		endSession(s);
+		expect(s.session.length).toBe(0);
+		saveView('sector', 1, '', { sort: 'label', scrollY: 900 }, s);
+		markReturn(1, '/valuation', s);
+		expect(s.session.length).toBe(0);
+	});
+});
+
+describe('back links', () => {
+	it('mark the page they lead to, once', () => {
+		const s = fresh();
+		markReturn(1, '/valuation/sector-rotation?sort=label', s);
+		expect(takeReturn(1, '/valuation/sector-rotation', s)).toBe(true);
+		expect(takeReturn(1, '/valuation/sector-rotation', s)).toBe(false);
+	});
+
+	it('do not mark another page or another person', () => {
+		const s = fresh();
+		markReturn(1, '/valuation', s);
+		expect(takeReturn(2, '/valuation', s)).toBe(false);
+		expect(takeReturn(1, '/valuation/alerts', s)).toBe(false);
 	});
 });
 

@@ -10,6 +10,7 @@
 		type AnalysisSettings
 	} from '$lib/valuation/analysisSettings';
 	import { resetAll } from '$lib/viewMemory';
+	import { tabWatchlistPrefs } from '$lib/valuation/tabPrefs';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -65,10 +66,11 @@
 		resetting = true;
 		resetMessage = null;
 		resetAll(data.user?.id);
+		// This tab's copy of the watchlist layout too, or the watchlist would come back as it was.
+		tabWatchlistPrefs.clear();
 		try {
 			const res = await fetch('/api/valuation/me/reset', { method: 'POST' });
-			// Read-only accounts have nothing saved on the server, so a refusal there is fine.
-			if (!res.ok && res.status !== 403) throw new Error(`HTTP ${res.status}`);
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			await invalidateAll();
 			resetMessage = { ok: true, text: 'All your view preferences are back to the defaults.' };
 		} catch {

@@ -4,11 +4,19 @@
 	import BasketRow from '$lib/valuation/components/BasketRow.svelte';
 	import NewBasketForm from '$lib/valuation/components/NewBasketForm.svelte';
 	import { sectorApi } from '$lib/valuation/sectorClient';
+	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
-	let query = $state('');
+	// The filter and the place on the page are remembered for this tab (lib/viewMemory.ts).
+	const memory: ViewTracker<'baskets'> = trackView({
+		view: 'baskets',
+		userId: () => data.user?.id,
+		read: () => ({ query }),
+		apply: (s) => (query = s.query)
+	});
+	let query = $state(memory.initial.query);
 	// Which major sectors are expanded. Stays across edits (invalidateAll re-runs load, not this).
 	let expanded = $state<Record<string, boolean>>({});
 
