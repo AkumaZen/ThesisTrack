@@ -4331,3 +4331,21 @@
 		margin: 0 var(--space-2) var(--space-3) 0;
 	}
 }
+
+/* Sector cards: every card in a row stretches to the same height, the header reserves room for
+   a two-line title, and the link sits on the bottom edge - so charts, figures and links line up
+   across a row no matter how long a sector's name is. */
+.vd .sector-card-grid-item {
+	display: flex;
+}
+.vd .sector-card-grid-item > .sector-card {
+	flex: 1;
+	min-width: 0;
+}
+.vd .sector-card-head {
+	min-height: 4.25rem;
+}
+.vd .sector-card-link {
+	margin-top: auto;
+	padding-top: var(--space-2);
+}
