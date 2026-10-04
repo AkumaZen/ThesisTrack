@@ -25,6 +25,8 @@
 	import { runIntegrityChecks, worstIntegrityStatus } from '$lib/valuation/dataIntegrity';
 	import { analyzePeg } from '$lib/valuation/pegAnalysis';
 	import type { StageAnalysisResult } from '$lib/valuation/stageAnalysis';
+	import PriceChart from '$lib/valuation/components/PriceChart.svelte';
+	import type { PricePoint } from '$lib/valuation/priceChart';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
 	import StrengthWhy from '$lib/valuation/components/StrengthWhy.svelte';
 	import { emptyStrengthView } from '$lib/valuation/strength';
@@ -475,6 +477,36 @@
 	// they're loaded on demand rather than blocking the initial page render — same pattern as
 	// refreshPrice above.
 	let strengthView = $state(emptyStrengthView());
+	let chartPoints = $state<PricePoint[] | null>(null);
+	let chartError = $state<string | null>(null);
+	let chartLoading = $state(true);
+	// The price chart loads on its own as soon as the page opens (one request per visit).
+	$effect(() => {
+		const symbol = company.symbol;
+		let cancelled = false;
+		chartLoading = true;
+		chartError = null;
+		chartPoints = null;
+		fetch(`/api/valuation/company/${encodeURIComponent(symbol)}/price-chart`)
+			.then(async (res) => {
+				if (!res.ok)
+					throw new Error((await res.json().catch(() => null))?.message ?? `HTTP ${res.status}`);
+				return res.json();
+			})
+			.then((body: { points: PricePoint[] }) => {
+				if (!cancelled) chartPoints = body.points;
+			})
+			.catch((e) => {
+				if (!cancelled)
+					chartError = e instanceof Error ? e.message : 'Could not load the price chart.';
+			})
+			.finally(() => {
+				if (!cancelled) chartLoading = false;
+			});
+		return () => {
+			cancelled = true;
+		};
+	});
 	let stageResult = $state<StageAnalysisResult | null>(null);
 	let stageLoading = $state(false);
 	let stageError = $state<string | null>(null);
@@ -926,6 +958,19 @@
 			{/if}
 		</div>
 	{/if}
+
+	<div class="stage-panel pc-panel">
+		<div class="depth-head">
+			<span class="exhibit-cap" style="margin:0">Price chart (daily, 50 and 200 day averages)</span>
+		</div>
+		{#if chartLoading}
+			<div class="line-chart-empty">Loading price history…</div>
+		{:else if chartError}
+			<div class="price-error">{chartError}</div>
+		{:else if chartPoints}
+			<PriceChart points={chartPoints} />
+		{/if}
+	</div>
 
 	<div class="sv-company">
 		<StrengthPanel
