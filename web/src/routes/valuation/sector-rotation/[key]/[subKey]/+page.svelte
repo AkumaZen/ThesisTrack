@@ -2,6 +2,8 @@
 	import { resolve } from '$app/paths';
 	import ConstituentCard from '$lib/valuation/components/ConstituentCard.svelte';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
+	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import { emptyStrengthView, passesStrength } from '$lib/valuation/strength';
 	import { TIMEFRAMES, type Timeframe } from '$lib/valuation/sectorRotation';
 	import { rotationBadge, ROTATION_TONE_CLASS, type SectorReturn } from '$lib/valuation/sectorRotation';
@@ -9,7 +11,26 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let timeframe = $state<Timeframe>('3M');
+	function resetThisView() {
+		memory.reset();
+		strengthRef?.reset();
+	}
+
+	// Chart range, open panels and scroll position are remembered per subsector (lib/viewMemory.ts).
+	let strengthRef = $state<ReturnType<typeof StrengthPanel>>();
+	const memory: ViewTracker<'subsector'> = trackView({
+		view: 'subsector',
+		userId: () => data.user?.id,
+		scope: () => `${data.majorKey}/${data.key}`,
+		read: () => ({ timeframe, strength: strengthPanel }),
+		apply: (s) => {
+			timeframe = s.timeframe;
+			strengthPanel = s.strength;
+		}
+	});
+
+	let timeframe = $state<Timeframe>(memory.initial.timeframe);
+	let strengthPanel = $state(memory.initial.strength);
 	let strength = $state(emptyStrengthView());
 	const visibleSymbols = $derived(data.symbols.filter((s) => passesStrength(strength, s)));
 
@@ -102,12 +123,14 @@
 <div class="wrap">
 	<div style="margin-top:20px">
 		<StrengthPanel
+			bind:this={strengthRef}
 			level="companies"
 			parentKey={data.key}
 			kind="company"
 			scopeLabel={`the companies in ${data.label}`}
 			canSave={data.user?.role !== 'read_only'}
 			bind:view={strength}
+			bind:openState={strengthPanel}
 		/>
 	</div>
 
@@ -121,6 +144,7 @@
 				onclick={() => (timeframe = tf)}>{tf}</button
 			>
 		{/each}
+		<ViewResetButton onReset={resetThisView} />
 	</div>
 
 	{#if strength.active && strength.ready && !strength.error && visibleSymbols.length === 0}

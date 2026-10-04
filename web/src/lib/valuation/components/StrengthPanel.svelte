@@ -13,6 +13,7 @@
 		type StrengthResult,
 		type StrengthView
 	} from '$lib/valuation/strength';
+	import type { PanelState } from '$lib/viewMemory';
 
 	// The Strength & Volume filter, the same panel on every level of the sector -> subsector ->
 	// company journey. It sends its settings to /api/valuation/strength (the one calculation the
@@ -25,6 +26,7 @@
 		scopeLabel,
 		canSave = true,
 		view = $bindable(emptyStrengthView()),
+		openState = $bindable<PanelState>('auto'),
 		title = 'Strength & Volume'
 	}: {
 		level: StrengthLevel;
@@ -35,12 +37,16 @@
 		scopeLabel: string;
 		canSave?: boolean;
 		view?: StrengthView;
+		/** Remembered by the page: 'auto' follows the default until the person opens or closes it. */
+		openState?: PanelState;
 		title?: string;
 	} = $props();
 
 	let config = $state<StrengthConfig>(structuredClone(DEFAULT_STRENGTH_CONFIG));
 	let loadedPrefs = $state(false);
-	let open = $state(false);
+	// Open by default for a single company with filters on; otherwise closed until opened.
+	let openByDefault = $state(false);
+	const open = $derived(openState === 'auto' ? openByDefault : openState === 'open');
 	let customPeriod = $state(false);
 	let loading = $state(false);
 	let total = $state(0);
@@ -60,6 +66,26 @@
 			Number(kind === 'group' && config.spreading.enabled)
 	);
 
+	// What the server last stored for this level, so only a real change is sent.
+	let savedSnapshot = '';
+	function savePref(snapshot: string, lvl: StrengthLevel) {
+		if (snapshot === savedSnapshot) return;
+		savedSnapshot = snapshot;
+		// Remembered for next time (including "no filter"). Read-only people cannot write, so
+		// failure is fine.
+		void fetch('/api/valuation/strength/prefs', {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ level: lvl, config: JSON.parse(snapshot) })
+		}).catch(() => {});
+	}
+
+	/** Back to the default filter (everything off). Used by the page's "Reset this view". */
+	export function reset() {
+		config = structuredClone(DEFAULT_STRENGTH_CONFIG);
+		customPeriod = false;
+	}
+
 	onMount(async () => {
 		try {
 			const res = await fetch(`/api/valuation/strength/prefs?level=${level}`);
@@ -70,8 +96,9 @@
 		} catch {
 			// no saved settings: start from the defaults
 		}
+		savedSnapshot = JSON.stringify(config);
 		customPeriod = !PERIOD_PRESETS.some((p) => p.days === config.periodDays);
-		open = isStrengthActive(config, kind) && kind === 'company';
+		openByDefault = isStrengthActive(config, kind) && kind === 'company';
 		loadedPrefs = true;
 	});
 
@@ -86,7 +113,8 @@
 			view = emptyStrengthView();
 			total = matches = unavailableCount = 0;
 			loading = false;
-			return;
+			const quiet = setTimeout(() => savePref(snapshot, lvl), 600);
+			return () => clearTimeout(quiet);
 		}
 		const controller = new AbortController();
 		loading = true;
@@ -102,12 +130,7 @@
 				matches = result.rows.filter((r) => r.evaluation.matched).length;
 				unavailableCount = result.rows.filter((r) => r.evaluation.unavailable.length > 0).length;
 				view = { active: true, ready: true, error: null, asOf: result.asOf, byKey };
-				// Remember it for next time. Read-only people cannot write, so failure is fine.
-				void fetch('/api/valuation/strength/prefs', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ level: lvl, config })
-				}).catch(() => {});
+				savePref(snapshot, lvl);
 			} catch (e) {
 				if ((e as Error).name === 'AbortError') return;
 				view = { ...emptyStrengthView(), active: true, error: 'Could not calculate this filter.' };
@@ -188,7 +211,7 @@
 			class="sv-toggle"
 			aria-expanded={open}
 			aria-controls={fieldId('body')}
-			onclick={() => (open = !open)}
+			onclick={() => (openState = open ? 'closed' : 'open')}
 		>
 			<span class="sv-title">{title}</span>
 			<span class="sv-caret" aria-hidden="true">{open ? '▲' : '▼'}</span>

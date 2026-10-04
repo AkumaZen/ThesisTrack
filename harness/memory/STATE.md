@@ -28,6 +28,12 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
   `web/src/lib/valuation/strength.ts` (shared by the filter API and the alert checks), rules in
   `valuation.strength_rules`, per-subject state in `valuation.alert_state` (`strength:<rule>:<subject>`).
   End-of-day signals only; alerts are checked after each ~2h cache refresh and go to the whole team.
+- Remembered browsing state (valuation sector, subsector and company views): `web/src/lib/viewMemory.ts`
+  (storage, validation, per-user keys `tt:v1:<userId>:...`) and `viewMemory.svelte.ts` (save, URL mirror,
+  scroll restore). sessionStorage holds tab state (open panels, scroll), localStorage the lasting display
+  preferences and last visited place; an explicit URL parameter wins. "Reset this view" is on each page,
+  "Reset all preferences" on Settings (`POST /api/valuation/me/reset`). Sign-out and the login page clear
+  temporary state. No migration needed.
 
 ## Earlier history
 Phase: BUILD_PLAN.md v1 (P0-P6) COMPLETE. Now building user-requested work

@@ -28,6 +28,9 @@
 	import PriceChart from '$lib/valuation/components/PriceChart.svelte';
 	import type { PricePoint } from '$lib/valuation/priceChart';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
+	import { readOrigin } from '$lib/viewMemory';
+	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
 	import StrengthWhy from '$lib/valuation/components/StrengthWhy.svelte';
 	import { emptyStrengthView } from '$lib/valuation/strength';
 	import CompanyTeam from '$lib/valuation/components/CompanyTeam.svelte';
@@ -56,6 +59,29 @@
 	}
 
 	let { data }: { data: PageData } = $props();
+
+	function resetThisView() {
+		memory.reset();
+		strengthRef?.reset();
+	}
+
+	// Chart range, open panels and scroll position are remembered per company (lib/viewMemory.ts).
+	let strengthRef = $state<ReturnType<typeof StrengthPanel>>();
+	const memory: ViewTracker<'company'> = trackView({
+		view: 'company',
+		userId: () => data.user?.id,
+		scope: () => data.company.symbol,
+		read: () => ({ chartRange, strength: strengthPanel, integrity: showIntegrity }),
+		apply: (s) => {
+			chartRange = s.chartRange;
+			strengthPanel = s.strength;
+			showIntegrity = s.integrity;
+		}
+	});
+	let chartRange = $state(memory.initial.chartRange);
+	let strengthPanel = $state(memory.initial.strength);
+	// The list this company was opened from, so "back" returns to that same list.
+	const origin = $derived(readOrigin(data.user?.id, data.company.symbol));
 	// Initial value only; the $effect below re-syncs `company` on every navigation and
 	// lets a price refresh patch it in between without being overwritten.
 	// svelte-ignore state_referenced_locally
@@ -118,7 +144,7 @@
 		})
 	);
 	const integrityStatus = $derived(worstIntegrityStatus(integrityChecks));
-	let showIntegrity = $state(false);
+	let showIntegrity = $state(memory.initial.integrity);
 
 	const peg = $derived(analyzePeg({ stockPE: company.stockPE, history: company.history }));
 
@@ -607,7 +633,13 @@
 
 <div class="band">
 	<div class="band-inner">
-		<a class="back-link" href={resolve('/valuation')}>&larr; Watchlist</a>
+		{#if origin}
+			<a class="back-link" data-testid="back-to-origin" href={resolve(origin.path as '/valuation')}
+				>&larr; Back to {origin.label}</a
+			>
+		{:else}
+			<a class="back-link" href={resolve('/valuation')}>&larr; Watchlist</a>
+		{/if}
 		<button class="print-btn" onclick={handlePrint}>🖨 Print / PDF</button>
 		<button
 			class="print-btn print-btn-gap"
@@ -615,6 +647,7 @@
 			disabled={exporting}
 			onclick={exportExcel}>{exporting ? 'Exporting…' : 'Excel'}</button
 		>
+		<ViewResetButton onReset={resetThisView} extraClass="print-btn print-btn-gap" />
 		{#if exportError}<p class="export-error" role="alert">{exportError}</p>{/if}
 		<h1>
 			{company.name}
@@ -968,12 +1001,13 @@
 		{:else if chartError}
 			<div class="price-error">{chartError}</div>
 		{:else if chartPoints}
-			<PriceChart points={chartPoints} />
+			<PriceChart points={chartPoints} bind:range={chartRange} />
 		{/if}
 	</div>
 
 	<div class="sv-company">
 		<StrengthPanel
+			bind:this={strengthRef}
 			level="company"
 			parentKey={company.symbol}
 			kind="company"
@@ -981,6 +1015,7 @@
 			scopeLabel={`${company.symbol}`}
 			canSave={data.user?.role !== 'read_only'}
 			bind:view={strengthView}
+			bind:openState={strengthPanel}
 		/>
 		{#if strengthView.active}
 			<StrengthWhy evaluation={strengthView.byKey[company.symbol.toUpperCase()]} all />

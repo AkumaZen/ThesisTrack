@@ -9,6 +9,7 @@
 		VALUATION_FIELDS,
 		type AnalysisSettings
 	} from '$lib/valuation/analysisSettings';
+	import { resetAll } from '$lib/viewMemory';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -51,6 +52,33 @@
 		(draft[group] as unknown as Record<string, number>)[key];
 	function setValue(group: GroupId, key: string, v: number) {
 		(draft[group] as unknown as Record<string, number>)[key] = v;
+	}
+
+	let resetMessage = $state<{ ok: boolean; text: string } | null>(null);
+	let resetting = $state(false);
+
+	// Clears what this browser remembers for the signed-in person, and their saved display
+	// preferences and filters on the server. Saved alert rules and valuations are untouched.
+	async function resetAllPreferences() {
+		if (!confirm('Reset all your view preferences to the defaults? Your alert rules are not affected.'))
+			return;
+		resetting = true;
+		resetMessage = null;
+		resetAll(data.user?.id);
+		try {
+			const res = await fetch('/api/valuation/me/reset', { method: 'POST' });
+			// Read-only accounts have nothing saved on the server, so a refusal there is fine.
+			if (!res.ok && res.status !== 403) throw new Error(`HTTP ${res.status}`);
+			await invalidateAll();
+			resetMessage = { ok: true, text: 'All your view preferences are back to the defaults.' };
+		} catch {
+			resetMessage = {
+				ok: false,
+				text: 'Remembered views on this browser were cleared, but your saved preferences could not be reset. Try again.'
+			};
+		} finally {
+			resetting = false;
+		}
 	}
 
 	async function send(body: unknown, done: string) {
@@ -159,4 +187,23 @@
 			</p>
 		{/if}
 	</form>
+
+	<fieldset class="settings-group" data-testid="settings-reset-all">
+		<legend>Your view preferences</legend>
+		<p class="hint">
+			Sorting, chart ranges, open panels, filters and the figures on sector cards are remembered for you
+			alone. This returns all of them to the defaults. Your alert rules and saved valuations are not
+			affected.
+		</p>
+		<div class="settings-actions">
+			<button class="link-btn" type="button" disabled={resetting} onclick={resetAllPreferences}
+				>Reset all preferences</button
+			>
+		</div>
+		{#if resetMessage}
+			<p class={resetMessage.ok ? 'hint' : 'team-error'} role={resetMessage.ok ? 'status' : 'alert'}>
+				{resetMessage.text}
+			</p>
+		{/if}
+	</fieldset>
 </div>

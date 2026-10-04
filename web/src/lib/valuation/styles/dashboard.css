@@ -757,7 +757,8 @@
 
 
 .vd .sector-sort-dir,
-.vd .sector-export-btn {
+.vd .sector-export-btn,
+.vd .vm-reset {
 	font-family: inherit;
 	font-size: 12px;
 	padding: 5px 10px;
@@ -770,7 +771,8 @@
 
 
 .vd .sector-sort-dir:hover,
-.vd .sector-export-btn:hover {
+.vd .sector-export-btn:hover,
+.vd .vm-reset:hover {
 	border-color: var(--green);
 	color: var(--green);
 }
@@ -4680,3 +4682,20 @@
 .vd .pc-cross { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; }
 .vd .pc-dot { fill: var(--bg); stroke: var(--ink); stroke-width: 2; }
 .vd .pc-note { margin: var(--space-2) 0 0; font-size: 12px; color: var(--muted); }
+
+/* Remembered browsing state: the "continue where you left off" bar and the reset button. */
+.vd .vm-reset { margin-left: auto; }
+.vd .vm-continue {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2);
+	margin: 0 0 var(--space-3);
+	padding: 8px 12px;
+	border: var(--border-w) solid var(--ink);
+	background: var(--paper);
+	box-shadow: 3px 3px 0 var(--ink);
+	font-size: 13px;
+}
+.vd .vm-continue a { font-weight: 700; color: var(--ink); }
+.vd .vm-continue a:hover { color: var(--green); }

@@ -4,14 +4,14 @@
 	// Daily close with 50- and 200-day moving averages and a volume strip. Hover or use the arrow
 	// keys to read any session. The averages are drawn from the full history, so the 200-day line
 	// is complete across the visible range whenever the stock has 200+ sessions behind it.
-	let { points }: { points: PricePoint[] } = $props();
+	let { points, range = $bindable('1Y') }: { points: PricePoint[]; range?: (typeof RANGES)[number]['label'] } =
+		$props();
 
 	const RANGES = [
 		{ label: '3M', bars: 63 },
 		{ label: '6M', bars: 126 },
 		{ label: '1Y', bars: 252 }
 	] as const;
-	let range = $state<(typeof RANGES)[number]['label']>('1Y');
 	let hover = $state<number | null>(null);
 	let frame = $state<HTMLDivElement>();
 

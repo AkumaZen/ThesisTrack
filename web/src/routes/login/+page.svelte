@@ -1,10 +1,16 @@
 <script lang="ts">
 	import type { ActionData, PageData } from './$types';
 	import AuthFrame from '$lib/components/shell/AuthFrame.svelte';
+	import { onMount } from 'svelte';
+	import { clearSessionState } from '$lib/viewMemory';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let showPassword = $state(false);
 	let submitting = $state(false);
+
+	// Reaching the sign-in page (signed out, or the session ran out) leaves no one's temporary
+	// browsing state behind for the next person to sign in.
+	onMount(() => clearSessionState());
 </script>
 
 <svelte:head>

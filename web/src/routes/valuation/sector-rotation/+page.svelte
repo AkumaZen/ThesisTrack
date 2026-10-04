@@ -7,11 +7,36 @@
 	import SectorCard from '$lib/valuation/components/SectorCard.svelte';
 	import SectorExport from '$lib/valuation/components/SectorExport.svelte';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
+	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
+	import { saveDefaultCardMetrics } from '$lib/valuation/viewReset';
 	import { emptyStrengthView, passesStrength } from '$lib/valuation/strength';
 	import type { SectorReturn } from '$lib/valuation/sectorRotation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	async function resetThisView() {
+		memory.reset();
+		strengthRef?.reset();
+		cardMetrics = [...DEFAULT_SECTOR_CARD_METRICS];
+		await saveDefaultCardMetrics();
+	}
+
+	// Sort, open panels and scroll position are remembered for this person (see lib/viewMemory.ts).
+	let strengthRef = $state<ReturnType<typeof StrengthPanel>>();
+	const memory: ViewTracker<'sector'> = trackView({
+		view: 'sector',
+		userId: () => data.user?.id,
+		read: () => ({ sort: sortKey, dir: sortDir, strength: strengthPanel, importer: importOpen }),
+		apply: (s) => {
+			sortKey = s.sort;
+			sortDir = s.dir;
+			strengthPanel = s.strength;
+			importOpen = s.importer;
+			userSorted = false;
+		}
+	});
 
 	// The person's own choice of figures on each card (saved on the server, see lib/prefs.ts).
 	// svelte-ignore state_referenced_locally
@@ -34,7 +59,7 @@
   ]
 }`;
 
-	let importOpen = $state(false);
+	let importOpen = $state(memory.initial.importer);
 	let importText = $state('');
 	let importing = $state(false);
 	let importError = $state<string | null>(null);
@@ -99,8 +124,9 @@
 		{ key: 'return6m', label: '6M return' },
 		{ key: 'label', label: 'Name' }
 	];
-	let sortKey = $state<SortKey>('rs1m');
-	let sortDir = $state<'asc' | 'desc'>('desc');
+	let sortKey = $state<SortKey>(memory.initial.sort);
+	let sortDir = $state<'asc' | 'desc'>(memory.initial.dir);
+	let strengthPanel = $state(memory.initial.strength);
 	// Cards stay in their static, unsorted order while progressively loading — re-sorting after
 	// every single card arrives made the whole grid visibly reshuffle dozens of times in a row.
 	// Once every card has loaded, the grid settles into sorted order in one smooth animated move
@@ -301,11 +327,13 @@
 		</div>
 
 		<StrengthPanel
+			bind:this={strengthRef}
 			level="sectors"
 			kind="group"
 			scopeLabel="every sector"
 			canSave={data.user?.role !== 'read_only'}
 			bind:view={strength}
+			bind:openState={strengthPanel}
 		/>
 
 		<div class="sector-sort-bar">
@@ -324,6 +352,7 @@
 				{sortDir === 'asc' ? '▲ Ascending' : '▼ Descending'}
 			</button>
 			<CardMetricsChooser metrics={cardMetrics} onChange={(m) => (cardMetrics = m)} />
+			<ViewResetButton onReset={resetThisView} />
 			<SectorExport
 				title="Sector rotation"
 				filename="sector-rotation"
