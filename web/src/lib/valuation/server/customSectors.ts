@@ -137,7 +137,7 @@ export const CUSTOM_SECTORS: CustomSector[] = [
 	{
 		key: 'semicon_chemicals',
 		label: 'Specialty Chemicals',
-		symbols: ['NAVINFLUOR', 'JUBLINGREA', 'AMIORG']
+		symbols: ['NAVINFLUOR', 'JUBLINGREA', 'ACUTAAS']
 	},
 	{ key: 'semicon_fluoropolymers', label: 'Fluoropolymers', symbols: ['FLUOROCHEM'] },
 	{ key: 'semicon_ultrapure_water', label: 'Ultrapure Water', symbols: ['THERMAX', 'IONEXCHANG'] },
@@ -151,7 +151,7 @@ export const CUSTOM_SECTORS: CustomSector[] = [
 	{
 		key: 'osat_atmp',
 		label: 'OSAT / ATMP',
-		symbols: ['CGPOWER', 'KAYNES', 'SPEL', 'SAHASRA']
+		symbols: ['CGPOWER', 'KAYNES', 'SPELS', 'SAHASRA']
 	},
 	{
 		key: 'ems_system_integration',
@@ -184,7 +184,7 @@ export const CUSTOM_SECTORS: CustomSector[] = [
 		key: 'ev_auto_oems',
 		label: 'EV / Auto OEMs',
 		symbols: [
-			'TATAMOTORS',
+			'TMPV',
 			'M&M',
 			'OLAELEC',
 			'ATHERENERG',
@@ -600,7 +600,7 @@ export const CUSTOM_SECTORS: CustomSector[] = [
 			'DHANUKA',
 			'RALLIS',
 			'INSECTICID',
-			'AGREVOIND',
+			'BAYERCROP',
 			'SHARDACROP'
 		]
 	},

@@ -223,16 +223,46 @@ async function getAccessToken(): Promise<string> {
 	return cachedToken.token;
 }
 
-interface ScripEntry {
+export interface ScripEntry {
 	token: string;
 	symbol: string;
 	name: string;
 	exch_seg: string;
+	instrumenttype?: string;
 }
 
 let scripIndex: Map<string, ScripEntry> | null = null;
 let scripIndexFetchedAt = 0;
 const SCRIP_INDEX_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** NSE series we can read daily candles for, best first. EQ is the normal board; BE is
+ *  trade-to-trade; SM is the SME board (SAHASRA-SM and friends); RR and IV are REITs and InvITs
+ *  (EMBASSY-RR); BZ is a surveillance series some listed names sit in (RAJESHEXPO-BZ). */
+const NSE_SERIES_RANK: Record<string, number> = { EQ: 0, BE: 1, SM: 2, RR: 3, IV: 3, BZ: 4 };
+
+/** Maps a ticker to the one listing the app reads prices from: the best NSE series, and for a
+ *  name Angel One lists only on BSE (SPICEJET, ASMTEC) that BSE equity listing. Exported so the
+ *  resolution rules can be tested without the network. */
+export function buildScripIndex(entries: ScripEntry[]): Map<string, ScripEntry> {
+	const index = new Map<string, ScripEntry>();
+	const rank = (symbol: string) => NSE_SERIES_RANK[symbol.split('-').pop() ?? ''] ?? -1;
+	for (const entry of entries) {
+		if (entry.exch_seg !== 'NSE' || !entry.symbol.includes('-')) continue;
+		const r = rank(entry.symbol);
+		if (r === -1) continue;
+		const key = entry.name.toUpperCase();
+		const existing = index.get(key);
+		if (!existing || r < rank(existing.symbol)) index.set(key, entry);
+	}
+	// BSE only fills names with no NSE listing. A BSE equity row has no suffix and no instrument type.
+	for (const entry of entries) {
+		if (entry.exch_seg !== 'BSE' || entry.symbol.includes('-') || entry.instrumenttype) continue;
+		if (entry.symbol !== entry.name) continue;
+		const key = entry.name.toUpperCase();
+		if (!index.has(key)) index.set(key, entry);
+	}
+	return index;
+}
 
 async function getScripIndex(): Promise<Map<string, ScripEntry>> {
 	if (scripIndex && Date.now() - scripIndexFetchedAt < SCRIP_INDEX_TTL_MS) {
@@ -245,21 +275,7 @@ async function getScripIndex(): Promise<Map<string, ScripEntry>> {
 	}
 	const entries = (await res.json()) as ScripEntry[];
 
-	const index = new Map<string, ScripEntry>();
-	// Preference order when a name has multiple listings: main-board EQ, then trade-to-trade BE,
-	// then NSE SME board (-SM) — SME symbols (e.g. AIMTRON-SM, SAHASRA-SM) would otherwise be
-	// silently dropped even though Angel One serves live data for them.
-	const rank = (symbol: string) =>
-		symbol.endsWith('-EQ') ? 0 : symbol.endsWith('-BE') ? 1 : symbol.endsWith('-SM') ? 2 : -1;
-	for (const entry of entries) {
-		if (entry.exch_seg !== 'NSE') continue;
-		if (rank(entry.symbol) === -1) continue;
-		const key = entry.name.toUpperCase();
-		const existing = index.get(key);
-		if (!existing || rank(entry.symbol) < rank(existing.symbol)) {
-			index.set(key, entry);
-		}
-	}
+	const index = buildScripIndex(entries);
 
 	scripIndex = index;
 	scripIndexFetchedAt = Date.now();
@@ -292,7 +308,7 @@ async function fetchLtpUncached(symbol: string): Promise<number | null> {
 			method: 'POST',
 			headers: buildHeaders(token, apiKey),
 			body: JSON.stringify({
-				exchange: 'NSE',
+				exchange: scrip.exch_seg,
 				tradingsymbol: scrip.symbol,
 				symboltoken: scrip.token
 			})
@@ -399,7 +415,12 @@ async function fetchDailyCandlesUncached(symbol: string, days: number): Promise<
 
 	const to = new Date();
 	const from = new Date(to.getTime() - days * 24 * 60 * 60 * 1000);
-	return fetchCandlesByToken('NSE', scrip.token, formatDateForAngel(from), formatDateForAngel(to));
+	return fetchCandlesByToken(
+		scrip.exch_seg,
+		scrip.token,
+		formatDateForAngel(from),
+		formatDateForAngel(to)
+	);
 }
 
 /** Daily OHLCV candles for an NSE index by its Angel One symbol token (see
@@ -481,7 +502,7 @@ async function fetchMarketDepthUncached(symbol: string): Promise<MarketDepth | n
 		return fetch(`${ROOT_URL}${QUOTE_PATH}`, {
 			method: 'POST',
 			headers: buildHeaders(token, apiKey),
-			body: JSON.stringify({ mode: 'FULL', exchangeTokens: { NSE: [scrip.token] } })
+			body: JSON.stringify({ mode: 'FULL', exchangeTokens: { [scrip.exch_seg]: [scrip.token] } })
 		});
 	};
 

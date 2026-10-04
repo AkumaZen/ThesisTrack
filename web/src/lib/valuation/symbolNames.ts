@@ -6,22 +6,19 @@
 //
 // Regenerate by re-running the resolution script for any newly-added symbols and merging the
 // result in here — never hand-guess a company name.
-// Unresolved at generation time (Screener 404/rate-limit) — falls back to the raw symbol:
-// AMIORG, GUJGASLTD, TATAMOTORS
-// (ASMTEC and SPEL resolved on a later pass — see their entries below.)
-//
-// AMIORG, GUJGASLTD, and TATAMOTORS deliberately stay unresolved rather than being
-// hand-filled: querying Screener by name surfaces what look like real corporate-action
-// changes (Ami Organics search returns "Acutaas Chemicals Ltd"; Gujarat Gas returns a
-// "(Merged)" entity under a different symbol GUJRATGAS; Tata Motors returns a 2025 demerger
-// into separate TMCV/TMPV entities) rather than a clean 1:1 name for the exact ticker this
-// app already uses — resolving these needs a human to confirm which entity is authoritative
-// for the existing NSE symbol, not a guess.
+// Symbols renamed by corporate actions, so the baskets now use the current NSE ticker
+// (confirmed against Angel One's instrument list, which has no listing under the old one):
+// AGREVOIND -> BAYERCROP (Bayer Cropscience), SPEL -> SPELS, AMIORG -> ACUTAAS (Ami Organics
+// became Acutaas Chemicals), TATAMOTORS -> TMPV (the 2025 demerger; same instrument token).
+// Still unresolved, no listing found anywhere: GUJGASLTD (Gujarat Gas, merged) and INDLMETER.
+// They fall back to the raw symbol and show "unavailable" until someone removes or replaces them.
 
 export const SYMBOL_NAMES: Record<string, string> = {
 	'360ONE': '360 ONE WAM Ltd',
 	AADHARHFC: 'Aadhar Housing Finance Ltd',
 	AARTIDRUGS: 'Aarti Drugs Ltd',
+	ACUTAAS: 'Acutaas Chemicals Ltd',
+	TMPV: 'Tata Motors Passenger Vehicles Ltd',
 	AARTIIND: 'Aarti Industries Ltd',
 	AAVAS: 'AAVAS Financiers Ltd',
 	ABB: 'ABB India Ltd',
@@ -37,7 +34,7 @@ export const SYMBOL_NAMES: Record<string, string> = {
 	AEQUS: 'Aequs Ltd',
 	AEROFLEX: 'Aeroflex Industries Ltd',
 	AGARWALEYE: 'Dr Agarwals Health Care Ltd',
-	AGREVOIND: 'Bayer Cropscience India Ltd - Merged',
+	BAYERCROP: 'Bayer Cropscience Ltd',
 	AHLUCONT: 'Ahluwalia Contracts (India) Ltd',
 	AIMTRON: 'Aimtron Electronics Ltd',
 	AKSHOPTFBR: 'Aksh Optifibre Ltd',
@@ -404,7 +401,7 @@ export const SYMBOL_NAMES: Record<string, string> = {
 	SONACOMS: 'Sona BLW Precision Forgings Ltd',
 	SONATSOFTW: 'Sonata Software Ltd',
 	SPANDANA: 'Spandana Sphoorty Financial Ltd',
-	SPEL: 'Spel Semiconductor Ltd',
+	SPELS: 'SPEL Semiconductor Ltd',
 	SPICEJET: 'SpiceJet Ltd',
 	SRF: 'SRF Ltd',
 	STARHEALTH: 'Star Health & Allied Insurance Company Ltd',
