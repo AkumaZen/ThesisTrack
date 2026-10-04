@@ -112,10 +112,12 @@ function parseNumber(text: string | undefined | null): number | null {
  * Confirmed against RELIANCE (real consolidated+standalone), AHCL (real consolidated+standalone),
  * and ANLON (standalone_only, silent fallback — no "Consolidated"/"Standalone" prefix or toggle link).
  */
-function detectBasis($: cheerio.CheerioAPI): Basis {
+export function detectBasis($: cheerio.CheerioAPI): Basis {
+	// Screener wraps this text across lines (a newline between "Consolidated" and "Figures"), so
+	// match any whitespace between the words.
 	const subText = $('#profit-loss p.sub').first().text();
-	if (/Consolidated Figures/i.test(subText)) return 'consolidated';
-	if (/Standalone Figures/i.test(subText)) return 'standalone';
+	if (/Consolidated\s+Figures/i.test(subText)) return 'consolidated';
+	if (/Standalone\s+Figures/i.test(subText)) return 'standalone';
 	return 'standalone_only';
 }
 

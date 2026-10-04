@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	KEY_RE,
+	bseFallback,
 	SYMBOL_RE,
 	normalizeSymbol,
 	resolveSymbolMatch,
@@ -66,5 +67,23 @@ describe('resolveSymbolMatch', () => {
 
 	it('returns nothing for no hits', () => {
 		expect(resolveSymbolMatch('ZZZ', [])).toEqual({ match: null, suggestions: [] });
+	});
+});
+
+describe('bseFallback', () => {
+	const asm = { symbol: '526433', name: 'ASM Technologies Ltd' };
+	it('uses the BSE-code page carrying the known company name', () => {
+		expect(bseFallback([asm, { symbol: 'ASMS', name: 'Bartronics' }], 'ASM Technologies Ltd')).toEqual(asm);
+		expect(bseFallback([asm], 'ASM Technologies Limited.')).toEqual(asm); // only one hit
+	});
+	it('uses the only company the search returned when the name is unknown', () => {
+		expect(bseFallback([asm], null)).toEqual(asm);
+	});
+	it('never picks between several unnamed candidates or a different company', () => {
+		const other = { symbol: '500123', name: 'ASM Foods Ltd' };
+		expect(bseFallback([asm, other], null)).toBeNull();
+		expect(bseFallback([asm, other], 'Something Else Ltd')).toBeNull();
+		expect(bseFallback([{ symbol: 'ASMS', name: 'ASM Technologies Ltd' }], null)).toBeNull();
+		expect(bseFallback([], 'ASM Technologies Ltd')).toBeNull();
 	});
 });

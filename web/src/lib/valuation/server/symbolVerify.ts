@@ -1,14 +1,7 @@
 import { isListedOnAngelOne } from './angelone';
 import { rememberSymbolName } from './sectorStore';
-import {
-	SYMBOL_RE,
-	normalizeSymbol,
-	resolveSymbolMatch,
-	type SymbolSuggestion
-} from '../sectorEdit';
-
-const USER_AGENT =
-	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+import { lookupScreenerPage, type ScreenerLookup } from './screenerSlug';
+import { SYMBOL_RE, normalizeSymbol, type SymbolSuggestion } from '../sectorEdit';
 
 export type VerifyResult =
 	| { ok: true; symbol: string; name: string; listedOnAngelOne: boolean }
@@ -16,7 +9,8 @@ export type VerifyResult =
 
 /**
  * Enforces the project's "never guess a symbol" rule inside the app: a symbol is accepted only
- * when Screener.in returns a company whose own slug is exactly that symbol. Fuzzy matches are
+ * when Screener.in returns a company whose own slug is exactly that symbol, or (for a company
+ * Screener lists only by BSE code) that BSE-code page under the same name. Fuzzy matches are
  * returned as suggestions for a human to pick, never auto-accepted. The real company name is
  * stored so cards can show names rather than tickers. `listedOnAngelOne` is a separate flag
  * (not a rejection): such a company can still be tracked, it just won't have live charts.
@@ -27,35 +21,37 @@ export async function verifySymbol(raw: string): Promise<VerifyResult> {
 		return { ok: false, reason: `"${raw}" isn't a valid NSE symbol shape.`, suggestions: [] };
 	}
 
-	let hits: { name?: string; url?: string }[];
+	let found: ScreenerLookup;
 	try {
-		const res = await fetch(
-			`https://www.screener.in/api/company/search/?q=${encodeURIComponent(symbol)}`,
-			{ headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' } }
-		);
-		if (!res.ok) throw new Error(`HTTP ${res.status}`);
-		hits = (await res.json()) as { name?: string; url?: string }[];
+		found = await lookupScreenerPage(symbol);
 	} catch (e) {
 		throw new Error(`Couldn't reach Screener.in to verify ${symbol}: ${(e as Error).message}`, {
 			cause: e
 		});
 	}
-
-	const { match, suggestions } = resolveSymbolMatch(symbol, hits);
-	if (!match) {
+	if (found.kind === 'none') {
 		return {
 			ok: false,
 			reason: `Screener.in has no company with the exact symbol "${symbol}".`,
-			suggestions
+			suggestions: found.suggestions
 		};
 	}
 
-	await rememberSymbolName(match.symbol, match.name);
-	let listedOnAngelOne = false;
-	try {
-		listedOnAngelOne = await isListedOnAngelOne(match.symbol);
-	} catch {
-		// Scrip master unreachable (e.g. credentials/network) - don't fail verification over it.
+	const listed = async (s: string) => {
+		try {
+			return await isListedOnAngelOne(s);
+		} catch {
+			return false; // Scrip master unreachable (e.g. credentials/network) - don't fail over it.
+		}
+	};
+	// A company Screener lists only by its BSE code keeps its NSE ticker when Angel One prices
+	// it (its financial statements are then read from the BSE-code page behind the scenes).
+	let id = found.page.symbol;
+	let listedOnAngelOne = await listed(id);
+	if (found.kind === 'bse' && (await listed(symbol))) {
+		id = symbol;
+		listedOnAngelOne = true;
 	}
-	return { ok: true, symbol: match.symbol, name: match.name, listedOnAngelOne };
+	await rememberSymbolName(id, found.page.name);
+	return { ok: true, symbol: id, name: found.page.name, listedOnAngelOne };
 }

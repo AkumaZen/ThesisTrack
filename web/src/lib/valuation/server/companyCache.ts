@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { companyCache } from '$lib/server/db/valuationSchema';
 import { fetchCompanyFinancials, type CompanyFinancials } from './scraper';
 import { fetchLtp } from './angelone';
+import { bseSlugFor } from './screenerSlug';
 import { isMarketOpenIST } from './marketHours';
 
 const TTL_MS = 24 * 60 * 60 * 1000;
@@ -21,7 +22,7 @@ export async function getCompanyData(
 		return { data: row.data as CompanyFinancials, cacheHit: true };
 	}
 
-	const data = await fetchCompanyFinancials(key);
+	const data = await fetchFinancials(key);
 	await db
 		.insert(companyCache)
 		.values({ symbol: key, basis: data.basis, data, fetchedAt: Date.now() })
@@ -31,6 +32,22 @@ export async function getCompanyData(
 		});
 
 	return { data, cacheHit: false };
+}
+
+/**
+ * Reads a company's statements from Screener under its ticker. Some companies are listed there
+ * only by their BSE code (ASMTEC is /company/526433/), so a "not found" retries that page.
+ */
+async function fetchFinancials(symbol: string): Promise<CompanyFinancials> {
+	try {
+		return await fetchCompanyFinancials(symbol);
+	} catch (e) {
+		if (!(e instanceof Error) || !e.message.startsWith('NOT_FOUND')) throw e;
+		const slug = await bseSlugFor(symbol).catch(() => null);
+		if (!slug) throw e;
+		// Keep the ticker the app knows the company by (prices and baskets use it).
+		return { ...(await fetchCompanyFinancials(slug)), symbol };
+	}
 }
 
 /** Manual, on-demand price refresh (button-triggered only — never polled) to conserve Angel One API calls. */

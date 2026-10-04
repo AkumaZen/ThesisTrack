@@ -68,3 +68,25 @@ export function resolveSymbolMatch(
 	const match = suggestions.find((s) => s.symbol === wanted) ?? null;
 	return { match, suggestions: match ? [] : suggestions.slice(0, 5) };
 }
+
+const BSE_CODE_RE = /^\d{6}$/;
+const sameName = (a: string, b: string) =>
+	a.toLowerCase().replace(/[^a-z0-9]/g, '') === b.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * When Screener has no page under an NSE ticker (some companies only appear there by their BSE
+ * code, e.g. ASM Technologies is /company/526433/, not /company/ASMTEC/), finds that BSE-code
+ * page among the search hits for the ticker. Still no guessing: the hit must carry the company's
+ * known name, or be the only company the search returned.
+ */
+export function bseFallback(
+	suggestions: SymbolSuggestion[],
+	knownName: string | null | undefined
+): SymbolSuggestion | null {
+	const codes = suggestions.filter((s) => BSE_CODE_RE.test(s.symbol));
+	if (knownName) {
+		const named = codes.filter((s) => sameName(s.name, knownName));
+		if (named.length === 1) return named[0];
+	}
+	return suggestions.length === 1 && codes.length === 1 ? codes[0] : null;
+}
