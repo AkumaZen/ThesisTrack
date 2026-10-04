@@ -2199,16 +2199,22 @@
 }
 
 
-.vd .al-chip:hover {
+.vd .al-chip:not(.al-chip-on):hover {
 	background: var(--blue-bg);
 	border-color: var(--blue-border);
 }
 
 
 .vd .al-chip-on {
-	color: #fff;
+	color: var(--accent-ink);
 	background: var(--blue);
 	border-color: var(--blue);
+}
+
+
+.vd .al-chip-on:hover {
+	background: var(--accent-strong);
+	border-color: var(--accent-strong);
 }
 
 
