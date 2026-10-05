@@ -24,7 +24,7 @@ const TTL_MS = 24 * 60 * 60 * 1000;
 /** Kept in valuation.company_cache beside the summary rows, under a prefixed key. */
 const CACHE_PREFIX = 'STMT:';
 /** Bump when the shape changes so older cached rows are fetched again. */
-const SHAPE_VERSION = 1;
+const SHAPE_VERSION = 2;
 const MIN_GAP_MS = 450;
 const MAX_RETRIES = 3;
 /** An incomplete fetch (some breakdowns failed) is cached this long only, then retried. */
@@ -197,14 +197,17 @@ async function loadPage(slug: string, consolidated: boolean): Promise<cheerio.Ch
 
 async function scrape(symbol: string, slug: string): Promise<Scraped> {
 	let $ = await loadPage(slug, true);
-	// Screener serves the standalone page at /consolidated/ when a company has no consolidated
-	// figures, and some show an empty consolidated table instead. Either way only standalone
-	// figures exist, which are used and flagged so the page can say so.
+	// Some /consolidated/ pages contain placeholder rows but no periods or values, even without
+	// a consolidated basis marker. Check the parsed data, not the raw row count or basis label.
 	let consolidated = detectBasis($) === 'consolidated';
-	if (consolidated && $('#profit-loss table tbody tr').length === 0) {
+	let profitLoss = readTable($, 'pl', 'profit-loss').section;
+	if (profitLoss.labels.length === 0 || profitLoss.rows.length === 0) {
 		$ = await loadPage(slug, false);
 		consolidated = false;
+		profitLoss = readTable($, 'pl', 'profit-loss').section;
 	}
+	if (profitLoss.labels.length === 0 || profitLoss.rows.length === 0)
+		throw new Error(`No financial statements available on Screener: ${symbol}`);
 
 	const companyId = $('[data-company-id]').first().attr('data-company-id') ?? null;
 	const sections: StatementSection[] = [readMarket($)];
