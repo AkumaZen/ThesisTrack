@@ -1,15 +1,10 @@
 import type { PageServerLoad } from './$types';
-import { getCompanyData } from '$lib/valuation/server/companyCache';
-import type { CompanyFinancials } from '$lib/valuation/server/scraper';
 
-export interface CompareResult {
-	symbol: string;
-	company: CompanyFinancials | null;
-	errorMessage: string | null;
-}
+const MAX_SYMBOLS = 10;
 
-const MAX_SYMBOLS = 4;
-
+// Only reads which companies to compare. Each company's statements are fetched by the page from
+// /api/valuation/compare/[symbol] in parallel, so the table fills in company by company instead
+// of waiting for the slowest uncached one.
 export const load: PageServerLoad = async ({ url }) => {
 	const raw = url.searchParams.get('symbols') ?? '';
 	const symbols = [
@@ -17,25 +12,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			raw
 				.split(',')
 				.map((s) => s.trim().toUpperCase())
-				.filter(Boolean)
+				.filter((s) => /^[A-Z0-9&._-]{1,30}$/.test(s))
 		)
 	].slice(0, MAX_SYMBOLS);
 
-	const results: CompareResult[] = await Promise.all(
-		symbols.map(async (symbol) => {
-			try {
-				const { data } = await getCompanyData(symbol);
-				return { symbol, company: data, errorMessage: null };
-			} catch (e) {
-				const message = e instanceof Error ? e.message : 'Unknown scrape error';
-				return {
-					symbol,
-					company: null,
-					errorMessage: message.startsWith('NOT_FOUND') ? 'Symbol not found on Screener' : message
-				};
-			}
-		})
-	);
-
-	return { results, maxSymbols: MAX_SYMBOLS };
+	return { symbols, maxSymbols: MAX_SYMBOLS };
 };
