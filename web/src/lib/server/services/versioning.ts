@@ -41,9 +41,12 @@ async function resolveOperatingModel(name: string) {
 	return model;
 }
 
-async function writeKillTriggers(versionId: number, thesis: ThesisData) {
+// The db itself or an open transaction, so multi-step writes can share one.
+type Executor = Pick<typeof db, 'select' | 'insert' | 'update'>;
+
+async function writeKillTriggers(versionId: number, thesis: ThesisData, ex: Executor = db) {
 	if (!thesis.what_can_kill_it.length) return;
-	await db.insert(killTriggers).values(
+	await ex.insert(killTriggers).values(
 		thesis.what_can_kill_it.map((t) => ({
 			versionId,
 			label: t.label,
@@ -69,68 +72,147 @@ function deriveCompanyId(payload: ThesisCreate): string {
 	return raw.replace(/[^A-Z0-9_]/g, '_').slice(0, 50);
 }
 
-export async function createCompany(payload: ThesisCreate, actor: string) {
-	const companyId = deriveCompanyId(payload);
-	const [existing] = await db.select().from(companies).where(eq(companies.companyId, companyId)).limit(1);
-	if (existing && (await getScenarioOptional(companyId, actor))) {
-		throw new AlreadyExistsError(`'${actor}' already has a thesis on company '${companyId}'`);
-	}
+// Same test the dashboard (GET /api/companies) uses to decide whether a
+// scenario is a real thesis or a thin placeholder it hides. Keep them in sync:
+// if the dashboard hides it, creating a thesis must be allowed to replace it.
+export function isSubstantiveThesis(data: unknown): boolean {
+	const d = (data ?? {}) as {
+		the_business?: { what_it_does?: unknown };
+		proof_points?: { hard_evidence?: unknown };
+		why_we_believe_it?: unknown;
+	};
+	const whatItDoes = d.the_business?.what_it_does;
+	if (typeof whatItDoes === 'string' && whatItDoes.trim().length > 0) return true;
+	const evidence = d.proof_points?.hard_evidence;
+	if (Array.isArray(evidence) && evidence.length > 0) return true;
+	return Array.isArray(d.why_we_believe_it) && d.why_we_believe_it.length > 0;
+}
 
-	let company = existing;
-	if (!company) {
-		const { industry, niche } = await resolveTaxonomy(
-			payload.classification.broad_industry,
-			payload.classification.specific_niche
-		);
-		const model = await resolveOperatingModel(payload.classification.operating_model);
-		[company] = await db
-			.insert(companies)
-			.values({
-				companyId,
-				name: payload.name,
-				nseTicker: payload.nse_ticker ?? null,
-				bseTicker: payload.bse_ticker ?? null,
-				broadIndustryId: industry.id,
-				specificNicheId: niche.id,
-				operatingModel: model.name,
-				currency: payload.classification.currency
-			})
-			.returning();
-	}
-
-	const [scenario] = await db
-		.insert(thesisScenarios)
-		.values({
-			companyId: company.companyId,
-			owner: actor,
-			label: 'Thesis',
-			status: payload.status,
-			statusSource: 'manual',
-			lastReviewed: payload.last_reviewed
-		})
-		.returning();
-
+async function scenarioHasSubstantiveThesis(scenario: typeof thesisScenarios.$inferSelect) {
+	if (scenario.currentVersionId == null) return false;
 	const [version] = await db
+		.select({ thesisData: thesisVersions.thesisData })
+		.from(thesisVersions)
+		.where(eq(thesisVersions.versionId, scenario.currentVersionId))
+		.limit(1);
+	return version ? isSubstantiveThesis(version.thesisData) : false;
+}
+
+// Fills an empty placeholder scenario (no version, or a version with no real
+// content, which the dashboard hides) with the submitted thesis. Appends a new
+// version rather than editing old ones, so nothing is lost.
+async function adoptPlaceholderScenario(
+	scenario: typeof thesisScenarios.$inferSelect,
+	payload: ThesisCreate,
+	actor: string,
+	ex: Executor
+) {
+	const [row] = await ex
+		.select({ maxNo: max(thesisVersions.versionNo) })
+		.from(thesisVersions)
+		.where(eq(thesisVersions.scenarioId, scenario.id));
+
+	const [version] = await ex
 		.insert(thesisVersions)
 		.values({
-			companyId: company.companyId,
+			companyId: scenario.companyId,
 			scenarioId: scenario.id,
-			versionNo: 1,
+			versionNo: (row?.maxNo ?? 0) + 1,
 			thesisData: payload.thesis_data,
 			changeNote: 'initial thesis',
 			authoredBy: actor
 		})
 		.returning();
 
-	await writeKillTriggers(version.versionId, payload.thesis_data);
+	await writeKillTriggers(version.versionId, payload.thesis_data, ex);
 
-	const [updated] = await db
+	const [updated] = await ex
 		.update(thesisScenarios)
-		.set({ currentVersionId: version.versionId })
+		.set({
+			currentVersionId: version.versionId,
+			status: payload.status,
+			statusSource: 'manual',
+			lastReviewed: payload.last_reviewed
+		})
 		.where(eq(thesisScenarios.id, scenario.id))
 		.returning();
-
 	return updated;
+}
+
+export async function createCompany(payload: ThesisCreate, actor: string) {
+	const companyId = deriveCompanyId(payload);
+	const [existing] = await db.select().from(companies).where(eq(companies.companyId, companyId)).limit(1);
+	const mine = existing ? await getScenarioOptional(companyId, actor) : null;
+	if (mine) {
+		if (await scenarioHasSubstantiveThesis(mine)) {
+			throw new AlreadyExistsError(`'${actor}' already has a thesis on company '${companyId}'`);
+		}
+		return db.transaction((tx) => adoptPlaceholderScenario(mine, payload, actor, tx));
+	}
+
+	// Resolve lookups before writing, then do every write in one transaction:
+	// a failure part-way used to leave an empty scenario behind that the
+	// dashboard hides but that still blocked the analyst from creating again.
+	const taxonomy = existing
+		? null
+		: {
+				...(await resolveTaxonomy(payload.classification.broad_industry, payload.classification.specific_niche)),
+				model: await resolveOperatingModel(payload.classification.operating_model)
+			};
+
+	return db.transaction(async (tx) => {
+		let company = existing;
+		if (!company) {
+			const { industry, niche, model } = taxonomy!;
+			[company] = await tx
+				.insert(companies)
+				.values({
+					companyId,
+					name: payload.name,
+					nseTicker: payload.nse_ticker ?? null,
+					bseTicker: payload.bse_ticker ?? null,
+					broadIndustryId: industry.id,
+					specificNicheId: niche.id,
+					operatingModel: model.name,
+					currency: payload.classification.currency
+				})
+				.returning();
+		}
+
+		const [scenario] = await tx
+			.insert(thesisScenarios)
+			.values({
+				companyId: company.companyId,
+				owner: actor,
+				label: 'Thesis',
+				status: payload.status,
+				statusSource: 'manual',
+				lastReviewed: payload.last_reviewed
+			})
+			.returning();
+
+		const [version] = await tx
+			.insert(thesisVersions)
+			.values({
+				companyId: company.companyId,
+				scenarioId: scenario.id,
+				versionNo: 1,
+				thesisData: payload.thesis_data,
+				changeNote: 'initial thesis',
+				authoredBy: actor
+			})
+			.returning();
+
+		await writeKillTriggers(version.versionId, payload.thesis_data, tx);
+
+		const [updated] = await tx
+			.update(thesisScenarios)
+			.set({ currentVersionId: version.versionId })
+			.where(eq(thesisScenarios.id, scenario.id))
+			.returning();
+
+		return updated;
+	});
 }
 
 export async function updateCompanyDetails(

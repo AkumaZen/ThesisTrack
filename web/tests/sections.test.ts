@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { THESIS_SECTIONS, SECTION_KEYS, readTrackables } from '../src/lib/sections';
 import { thesisData } from '../src/lib/server/schemas/thesis';
-import { diffVersions } from '../src/lib/server/services/versioning';
+import { diffVersions, isSubstantiveThesis } from '../src/lib/server/services/versioning';
 
 export const validThesis = {
 	the_business: { what_it_does: 'Test business', revenue_split: [{ segment: 'Main', share_pct: 100 }] },
@@ -40,5 +40,26 @@ describe('nine default sections and separate references', () => {
 	it('includes new sections in version differences', () => {
 		const changes = diffVersions({ thesisData: validThesis }, { thesisData: { ...validThesis, trackables: ['A'], buy_sell_decision: 'B' } });
 		expect(changes.map((c) => c.path)).toEqual(expect.arrayContaining(['trackables[0]', 'buy_sell_decision']));
+	});
+});
+
+describe('placeholder theses the dashboard hides can be replaced', () => {
+	it('treats an empty or missing thesis as a placeholder', () => {
+		expect(isSubstantiveThesis(null)).toBe(false);
+		expect(isSubstantiveThesis({})).toBe(false);
+		expect(
+			isSubstantiveThesis({
+				the_business: { what_it_does: '   ' },
+				proof_points: { hard_evidence: [] },
+				why_we_believe_it: []
+			})
+		).toBe(false);
+	});
+
+	it('treats any core content as a real thesis', () => {
+		expect(isSubstantiveThesis({ the_business: { what_it_does: 'Makes cables' } })).toBe(true);
+		expect(isSubstantiveThesis({ proof_points: { hard_evidence: ['Order book up'] } })).toBe(true);
+		expect(isSubstantiveThesis({ why_we_believe_it: ['Premise: demand'] })).toBe(true);
+		expect(isSubstantiveThesis(validThesis)).toBe(true);
 	});
 });
