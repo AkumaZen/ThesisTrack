@@ -56,6 +56,12 @@ describe('placeholder theses the dashboard hides can be replaced', () => {
 		).toBe(false);
 	});
 
+	it('agrees with the dashboard SQL about what counts as blank', () => {
+		// btrim in GET /api/companies strips space, tab and line breaks only.
+		expect(isSubstantiveThesis({ the_business: { what_it_does: ' \t\r\n\v\f' } })).toBe(false);
+		expect(isSubstantiveThesis({ the_business: { what_it_does: ' ' } })).toBe(true);
+	});
+
 	it('treats any core content as a real thesis', () => {
 		expect(isSubstantiveThesis({ the_business: { what_it_does: 'Makes cables' } })).toBe(true);
 		expect(isSubstantiveThesis({ proof_points: { hard_evidence: ['Order book up'] } })).toBe(true);

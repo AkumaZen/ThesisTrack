@@ -75,6 +75,9 @@ function deriveCompanyId(payload: ThesisCreate): string {
 // Same test the dashboard (GET /api/companies) uses to decide whether a
 // scenario is a real thesis or a thin placeholder it hides. Keep them in sync:
 // if the dashboard hides it, creating a thesis must be allowed to replace it.
+// "Blank" means only ASCII whitespace (space, tab, line breaks), the set the
+// SQL btrim uses; JS trim() also strips Unicode spaces, so it isn't used here.
+const NOT_BLANK = /[^ \t\n\v\f\r]/;
 export function isSubstantiveThesis(data: unknown): boolean {
 	const d = (data ?? {}) as {
 		the_business?: { what_it_does?: unknown };
@@ -82,7 +85,7 @@ export function isSubstantiveThesis(data: unknown): boolean {
 		why_we_believe_it?: unknown;
 	};
 	const whatItDoes = d.the_business?.what_it_does;
-	if (typeof whatItDoes === 'string' && whatItDoes.trim().length > 0) return true;
+	if (typeof whatItDoes === 'string' && NOT_BLANK.test(whatItDoes)) return true;
 	const evidence = d.proof_points?.hard_evidence;
 	if (Array.isArray(evidence) && evidence.length > 0) return true;
 	return Array.isArray(d.why_we_believe_it) && d.why_we_believe_it.length > 0;

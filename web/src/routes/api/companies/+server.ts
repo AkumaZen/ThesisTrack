@@ -60,7 +60,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 								and(
 									eq(thesisScenarios.companyId, companies.companyId),
 									sql`(
-										length(trim(coalesce(${thesisVersions.thesisData}->'the_business'->>'what_it_does', ''))) > 0
+										length(btrim(coalesce(${thesisVersions.thesisData}->'the_business'->>'what_it_does', ''), ' ' || chr(9) || chr(10) || chr(11) || chr(12) || chr(13))) > 0
 										or jsonb_array_length(coalesce(${thesisVersions.thesisData}->'proof_points'->'hard_evidence', '[]'::jsonb)) > 0
 										or jsonb_array_length(coalesce(${thesisVersions.thesisData}->'why_we_believe_it', '[]'::jsonb)) > 0
 									)`
