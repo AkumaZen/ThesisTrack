@@ -28,6 +28,12 @@ function page(populated: boolean, consolidated = false) {
 
 beforeEach(() => {
 	vi.resetModules();
+	// The module spaces Screener requests 450 ms apart; waiting for real made these tests slow enough
+	// to time out under load, and a timed-out test kept fetching into the next one's mock.
+	vi.stubGlobal('setTimeout', (run: () => void) => {
+		run();
+		return 0;
+	});
 	write.mockClear();
 	cached.rows = [];
 });

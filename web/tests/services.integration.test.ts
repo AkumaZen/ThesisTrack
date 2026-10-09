@@ -16,6 +16,9 @@ import { createTable, createRow, deleteTable } from '../src/lib/server/services/
 import { createGuidance, resolveGuidance } from '../src/lib/server/services/guidance';
 import { proposeNiche } from '../src/lib/server/services/taxonomy';
 import { NotFoundError } from '../src/lib/server/services/scenarios';
+import { dbReachable } from './dbReachable';
+
+const dbUp = await dbReachable();
 
 const COMPANY_ID = `VITEST_${Date.now()}`;
 const ACTOR = 'vitest-actor';
@@ -23,6 +26,7 @@ let versionId: number;
 let scenarioId: number;
 
 beforeAll(async () => {
+	if (!dbUp) return;
 	await db.insert(companies).values({
 		companyId: COMPANY_ID,
 		name: 'Vitest Co',
@@ -66,6 +70,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+	if (!dbUp) return;
 	// thesis_versions and position_decisions are append-only (BEFORE UPDATE OR
 	// DELETE triggers) by design (ADR-008/ADR-024) - cascading a company
 	// delete through them is blocked in production on purpose. Test-only:
@@ -80,7 +85,7 @@ afterAll(async () => {
 	}
 });
 
-describe('rule engine + observations (ports app/services/rule_engine.py)', () => {
+describe.skipIf(!dbUp)('rule engine + observations (ports app/services/rule_engine.py)', () => {
 	it('does not fire on a single breach when grace_periods=2', async () => {
 		const result = await postObservations(
 			COMPANY_ID,
@@ -134,7 +139,7 @@ describe('rule engine + observations (ports app/services/rule_engine.py)', () =>
 	});
 });
 
-describe('audit: overriding a fired kill trigger', () => {
+describe.skipIf(!dbUp)('audit: overriding a fired kill trigger', () => {
 	it('requires a non-empty note to submit a health check that overrides an active fired kill', async () => {
 		await expect(submitHealthCheck(COMPANY_ID, 'FY26Q2', 'on_track', '', ACTOR)).rejects.toThrow(OverrideRequiresNoteError);
 	});
@@ -148,7 +153,7 @@ describe('audit: overriding a fired kill trigger', () => {
 	});
 });
 
-describe('decisions (ports app/services/decisions.py, append-only)', () => {
+describe.skipIf(!dbUp)('decisions (ports app/services/decisions.py, append-only)', () => {
 	it('logs a buy decision capturing the scenario current_version_id', async () => {
 		const decision = await logDecision(COMPANY_ID, 'buy', 100, 10, '2026-02-01', 'Initial position', ACTOR);
 		expect(decision.versionId).toBe(versionId);
@@ -163,7 +168,7 @@ describe('decisions (ports app/services/decisions.py, append-only)', () => {
 	});
 });
 
-describe('price performance (ports app/services/price_performance.py)', () => {
+describe.skipIf(!dbUp)('price performance (ports app/services/price_performance.py)', () => {
 	it('computes pct_change against the decision baseline (first buy price)', async () => {
 		await logPrice(COMPANY_ID, '2026-04-01', 150, ACTOR);
 		const perf = await computePerformance(COMPANY_ID, 'decision', ACTOR);
@@ -179,7 +184,7 @@ describe('price performance (ports app/services/price_performance.py)', () => {
 	});
 });
 
-describe('custom tables (ports app/routers/custom_tables.py)', () => {
+describe.skipIf(!dbUp)('custom tables (ports app/routers/custom_tables.py)', () => {
 	it('creates a table, validates row types, and rejects an unknown column key', async () => {
 		const table = await createTable(
 			COMPANY_ID,
@@ -199,7 +204,7 @@ describe('custom tables (ports app/routers/custom_tables.py)', () => {
 	});
 });
 
-describe('guidance (ports app/routers/guidance.py)', () => {
+describe.skipIf(!dbUp)('guidance (ports app/routers/guidance.py)', () => {
 	it('creates and resolves a guidance note', async () => {
 		const { note } = await createGuidance(COMPANY_ID, 'what_can_kill_it', 'Add a competitor risk trigger.', ACTOR);
 		expect(note.status).toBe('open');
@@ -209,7 +214,7 @@ describe('guidance (ports app/routers/guidance.py)', () => {
 	});
 });
 
-describe('taxonomy (ports app/services/taxonomy.py propose_niche)', () => {
+describe.skipIf(!dbUp)('taxonomy (ports app/services/taxonomy.py propose_niche)', () => {
 	it('creates a new niche under an existing industry, idempotently', async () => {
 		const name = `Vitest Niche ${Date.now()}`;
 		const first = await proposeNiche('Auto & Mobility', name);

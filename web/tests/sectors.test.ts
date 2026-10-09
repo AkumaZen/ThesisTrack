@@ -7,6 +7,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '../src/lib/server/db';
 import { companies, sectorCompanies, sectors, thesisScenarios, thesisVersions } from '../src/lib/server/db/schema';
+import { dbReachable } from './dbReachable';
+
+const dbUp = await dbReachable();
 import {
 	NotFoundError,
 	addCompaniesToSector,
@@ -55,12 +58,14 @@ async function makeCompanyWithStatus(companyId: string, name: string, status: 'o
 }
 
 beforeAll(async () => {
+	if (!dbUp) return;
 	await makeCompanyWithStatus(COMPANY_A, 'Vitest Sector Co A', 'on_track');
 	await makeCompanyWithStatus(COMPANY_B, 'Vitest Sector Co B', 'watch_closely');
 	await makeCompanyWithStatus(COMPANY_C, 'Vitest Sector Co C', 'broken');
 });
 
 afterAll(async () => {
+	if (!dbUp) return;
 	for (const id of sectorIdsToClean) {
 		await db.delete(sectors).where(eq(sectors.id, id));
 	}
@@ -74,7 +79,7 @@ afterAll(async () => {
 	}
 });
 
-describe('sectors service', () => {
+describe.skipIf(!dbUp)('sectors service', () => {
 	it('creates a sector with initial companies', async () => {
 		const sector = await createSector(
 			{ name: `Vitest Sector ${RUN_ID}`, description: 'test sector', operating_model: 'factory', company_ids: [COMPANY_A, COMPANY_B] },

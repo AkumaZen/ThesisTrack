@@ -4,10 +4,14 @@ import { createMetricSchema, normalizeMetricKey } from '../src/lib/server/schema
 import { db } from '../src/lib/server/db';
 import { metricDefinitions } from '../src/lib/server/db/schema';
 import { POST } from '../src/routes/api/metrics/+server';
+import { dbReachable } from './dbReachable';
+
+const dbUp = await dbReachable();
 
 const createdKeys: string[] = [];
 
 afterAll(async () => {
+	if (!dbUp) return;
 	for (const key of createdKeys) await db.delete(metricDefinitions).where(eq(metricDefinitions.metricKey, key));
 });
 
@@ -45,7 +49,7 @@ describe('createMetricSchema', () => {
 	});
 });
 
-describe('POST /api/metrics', () => {
+describe.skipIf(!dbUp)('POST /api/metrics', () => {
 	it('persists an analyst-defined metric with a free-form unit', async () => {
 		const label = `Patients treated ${Date.now()}`;
 		const response = await POST({
