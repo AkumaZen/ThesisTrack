@@ -7,6 +7,7 @@
 	import SectorExport from '$lib/valuation/components/SectorExport.svelte';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
 	import Pagination from '$lib/valuation/components/Pagination.svelte';
+	import CardsLoading from '$lib/valuation/components/CardsLoading.svelte';
 	import { untrack } from 'svelte';
 	import { refreshSector } from '$lib/valuation/seriesRefresh';
 	import { fetchCard, peekCard } from '$lib/valuation/cardCache';
@@ -39,8 +40,6 @@
 			strengthPanel = s.strength;
 			page = s.page;
 			pageSize = s.pageSize;
-			// A sort put back from memory counts as chosen, as on first load.
-			userSorted = s.sort !== 'rs1m' || s.dir !== 'desc';
 		}
 	});
 
@@ -60,30 +59,23 @@
 	let sortKey = $state<SortKey>(memory.initial.sort);
 	let sortDir = $state<'asc' | 'desc'>(memory.initial.dir);
 	let strengthPanel = $state(memory.initial.strength);
-	// Cards stay in their static, unsorted order while progressively loading — re-sorting after
-	// every single card arrives made the whole grid visibly reshuffle dozens of times in a row.
-	// Once every card has loaded, the grid settles into sorted order in one smooth animated move
-	// (see `shouldSort` below and `animate:flip` on the grid). An explicit sort action jumps the
-	// gun on that and applies immediately, still via the same smooth flip transition.
-	// A sort restored from memory counts as chosen.
-	let userSorted = $state(memory.initial.sort !== 'rs1m' || memory.initial.dir !== 'desc');
 	let strength = $state(emptyStrengthView());
+	let strengthSettled = $state(false);
 
-	function markUserSorted() {
-		userSorted = true;
+	function sortChanged() {
 		page = 1;
 	}
 
 	function toggleSortDir() {
 		sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-		markUserSorted();
+		sortChanged();
 	}
 
 	// Plain $state (not .raw) keyed by subsector - each load writes only its own entry, a genuine
 	// in-place property set on the reactive proxy, so a card reading a different key never re-runs.
-	// A card loads when it scrolls into view (or with Load all); loading it reads the stored prices
-	// from the database and never calls Angel One. Answers are kept in the browser (cardCache.ts)
-	// and reused, so paging, sorting or coming back to the page doesn't ask again.
+	// Every card loads as soon as the page opens; loading reads the stored prices from the database
+	// and never calls Angel One. Answers are kept in the browser (cardCache.ts) and reused, so
+	// paging, sorting or coming back to the page doesn't ask again.
 	type CardState = SectorReturn | 'error' | 'loading' | undefined;
 	let sectorData = $state<Record<string, CardState>>(
 		untrack(() =>
@@ -130,18 +122,30 @@
 		refreshing[key] = null;
 	}
 
-	let loadingAll = $state(false);
-	/** Loads every card from the stored prices, two at a time (so Sort by return can rank them). */
-	async function loadAll() {
-		loadingAll = true;
-		const pending = data.subsectors.map((s) => s.key).filter((k) => !isRow(sectorData[k]));
-		await Promise.all(
-			Array.from({ length: 2 }, async () => {
-				for (let k = pending.shift(); k !== undefined; k = pending.shift()) await loadSector(k);
-			})
-		);
-		loadingAll = false;
-	}
+	// Ask for every card not already in hand (cardCache.ts caps how many requests run at once),
+	// again when the page moves to another sector.
+	$effect(() => {
+		const keys = data.subsectors.map((s) => s.key);
+		untrack(() => {
+			for (const key of keys) if (sectorData[key] === undefined) void loadSector(key);
+		});
+	});
+
+	// The grid is shown once, when every card has its figures (or failed) and a saved Strength
+	// filter has been applied, so it appears already in order instead of reshuffling as cards
+	// arrive. After that it stays: a Refresh or a new sort moves cards, but only when asked.
+	const settledCount = $derived(
+		data.subsectors.filter((s) => isRow(sectorData[s.key]) || sectorData[s.key] === 'error').length
+	);
+	let gridShown = $state(false);
+	$effect(() => {
+		void data.majorKey;
+		gridShown = false;
+	});
+	$effect(() => {
+		if (gridShown) return;
+		if ((settledCount === data.subsectors.length && strengthSettled) || systemicError) gridShown = true;
+	});
 
 	function sortValue(key: string, sortByKey: SortKey): string | number | null {
 		const row = sectorData[key];
@@ -150,28 +154,21 @@
 		return row[sortByKey];
 	}
 
-	const allLoaded = $derived(loadedCount === data.subsectors.length);
-	// Sort applies once loading has fully finished (a quiet, one-time settle), or immediately if
-	// the user has explicitly picked a sort — otherwise the grid stays in its original order.
-	const shouldSort = $derived(allLoaded || userSorted);
-
 	const sortedAll = $derived(
-		shouldSort
-			? [...data.subsectors].sort((a, b) => {
-					const av = sortValue(a.key, sortKey);
-					const bv = sortValue(b.key, sortKey);
-					if (av == null && bv == null) return 0;
-					if (av == null) return 1;
-					if (bv == null) return -1;
-					if (typeof av === 'string' && typeof bv === 'string') {
-						return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-					}
-					if (typeof av === 'number' && typeof bv === 'number') {
-						return sortDir === 'asc' ? av - bv : bv - av;
-					}
-					return 0;
-				})
-			: data.subsectors
+		[...data.subsectors].sort((a, b) => {
+			const av = sortValue(a.key, sortKey);
+			const bv = sortValue(b.key, sortKey);
+			if (av == null && bv == null) return 0;
+			if (av == null) return 1;
+			if (bv == null) return -1;
+			if (typeof av === 'string' && typeof bv === 'string') {
+				return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+			}
+			if (typeof av === 'number' && typeof bv === 'number') {
+				return sortDir === 'asc' ? av - bv : bv - av;
+			}
+			return 0;
+		})
 	);
 	const sortedSubsectors = $derived(sortedAll.filter((s) => passesStrength(strength, s.key)));
 
@@ -203,8 +200,8 @@
 		<a class="back-link" href={resolve('/valuation/sector-rotation')}>&larr; Back to Sector Rotation</a>
 		<h1>{data.majorLabel}</h1>
 		<div class="sub">
-			Thematic sub-baskets measured against Nifty 50. Charts load as they scroll into view, from
-			prices stored on the server (refreshed automatically after each weekday's close, or press Refresh on a card).
+			Thematic sub-baskets measured against Nifty 50. Figures come from prices stored on the server
+			(refreshed automatically after each weekday's close, or press Refresh on a card).
 			{loadedCount} of {data.subsectors.length} loaded.
 		</div>
 	</div>
@@ -223,6 +220,7 @@
 			canSave={data.user?.role !== 'read_only'}
 			bind:view={strength}
 			bind:openState={strengthPanel}
+			bind:settled={strengthSettled}
 		/>
 
 		<div class="sector-sort-bar">
@@ -231,7 +229,7 @@
 				class="sector-sort-select"
 				aria-label="Sort by"
 				bind:value={sortKey}
-				onchange={markUserSorted}
+				onchange={sortChanged}
 			>
 				{#each SORT_OPTIONS as opt (opt.key)}
 					<option value={opt.key}>{opt.label}</option>
@@ -241,9 +239,6 @@
 				{sortDir === 'asc' ? '▲ Ascending' : '▼ Descending'}
 			</button>
 			<CardMetricsChooser metrics={cardMetrics} onChange={(m) => (cardMetrics = m)} />
-			<button type="button" class="sector-sort-dir" disabled={loadingAll || allLoaded} onclick={loadAll}
-				>{loadingAll ? 'Loading…' : allLoaded ? 'All loaded' : 'Load all'}</button
-			>
 			<ViewResetButton onReset={resetThisView} />
 			<SectorExport
 				title={data.majorLabel}
@@ -253,6 +248,9 @@
 			/>
 		</div>
 
+		{#if !gridShown}
+			<CardsLoading done={settledCount} total={data.subsectors.length} noun="subsectors" />
+		{:else}
 		{#if strength.active && strength.ready && !strength.error && sortedSubsectors.length === 0}
 			<div class="depth-note" role="status">No subsector matches these filters. Loosen a threshold or clear the filters.</div>
 		{/if}
@@ -276,5 +274,6 @@
 			{/each}
 		</div>
 		<Pagination total={sortedSubsectors.length} bind:page bind:pageSize noun="subsectors" />
+		{/if}
 	{/if}
 </div>

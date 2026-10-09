@@ -28,6 +28,7 @@
 		canSave = true,
 		view = $bindable(emptyStrengthView()),
 		openState = $bindable<PanelState>('auto'),
+		settled = $bindable(false),
 		title = 'Strength & Volume'
 	}: {
 		level: StrengthLevel;
@@ -40,6 +41,9 @@
 		view?: StrengthView;
 		/** Remembered by the page: 'auto' follows the default until the person opens or closes it. */
 		openState?: PanelState;
+		/** True once this place's saved filter has loaded and, when it is on, been evaluated, so a
+		 *  page can wait for it before showing cards the filter might still hide. */
+		settled?: boolean;
 		title?: string;
 	} = $props();
 
@@ -57,6 +61,9 @@
 	let unavailableCount = $state(0);
 
 	const active = $derived(isStrengthActive(config, kind));
+	$effect(() => {
+		settled = loadedPrefs && loadedFor === `${level}|${scope}` && (!active || view.ready || view.error != null);
+	});
 	const chips = $derived(describeStrengthConfig(config, kind));
 	const periodSelect = $derived(
 		customPeriod || !PERIOD_PRESETS.some((p) => p.days === config.periodDays)

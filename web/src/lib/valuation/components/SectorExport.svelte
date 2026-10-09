@@ -30,7 +30,7 @@
 					notes: [
 						`${title}, exported ${new Date().toLocaleString('en-IN')}.`,
 						'Returns are price returns in %; RS is the sector return minus Nifty 50 over the same window.' +
-							(pending ? ` ${pending} card(s) had not been loaded yet and are blank (use Load all first).` : '')
+							(pending ? ` ${pending} card(s) had no figures (still loading or failed to load) and are blank.` : '')
 					],
 					columns: [
 						{ header: 'Sector', width: 40 },
