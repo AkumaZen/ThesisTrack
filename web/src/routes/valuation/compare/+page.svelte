@@ -197,41 +197,24 @@
 
 	// ---- table ---------------------------------------------------------------------------------
 
-	// The table runs its full height down the page; only its sideways-scroll box scrolls. CSS sticky
-	// cells stick within the nearest scroll box, which here never scrolls vertically, so the header
-	// rows are moved down by hand instead: just under the site header while the table passes under
-	// it, never past the table's last row.
+	// The table scrolls inside its own box so its header rows can stay put while reading down. The
+	// box is at most as tall as the screen minus the site header and the page space below the box:
+	// scrolled to the very bottom, the box's top (and so its header) still sits just under the site
+	// header. Both heights change with the window width (the sub-menu wraps), so they are measured.
 	let shellEl = $state<HTMLDivElement>();
 	$effect(() => {
 		const header = document.querySelector<HTMLElement>('.shell');
 		const el = shellEl;
-		if (!el) return;
-		let frame = 0;
-		const place = () => {
-			frame = 0;
-			const box = el.querySelector<HTMLElement>('.cmp-scroll');
-			const head = box?.querySelector<HTMLElement>('thead');
-			if (!box || !head) return;
-			const top = Math.max(0, header?.getBoundingClientRect().bottom ?? 0);
-			const room = box.clientHeight - head.offsetHeight;
-			const shift = Math.min(Math.max(0, top - box.getBoundingClientRect().top - box.clientTop), Math.max(0, room));
-			head.style.transform = shift > 0 ? `translateY(${shift}px)` : '';
+		if (!header || !el) return;
+		const measure = () => {
+			const box = el.querySelector('.cmp-scroll');
+			const below = box ? document.documentElement.scrollHeight - (box.getBoundingClientRect().bottom + scrollY) : 0;
+			el.style.setProperty('--cmp-reserved-h', `${header.offsetHeight + Math.max(0, below)}px`);
 		};
-		const schedule = () => {
-			if (!frame) frame = requestAnimationFrame(place);
-		};
-		const observer = new ResizeObserver(schedule);
+		const observer = new ResizeObserver(measure);
+		observer.observe(header);
 		observer.observe(el);
-		if (header) observer.observe(header);
-		addEventListener('scroll', schedule, { passive: true });
-		addEventListener('resize', schedule);
-		schedule();
-		return () => {
-			observer.disconnect();
-			removeEventListener('scroll', schedule);
-			removeEventListener('resize', schedule);
-			cancelAnimationFrame(frame);
-		};
+		return () => observer.disconnect();
 	});
 
 	/** Per company: its year columns, oldest first with the latest last. */
@@ -498,11 +481,16 @@
 
 <style>
 	/* Picker, toolbar and grid share the band's left edge. The grid uses the full page width;
-	   extra companies scroll sideways inside .cmp-scroll, with the metric column and both header
-	   rows (company names and years) held in place. */
+	   the table scrolls inside .cmp-scroll, with the metric column and both header rows (company
+	   names and years) held in place. */
 	.cmp-shell {
-		padding: var(--space-4) 0 var(--space-4);
+		padding: var(--space-4) 0 var(--space-2);
 		font-family: var(--font-sans);
+	}
+	/* The table is the end of the page: drop the layout's bottom padding so the box can be a full
+	   screen tall below the site header. */
+	:global(.app-main:has(.cmp-shell)) {
+		padding-bottom: 0;
 	}
 	.cmp-picker {
 		max-width: 760px;
@@ -569,13 +557,15 @@
 		color: var(--muted);
 	}
 
-	/* As wide as its columns need, up to the page width; beyond that it scrolls sideways.
-	   Never scrolls vertically: the table runs its full height down the page. */
+	/* As wide as its columns need, up to the page width, and at most a full screen tall below the
+	   site header; beyond either it scrolls inside. Sticky cells only stick within the box that
+	   scrolls them, so the table has to scroll here, not with the page, to keep its header. At
+	   the end of the table the wheel carries on scrolling the page. */
 	.cmp-scroll {
 		width: fit-content;
 		max-width: 100%;
-		overflow-x: auto;
-		overflow-y: hidden;
+		max-height: calc(100dvh - var(--cmp-reserved-h, 200px) - var(--space-2));
+		overflow: auto;
 		overscroll-behavior-x: contain;
 		border: var(--border-w) solid var(--ink);
 		background: var(--bg);
@@ -598,11 +588,11 @@
 		letter-spacing: 0;
 	}
 
-	/* Company names and years stay in view while scrolling down the page (moved by the script). */
+	/* Company names and years stay at the top while scrolling down the table. */
 	.cmp-table thead {
-		position: relative;
+		position: sticky;
+		top: 0;
 		z-index: 2;
-		will-change: transform;
 	}
 	.cmp-table thead th {
 		background: var(--surface);
