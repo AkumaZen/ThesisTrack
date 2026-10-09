@@ -17,12 +17,13 @@
 		yearColumns,
 		type CatalogEntry,
 		type CompareStatements,
-		type SectionId
+		type Unit
 	} from '$lib/valuation/compareMetrics';
 
 	let { data }: { data: PageData } = $props();
 
 	type Load =
+		| { status: 'waiting' }
 		| { status: 'loading' }
 		| { status: 'ok'; data: CompareStatements }
 		| { status: 'error'; message: string };
@@ -35,7 +36,17 @@
 
 	let loads = $state<Record<string, Load>>({});
 
+	// Each uncached company costs the server about a dozen Screener calls, and every serverless
+	// instance paces Screener on its own, so a full table fired at once could trip Screener's
+	// limits or run past the time limit. Two at a time; the rest wait their turn.
+	const MAX_PARALLEL = 2;
+	let running = 0;
+	const queue: (() => void)[] = [];
+
 	async function fetchCompany(symbol: string, refresh = false) {
+		loads[symbol] = { status: 'waiting' };
+		if (running >= MAX_PARALLEL) await new Promise<void>((go) => queue.push(go));
+		running++;
 		loads[symbol] = { status: 'loading' };
 		try {
 			const res = await fetch(
@@ -48,6 +59,9 @@
 			loads[symbol] = { status: 'ok', data: await res.json() };
 		} catch (e) {
 			loads[symbol] = { status: 'error', message: e instanceof Error ? e.message : 'Could not load' };
+		} finally {
+			running--;
+			queue.shift()?.();
 		}
 	}
 
@@ -73,8 +87,9 @@
 	const pending = $derived(chosen.map((c) => c.symbol).join(',') !== data.symbols.join(','));
 
 	function submit() {
+		// Encoded one by one so a symbol such as M&M survives the address; the commas stay literal.
 		const symbols = chosen
-			.map((c) => c.symbol)
+			.map((c) => encodeURIComponent(c.symbol))
 			.slice(0, data.maxSymbols)
 			.join(',');
 		goto(resolve(symbols ? `/valuation/compare?symbols=${symbols}` : '/valuation/compare'));
@@ -143,8 +158,9 @@
 		selected = on ? [...selected, key] : selected.filter((k) => k !== key);
 		savePrefs();
 	}
-	function setSection(id: SectionId, on: boolean) {
-		const keys = new Set(catalog.filter((m) => m.section === id).map((m) => m.key));
+	/** Turns a section's metrics on or off: only those the search shows, when there is a search. */
+	function setSection(items: CatalogEntry[], on: boolean) {
+		const keys = new Set(items.map((m) => m.key));
 		const rest = selected.filter((k) => !keys.has(k));
 		selected = on ? [...rest, ...keys] : rest;
 		savePrefs();
@@ -173,7 +189,9 @@
 		return SECTION_ORDER.map((id) => {
 			const all = catalog.filter((m) => m.section === id);
 			const on = all.filter((m) => selectedSet.has(m.key)).length;
-			return { id, title: SECTION_TITLES[id], all, on, items: all.filter(match) };
+			const items = all.filter(match);
+			const itemsOn = items.filter((m) => selectedSet.has(m.key)).length;
+			return { id, title: SECTION_TITLES[id], all, on, items, itemsOn };
 		}).filter((s) => s.items.length > 0);
 	});
 
@@ -182,7 +200,7 @@
 	/** Per company: its year columns, oldest first with the latest last. */
 	const columns = $derived(
 		data.symbols.map((symbol) => {
-			const load: Load = loads[symbol] ?? { status: 'loading' };
+			const load: Load = loads[symbol] ?? { status: 'waiting' };
 			const years = load.status === 'ok' ? yearColumns(load.data, yearCount) : [];
 			// Keep the group's width while loading or failed, so the header doesn't jump.
 			const slots = years.length > 0 ? years : Array.from({ length: yearCount }, () => '');
@@ -198,9 +216,10 @@
 		return m[1] === 'Mar' ? `FY${m[2]}` : `${m[1]} ${m[2]}`;
 	}
 
-	function cell(load: Load, key: string, year: string) {
-		if (load.status !== 'ok' || !year) return null;
-		return valueAt(load.data, key, year);
+	/** A cell's text: blank until the company's figures arrive, a dash where it has no value. */
+	function cell(load: Load, key: string, year: string, unit: Unit) {
+		if (load.status === 'waiting' || load.status === 'loading') return '';
+		return formatValue(load.status === 'ok' && year ? valueAt(load.data, key, year) : null, unit);
 	}
 </script>
 
@@ -300,7 +319,7 @@
 												>Standalone only</span
 											>
 										{/if}
-										{#if c.load.status !== 'loading'}
+										{#if c.load.status === 'ok'}
 											<button
 												type="button"
 												class="cmp-refresh"
@@ -310,10 +329,15 @@
 											>
 										{/if}
 									</span>
-									{#if c.load.status === 'loading'}
+									{#if c.load.status === 'waiting'}
+										<span class="cmp-status">Waiting to load…</span>
+									{:else if c.load.status === 'loading'}
 										<span class="cmp-status">Loading figures…</span>
 									{:else if c.load.status === 'error'}
-										<span class="cmp-status cmp-status-bad">{c.load.message}</span>
+										<span class="cmp-status cmp-status-bad">
+											{c.load.message}
+											<button type="button" class="link-btn" onclick={() => fetchCompany(c.symbol)}>Retry</button>
+										</span>
 									{/if}
 								</div>
 							</th>
@@ -355,18 +379,18 @@
 								</th>
 								{#each columns as c (c.symbol)}
 									{#if g.id === 'mkt'}
-										{@const v = cell(c.load, m.key, 'now')}
-										<td class="cmp-val cmp-first cmp-now" class:neg={v != null && v < 0} colspan={c.years.length}
-											>{c.load.status === 'loading' ? '' : formatValue(v, m.unit)}</td
+										{@const text = cell(c.load, m.key, 'now', m.unit)}
+										<td class="cmp-val cmp-first cmp-now" class:neg={text.startsWith('-')} colspan={c.years.length}
+											>{text}</td
 										>
 									{:else}
 										{#each c.years as y, i}
-											{@const v = cell(c.load, m.key, y)}
+											{@const text = cell(c.load, m.key, y, m.unit)}
 											<td
 												class="cmp-val"
 												class:cmp-first={i === 0}
 												class:cmp-latest={i === c.years.length - 1}
-												class:neg={v != null && v < 0}>{c.load.status === 'loading' ? '' : formatValue(v, m.unit)}</td
+												class:neg={text.startsWith('-')}>{text}</td
 											>
 										{/each}
 									{/if}
@@ -402,9 +426,9 @@
 					<label class="cmp-group-toggle">
 						<input
 							type="checkbox"
-							checked={s.on === s.all.length}
-							indeterminate={s.on > 0 && s.on < s.all.length}
-							onchange={(e) => setSection(s.id, e.currentTarget.checked)}
+							checked={s.itemsOn === s.items.length}
+							indeterminate={s.itemsOn > 0 && s.itemsOn < s.items.length}
+							onchange={(e) => setSection(s.items, e.currentTarget.checked)}
 						/>
 						{s.title}
 						<span class="cmp-count">{s.on}/{s.all.length}</span>

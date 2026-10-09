@@ -668,7 +668,7 @@
 			{#if data.thesisId}
 				<a href={resolve('/company/[id]', { id: data.thesisId })}>Investment thesis &rarr;</a>
 			{/if}
-			<a href={resolve(`/valuation/compare?symbols=${company.symbol}`)}>Compare with peers &rarr;</a>
+			<a href={resolve(`/valuation/compare?symbols=${encodeURIComponent(company.symbol)}`)}>Compare with peers &rarr;</a>
 			{#each data.sectors as path (path.majorKey + path.basketKey)}
 				<a
 					href={resolve('/valuation/sector-rotation/[key]/[subKey]', {
