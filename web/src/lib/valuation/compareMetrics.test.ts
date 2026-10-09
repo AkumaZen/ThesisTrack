@@ -129,4 +129,15 @@ describe('compareMetrics', () => {
 		expect(formatValue(22.75, 'rs')).toBe('₹22.75');
 		expect(formatValue(27, 'pct')).toBe('27%');
 	});
+
+	it('keeps small crore amounts visible and never shows -0', () => {
+		expect(formatValue(0.45, 'cr')).toBe('0.45');
+		expect(formatValue(3.6, 'cr')).toBe('3.6');
+		expect(formatValue(-0.4, 'cr')).toBe('-0.4');
+		expect(formatValue(99.994, 'cr')).toBe('99.99');
+		expect(formatValue(431.4, 'cr')).toBe('431');
+		expect(formatValue(-0.001, 'cr')).toBe('0');
+		expect(formatValue(-0.001, 'pct')).toBe('0%');
+		expect(formatValue(1250, 'count')).toBe('1,250');
+	});
 });

@@ -207,11 +207,17 @@ export function valueAt(company: CompareStatements, key: string, year: string): 
 	return null;
 }
 
+/**
+ * Whole numbers from 100 up (crore figures are large), up to two decimals below that, so small
+ * amounts such as 0.45 Cr don't round to 0. Prices, ratios and percentages keep two decimals up to
+ * 1,000. Anything that rounds to zero shows as "0", never "-0".
+ */
 export function formatValue(n: number | null, unit: Unit): string {
 	if (n == null) return '—';
-	const decimals = unit === 'pct' || unit === 'rs' || unit === 'x';
-	const digits = decimals && Math.abs(n) < 1000 ? 2 : 0;
-	const s = n.toLocaleString('en-IN', { maximumFractionDigits: digits });
+	const precise = unit === 'pct' || unit === 'rs' || unit === 'x';
+	const digits = Math.abs(n) < (precise ? 1000 : 100) ? 2 : 0;
+	const rounded = Math.round(n * 10 ** digits) / 10 ** digits || 0;
+	const s = rounded.toLocaleString('en-IN', { maximumFractionDigits: digits });
 	if (unit === 'pct') return `${s}%`;
 	if (unit === 'rs') return `₹${s}`;
 	if (unit === 'x') return `${s}x`;
