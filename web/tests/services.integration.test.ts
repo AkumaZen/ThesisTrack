@@ -71,18 +71,15 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	if (!dbUp) return;
-	// thesis_versions and position_decisions are append-only (BEFORE UPDATE OR
-	// DELETE triggers) by design (ADR-008/ADR-024) - cascading a company
-	// delete through them is blocked in production on purpose. Test-only:
-	// disable those two triggers just for this cleanup, then restore them.
-	await db.execute(sql`ALTER TABLE thesis_versions DISABLE TRIGGER trg_forbid_version_update`);
-	await db.execute(sql`ALTER TABLE position_decisions DISABLE TRIGGER trg_forbid_decision_update`);
-	try {
-		await db.delete(companies).where(eq(companies.companyId, COMPANY_ID)); // cascades everything
-	} finally {
-		await db.execute(sql`ALTER TABLE thesis_versions ENABLE TRIGGER trg_forbid_version_update`);
-		await db.execute(sql`ALTER TABLE position_decisions ENABLE TRIGGER trg_forbid_decision_update`);
-	}
+	// thesis_versions and position_decisions are append-only (ADR-008/ADR-024). Deleting a company
+	// through them is allowed only inside a transaction that opts in, exactly as the admin Delete
+	// endpoint does (drizzle/0011 and 0017). This company has a logged decision, so it also checks
+	// that Delete works for one. Disabling the triggers instead was global: another test file's
+	// cleanup could re-enable them in the middle of this one.
+	await db.transaction(async (tx) => {
+		await tx.execute(sql`select set_config('app.allow_thesis_delete', 'on', true)`);
+		await tx.delete(companies).where(eq(companies.companyId, COMPANY_ID)); // cascades everything
+	});
 });
 
 describe.skipIf(!dbUp)('rule engine + observations (ports app/services/rule_engine.py)', () => {

@@ -229,8 +229,8 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 };
 
 // Removes a company and everything under it (scenarios, versions, observations, notes, ...).
-// Irreversible, so admin only. thesis_versions has an append-only trigger that allows DELETE only
-// inside a transaction that sets app.allow_thesis_delete (see drizzle/0011).
+// Irreversible, so admin only. thesis_versions and position_decisions have append-only triggers that
+// allow DELETE only inside a transaction that sets app.allow_thesis_delete (drizzle/0011 and 0017).
 export const DELETE: RequestHandler = async ({ locals, params }) => {
 	try {
 		const actor = requireWriteActor(locals.actor);

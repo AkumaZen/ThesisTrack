@@ -69,14 +69,13 @@ afterAll(async () => {
 	for (const id of sectorIdsToClean) {
 		await db.delete(sectors).where(eq(sectors.id, id));
 	}
-	await db.execute(sql`ALTER TABLE thesis_versions DISABLE TRIGGER trg_forbid_version_update`);
-	try {
+	// The same opt-in the admin Delete endpoint uses (drizzle/0011), scoped to this transaction.
+	await db.transaction(async (tx) => {
+		await tx.execute(sql`select set_config('app.allow_thesis_delete', 'on', true)`);
 		for (const companyId of [COMPANY_A, COMPANY_B, COMPANY_C]) {
-			await db.delete(companies).where(eq(companies.companyId, companyId));
+			await tx.delete(companies).where(eq(companies.companyId, companyId));
 		}
-	} finally {
-		await db.execute(sql`ALTER TABLE thesis_versions ENABLE TRIGGER trg_forbid_version_update`);
-	}
+	});
 });
 
 describe.skipIf(!dbUp)('sectors service', () => {
