@@ -1,23 +1,14 @@
-// Reads DATABASE_URL from .production.env internally - never logs it.
+// Reads the production URL from the given env file via _prod_db.mjs - never logs it.
 // Diagnostic only, no writes. Checks for every migration (0003-0007) that
 // could plausibly not have been reconciled to production yet, per the
 // recurring "migration file committed but never applied to prod" gotcha.
-import fs from 'node:fs';
 import postgres from 'postgres';
+import { productionDatabaseUrl } from './_prod_db.mjs';
 
 const envPath = process.argv[2];
-const envText = fs.readFileSync(envPath, 'utf8');
-const match = envText.match(/^DATABASE_URL=(.+)$/m);
-if (!match) {
-	console.error('DATABASE_URL not found in env file');
-	process.exit(1);
-}
-let url = match[1].trim();
-if ((url.startsWith('"') && url.endsWith('"')) || (url.startsWith("'") && url.endsWith("'"))) {
-	url = url.slice(1, -1);
-}
+const url = productionDatabaseUrl(envPath);
 
-const client = postgres(url, { max: 1, ssl: url.includes('sslmode=require') ? 'require' : undefined });
+const client = postgres(url, { max: 1, ssl: 'require' });
 
 const tables = await client`
 	select table_name from information_schema.tables
