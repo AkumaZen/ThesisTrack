@@ -87,3 +87,59 @@ describe('comparison standalone fallback', () => {
 		expect(write).not.toHaveBeenCalled();
 	});
 });
+
+describe('bank statements', () => {
+	const bankPage = `<div id="top"><h1>Example Bank</h1></div><div data-company-id="1234"></div>
+		<section id="profit-loss"><p class="sub">Consolidated Figures in Rs. Crores</p>
+		<table><thead><tr><th></th><th>Mar 2025</th><th>Mar 2026</th></tr></thead><tbody>
+		<tr><td>Revenue <button onclick="Company.showSchedule('Revenue', 'profit-loss', this)">+</button></td><td>1,000</td><td>1,200</td></tr>
+		<tr><td>Financing Profit</td><td>300</td><td>360</td></tr>
+		<tr><td>Financing Margin %</td><td>30%</td><td>30%</td></tr>
+		<tr><td>Net Profit</td><td>200</td><td>240</td></tr></tbody></table></section>`;
+
+	it('files Revenue and Financing Margin under the rows other companies use', async () => {
+		const request = vi.fn(async (url: string) =>
+			url.includes('/schedules/')
+				? Response.json({ 'Interest Earned': { 'Mar 2025': '900', 'Mar 2026': '1,050' } })
+				: new Response(bankPage)
+		);
+		vi.stubGlobal('fetch', request);
+		const { getCompareStatements } = await import('./compareStatements');
+		const pl = (await getCompareStatements('BANK', { refresh: true })).sections.find((s) => s.id === 'pl')!;
+		expect(pl.rows.map((r) => r.key)).toEqual([
+			'pl:Sales',
+			'pl:Sales>Interest Earned',
+			'pl:Operating Profit',
+			'pl:OPM %',
+			'pl:Net Profit'
+		]);
+		expect(pl.rows[1]).toMatchObject({ parent: 'Sales', values: [900, 1050] });
+		expect(pl.rows[3]).toMatchObject({ unit: 'pct', values: [30, 30] });
+		// The breakdown is still asked for by Screener's own label.
+		expect(request.mock.calls.some(([url]) => url.includes('parent=Revenue&'))).toBe(true);
+	});
+});
+
+describe('Refresh', () => {
+	const storedAt = (ageMs: number) => [
+		{ fetchedAt: Date.now() - ageMs, data: { shapeVersion: 3, symbol: 'ELLEN', name: 'Cached', basis: 'consolidated', sections: [] } }
+	];
+
+	it('reuses a fetch from the last few minutes instead of asking Screener again', async () => {
+		cached.rows = storedAt(60_000);
+		const request = vi.fn(async () => new Response(page(true)));
+		vi.stubGlobal('fetch', request);
+		const { getCompareStatements } = await import('./compareStatements');
+		expect((await getCompareStatements('ELLEN', { refresh: true })).name).toBe('Cached');
+		expect(request).not.toHaveBeenCalled();
+	});
+
+	it('fetches again once the last fetch is older than that', async () => {
+		cached.rows = storedAt(6 * 60_000);
+		const request = vi.fn(async () => new Response(page(true)));
+		vi.stubGlobal('fetch', request);
+		const { getCompareStatements } = await import('./compareStatements');
+		expect((await getCompareStatements('ELLEN', { refresh: true })).name).toBe('Example Ltd');
+		expect(request).toHaveBeenCalledOnce();
+	});
+});

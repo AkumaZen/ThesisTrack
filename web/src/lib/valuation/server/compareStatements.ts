@@ -24,11 +24,16 @@ const TTL_MS = 24 * 60 * 60 * 1000;
 /** Kept in valuation.company_cache beside the summary rows, under a prefixed key. */
 const CACHE_PREFIX = 'STMT:';
 /** Bump when the shape changes so older cached rows are fetched again. */
-const SHAPE_VERSION = 2;
+const SHAPE_VERSION = 3;
 const MIN_GAP_MS = 450;
 const MAX_RETRIES = 3;
 /** An incomplete fetch (some breakdowns failed) is cached this long only, then retried. */
 const PARTIAL_TTL_MS = 10 * 60 * 1000;
+/**
+ * A Refresh within this long of the last fetch gets that fetch back. Any signed-in user
+ * can press Refresh and each one costs about a dozen Screener calls, so repeats are capped.
+ */
+const MIN_REFRESH_GAP_MS = 5 * 60 * 1000;
 
 type TableSection = Exclude<SectionId, 'mkt'>;
 const TABLE_SECTIONS: { id: TableSection; html: string }[] = [
@@ -77,6 +82,21 @@ function parseNumber(text: unknown): number | null {
 	return Number.isNaN(n) ? null : n;
 }
 
+/**
+ * Banks' P&L rows under the names every other company uses, so a bank's revenue and margin land
+ * in the same Compare rows (and the default selection) instead of showing a dash there.
+ */
+const PL_ALIASES: Record<string, string> = {
+	Revenue: 'Sales',
+	'Financing Profit': 'Operating Profit',
+	'Financing Margin %': 'OPM %'
+};
+
+/** The label a row is filed under: Screener's own, except for the bank aliases above. */
+function rowLabel(section: TableSection, label: string): string {
+	return section === 'pl' ? (PL_ALIASES[label] ?? label) : label;
+}
+
 /** "Borrowings&nbsp;+" -> "Borrowings". */
 function cleanLabel(text: string): string {
 	return text
@@ -86,6 +106,7 @@ function cleanLabel(text: string): string {
 		.trim();
 }
 
+/** `expandable` holds Screener's own labels: the breakdown API is asked by those. */
 function readTable(
 	$: cheerio.CheerioAPI,
 	id: TableSection,
@@ -102,15 +123,16 @@ function readTable(
 	const expandable: string[] = [];
 	table.find('tbody tr').each((_, tr) => {
 		const cells = $(tr).find('td');
-		const label = cleanLabel($(cells[0]).text());
-		if (!label || /raw pdf/i.test(label)) return;
+		const screenerLabel = cleanLabel($(cells[0]).text());
+		if (!screenerLabel || /raw pdf/i.test(screenerLabel)) return;
+		const label = rowLabel(id, screenerLabel);
 		const raw = cells
 			.slice(1)
 			.map((_, td) => $(td).text().trim())
 			.get();
 		const values = raw.map(parseNumber);
 		if (values.every((v) => v == null)) return;
-		if ($(cells[0]).find('button[onclick*="showSchedule"]').length) expandable.push(label);
+		if ($(cells[0]).find('button[onclick*="showSchedule"]').length) expandable.push(screenerLabel);
 		rows.push({
 			key: metricKey(id, label),
 			label,
@@ -134,6 +156,7 @@ async function readSchedule(
 	const url =
 		`https://www.screener.in/api/company/${encodeURIComponent(companyId)}/schedules/` +
 		`?parent=${encodeURIComponent(parent)}&section=${htmlId}${consolidated ? '&consolidated=' : ''}`;
+	const parentLabel = rowLabel(section, parent);
 	const res = await politeFetch(url, 'application/json');
 	const body = (await res.json()) as Record<string, Record<string, unknown>> | null;
 	const rows: StatementRow[] = [];
@@ -146,9 +169,9 @@ async function readSchedule(
 		if (values.every((v) => v == null)) continue;
 		const sawPercent = raw.some((t) => typeof t === 'string' && t.includes('%'));
 		rows.push({
-			key: metricKey(section, label, parent),
+			key: metricKey(section, label, parentLabel),
 			label,
-			parent,
+			parent: parentLabel,
 			unit: unitFor(section, label, sawPercent),
 			values
 		});
@@ -218,7 +241,7 @@ async function scrape(symbol: string, slug: string): Promise<Scraped> {
 			for (const parent of expandable) {
 				try {
 					const subRows = await readSchedule(companyId, id, html, parent, section.labels, consolidated);
-					const at = section.rows.findIndex((r) => r.key === metricKey(id, parent)) + 1;
+					const at = section.rows.findIndex((r) => r.key === metricKey(id, rowLabel(id, parent))) + 1;
 					section.rows.splice(at, 0, ...subRows);
 				} catch (e) {
 					// A missing breakdown only hides its sub-rows; the headline row is still there.
@@ -266,13 +289,11 @@ export async function getCompareStatements(
 ): Promise<CompareStatements> {
 	const key = symbol.toUpperCase();
 	const cacheKey = CACHE_PREFIX + key;
-	if (!refresh) {
-		const [row] = await db.select().from(companyCache).where(eq(companyCache.symbol, cacheKey));
-		const data = row?.data as Cached | undefined;
-		const ttl = data?.partial ? PARTIAL_TTL_MS : TTL_MS;
-		if (row && data?.shapeVersion === SHAPE_VERSION && Date.now() - row.fetchedAt < ttl) {
-			return publicShape(data);
-		}
+	const [row] = await db.select().from(companyCache).where(eq(companyCache.symbol, cacheKey));
+	const cached = row?.data as Cached | undefined;
+	if (row && cached?.shapeVersion === SHAPE_VERSION) {
+		const ttl = refresh ? MIN_REFRESH_GAP_MS : cached.partial ? PARTIAL_TTL_MS : TTL_MS;
+		if (Date.now() - row.fetchedAt < ttl) return publicShape(cached);
 	}
 
 	const existing = inFlight.get(key);
