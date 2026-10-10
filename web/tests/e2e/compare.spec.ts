@@ -169,6 +169,15 @@ test('fits seven companies on one screen for one year, and stays compact for mor
 	const kpil = page.getByRole('link', { name: 'Kalpataru Projects International Ltd' });
 	await expect(kpil).toHaveAttribute('title', 'Kalpataru Projects International Ltd');
 	expect((await kpil.boundingBox())!.height).toBeGreaterThan(30);
+	// Two lines are enough for the longest name here: nothing is cut off.
+	expect(await page.locator('.cmp-co-name').evaluateAll((els) => els.filter((e) => e.scrollHeight > e.clientHeight + 1).length)).toBe(0);
+	// One regular grid: every company the same width, every figure on the right edge, and no
+	// latest-year tint when there is only one year.
+	const widths = await page.locator('.cmp-table thead th.cmp-co').evaluateAll((ths) => ths.map((th) => th.getBoundingClientRect().width));
+	expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
+	const aligns = await page.locator('.cmp-table td.cmp-val').evaluateAll((tds) => [...new Set(tds.map((td) => getComputedStyle(td).textAlign))]);
+	expect(aligns).toEqual(['right']);
+	await expect(page.locator('.cmp-table .cmp-latest')).toHaveCount(0);
 	// Every figure is shown whole, not clipped.
 	const clipped = await page.locator('.cmp-table td.cmp-val, .cmp-table th.cmp-year').evaluateAll((cells) => cells.filter((c) => c.scrollWidth > c.clientWidth).length);
 	expect(clipped).toBe(0);
@@ -177,6 +186,14 @@ test('fits seven companies on one screen for one year, and stays compact for mor
 	await page.screenshot({ path: testInfo.outputPath('seven-2y.png') });
 	expect(await overflow()).toBeLessThanOrEqual(0);
 
-	await setYears(3);
-	await page.screenshot({ path: testInfo.outputPath('seven-3y.png') });
+	await expect(page.locator('.cmp-table thead .cmp-year.cmp-latest')).toHaveCount(7);
+
+	await setYears(5);
+	await page.screenshot({ path: testInfo.outputPath('seven-5y.png') });
+
+	// Two companies stay compact instead of stretching across the page.
+	await open(page, 'AAA,BBB');
+	await setYears(1);
+	expect((await page.locator('.cmp-table').boundingBox())!.width).toBeLessThan(500);
+	await page.screenshot({ path: testInfo.outputPath('two-1y.png') });
 });

@@ -338,6 +338,7 @@
 	});
 	const totalCols = $derived(1 + columns.reduce((n, c) => n + c.years.length, 0));
 
+
 	/** "Mar 2026" -> "FY26"; other year ends keep their month ("Dec 25"). */
 	function shortYear(label: string) {
 		const m = /^(\w{3})\w*\s+\d{2}(\d{2})$/.exec(label);
@@ -444,7 +445,13 @@
 		</div>
 
 		<div class="cmp-scroll">
-			<table class="cmp-table">
+			<table class="cmp-table" style:--cmp-years={yearCount} style:--cmp-cols={totalCols - 1}>
+				<colgroup>
+					<col class="cmp-col-metric" />
+					{#each columns as c (c.symbol)}
+						{#each c.years as _, i (i)}<col class="cmp-col-year" />{/each}
+					{/each}
+				</colgroup>
 				<thead>
 					<tr>
 						<th class="cmp-metric-col" rowspan="2" scope="col">Metric</th>
@@ -497,7 +504,7 @@
 								<th
 									class="cmp-year"
 									class:cmp-first={i === 0}
-									class:cmp-latest={i === c.years.length - 1}
+									class:cmp-latest={c.years.length > 1 && i === c.years.length - 1}
 									scope="col"
 									title={y}>{y ? shortYear(y) : '·'}</th
 								>
@@ -543,7 +550,11 @@
 								{#each columns as c (c.symbol)}
 									{#if g.section === 'mkt'}
 										{@const text = cell(c.load, m.key, 'now', m.unit)}
-										<td class="cmp-val cmp-first cmp-now" class:neg={text.startsWith('-')} colspan={c.years.length}
+										<td
+												class="cmp-val cmp-first cmp-now"
+												class:cmp-emph={c.years.length > 1}
+												class:neg={text.startsWith('-')}
+												colspan={c.years.length}
 											>{text}</td
 										>
 									{:else}
@@ -552,7 +563,7 @@
 											<td
 												class="cmp-val"
 												class:cmp-first={i === 0}
-												class:cmp-latest={i === c.years.length - 1}
+												class:cmp-latest={c.years.length > 1 && i === c.years.length - 1}
 												class:neg={text.startsWith('-')}>{text}</td
 											>
 										{/each}
@@ -773,10 +784,17 @@
 		border: var(--border-w) solid var(--ink);
 		background: var(--bg);
 	}
-	/* As wide as its content when that fits; otherwise long company names wrap first, and only
-	   when the figures alone are too wide does .cmp-scroll scroll sideways (never the page). */
+	/* Every company gets the same width, so figures sit on one regular grid however long a name
+	   is: room for a two-line name at one year, and for the figures themselves at more years.
+	   Capped at the box, long names wrap first; only when the figures alone are too wide does
+	   .cmp-scroll scroll sideways (never the page). */
 	.cmp-table {
-		width: auto;
+		--metric-w: 168px;
+		--company-min: 150px;
+		--year-min: 92px;
+		--year-w: max(calc(var(--company-min) / var(--cmp-years, 1)), var(--year-min));
+		width: calc(var(--metric-w) + var(--cmp-cols, 1) * var(--year-w));
+		max-width: 100%;
 		margin: 0;
 		border-collapse: separate;
 		border-spacing: 0;
@@ -811,6 +829,12 @@
 	}
 
 	/* The metric column stays on the left while scrolling sideways. Narrow: long names wrap. */
+	.cmp-col-metric {
+		width: var(--metric-w);
+	}
+	.cmp-col-year {
+		width: var(--year-w);
+	}
 	.cmp-metric-col,
 	.cmp-metric,
 	.cmp-table .cmp-section-title {
@@ -836,7 +860,7 @@
 	}
 
 	.cmp-table .cmp-co {
-		padding: 10px 12px;
+		padding: 10px;
 		text-align: left;
 		border-left: var(--border-w) solid var(--ink);
 		letter-spacing: 0;
@@ -849,7 +873,7 @@
 	}
 	.cmp-co-name {
 		font-family: var(--font-sans);
-		font-size: 14px;
+		font-size: 13.5px;
 		font-weight: 700;
 		line-height: 1.25;
 		color: var(--ink);
@@ -940,6 +964,8 @@
 		border-bottom: 1px solid var(--ink);
 	}
 	.cmp-table .cmp-section-title {
+		/* Wraps between words, so a long title never widens the metric column. */
+		white-space: normal;
 		padding: 14px 12px 6px;
 		font-family: var(--font-display);
 		font-size: 12.5px;
@@ -1017,8 +1043,9 @@
 		background: #f7f9ff;
 		font-weight: 600;
 	}
-	.cmp-table .cmp-val.cmp-now {
-		text-align: center;
+	/* Today's market figures line up on the same right edge as every other figure (under the
+	   latest year when several are shown), and carry its weight only beside other years. */
+	.cmp-table .cmp-val.cmp-now.cmp-emph {
 		font-weight: 600;
 	}
 	.cmp-table .cmp-val.neg {
@@ -1266,13 +1293,18 @@
 	}
 
 	@media (max-width: 640px) {
+		.cmp-table {
+			--metric-w: 116px;
+			--company-min: 96px;
+			--year-min: 72px;
+		}
 		.cmp-note {
 			flex-basis: 100%;
 			margin-left: 0;
 		}
 		.cmp-metric-col,
 		.cmp-metric,
-		.cmp-section-title {
+		.cmp-table .cmp-section-title {
 			width: 116px;
 			min-width: 116px;
 			max-width: 116px;
