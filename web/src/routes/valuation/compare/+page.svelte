@@ -773,9 +773,10 @@
 		border: var(--border-w) solid var(--ink);
 		background: var(--bg);
 	}
-	/* Grows with its content; only .cmp-scroll scrolls sideways, never the page. */
+	/* As wide as its content when that fits; otherwise long company names wrap first, and only
+	   when the figures alone are too wide does .cmp-scroll scroll sideways (never the page). */
 	.cmp-table {
-		width: max-content;
+		width: auto;
 		margin: 0;
 		border-collapse: separate;
 		border-spacing: 0;
@@ -835,7 +836,7 @@
 	}
 
 	.cmp-table .cmp-co {
-		padding: 12px 16px;
+		padding: 10px 12px;
 		text-align: left;
 		border-left: var(--border-w) solid var(--ink);
 		letter-spacing: 0;
@@ -853,11 +854,14 @@
 		line-height: 1.25;
 		color: var(--ink);
 		text-decoration: none;
-		/* One line, so the header stays short. */
-		max-width: 100%;
+		/* Wraps onto at most two lines (full name on hover), so the figures, not a long name, set
+		   how wide a company's columns are. Breaks only between words. */
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
 		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		white-space: normal;
 	}
 	a.cmp-co-name:hover {
 		color: var(--accent);
@@ -909,9 +913,10 @@
 		white-space: normal;
 	}
 
+	/* Wide enough for figures such as 1,23,456 or ₹1,392; the numbers set the width, not padding. */
 	.cmp-table .cmp-year {
-		min-width: 112px;
-		padding: 8px 16px;
+		min-width: 64px;
+		padding: 8px 10px;
 		text-align: right;
 		font-family: var(--font-sans);
 		font-size: 11.5px;
@@ -1003,7 +1008,7 @@
 	}
 
 	.cmp-table .cmp-val {
-		padding: 10px 16px;
+		padding: 10px;
 		text-align: right;
 		white-space: nowrap;
 		font-variant-numeric: tabular-nums;
@@ -1281,7 +1286,7 @@
 			padding-left: 22px;
 		}
 		.cmp-table .cmp-year {
-			min-width: 92px;
+			min-width: 56px;
 		}
 	}
 </style>

@@ -17,19 +17,32 @@ function company(symbol: string, name: string, scale: number) {
 	};
 }
 
-async function open(page: Page) {
+/** The seven power-transmission names from a real comparison, long names included. */
+const SEVEN: [string, string, number][] = [
+	['JYOTISTRUC', 'Jyoti Structures Ltd', 0.3],
+	['TRANSRAILL', 'Transrail Lighting Ltd', 6.9],
+	['SKIPPER', 'Skipper Ltd', 5.6],
+	['KPIL', 'Kalpataru Projects International Ltd', 27.1],
+	['KEC', 'KEC International Ltd', 23.5],
+	['BAJEL', 'Bajel Projects Ltd', 2.8],
+	['SALASAR', 'Salasar Techno Engineering Ltd', 1.4]
+];
+
+async function open(page: Page, symbols = 'AAA,BBB,CCC') {
 	await page.route('**/api/valuation/compare/*', (route) => {
 		const symbol = route.request().url().split('/').pop()!.split('?')[0];
 		const fixtures: Record<string, ReturnType<typeof company>> = {
 			AAA: company('AAA', 'Alpha Ltd', 1),
 			BBB: company('BBB', 'Beta Ltd', 2),
-			CCC: company('CCC', 'Gamma Ltd', 1.5)
+			CCC: company('CCC', 'Gamma Ltd', 1.5),
+			...Object.fromEntries(SEVEN.map(([s, name, scale]) => [s, company(s, name, scale)]))
 		};
 		return route.fulfill({ json: fixtures[symbol] });
 	});
-	await page.goto('/valuation/compare?symbols=AAA,BBB,CCC');
+	await page.goto(`/valuation/compare?symbols=${symbols}`);
 	await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
-	await expect(page.getByRole('link', { name: 'Gamma Ltd' })).toBeVisible();
+	await expect(page.locator('.cmp-co-name')).toHaveCount(symbols.split(',').length);
+	await expect(page.locator('.cmp-status')).toHaveCount(0);
 }
 /** Section headers and metric names down the table, as the reader sees them. */
 const rowsOf = (page: Page) =>
@@ -140,4 +153,30 @@ test('shows one year per company and ranks companies by the metric clicked', asy
 	await page.getByRole('button', { name: 'Clear' }).click();
 	expect(await companies()).toEqual(['Alpha Ltd', 'Beta Ltd', 'Gamma Ltd']);
 	expect(errors).toEqual([]);
+});
+
+test('fits seven companies on one screen for one year, and stays compact for more', async ({ page }, testInfo) => {
+	test.skip(testInfo.project.name !== 'desktop', 'A phone can never fit seven companies side by side');
+	await open(page, SEVEN.map(([s]) => s).join(','));
+	const box = page.locator('.cmp-scroll');
+	const overflow = () => box.evaluate((el) => el.scrollWidth - el.clientWidth);
+	const setYears = (n: number) => page.getByRole('group', { name: 'Years per company' }).getByRole('button', { name: String(n), exact: true }).click();
+
+	await setYears(1);
+	await page.screenshot({ path: testInfo.outputPath('seven-1y.png') });
+	expect(await overflow()).toBe(0);
+	// Long names wrap instead of widening their column, and stay readable in full on hover.
+	const kpil = page.getByRole('link', { name: 'Kalpataru Projects International Ltd' });
+	await expect(kpil).toHaveAttribute('title', 'Kalpataru Projects International Ltd');
+	expect((await kpil.boundingBox())!.height).toBeGreaterThan(30);
+	// Every figure is shown whole, not clipped.
+	const clipped = await page.locator('.cmp-table td.cmp-val, .cmp-table th.cmp-year').evaluateAll((cells) => cells.filter((c) => c.scrollWidth > c.clientWidth).length);
+	expect(clipped).toBe(0);
+
+	await setYears(2);
+	await page.screenshot({ path: testInfo.outputPath('seven-2y.png') });
+	expect(await overflow()).toBeLessThanOrEqual(0);
+
+	await setYears(3);
+	await page.screenshot({ path: testInfo.outputPath('seven-3y.png') });
 });
