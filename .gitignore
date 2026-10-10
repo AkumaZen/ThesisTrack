@@ -17,3 +17,8 @@ production-creds.md
 node_modules/
 web/.svelte-kit/
 .neon
+web/playwright-report/
+web/test-results/
+services/concall/.venv/
+services/concall/downloads/
+web/tracker-build.log

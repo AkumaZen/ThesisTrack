@@ -116,6 +116,10 @@ const panel = () => field.oneOf(PANEL_STATES, 'auto');
  * `subsector` the companies in one subsector, `company` a single company.
  */
 export const VIEWS = {
+	masterTracker: {
+		query: field.text(100, { url: 'q' }), status: field.oneOf(['all', 'Pending', 'Met', 'Beat', 'Miss', 'Revised', 'Withdrawn'] as const, 'all', { lasting: true, url: 'status' }),
+		period: field.text(40, { lasting: true, url: 'period' }), expanded: field.text(40), selections: field.text(4000), scrollY
+	},
 	sector: {
 		sort: field.oneOf(SECTOR_SORT_KEYS, 'rs1m', { lasting: true, url: 'sort' }),
 		dir: field.oneOf(['asc', 'desc'] as const, 'desc', { lasting: true, url: 'dir' }),

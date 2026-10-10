@@ -11,7 +11,7 @@ export default defineConfig({
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
 				runes: ({ filename }) => filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			adapter: adapter({ runtime: 'nodejs24.x' })
 		})
 	],
 	server: {
@@ -26,7 +26,7 @@ export default defineConfig({
 			// working without that cost.
 			usePolling: true,
 			interval: 1000,
-			ignored: ['**/node_modules/**', '**/.git/**']
+			ignored: ['**/node_modules/**', '**/.git/**', '**/.svelte-kit/**', '**/.vercel/**', '**/test-results/**', '**/playwright-report/**']
 		}
 	}
 });

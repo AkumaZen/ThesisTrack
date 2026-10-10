@@ -4,6 +4,7 @@ import { coverage, savedValuations, valuationStatus, valuationVersions } from '$
 import { users } from '$lib/server/db/schema';
 import { logActivity, type Tx } from './activityStore';
 import { diffValuations } from '$lib/valuation/valuationDiff';
+import { trackerMocksEnabled } from './masterTrackerMock';
 import type {
 	RemovedValuation,
 	SaveBody,
@@ -17,6 +18,8 @@ import type {
 export const EDIT_SESSION_MS = 10 * 60 * 1000;
 /** Removed valuations stay listed (and one click from restored) for this long. */
 const REMOVED_LIST_DAYS = 30;
+const mockSaved = new Map<string, SavedValuationRecord>();
+export function resetMockSavedValuations() { if (!trackerMocksEnabled()) throw new Error('Test mode is disabled'); mockSaved.clear(); }
 
 function toRecord(row: typeof savedValuations.$inferSelect): SavedValuationRecord {
 	return {
@@ -44,12 +47,14 @@ function contentOf(v: Omit<SaveBody, 'baseVersion'>): ValuationContent {
 
 export async function getSavedValuationRow(symbol: string): Promise<SavedValuationRecord | null> {
 	const key = symbol.toUpperCase();
+	if (trackerMocksEnabled()) return structuredClone(mockSaved.get(key) ?? null);
 	const [row] = await db.select().from(savedValuations).where(eq(savedValuations.symbol, key));
 	return row ? toRecord(row) : null;
 }
 
 /** The watchlist: every saved valuation with who saved it last, its review status and analyst. */
 export async function listSavedValuationRows(): Promise<SavedValuationMeta[]> {
+	if (trackerMocksEnabled()) return [...mockSaved].map(([symbol, row]) => ({ symbol, name: row.name, lastUpdated: row.lastUpdated, version: row.version, updatedBy: row.updatedBy }));
 	const rows = await db
 		.select({
 			symbol: savedValuations.symbol,
@@ -100,9 +105,17 @@ const nextVersionSql = (key: string) =>
 export async function saveSavedValuationRow(
 	symbol: string,
 	body: SaveBody,
-	userName: string
+	userName: string,
+	transaction?: Tx
 ): Promise<SaveOutcome> {
 	const key = symbol.toUpperCase();
+	if (trackerMocksEnabled()) {
+		const current = mockSaved.get(key) ?? null;
+		if (body.baseVersion !== undefined && body.baseVersion !== (current?.version ?? 0)) return { ok: false, current };
+		const version = (current?.version ?? 0) + 1;
+		mockSaved.set(key, { ...structuredClone(body), version, updatedBy: userName });
+		return { ok: true, version, updatedBy: userName };
+	}
 	const values = {
 		name: body.name,
 		lastUpdated: body.lastUpdated,
@@ -113,7 +126,7 @@ export async function saveSavedValuationRow(
 		updatedBy: userName
 	};
 
-	const outcome = await db.transaction(async (tx) => {
+	const save = async (tx: Tx) => {
 		let version: number | undefined;
 		if (body.baseVersion === undefined) {
 			const [row] = await tx
@@ -143,7 +156,8 @@ export async function saveSavedValuationRow(
 		if (version === undefined) return null;
 		await recordVersion(tx, key, version, 'save', contentOf(body), userName);
 		return version;
-	});
+	};
+	const outcome = transaction ? await save(transaction) : await db.transaction(save);
 
 	if (outcome === null) return { ok: false, current: await getSavedValuationRow(key) };
 	return { ok: true, version: outcome, updatedBy: userName };

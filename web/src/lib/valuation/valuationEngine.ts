@@ -2,6 +2,9 @@ export type MethodId = 'pe' | 'pb' | 'ev_ebitda' | 'mcap_sales';
 export type ScenarioId = 'bear' | 'base' | 'bull';
 
 export interface YearAssumptions {
+	shares?: number; // optional disclosed year-wise dilution, used by tracker-generated models
+	minorityPAT?: number;
+	equityRaised?: number;
 	revenueGrowthPct: number;
 	expensePct: number; // expenses as a % of that same year's sales, not a YoY growth rate
 	otherIncome: number;
@@ -14,6 +17,8 @@ export interface YearAssumptions {
 }
 
 export interface ScenarioAssumptions {
+	baseSales?: number; // accepted tracker baseline, including manual corrections
+	baseBookValuePerShare?: number;
 	years: [YearAssumptions, YearAssumptions, YearAssumptions];
 }
 
@@ -105,8 +110,9 @@ export function project(
 	assumptions: ScenarioAssumptions
 ): ProjectedYear[] {
 	const years: ProjectedYear[] = [];
-	let prevSales = baseSales;
-	let prevBVPS = baseBookValuePerShare;
+	let prevSales = Number.isFinite(assumptions.baseSales) ? assumptions.baseSales! : baseSales;
+	let prevBVPS = Number.isFinite(assumptions.baseBookValuePerShare) ? assumptions.baseBookValuePerShare! : baseBookValuePerShare;
+	let prevShares = shares;
 
 	for (const rawYear of assumptions.years) {
 		// Defends against a year-assumptions object that didn't go through this module's own
@@ -137,9 +143,12 @@ export function project(
 		const pbt = ebitda + a.otherIncome - a.interest - a.depreciation;
 		const tax = pbt * (a.taxPct / 100);
 		const netProfit = pbt - tax;
-		const eps = shares > 0 ? netProfit / shares : 0;
+		const yearShares = Number.isFinite(rawYear.shares) && rawYear.shares! > 0 ? rawYear.shares! : shares;
+		const ownersPAT = netProfit - (Number.isFinite(rawYear.minorityPAT) ? rawYear.minorityPAT! : 0);
+		const eps = yearShares > 0 ? ownersPAT / yearShares : 0;
 		const retainedPerShare = (eps * (100 - a.dividendPayoutPct)) / 100;
-		const bookValuePerShare = prevBVPS + retainedPerShare;
+		const equityRaised = Number.isFinite(rawYear.equityRaised) ? rawYear.equityRaised! : 0;
+		const bookValuePerShare = yearShares > 0 ? (prevBVPS * prevShares + equityRaised) / yearShares + retainedPerShare : prevBVPS + retainedPerShare;
 
 		let impliedPrice: number;
 		switch (method) {
@@ -151,12 +160,12 @@ export function project(
 				break;
 			case 'ev_ebitda': {
 				const equityValue = ebitda * a.targetMultiple - a.netDebt;
-				impliedPrice = shares > 0 ? equityValue / shares : 0;
+				impliedPrice = yearShares > 0 ? equityValue / yearShares : 0;
 				break;
 			}
 			case 'mcap_sales': {
 				const mktCap = sales * a.targetMultiple;
-				impliedPrice = shares > 0 ? mktCap / shares : 0;
+				impliedPrice = yearShares > 0 ? mktCap / yearShares : 0;
 				break;
 			}
 		}
@@ -178,6 +187,7 @@ export function project(
 
 		prevSales = sales;
 		prevBVPS = bookValuePerShare;
+		prevShares = yearShares;
 	}
 
 	return years;

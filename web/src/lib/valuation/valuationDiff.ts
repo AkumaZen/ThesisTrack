@@ -6,6 +6,9 @@ import type { SavedValuationRecord } from './savedValuations';
 // what the other analyst changed before deciding whether to reload.
 
 const FIELD_LABELS: Record<keyof YearAssumptions, string> = {
+	shares: 'shares outstanding',
+	minorityPAT: 'minority PAT',
+	equityRaised: 'new equity capital',
 	revenueGrowthPct: 'revenue growth %',
 	expensePct: 'expenses % of sales',
 	otherIncome: 'other income',

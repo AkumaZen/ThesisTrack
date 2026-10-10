@@ -9,6 +9,7 @@ import { decideAccess, isApiPath } from '$lib/access';
 import { startSectorRotationScheduler } from '$lib/valuation/server/sectorRotationScheduler';
 import { startAlertScheduler } from '$lib/valuation/server/alertScheduler';
 import { IDLE_GRACE_MS, holdIdleConnections } from '$lib/server/db';
+import { isTrackerTestRequest, mockCompanies } from '$lib/valuation/server/masterTrackerMock';
 
 // Background jobs for the valuation tools: refresh the stored prices four times each weekday
 // (see refreshSlots.ts) and check prices against fair value every 10 min in market hours. A long-running server (local
@@ -42,6 +43,17 @@ function holdInstanceForIdleConnections() {
  * redirect so fetch() callers see a real error.
  */
 export const handle: Handle = async ({ event, resolve }) => {
+	// Local Playwright harness: scoped to this feature, unavailable in production builds.
+	const mockScope = event.url.pathname.startsWith('/valuation/master-tracker') || event.url.pathname.startsWith('/api/valuation/master-tracker') || (event.request.method === 'GET' && event.url.pathname.startsWith('/api/valuation/valuations')) || ['/api/valuation/symbol-search', '/api/valuation/alerts/unread-count'].includes(event.url.pathname);
+	if (mockScope && isTrackerTestRequest(event.url)) {
+		const role = event.cookies.get('tracker-test-role') === 'read_only' ? 'read_only' : 'read_write';
+		event.locals.user = { id: event.cookies.get('tracker-test-user') === 'second' ? 900002 : 900001, username: 'Playwright.Test', email: 'test@example.invalid', role, mustChangePassword: false };
+		const decision = decideAccess({ pathname: event.url.pathname, method: event.request.method, user: event.locals.user, hasApiCredential: false });
+		if (decision === 'forbidden') return json({ message: 'You do not have access to this action.' }, { status: 403 });
+		if (event.url.pathname === '/api/valuation/symbol-search') { const q = (event.url.searchParams.get('q') ?? '').toLowerCase(); return json({ results: mockCompanies.filter((c) => `${c.name} ${c.symbol}`.toLowerCase().includes(q)) }); }
+		if (event.url.pathname === '/api/valuation/alerts/unread-count') return json({ count: 0 });
+		return resolve(event);
+	}
 	const token = event.cookies.get(SESSION_COOKIE) ?? null;
 	event.locals.sessionToken = token;
 	event.locals.user = await getSessionUser(token ?? undefined);

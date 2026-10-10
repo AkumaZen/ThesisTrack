@@ -339,3 +339,15 @@ export const valuationTemplateDefaults = pgTable('valuation_template_defaults', 
 	setBy: text('set_by').notNull(),
 	setAt: bigint('set_at', { mode: 'number' }).notNull()
 });
+
+// Tracker membership is explicit. Research and review drafts are separate from accepted history.
+export const masterTrackerCompanies = pgTable('master_tracker_companies', {
+	symbol: text('symbol').primaryKey(), state: jsonb('state').notNull(), version: integer('version').notNull()
+});
+export const masterTrackerResearch = pgTable('master_tracker_research', {
+	key: text('key').primaryKey(), symbol: text('symbol').notNull().references(() => masterTrackerCompanies.symbol, { onDelete: 'cascade' }), data: jsonb('data').notNull()
+});
+export const masterTrackerPreviews = pgTable('master_tracker_previews', {
+	id: text('id').primaryKey(), symbol: text('symbol').notNull().references(() => masterTrackerCompanies.symbol, { onDelete: 'cascade' }), userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+	data: jsonb('data').notNull()
+});

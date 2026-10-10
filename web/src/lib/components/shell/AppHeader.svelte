@@ -34,6 +34,7 @@
 			match: (p) => p === '/valuation' || starts('/valuation/company')(p)
 		},
 		{ href: '/valuation/compare', label: 'Compare', match: starts('/valuation/compare') },
+		{ href: '/valuation/master-tracker', label: 'Master Tracker', match: starts('/valuation/master-tracker') },
 		{
 			href: '/valuation/sector-rotation',
 			label: 'Sector rotation',
