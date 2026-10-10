@@ -6,6 +6,8 @@ import {
 	moveMetric,
 	periodIndex,
 	shownMetrics,
+	sortByValue,
+	sortValue,
 	unitFor,
 	valueAt,
 	yearColumns,
@@ -166,6 +168,30 @@ describe('compareMetrics', () => {
 		]);
 		expect(new Set(runs.map((r) => r.id)).size).toBe(4);
 		expect(runs[3].metrics.map((m) => m.indent)).toEqual([false, false, true]);
+	});
+
+	it('ranks by the latest shown year, or today for market figures', () => {
+		const c = company();
+		expect(sortValue(c, 'pl:Sales', ['Mar 2025', 'Mar 2026'])).toBe(1175);
+		expect(sortValue(c, 'pl:Sales', ['Mar 2025'])).toBe(1107);
+		expect(sortValue(c, 'mkt:Current Price', ['Mar 2026'])).toBe(504);
+		// No value in the latest year: no fallback to an older one.
+		expect(sortValue(c, 'bs:Other Assets', ['Mar 2026', 'Mar 2027'])).toBeNull();
+		expect(sortValue(c, 'pl:Sales', [])).toBeNull();
+	});
+
+	it('sorts both ways, keeping companies without a value last in their order', () => {
+		const items = [
+			{ s: 'A', v: 5 },
+			{ s: 'B', v: null },
+			{ s: 'C', v: -2 },
+			{ s: 'D', v: 5 },
+			{ s: 'E', v: null },
+			{ s: 'F', v: 12 }
+		];
+		const order = (dir: 'asc' | 'desc') => sortByValue(items, (x) => x.v, dir).map((x) => x.s).join('');
+		expect(order('desc')).toBe('FADCBE');
+		expect(order('asc')).toBe('CADFBE');
 	});
 
 	it('reads period labels and units', () => {

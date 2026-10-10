@@ -228,6 +228,31 @@ export function moveMetric(selected: string[], shown: string[], from: number, to
 	return [...new Set(selected)].map((k) => (isShown.has(k) ? order[next++] : k));
 }
 
+export type SortDir = 'desc' | 'asc';
+
+/**
+ * The figure a company is ranked by for one metric: today's value for market figures, else the
+ * value in the latest year column shown for it. No fallback to an older year, which would rank
+ * companies on different years without saying so.
+ */
+export function sortValue(company: CompareStatements, key: string, years: string[]): number | null {
+	if (key.startsWith('mkt:')) return valueAt(company, key, 'now');
+	const latest = years[years.length - 1];
+	return latest ? valueAt(company, key, latest) : null;
+}
+
+/** Orders items by their value; items without one (or still loading) keep their order, last. */
+export function sortByValue<T>(items: T[], value: (item: T) => number | null, dir: SortDir): T[] {
+	const sign = dir === 'desc' ? -1 : 1;
+	const keyed = items.map((item, i) => ({ item, i, v: value(item) }));
+	return keyed
+		.sort((a, b) => {
+			if (a.v == null || b.v == null) return a.v == null && b.v == null ? a.i - b.i : a.v == null ? 1 : -1;
+			return a.v === b.v ? a.i - b.i : sign * (a.v - b.v);
+		})
+		.map((k) => k.item);
+}
+
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
 /** "Mar 2026" -> a sortable month index (year * 12 + month), or null for anything else (e.g. TTM). */

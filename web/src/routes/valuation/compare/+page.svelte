@@ -15,10 +15,13 @@
 		metricRuns,
 		moveMetric,
 		shownMetrics,
+		sortByValue,
+		sortValue,
 		valueAt,
 		yearColumns,
 		type CatalogEntry,
 		type CompareStatements,
+		type SortDir,
 		type Unit
 	} from '$lib/valuation/compareMetrics';
 
@@ -99,7 +102,7 @@
 
 	// ---- preferences (per person, this browser) ------------------------------------------------
 
-	const YEAR_CHOICES = [2, 3, 5];
+	const YEAR_CHOICES = [1, 2, 3, 5];
 	let selected = $state<string[]>([...DEFAULT_METRIC_KEYS]);
 	let yearCount = $state(2);
 	/** True once the person has put the rows in their own order; `selected` then holds that order. */
@@ -196,16 +199,76 @@
 	let dragFrom = $state<number | null>(null);
 	let dropAt = $state<number | null>(null);
 
-	function dragOver(e: DragEvent, i: number) {
+	let arrangeEl = $state<HTMLOListElement>();
+	/** Where the pointer was at the last dragover, anywhere in the panel. */
+	let pointer = { x: 0, y: 0 };
+	let scrollFrame = 0;
+	/** Within this distance of the list's top or bottom edge (or past it), the list scrolls. */
+	const EDGE_PX = 72;
+	const MAX_SPEED_PX = 22;
+
+	/** The slot under the pointer, held inside the list so a pointer above or below it picks the
+	 *  first or last visible slot. */
+	function slotAtPointer(list: HTMLElement): number | null {
+		const area = list.getBoundingClientRect();
+		const y = Math.min(Math.max(pointer.y, area.top + 1), area.bottom - 1);
+		const x = Math.min(Math.max(pointer.x, area.left + 1), area.right - 1);
+		const li = document.elementFromPoint(x, y)?.closest<HTMLElement>('li[data-index]');
+		if (!li || !list.contains(li)) return dropAt;
+		const i = Number(li.dataset.index);
+		const box = li.getBoundingClientRect();
+		return y < box.top + box.height / 2 ? i : i + 1;
+	}
+
+	/**
+	 * Runs every frame while a row is dragged: scrolls the list when the pointer is near or past
+	 * its top or bottom (faster the closer it gets), and keeps the drop slot under the pointer as
+	 * rows scroll past. Browsers only scroll a few pixels from the very edge on their own, and
+	 * fire no events while the pointer holds still.
+	 */
+	function dragLoop() {
+		const list = arrangeEl;
+		if (dragFrom == null || !list) return;
+		const area = list.getBoundingClientRect();
+		const depth =
+			pointer.y < area.top + EDGE_PX
+				? -(area.top + EDGE_PX - pointer.y)
+				: pointer.y > area.bottom - EDGE_PX
+					? pointer.y - (area.bottom - EDGE_PX)
+					: 0;
+		if (depth !== 0) list.scrollTop += Math.sign(depth) * Math.ceil(Math.min(1, Math.abs(depth) / EDGE_PX) * MAX_SPEED_PX);
+		dropAt = slotAtPointer(list);
+		scrollFrame = requestAnimationFrame(dragLoop);
+	}
+
+	function dragStart(e: DragEvent, i: number, key: string) {
+		dragFrom = i;
+		pointer = { x: e.clientX, y: e.clientY };
+		e.dataTransfer?.setData('text/plain', key);
+		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+		cancelAnimationFrame(scrollFrame);
+		scrollFrame = requestAnimationFrame(dragLoop);
+	}
+	/** Anywhere in the panel, so the list keeps scrolling with the pointer above or below it. Both
+	 *  dragenter and dragover are cancelled: an uncancelled dragenter makes the browser treat the
+	 *  spot as no drop target, and it then sends no dragover at all. */
+	function panelDragOver(e: DragEvent) {
 		if (dragFrom == null) return;
 		e.preventDefault();
-		const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		dropAt = e.clientY < box.top + box.height / 2 ? i : i + 1;
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+		pointer = { x: e.clientX, y: e.clientY };
+	}
+	function dragEnd() {
+		cancelAnimationFrame(scrollFrame);
+		dragFrom = dropAt = null;
 	}
 	function drop(e: DragEvent) {
+		if (dragFrom == null) return;
 		e.preventDefault();
-		if (dragFrom != null && dropAt != null) moveTo(dragFrom, dropAt > dragFrom ? dropAt - 1 : dropAt);
-		dragFrom = dropAt = null;
+		pointer = { x: e.clientX, y: e.clientY };
+		const at = arrangeEl ? slotAtPointer(arrangeEl) : dropAt;
+		if (at != null) moveTo(dragFrom, at > dragFrom ? at - 1 : at);
+		dragEnd();
 	}
 	const pickerSections = $derived.by(() => {
 		const q = query.trim().toLowerCase();
@@ -251,16 +314,28 @@
 		};
 	});
 
-	/** Per company: its year columns, oldest first with the latest last. */
-	const columns = $derived(
-		data.symbols.map((symbol) => {
+	/** Companies ranked by one metric, chosen by clicking its name; null keeps the chosen order. */
+	let sort = $state<{ key: string; dir: SortDir } | null>(null);
+
+	/** First click ranks high to low, the next low to high, the third clears the ranking. */
+	function sortBy(key: string) {
+		sort = sort?.key !== key ? { key, dir: 'desc' } : sort.dir === 'desc' ? { key, dir: 'asc' } : null;
+	}
+	const sortLabel = $derived(sort ? (catalog.find((m) => m.key === sort!.key)?.label ?? null) : null);
+
+	/** Per company: its year columns, oldest first with the latest last, in ranked order if any. */
+	const columns = $derived.by(() => {
+		const list = data.symbols.map((symbol) => {
 			const load: Load = loads[symbol] ?? { status: 'waiting' };
 			const years = load.status === 'ok' ? yearColumns(load.data, yearCount) : [];
 			// Keep the group's width while loading or failed, so the header doesn't jump.
 			const slots = years.length > 0 ? years : Array.from({ length: yearCount }, () => '');
 			return { symbol, load, years: slots };
-		})
-	);
+		});
+		const by = sort;
+		if (!by) return list;
+		return sortByValue(list, (c) => (c.load.status === 'ok' ? sortValue(c.load.data, by.key, c.years) : null), by.dir);
+	});
 	const totalCols = $derived(1 + columns.reduce((n, c) => n + c.years.length, 0));
 
 	/** "Mar 2026" -> "FY26"; other year ends keep their month ("Dec 25"). */
@@ -358,6 +433,13 @@
 				{/each}
 			</div>
 
+			{#if sort && sortLabel}
+				<p class="cmp-sorted">
+					Ranked by <strong>{sortLabel}</strong>, {sort.dir === 'desc' ? 'high to low' : 'low to high'}
+					<button type="button" class="link-btn" onclick={() => (sort = null)}>Clear</button>
+				</p>
+			{/if}
+
 			<p class="cmp-note">₹ Cr unless marked. Market figures are current; shareholding is as at each year end.</p>
 		</div>
 
@@ -438,10 +520,25 @@
 							<td colspan={totalCols - 1}></td>
 						</tr>
 						{#each g.metrics as m (m.key)}
+							{@const dir = sort?.key === m.key ? sort.dir : null}
 							<tr class:cmp-sub={m.indent}>
 								<th class="cmp-metric" scope="row">
-									<span class="cmp-metric-label">{m.label}</span>
-									{#if m.unit !== 'cr'}<span class="cmp-unit">{UNIT_HINT[m.unit]}</span>{/if}
+									<button
+										type="button"
+										class="cmp-sort"
+										class:on={dir != null}
+										aria-pressed={dir != null}
+										title={dir === 'desc'
+											? 'Ranked high to low. Click for low to high'
+											: dir === 'asc'
+												? 'Ranked low to high. Click to clear'
+												: `Rank companies by ${m.label}`}
+										onclick={() => sortBy(m.key)}
+									>
+										<span class="cmp-metric-label">{m.label}</span>
+										{#if m.unit !== 'cr'}<span class="cmp-unit">{UNIT_HINT[m.unit]}</span>{/if}
+										<span class="cmp-sort-mark" aria-hidden="true">{dir === 'desc' ? '▼' : dir === 'asc' ? '▲' : '↕'}</span>
+									</button>
 								</th>
 								{#each columns as c (c.symbol)}
 									{#if g.section === 'mkt'}
@@ -475,6 +572,9 @@
 	class="cmp-dialog"
 	bind:this={dialog}
 	aria-labelledby="cmpDialogTitle"
+	ondragenter={panelDragOver}
+	ondragover={panelDragOver}
+	ondrop={drop}
 	onclose={() => {
 		query = '';
 		tab = 'choose';
@@ -500,21 +600,16 @@
 				{#if arranged}<button type="button" class="link-btn" onclick={statementOrder}>Statement order</button>{/if}
 			</div>
 		</div>
-		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<ol class="cmp-dialog-body cmp-arrange" ondrop={drop} ondragover={(e) => dragFrom != null && e.preventDefault()}>
+		<ol class="cmp-dialog-body cmp-arrange" bind:this={arrangeEl}>
 			{#each shown as m, i (m.key)}
 				<li
 					draggable="true"
+					data-index={i}
 					class:dragging={dragFrom === i}
 					class:drop-before={dropAt === i && dragFrom !== i && dragFrom !== i - 1}
 					class:drop-after={dropAt === i + 1 && i === shown.length - 1 && dragFrom !== i}
-					ondragstart={(e) => {
-						dragFrom = i;
-						e.dataTransfer?.setData('text/plain', m.key);
-						if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-					}}
-					ondragover={(e) => dragOver(e, i)}
-					ondragend={() => (dragFrom = dropAt = null)}
+					ondragstart={(e) => dragStart(e, i, m.key)}
+					ondragend={dragEnd}
 				>
 					<span class="cmp-grip" aria-hidden="true">⠿</span>
 					<span class="cmp-arrange-label">
@@ -857,6 +952,42 @@
 	}
 	.cmp-metric-label {
 		white-space: normal;
+	}
+	/* The whole name cell is the sort control; the arrow shows on hover, or stays when ranked. */
+	.cmp-sort {
+		display: flex;
+		align-items: baseline;
+		width: 100%;
+		padding: 0;
+		border: none;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+	.cmp-sort:hover .cmp-metric-label {
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.cmp-sort-mark {
+		margin-left: auto;
+		padding-left: 6px;
+		font-size: 10px;
+		color: var(--muted);
+		opacity: 0;
+	}
+	.cmp-sort:hover .cmp-sort-mark,
+	.cmp-sort:focus-visible .cmp-sort-mark {
+		opacity: 1;
+	}
+	.cmp-sort.on .cmp-sort-mark {
+		opacity: 1;
+		color: var(--accent);
+	}
+	.cmp-sorted {
+		margin: 0;
+		font-size: 13px;
 	}
 	.cmp-unit {
 		margin-left: 6px;
