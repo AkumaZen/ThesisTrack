@@ -1,7 +1,7 @@
 // Everything the Compare page knows about a metric: the statements shape the server sends, the
 // default selection, friendly labels and the period alignment. Pure, so it runs on both sides.
 
-export type SectionId = 'mkt' | 'pl' | 'bs' | 'cf' | 'ratios' | 'sh';
+export type SectionId = 'mkt' | 'val' | 'pl' | 'bs' | 'cf' | 'ratios' | 'sh';
 export type Unit = 'cr' | 'pct' | 'days' | 'rs' | 'count' | 'x';
 
 export interface StatementRow {
@@ -33,18 +33,23 @@ export interface CompareStatements {
 
 export const SECTION_TITLES: Record<SectionId, string> = {
 	mkt: 'Market',
+	val: 'Valuation multiples',
 	pl: 'Profit & loss',
 	bs: 'Balance sheet',
 	cf: 'Cash flow',
 	ratios: 'Efficiency & returns',
 	sh: 'Shareholding pattern'
 };
-export const SECTION_ORDER: SectionId[] = ['mkt', 'pl', 'bs', 'cf', 'ratios', 'sh'];
+export const SECTION_ORDER: SectionId[] = ['mkt', 'val', 'pl', 'bs', 'cf', 'ratios', 'sh'];
 
 /** The selection a first visit (and "Reset to defaults") shows. */
 export const DEFAULT_METRIC_KEYS: readonly string[] = [
 	'mkt:Current Price',
 	'mkt:Stock P/E',
+	'val:P/E',
+	'val:EV / EBITDA',
+	'val:Price to book',
+	'val:Price to sales',
 	'pl:Sales',
 	'pl:OPM %',
 	'pl:Net Profit',
@@ -111,7 +116,7 @@ export function unitFor(section: SectionId, label: string, sawPercent: boolean):
 	if (sawPercent || /%/.test(label)) return 'pct';
 	if (/days|cycle/i.test(label)) return 'days';
 	if (/^No\. of/i.test(label)) return 'count';
-	if (section === 'mkt' && /P\/E|P\/B/i.test(label)) return 'x';
+	if (section === 'val' || (section === 'mkt' && /P\/E|EV \/|Price to/i.test(label))) return 'x';
 	if (/EPS|Price|Book Value|Face Value|^High|^Low/i.test(label)) return 'rs';
 	return 'cr';
 }

@@ -6,6 +6,7 @@ import { detectBasis } from './scraper';
 import { bseSlugFor } from './screenerSlug';
 import {
 	metricKey,
+	periodIndex,
 	unitFor,
 	type CompareStatements,
 	type SectionId,
@@ -15,8 +16,9 @@ import {
 
 // The Compare page's full statements: every row of Screener's consolidated P&L, balance sheet,
 // cash flow, ratios and shareholding tables, plus the sub-rows behind each expandable "+" row
-// (trade receivables, payables, inventory, working capital changes, ...). Heavier than
-// scraper.ts's summary (one page plus ~11 small JSON calls), so it is cached on its own.
+// (trade receivables, payables, inventory, working capital changes, ...), and the valuation
+// multiples (P/E, EV/EBITDA, P/B, P/S) at each year end from Screener's chart API. Heavier than
+// scraper.ts's summary (one page plus ~12 small JSON calls), so it is cached on its own.
 
 const USER_AGENT =
 	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
@@ -24,7 +26,7 @@ const TTL_MS = 24 * 60 * 60 * 1000;
 /** Kept in valuation.company_cache beside the summary rows, under a prefixed key. */
 const CACHE_PREFIX = 'STMT:';
 /** Bump when the shape changes so older cached rows are fetched again. */
-const SHAPE_VERSION = 3;
+const SHAPE_VERSION = 4;
 const MIN_GAP_MS = 450;
 const MAX_RETRIES = 3;
 /** An incomplete fetch (some breakdowns failed) is cached this long only, then retried. */
@@ -35,7 +37,7 @@ const PARTIAL_TTL_MS = 10 * 60 * 1000;
  */
 const MIN_REFRESH_GAP_MS = 5 * 60 * 1000;
 
-type TableSection = Exclude<SectionId, 'mkt'>;
+type TableSection = Exclude<SectionId, 'mkt' | 'val'>;
 const TABLE_SECTIONS: { id: TableSection; html: string }[] = [
 	{ id: 'pl', html: 'profit-loss' },
 	{ id: 'bs', html: 'balance-sheet' },
@@ -209,6 +211,66 @@ function readMarket($: cheerio.CheerioAPI): StatementSection {
 	return { id: 'mkt', labels: [], rows };
 }
 
+/** Screener's chart metric names for the valuation multiples, and the row each one fills. */
+const VALUATION_SERIES: Record<string, string> = {
+	'Price to Earning': 'P/E',
+	'EV Multiple': 'EV / EBITDA',
+	'Price to book value': 'Price to book',
+	'Market Cap to Sales': 'Price to sales'
+};
+/** Screener's chart points are about a week apart; a year end further than this from one has no value. */
+const MAX_POINT_GAP_DAYS = 15;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** "Mar 2025" -> the last day of that month, in ms (UTC), or null for anything else (e.g. TTM). */
+function yearEndMs(label: string): number | null {
+	const i = periodIndex(label);
+	return i == null ? null : Date.UTC(Math.floor(i / 12), (i % 12) + 1, 0);
+}
+
+/**
+ * The valuation multiples at each year end, plus their latest values, from Screener's price
+ * chart API. One request covers all four multiples back to the oldest year shown.
+ */
+async function readValuation(
+	companyId: string,
+	years: string[],
+	consolidated: boolean
+): Promise<{ section: StatementSection; latest: StatementRow[] }> {
+	const labels = years.filter((l) => yearEndMs(l) != null);
+	const oldest = Math.min(...labels.map((l) => yearEndMs(l)!));
+	const days = Math.max(365, Math.ceil((Date.now() - oldest) / DAY_MS) + 30);
+	const url =
+		`https://www.screener.in/api/company/${encodeURIComponent(companyId)}/chart/` +
+		`?q=${encodeURIComponent(Object.keys(VALUATION_SERIES).join('-'))}&days=${days}` +
+		(consolidated ? '&consolidated=true' : '');
+	const res = await politeFetch(url, 'application/json');
+	const body = (await res.json()) as { datasets?: { metric?: string; values?: [string, unknown][] }[] };
+	const rows: StatementRow[] = [];
+	const latest: StatementRow[] = [];
+	for (const set of body.datasets ?? []) {
+		const label = set.metric ? VALUATION_SERIES[set.metric] : undefined;
+		if (!label) continue;
+		const points = (set.values ?? [])
+			.map(([date, v]) => ({ at: Date.parse(date), value: parseNumber(v) }))
+			.filter((p) => !Number.isNaN(p.at) && p.value != null)
+			.sort((a, b) => a.at - b.at);
+		if (points.length === 0) continue;
+		const values = labels.map((l) => {
+			const end = yearEndMs(l)!;
+			const p = points.findLast((pt) => pt.at <= end);
+			return p && end - p.at <= MAX_POINT_GAP_DAYS * DAY_MS ? p.value : null;
+		});
+		if (values.some((v) => v != null))
+			rows.push({ key: metricKey('val', label), label, parent: null, unit: 'x', values });
+		const now = points[points.length - 1].value;
+		latest.push({ key: metricKey('mkt', label), label, parent: null, unit: 'x', values: [now] });
+	}
+	const order = Object.values(VALUATION_SERIES);
+	const byOrder = (a: StatementRow, b: StatementRow) => order.indexOf(a.label) - order.indexOf(b.label);
+	return { section: { id: 'val', labels, rows: rows.sort(byOrder) }, latest: latest.sort(byOrder) };
+}
+
 async function loadPage(slug: string, consolidated: boolean): Promise<cheerio.CheerioAPI> {
 	const path = consolidated ? 'consolidated/' : '';
 	const res = await politeFetch(
@@ -251,6 +313,19 @@ async function scrape(symbol: string, slug: string): Promise<Scraped> {
 			}
 		}
 		sections.push(section);
+	}
+
+	if (companyId) {
+		try {
+			const { section, latest } = await readValuation(companyId, profitLoss.labels, consolidated);
+			sections.splice(1, 0, section);
+			// Today's multiples sit with the other market figures. P/E and P/B are already there from
+			// the header, so only the two it leaves out are added.
+			sections[0].rows.push(...latest.filter((r) => r.label === 'EV / EBITDA' || r.label === 'Price to sales'));
+		} catch (e) {
+			partial = true;
+			console.warn(`[compare] ${symbol}: no valuation history:`, e instanceof Error ? e.message : e);
+		}
 	}
 
 	return {
