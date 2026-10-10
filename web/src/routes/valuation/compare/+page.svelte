@@ -957,6 +957,13 @@
 	.cmp-table .cmp-first {
 		border-left: var(--border-w) solid var(--ink);
 	}
+	/* The first company sits against the metric column, whose own right border already draws
+	   that edge; a second rule there would double it into one thick, uneven line. */
+	.cmp-table .cmp-metric-col + .cmp-co,
+	.cmp-table thead tr:nth-child(2) > .cmp-year:first-child,
+	.cmp-table .cmp-metric + .cmp-first {
+		border-left: none;
+	}
 
 	.cmp-section th,
 	.cmp-section td {

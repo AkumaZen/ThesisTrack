@@ -180,6 +180,18 @@ test('fits seven companies on one screen for one year, and stays compact for mor
 	const headAligns = await page.locator('.cmp-table thead th.cmp-co, .cmp-table thead th.cmp-year').evaluateAll((ths) => [...new Set(ths.map((th) => getComputedStyle(th).textAlign))]);
 	expect(headAligns).toEqual(['center']);
 	await expect(page.locator('.cmp-table .cmp-latest')).toHaveCount(0);
+	// The metric column's right edge is one even rule down every row, never doubled.
+	// (The year row has no metric cell: the METRIC header spans it, border included.)
+	const edges = await page.locator('.cmp-table tr:has(.cmp-metric-col, .cmp-metric, .cmp-section-title)').evaluateAll((trs) =>
+		trs.map((tr) => {
+			const metric = tr.querySelector<HTMLElement>('.cmp-metric-col, .cmp-metric, .cmp-section-title')!;
+			const next = metric.nextElementSibling as HTMLElement;
+			return parseFloat(getComputedStyle(metric).borderRightWidth) + parseFloat(getComputedStyle(next).borderLeftWidth);
+		})
+	);
+	expect(edges.length).toBeGreaterThan(8);
+	expect([...new Set(edges)]).toEqual([2]);
+	await page.locator('.cmp-scroll').screenshot({ path: testInfo.outputPath('edge.png') });
 	// Every figure is shown whole, not clipped.
 	const clipped = await page.locator('.cmp-table td.cmp-val, .cmp-table th.cmp-year').evaluateAll((cells) => cells.filter((c) => c.scrollWidth > c.clientWidth).length);
 	expect(clipped).toBe(0);
