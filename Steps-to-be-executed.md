@@ -1,7 +1,6 @@
 # These are the steps which are to be executed after current changes are done by the claude agent 
 
 Run Multiple Agents to solve this quickly and parallely 
-Autocompact on 50% 
 
 Stop when reached 90% token usage
 

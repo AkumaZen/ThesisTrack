@@ -12,7 +12,7 @@ This document ports that loop to a software build. The "episode" is the P0→P6 
 
 | Paper | Here |
 |---|---|
-| Episode (one Pokémon run) | The whole build, P0 → P6. Sessions and context compactions are *not* episode boundaries. |
+| Episode (one Pokémon run) | The whole build, P0 → P6. Sessions are *not* episode boundaries. |
 | Environment interface | Repo + `pytest` + `alembic` + a live Postgres + the acceptance criteria in `BUILD_PLAN.md` |
 | Trajectory window | Last N tool calls (default 40) or the last work session, whichever is shorter |
 | System prompt `p` | `harness/prompt.md` — the operating directive the agent reloads each session |
@@ -130,14 +130,12 @@ For each unit of work:
 
 ## Awareness discipline
 
-You lose context to compaction. The harness is your continuity, so keep it true:
+The harness is your continuity, so keep it true:
 
 - Update `STATE.md` whenever the answer to "where are we" changes — at minimum
   at the end of every session and every phase boundary.
 - STATE.md is bounded at ~60 lines. It holds current position, not history.
   History goes to `decisions.md` and the journal.
-- If you are about to compact and STATE.md is stale, updating it is the highest
-  priority action available to you.
 - Never write "done" for something you have not verified. A false STATE.md is
   worse than an empty one, because the next session will build on it.
 
