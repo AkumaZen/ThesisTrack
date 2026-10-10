@@ -201,8 +201,9 @@ test('fits seven companies on one screen for one year, and stays compact for mor
 	expect(await overflow()).toBeLessThanOrEqual(0);
 
 	await expect(page.locator('.cmp-table thead .cmp-year.cmp-latest')).toHaveCount(7);
-	// Several years compare across one right edge.
-	expect(await page.locator('.cmp-table td.cmp-val').evaluateAll((tds) => [...new Set(tds.map((td) => getComputedStyle(td).textAlign))])).toEqual(['right']);
+	// Several years are centred too, headers and figures alike.
+	expect(await page.locator('.cmp-table td.cmp-val').evaluateAll((tds) => [...new Set(tds.map((td) => getComputedStyle(td).textAlign))])).toEqual(['center']);
+	expect(await page.locator('.cmp-table thead th.cmp-co, .cmp-table thead th.cmp-year').evaluateAll((ths) => [...new Set(ths.map((th) => getComputedStyle(th).textAlign))])).toEqual(['center']);
 
 	await setYears(5);
 	await page.screenshot({ path: testInfo.outputPath('seven-5y.png') });

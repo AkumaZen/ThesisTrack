@@ -445,7 +445,7 @@
 		</div>
 
 		<div class="cmp-scroll">
-			<table class="cmp-table" class:cmp-single={yearCount === 1} style:--cmp-years={yearCount} style:--cmp-cols={totalCols - 1}>
+			<table class="cmp-table" style:--cmp-years={yearCount} style:--cmp-cols={totalCols - 1}>
 				<colgroup>
 					<col class="cmp-col-metric" />
 					{#each columns as c (c.symbol)}
@@ -941,7 +941,6 @@
 	.cmp-table .cmp-year {
 		min-width: 64px;
 		padding: 8px 10px;
-		text-align: right;
 		font-family: var(--font-sans);
 		font-size: 11.5px;
 		font-weight: 600;
@@ -1042,7 +1041,6 @@
 
 	.cmp-table .cmp-val {
 		padding: 10px;
-		text-align: right;
 		white-space: nowrap;
 		font-variant-numeric: tabular-nums;
 	}
@@ -1050,25 +1048,24 @@
 		background: #f7f9ff;
 		font-weight: 600;
 	}
-	/* Today's market figures line up on the same right edge as every other figure (under the
-	   latest year when several are shown), and carry its weight only beside other years. */
+	/* Today's market figures span the company's block and carry the latest year's weight only
+	   beside other years. */
 	.cmp-table .cmp-val.cmp-now.cmp-emph {
 		font-weight: 600;
 	}
-	/* One year per company: each column holds a single figure, so figures, years and company
-	   headers sit centred in it. With several years they keep one right edge to compare across. */
-	.cmp-single .cmp-val,
-	.cmp-single thead .cmp-year,
-	.cmp-single thead .cmp-co {
+	/* Every column is the same width, so figures, years and company headers sit centred in it. */
+	.cmp-table .cmp-val,
+	.cmp-table thead .cmp-year,
+	.cmp-table thead .cmp-co {
 		text-align: center;
 	}
-	.cmp-single .cmp-co-head {
+	.cmp-table .cmp-co-head {
 		align-items: center;
 	}
-	.cmp-single .cmp-co-meta {
+	.cmp-table .cmp-co-meta {
 		justify-content: center;
 	}
-	.cmp-single .cmp-refresh {
+	.cmp-table .cmp-refresh {
 		margin-left: 0;
 	}
 	.cmp-table .cmp-val.neg {
