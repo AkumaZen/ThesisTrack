@@ -43,8 +43,9 @@ function holdInstanceForIdleConnections() {
  * redirect so fetch() callers see a real error.
  */
 export const handle: Handle = async ({ event, resolve }) => {
-	// Local Playwright harness: scoped to this feature, unavailable in production builds.
-	const mockScope = event.url.pathname.startsWith('/valuation/master-tracker') || event.url.pathname.startsWith('/api/valuation/master-tracker') || (event.request.method === 'GET' && event.url.pathname.startsWith('/api/valuation/valuations')) || ['/api/valuation/symbol-search', '/api/valuation/alerts/unread-count'].includes(event.url.pathname);
+	// Local Playwright harness: scoped to Master Tracker and the Compare page (whose figures the
+	// spec serves itself), unavailable in production builds.
+	const mockScope = event.url.pathname.startsWith('/valuation/master-tracker') || event.url.pathname === '/valuation/compare' || event.url.pathname.startsWith('/api/valuation/master-tracker') || (event.request.method === 'GET' && event.url.pathname.startsWith('/api/valuation/valuations')) || ['/api/valuation/symbol-search', '/api/valuation/alerts/unread-count'].includes(event.url.pathname);
 	if (mockScope && isTrackerTestRequest(event.url)) {
 		const role = event.cookies.get('tracker-test-role') === 'read_only' ? 'read_only' : 'read_write';
 		event.locals.user = { id: event.cookies.get('tracker-test-user') === 'second' ? 900002 : 900001, username: 'Playwright.Test', email: 'test@example.invalid', role, mustChangePassword: false };

@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
 	buildCatalog,
 	formatValue,
+	metricRuns,
+	moveMetric,
 	periodIndex,
+	shownMetrics,
 	unitFor,
 	valueAt,
 	yearColumns,
+	type CatalogEntry,
 	type CompareStatements
 } from './compareMetrics';
 
@@ -111,6 +115,57 @@ describe('compareMetrics', () => {
 			'sh:Promoters'
 		]);
 		expect(buildCatalog([company()]).find((m) => m.key === 'pl:Sales')?.label).toBe('Revenue');
+	});
+
+	const entry = (key: string, parent: string | null = null): CatalogEntry => ({
+		key,
+		section: key.split(':')[0] as CatalogEntry['section'],
+		label: key,
+		parent,
+		unit: 'cr'
+	});
+	const catalog = [
+		entry('mkt:Market Cap'),
+		entry('pl:Sales'),
+		entry('bs:Fixed Assets'),
+		entry('bs:CWIP'),
+		entry('bs:Other Assets'),
+		entry('bs:Other Assets>Inventories', 'Other Assets'),
+		entry('bs:Other Assets>Trade receivables', 'Other Assets')
+	];
+	const keys = (ms: CatalogEntry[]) => ms.map((m) => m.key);
+
+	it('shows metrics in statement order until the person arranges them', () => {
+		const selected = ['bs:CWIP', 'mkt:Market Cap', 'bs:Missing', 'bs:Fixed Assets'];
+		expect(keys(shownMetrics(catalog, selected, false))).toEqual(['mkt:Market Cap', 'bs:Fixed Assets', 'bs:CWIP']);
+		expect(keys(shownMetrics(catalog, selected, true))).toEqual(['bs:CWIP', 'mkt:Market Cap', 'bs:Fixed Assets']);
+	});
+
+	it('moves a metric and keeps unshown keys in their slots', () => {
+		// Shown in statement order: Market Cap, Sales, Fixed Assets, CWIP. Move CWIP to second.
+		const selected = ['pl:Sales', 'bs:Missing', 'bs:CWIP', 'mkt:Market Cap', 'bs:Fixed Assets'];
+		const shown = keys(shownMetrics(catalog, selected, false));
+		const next = moveMetric(selected, shown, 3, 1);
+		expect(next).toEqual(['mkt:Market Cap', 'bs:Missing', 'bs:CWIP', 'pl:Sales', 'bs:Fixed Assets']);
+		expect(keys(shownMetrics(catalog, next, true))).toEqual(['mkt:Market Cap', 'bs:CWIP', 'pl:Sales', 'bs:Fixed Assets']);
+		expect(moveMetric(selected, shown, 9, 0)).toBe(selected);
+	});
+
+	it('gives each run of one section its own header, and indents sub-rows only under their parent', () => {
+		const arranged = shownMetrics(
+			catalog,
+			['mkt:Market Cap', 'bs:Fixed Assets', 'bs:CWIP', 'pl:Sales', 'bs:Other Assets>Inventories', 'bs:Other Assets', 'bs:Other Assets>Trade receivables'],
+			true
+		);
+		const runs = metricRuns(arranged);
+		expect(runs.map((r) => [r.title, keys(r.metrics)])).toEqual([
+			['Market', ['mkt:Market Cap']],
+			['Balance sheet', ['bs:Fixed Assets', 'bs:CWIP']],
+			['Profit & loss', ['pl:Sales']],
+			['Balance sheet', ['bs:Other Assets>Inventories', 'bs:Other Assets', 'bs:Other Assets>Trade receivables']]
+		]);
+		expect(new Set(runs.map((r) => r.id)).size).toBe(4);
+		expect(runs[3].metrics.map((m) => m.indent)).toEqual([false, false, true]);
 	});
 
 	it('reads period labels and units', () => {

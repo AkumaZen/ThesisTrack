@@ -168,6 +168,66 @@ export function buildCatalog(companies: CompareStatements[]): CatalogEntry[] {
 	return SECTION_ORDER.flatMap((id) => bySection.get(id) ?? []);
 }
 
+/**
+ * The metrics the table shows, in display order: statement order by default, or the order of
+ * `selected` once the person has arranged the rows themselves. Selected keys that no loaded
+ * company reports are skipped.
+ */
+export function shownMetrics(catalog: CatalogEntry[], selected: string[], arranged: boolean): CatalogEntry[] {
+	if (!arranged) {
+		const on = new Set(selected);
+		return catalog.filter((m) => on.has(m.key));
+	}
+	const byKey = new Map(catalog.map((m) => [m.key, m]));
+	return [...new Set(selected)].flatMap((k) => byKey.get(k) ?? []);
+}
+
+export interface MetricRun {
+	/** Unique per run: a section can appear more than once in an arranged table. */
+	id: string;
+	section: SectionId;
+	title: string;
+	metrics: (CatalogEntry & { indent: boolean })[];
+}
+
+/**
+ * Splits the shown metrics into runs of one section, each under its own header. A sub-row is
+ * indented only when it follows its parent or a sibling, so it never looks part of another row.
+ */
+export function metricRuns(metrics: CatalogEntry[]): MetricRun[] {
+	const runs: MetricRun[] = [];
+	metrics.forEach((m, i) => {
+		let run = runs[runs.length - 1];
+		if (!run || run.section !== m.section) {
+			run = { id: `${m.section}-${i}`, section: m.section, title: SECTION_TITLES[m.section], metrics: [] };
+			runs.push(run);
+		}
+		const prev = run.metrics[run.metrics.length - 1];
+		const indent =
+			m.parent != null &&
+			prev != null &&
+			(prev.key === metricKey(m.section, m.parent) || (prev.parent === m.parent && prev.indent));
+		run.metrics.push({ ...m, indent });
+	});
+	return runs;
+}
+
+/**
+ * The selection after moving one shown metric to position `to` among the shown ones. Selected
+ * keys that aren't shown (no loaded company has them) keep their slots between the others.
+ */
+export function moveMetric(selected: string[], shown: string[], from: number, to: number): string[] {
+	const order = [...shown];
+	const [key] = order.splice(from, 1);
+	if (key === undefined) return selected;
+	order.splice(Math.max(0, Math.min(to, order.length)), 0, key);
+	// The shown keys' slots in the selection take the new order one by one, whatever order they
+	// were stored in (a selection in statement order stores its keys in ticking order).
+	const isShown = new Set(shown);
+	let next = 0;
+	return [...new Set(selected)].map((k) => (isShown.has(k) ? order[next++] : k));
+}
+
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
 /** "Mar 2026" -> a sortable month index (year * 12 + month), or null for anything else (e.g. TTM). */

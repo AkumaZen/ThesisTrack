@@ -10,7 +10,7 @@ import { DEFAULT_ANALYSIS_SETTINGS } from '$lib/valuation/analysisSettings';
 // invalidate('app:prefs') so this re-runs.
 export const load: LayoutServerLoad = async ({ locals, depends, url }) => {
 	depends('app:prefs');
-	if (url.pathname.startsWith('/valuation/master-tracker') && isTrackerTestRequest(url)) return { user: locals.user, prefs: sanitizePrefs(null), analysis: DEFAULT_ANALYSIS_SETTINGS };
+	if ((url.pathname.startsWith('/valuation/master-tracker') || url.pathname === '/valuation/compare') && isTrackerTestRequest(url)) return { user: locals.user, prefs: sanitizePrefs(null), analysis: DEFAULT_ANALYSIS_SETTINGS };
 	return {
 		user: locals.user,
 		prefs: locals.user ? await getPrefs(locals.user.id) : null,

@@ -12,7 +12,9 @@
 		UNIT_HINT,
 		buildCatalog,
 		formatValue,
-		metricKey,
+		metricRuns,
+		moveMetric,
+		shownMetrics,
 		valueAt,
 		yearColumns,
 		type CatalogEntry,
@@ -100,6 +102,8 @@
 	const YEAR_CHOICES = [2, 3, 5];
 	let selected = $state<string[]>([...DEFAULT_METRIC_KEYS]);
 	let yearCount = $state(2);
+	/** True once the person has put the rows in their own order; `selected` then holds that order. */
+	let arranged = $state(false);
 
 	const prefsKey = $derived(`tt:v1:${session.user?.id ?? 'anon'}:compare:prefs`);
 
@@ -107,11 +111,12 @@
 		try {
 			const raw = localStorage.getItem(prefsKey);
 			if (!raw) return;
-			const saved = JSON.parse(raw) as { metrics?: unknown; years?: unknown };
+			const saved = JSON.parse(raw) as { metrics?: unknown; years?: unknown; arranged?: unknown };
 			if (Array.isArray(saved.metrics) && saved.metrics.every((k) => typeof k === 'string')) {
 				selected = saved.metrics;
 			}
 			if (typeof saved.years === 'number' && YEAR_CHOICES.includes(saved.years)) yearCount = saved.years;
+			arranged = saved.arranged === true;
 		} catch {
 			// Unreadable or blocked storage: keep the defaults.
 		}
@@ -119,7 +124,7 @@
 
 	function savePrefs() {
 		try {
-			localStorage.setItem(prefsKey, JSON.stringify({ metrics: selected, years: yearCount }));
+			localStorage.setItem(prefsKey, JSON.stringify({ metrics: selected, years: yearCount, arranged }));
 		} catch {
 			// Storage blocked (private window): the choice still applies for this visit.
 		}
@@ -140,19 +145,11 @@
 	);
 	const catalog = $derived(buildCatalog(loaded));
 	const selectedSet = $derived(new Set(selected));
-	const shownCount = $derived(catalog.filter((m) => selectedSet.has(m.key)).length);
-
-	/** Selected metrics grouped by section, in statement order. A sub-row is indented only when
-	 *  its parent row is shown too; otherwise it would look like part of the row above it. */
-	const groups = $derived(
-		SECTION_ORDER.map((id) => ({
-			id,
-			title: SECTION_TITLES[id],
-			metrics: catalog
-				.filter((m) => m.section === id && selectedSet.has(m.key))
-				.map((m) => ({ ...m, indent: m.parent != null && selectedSet.has(metricKey(id, m.parent)) }))
-		})).filter((g) => g.metrics.length > 0)
-	);
+	/** The table's rows in display order: statement order, or the person's own once arranged. */
+	const shown = $derived(shownMetrics(catalog, selected, arranged));
+	const shownCount = $derived(shown.length);
+	/** Rows in runs of one section, each run under its own header. */
+	const groups = $derived(metricRuns(shown));
 
 	function toggleMetric(key: string, on: boolean) {
 		selected = on ? [...selected, key] : selected.filter((k) => k !== key);
@@ -167,6 +164,18 @@
 	}
 	function resetDefaults() {
 		selected = [...DEFAULT_METRIC_KEYS];
+		arranged = false;
+		savePrefs();
+	}
+	/** Moves the shown metric at `from` to `to`; the table follows this order from then on. */
+	function moveTo(from: number, to: number) {
+		if (from === to) return;
+		selected = moveMetric(selected, shown.map((m) => m.key), from, to);
+		arranged = true;
+		savePrefs();
+	}
+	function statementOrder() {
+		arranged = false;
 		savePrefs();
 	}
 	function selectAll() {
@@ -182,6 +191,22 @@
 
 	let dialog = $state<HTMLDialogElement>();
 	let query = $state('');
+	let tab = $state<'choose' | 'arrange'>('choose');
+	/** The row being dragged in the Arrange list, and the slot it would land in. */
+	let dragFrom = $state<number | null>(null);
+	let dropAt = $state<number | null>(null);
+
+	function dragOver(e: DragEvent, i: number) {
+		if (dragFrom == null) return;
+		e.preventDefault();
+		const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		dropAt = e.clientY < box.top + box.height / 2 ? i : i + 1;
+	}
+	function drop(e: DragEvent) {
+		e.preventDefault();
+		if (dragFrom != null && dropAt != null) moveTo(dragFrom, dropAt > dragFrom ? dropAt - 1 : dropAt);
+		dragFrom = dropAt = null;
+	}
 	const pickerSections = $derived.by(() => {
 		const q = query.trim().toLowerCase();
 		const match = (m: CatalogEntry) =>
@@ -211,10 +236,19 @@
 			const below = box ? document.documentElement.scrollHeight - (box.getBoundingClientRect().bottom + scrollY) : 0;
 			el.style.setProperty('--cmp-reserved-h', `${header.offsetHeight + Math.max(0, below)}px`);
 		};
-		const observer = new ResizeObserver(measure);
+		// Measured on the next frame: setting the height resizes `el`, which would otherwise notify
+		// this same observer again within one frame ("ResizeObserver loop" errors).
+		let frame = 0;
+		const observer = new ResizeObserver(() => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(measure);
+		});
 		observer.observe(header);
 		observer.observe(el);
-		return () => observer.disconnect();
+		return () => {
+			cancelAnimationFrame(frame);
+			observer.disconnect();
+		};
 	});
 
 	/** Per company: its year columns, oldest first with the latest last. */
@@ -302,6 +336,18 @@
 				Customize metrics
 				<span class="cmp-count">{shownCount} of {catalog.length || '…'}</span>
 			</button>
+			<button
+				type="button"
+				class="btn btn-ghost cmp-customize"
+				onclick={() => {
+					tab = 'arrange';
+					dialog?.showModal();
+				}}
+				disabled={shownCount < 2}>Arrange rows</button
+			>
+			{#if arranged}
+				<button type="button" class="link-btn cmp-order-reset" onclick={statementOrder}>Back to statement order</button>
+			{/if}
 
 			<div class="cmp-years" role="group" aria-label="Years per company">
 				<span class="cmp-years-label">Years</span>
@@ -398,7 +444,7 @@
 									{#if m.unit !== 'cr'}<span class="cmp-unit">{UNIT_HINT[m.unit]}</span>{/if}
 								</th>
 								{#each columns as c (c.symbol)}
-									{#if g.id === 'mkt'}
+									{#if g.section === 'mkt'}
 										{@const text = cell(c.load, m.key, 'now', m.unit)}
 										<td class="cmp-val cmp-first cmp-now" class:neg={text.startsWith('-')} colspan={c.years.length}
 											>{text}</td
@@ -425,11 +471,72 @@
 {/if}
 </div>
 
-<dialog class="cmp-dialog" bind:this={dialog} aria-labelledby="cmpDialogTitle" onclose={() => (query = '')}>
+<dialog
+	class="cmp-dialog"
+	bind:this={dialog}
+	aria-labelledby="cmpDialogTitle"
+	onclose={() => {
+		query = '';
+		tab = 'choose';
+	}}
+>
 	<div class="cmp-dialog-head">
-		<h2 id="cmpDialogTitle">Choose metrics</h2>
+		<h2 id="cmpDialogTitle">Metrics</h2>
 		<button type="button" class="cmp-x" aria-label="Close" onclick={() => dialog?.close()}>×</button>
 	</div>
+	<div class="cmp-tabs" role="tablist" aria-label="Metrics">
+		<button type="button" role="tab" aria-selected={tab === 'choose'} class:on={tab === 'choose'} onclick={() => (tab = 'choose')}
+			>Choose</button
+		>
+		<button type="button" role="tab" aria-selected={tab === 'arrange'} class:on={tab === 'arrange'} onclick={() => (tab = 'arrange')}
+			>Arrange <span class="cmp-count">{shownCount}</span></button
+		>
+	</div>
+	{#if tab === 'arrange'}
+		<div class="cmp-dialog-tools">
+			<p class="cmp-arrange-help">Drag rows, or use the arrows. The table shows them in this order.</p>
+			<div class="cmp-dialog-actions">
+				<span class="cmp-count">{arranged ? 'Your order' : 'Statement order'}</span>
+				{#if arranged}<button type="button" class="link-btn" onclick={statementOrder}>Statement order</button>{/if}
+			</div>
+		</div>
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<ol class="cmp-dialog-body cmp-arrange" ondrop={drop} ondragover={(e) => dragFrom != null && e.preventDefault()}>
+			{#each shown as m, i (m.key)}
+				<li
+					draggable="true"
+					class:dragging={dragFrom === i}
+					class:drop-before={dropAt === i && dragFrom !== i && dragFrom !== i - 1}
+					class:drop-after={dropAt === i + 1 && i === shown.length - 1 && dragFrom !== i}
+					ondragstart={(e) => {
+						dragFrom = i;
+						e.dataTransfer?.setData('text/plain', m.key);
+						if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+					}}
+					ondragover={(e) => dragOver(e, i)}
+					ondragend={() => (dragFrom = dropAt = null)}
+				>
+					<span class="cmp-grip" aria-hidden="true">⠿</span>
+					<span class="cmp-arrange-label">
+						<span class="cmp-arrange-name">{m.label}</span>
+						<span class="cmp-parent">{SECTION_TITLES[m.section]}{m.parent ? ` · ${m.parent}` : ''}</span>
+					</span>
+					<button type="button" class="cmp-move" aria-label="Move {m.label} up" disabled={i === 0} onclick={() => moveTo(i, i - 1)}
+						>↑</button
+					>
+					<button
+						type="button"
+						class="cmp-move"
+						aria-label="Move {m.label} down"
+						disabled={i === shown.length - 1}
+						onclick={() => moveTo(i, i + 1)}>↓</button
+					>
+				</li>
+			{:else}
+				<li class="cmp-empty">No metrics shown yet.</li>
+			{/each}
+		</ol>
+	{:else}
 	<div class="cmp-dialog-tools">
 		<input type="search" placeholder="Search metrics" aria-label="Search metrics" bind:value={query} />
 		<div class="cmp-dialog-actions">
@@ -474,6 +581,7 @@
 			<p class="cmp-empty">No metric matches “{query}”.</p>
 		{/each}
 	</div>
+	{/if}
 	<div class="cmp-dialog-foot">
 		<button type="button" class="btn btn-primary" onclick={() => dialog?.close()}>Done</button>
 	</div>
@@ -923,6 +1031,96 @@
 	.cmp-parent {
 		font-size: 12px;
 		color: var(--muted);
+	}
+	.cmp-order-reset {
+		font-size: 13px;
+	}
+	.cmp-tabs {
+		display: flex;
+		padding: 0 20px;
+		gap: var(--space-4);
+		border-bottom: 1px solid var(--rule);
+	}
+	.cmp-tabs button {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 0;
+		border: none;
+		border-bottom: 3px solid transparent;
+		margin-bottom: -1px;
+		background: none;
+		color: var(--muted);
+		font: inherit;
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.cmp-tabs button.on {
+		border-bottom-color: var(--ink);
+		color: var(--ink);
+	}
+	.cmp-dialog-tools:has(.cmp-arrange-help) {
+		padding-top: 12px;
+	}
+	.cmp-arrange-help {
+		margin: 0;
+		font-size: 13px;
+		color: var(--muted);
+	}
+	.cmp-arrange {
+		margin: 0;
+		padding-top: 4px;
+		list-style: none;
+	}
+	.cmp-arrange li {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 7px 0;
+		border-top: 2px solid transparent;
+		border-bottom: 1px solid var(--rule);
+		background: var(--bg);
+		cursor: grab;
+	}
+	.cmp-arrange li.dragging {
+		opacity: 0.4;
+	}
+	.cmp-arrange li.drop-before {
+		border-top-color: var(--accent);
+	}
+	.cmp-arrange li.drop-after {
+		border-bottom: 2px solid var(--accent);
+	}
+	.cmp-grip {
+		color: var(--muted);
+		font-size: 16px;
+		line-height: 1;
+	}
+	.cmp-arrange-label {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+		font-size: 14px;
+	}
+	.cmp-move {
+		width: 32px;
+		height: 32px;
+		border: 1px solid var(--rule);
+		background: var(--bg);
+		color: var(--ink);
+		font-size: 15px;
+		line-height: 1;
+		cursor: pointer;
+	}
+	.cmp-move:hover:not(:disabled) {
+		border-color: var(--ink);
+	}
+	.cmp-move:disabled {
+		color: var(--rule);
+		cursor: default;
 	}
 	.cmp-dialog-foot {
 		display: flex;
