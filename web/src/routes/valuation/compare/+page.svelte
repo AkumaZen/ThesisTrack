@@ -445,7 +445,7 @@
 		</div>
 
 		<div class="cmp-scroll">
-			<table class="cmp-table" style:--cmp-years={yearCount} style:--cmp-cols={totalCols - 1}>
+			<table class="cmp-table" class:cmp-single={yearCount === 1} style:--cmp-years={yearCount} style:--cmp-cols={totalCols - 1}>
 				<colgroup>
 					<col class="cmp-col-metric" />
 					{#each columns as c (c.symbol)}
@@ -1047,6 +1047,22 @@
 	   latest year when several are shown), and carry its weight only beside other years. */
 	.cmp-table .cmp-val.cmp-now.cmp-emph {
 		font-weight: 600;
+	}
+	/* One year per company: each column holds a single figure, so figures, years and company
+	   headers sit centred in it. With several years they keep one right edge to compare across. */
+	.cmp-single .cmp-val,
+	.cmp-single thead .cmp-year,
+	.cmp-single thead .cmp-co {
+		text-align: center;
+	}
+	.cmp-single .cmp-co-head {
+		align-items: center;
+	}
+	.cmp-single .cmp-co-meta {
+		justify-content: center;
+	}
+	.cmp-single .cmp-refresh {
+		margin-left: 0;
 	}
 	.cmp-table .cmp-val.neg {
 		color: var(--danger);

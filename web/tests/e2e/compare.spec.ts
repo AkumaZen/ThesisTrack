@@ -171,12 +171,14 @@ test('fits seven companies on one screen for one year, and stays compact for mor
 	expect((await kpil.boundingBox())!.height).toBeGreaterThan(30);
 	// Two lines are enough for the longest name here: nothing is cut off.
 	expect(await page.locator('.cmp-co-name').evaluateAll((els) => els.filter((e) => e.scrollHeight > e.clientHeight + 1).length)).toBe(0);
-	// One regular grid: every company the same width, every figure on the right edge, and no
-	// latest-year tint when there is only one year.
+	// One regular grid: every company the same width, every figure and header centred in its
+	// column, and no latest-year tint when there is only one year.
 	const widths = await page.locator('.cmp-table thead th.cmp-co').evaluateAll((ths) => ths.map((th) => th.getBoundingClientRect().width));
 	expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
 	const aligns = await page.locator('.cmp-table td.cmp-val').evaluateAll((tds) => [...new Set(tds.map((td) => getComputedStyle(td).textAlign))]);
-	expect(aligns).toEqual(['right']);
+	expect(aligns).toEqual(['center']);
+	const headAligns = await page.locator('.cmp-table thead th.cmp-co, .cmp-table thead th.cmp-year').evaluateAll((ths) => [...new Set(ths.map((th) => getComputedStyle(th).textAlign))]);
+	expect(headAligns).toEqual(['center']);
 	await expect(page.locator('.cmp-table .cmp-latest')).toHaveCount(0);
 	// Every figure is shown whole, not clipped.
 	const clipped = await page.locator('.cmp-table td.cmp-val, .cmp-table th.cmp-year').evaluateAll((cells) => cells.filter((c) => c.scrollWidth > c.clientWidth).length);
@@ -187,6 +189,8 @@ test('fits seven companies on one screen for one year, and stays compact for mor
 	expect(await overflow()).toBeLessThanOrEqual(0);
 
 	await expect(page.locator('.cmp-table thead .cmp-year.cmp-latest')).toHaveCount(7);
+	// Several years compare across one right edge.
+	expect(await page.locator('.cmp-table td.cmp-val').evaluateAll((tds) => [...new Set(tds.map((td) => getComputedStyle(td).textAlign))])).toEqual(['right']);
 
 	await setYears(5);
 	await page.screenshot({ path: testInfo.outputPath('seven-5y.png') });
