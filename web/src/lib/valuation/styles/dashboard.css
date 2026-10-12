@@ -909,6 +909,17 @@
 	border-top: 1px solid var(--zebra);
 }
 
+/* A phone-width card fits five figures; past that, split them into even rows (3+3, 4+4) rather
+   than leaving one figure alone on the second row. */
+@media (max-width: 640px) {
+	.vd .sector-card-stats:has(> :nth-child(6)) {
+		grid-template-columns: repeat(3, 1fr);
+	}
+	.vd .sector-card-stats:has(> :nth-child(7)) {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
 
 .vd .sector-stat {
 	display: flex;
