@@ -66,18 +66,20 @@ export interface UserPrefs {
 }
 
 export const SECTOR_CARD_METRICS = [
+	{ id: '1d', label: '1D', field: 'return1d', help: 'Return over the last trading day' },
 	{ id: '1w', label: '1W', field: 'return1w', help: 'Return over 1 week' },
 	{ id: '1m', label: '1M', field: 'return1m', help: 'Return over 1 month' },
 	{ id: '3m', label: '3M', field: 'return3m', help: 'Return over 3 months' },
 	{ id: '6m', label: '6M', field: 'return6m', help: 'Return over 6 months' },
+	{ id: 'rs1d', label: 'RS(1D)', field: 'rs1d', help: 'Return minus Nifty, last trading day' },
 	{ id: 'rs1w', label: 'RS(1W)', field: 'rs1w', help: 'Return minus Nifty, 1 week' },
 	{ id: 'rs1m', label: 'RS(1M)', field: 'rs1m', help: 'Return minus Nifty, 1 month' },
 	{ id: 'rs3m', label: 'RS(3M)', field: 'rs3m', help: 'Return minus Nifty, 3 months' },
 	{ id: 'rs6m', label: 'RS(6M)', field: 'rs6m', help: 'Return minus Nifty, 6 months' }
 ] as const;
 export type SectorCardMetric = (typeof SECTOR_CARD_METRICS)[number]['id'];
-/** What every card showed before the metrics were configurable. */
-export const DEFAULT_SECTOR_CARD_METRICS: SectorCardMetric[] = ['1w', '1m', '3m', '6m', 'rs1m'];
+/** What a card shows until the person picks its metrics. */
+export const DEFAULT_SECTOR_CARD_METRICS: SectorCardMetric[] = ['1d', '1w', '1m', '3m', '6m', 'rs1m'];
 
 export const DEFAULT_PREFS: UserPrefs = {
 	watchlist: { columns: DEFAULT_COLUMNS, sort: { key: 'upside', dir: 'desc' }, view: 'all' },

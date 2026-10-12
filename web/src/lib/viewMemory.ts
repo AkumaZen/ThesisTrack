@@ -86,7 +86,7 @@ export type StateOf<S extends Schema> = {
 	[K in keyof S]: S[K] extends FieldSpec<infer T> ? T : never;
 };
 
-export const SECTOR_SORT_KEYS = ['rs1m', 'return1w', 'return1m', 'return3m', 'return6m', 'label'] as const;
+export const SECTOR_SORT_KEYS = ['rs1m', 'return1d', 'return1w', 'return1m', 'return3m', 'return6m', 'label'] as const;
 export const TIMEFRAME_KEYS = ['1W', '1M', '3M', '6M', '1Y'] as const;
 export const CHART_RANGE_KEYS = ['3M', '6M', '1Y'] as const;
 /** The breakout scanner's stage chips, by short name (the scanner page maps them to stages). */

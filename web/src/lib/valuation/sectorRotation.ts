@@ -10,10 +10,12 @@ export interface Candle {
 export interface SectorReturn {
 	key: string;
 	label: string;
+	return1d: number | null;
 	return1w: number | null;
 	return1m: number | null;
 	return3m: number | null;
 	return6m: number | null;
+	rs1d: number | null; // latest close vs the previous trading day's close, minus Nifty's
 	rs1w: number | null; // weekly (5 trading days): sector return minus Nifty return
 	rs1m: number | null; // sector return minus Nifty return, same window
 	rs3m: number | null;
@@ -83,10 +85,10 @@ export const ROTATION_TONE_CLASS = {
 	flat: ''
 } as const;
 
-/** Trading-day lookback windows — approximate calendar equivalents (5/21/63/126/252 trading
- *  days), consistent with how the stage-analysis module already approximates a 3-month
+/** Trading-day lookback windows — 1D is the last close against the previous trading day's; the
+ *  rest are approximate calendar equivalents (5/21/63/126/252 trading days), consistent with how the stage-analysis module already approximates a 3-month
  *  window as ~63 trading days. */
-export const WINDOWS = { w1: 5, m1: 21, m3: 63, m6: 126, y1: 252 };
+export const WINDOWS = { d1: 1, w1: 5, m1: 21, m3: 63, m6: 126, y1: 252 };
 
 /** What makes a sector "Rotating In" / "Rotating Out" - tunable on the Settings page. The
  *  signal compares relative strength over a short, a medium and a long window (in trading days);
@@ -135,6 +137,7 @@ export function computeSectorReturns(
 ): SectorReturn[] {
 	const niftyCloses = niftyCandles.map((c) => c.close);
 	const niftyReturns = {
+		d1: returnOverWindow(niftyCloses, WINDOWS.d1),
 		w1: returnOverWindow(niftyCloses, WINDOWS.w1),
 		m1: returnOverWindow(niftyCloses, WINDOWS.m1),
 		m3: returnOverWindow(niftyCloses, WINDOWS.m3),
@@ -143,11 +146,13 @@ export function computeSectorReturns(
 
 	return sectorCandles.map(({ key, label, candles }) => {
 		const closes = candles.map((c) => c.close);
+		const return1d = returnOverWindow(closes, WINDOWS.d1);
 		const return1w = returnOverWindow(closes, WINDOWS.w1);
 		const return1m = returnOverWindow(closes, WINDOWS.m1);
 		const return3m = returnOverWindow(closes, WINDOWS.m3);
 		const return6m = returnOverWindow(closes, WINDOWS.m6);
 
+		const rs1d = return1d != null && niftyReturns.d1 != null ? return1d - niftyReturns.d1 : null;
 		const rs1w = return1w != null && niftyReturns.w1 != null ? return1w - niftyReturns.w1 : null;
 		const rs1m = return1m != null && niftyReturns.m1 != null ? return1m - niftyReturns.m1 : null;
 		const rs3m = return3m != null && niftyReturns.m3 != null ? return3m - niftyReturns.m3 : null;
@@ -174,7 +179,7 @@ export function computeSectorReturns(
 				signal = 'Rotating Out';
 		}
 
-		return { key, label, return1w, return1m, return3m, return6m, rs1w, rs1m, rs3m, rs6m, signal };
+		return { key, label, return1d, return1w, return1m, return3m, return6m, rs1d, rs1w, rs1m, rs3m, rs6m, signal };
 	});
 }
 
@@ -247,6 +252,7 @@ export function sliceForTimeframe(closes: number[], timeframe: Timeframe): numbe
 }
 
 export interface ConstituentGrowth {
+	return1d: number | null;
 	return1w: number | null;
 	return1m: number | null;
 	return3m: number | null;
@@ -259,6 +265,7 @@ export interface ConstituentGrowth {
  *  sector card stats row. */
 export function computeConstituentGrowth(closes: number[]): ConstituentGrowth {
 	return {
+		return1d: returnOverWindow(closes, WINDOWS.d1),
 		return1w: returnOverWindow(closes, WINDOWS.w1),
 		return1m: returnOverWindow(closes, WINDOWS.m1),
 		return3m: returnOverWindow(closes, WINDOWS.m3),

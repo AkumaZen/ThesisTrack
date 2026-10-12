@@ -122,9 +122,10 @@
 		}
 	}
 
-	type SortKey = 'label' | 'return1w' | 'return1m' | 'return3m' | 'return6m' | 'rs1m';
+	type SortKey = 'label' | 'return1d' | 'return1w' | 'return1m' | 'return3m' | 'return6m' | 'rs1m';
 	const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 		{ key: 'rs1m', label: 'RS vs Nifty (1M)' },
+		{ key: 'return1d', label: '1D return' },
 		{ key: 'return1w', label: '1W return' },
 		{ key: 'return1m', label: '1M return' },
 		{ key: 'return3m', label: '3M return' },

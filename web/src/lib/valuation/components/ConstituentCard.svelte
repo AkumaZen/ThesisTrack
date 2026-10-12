@@ -95,6 +95,11 @@
 		{@const growth = computeConstituentGrowth(closes)}
 		<div class="sector-card-stats">
 			<div class="sector-stat">
+				<span class="sector-stat-label">1D</span>
+				<span class="sector-stat-value {toneClass(growth.return1d)}">{fmtPct(growth.return1d)}</span
+				>
+			</div>
+			<div class="sector-stat">
 				<span class="sector-stat-label">1W</span>
 				<span class="sector-stat-value {toneClass(growth.return1w)}">{fmtPct(growth.return1w)}</span
 				>

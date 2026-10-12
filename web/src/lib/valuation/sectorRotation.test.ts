@@ -35,6 +35,18 @@ describe('computeSectorReturns', () => {
 		expect(result.rs6m).toBeGreaterThan(0); // outperformed a flat benchmark
 	});
 
+	it('computes the one-day move and its relative strength from the last two closes', () => {
+		// Sector closes 100 then 103 on the last day; Nifty closes 100 then 101.
+		const sector = { key: 'day', label: 'Day', candles: candles([...Array(198).fill(100), 100, 103]) };
+		const nifty = candles([...Array(198).fill(100), 100, 101]);
+		const [result] = computeSectorReturns([sector], nifty);
+		expect(result.return1d).toBeCloseTo(3);
+		expect(result.rs1d).toBeCloseTo(2);
+		const [short] = computeSectorReturns([{ key: 'one', label: 'One', candles: candles([100]) }], nifty);
+		expect(short.return1d).toBeNull();
+		expect(short.rs1d).toBeNull();
+	});
+
 	it('computes weekly relative strength (5 trading days) against the benchmark', () => {
 		// Flat at 100, then a 10% rise in the final week; Nifty is flat.
 		const path = [...Array(195).fill(100), 102, 104, 106, 108, 110];
