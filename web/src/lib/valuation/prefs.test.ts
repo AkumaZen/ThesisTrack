@@ -25,6 +25,15 @@ describe('sanitizePrefs', () => {
 		expect(p.lastWatchlistVisit).toBe(1700000000000);
 	});
 
+	it('switches 1D on once for card figures saved before it existed, then respects the choice', () => {
+		const old = sanitizePrefs({ sectorCard: { metrics: ['1w', '1m', '3m', '6m', 'rs1m'] } });
+		expect(old.sectorCard).toEqual({ metrics: ['1d', '1w', '1m', '3m', '6m', 'rs1m'], version: 2 });
+		// Turning 1D off afterwards is saved with the current version, so it stays off.
+		const off = mergePrefs(old, { sectorCard: { metrics: ['1w', 'rs1m'] } });
+		expect(off.sectorCard).toEqual({ metrics: ['1w', 'rs1m'], version: 2 });
+		expect(sanitizePrefs(off).sectorCard.metrics).toEqual(['1w', 'rs1m']);
+	});
+
 	it('never allows an empty column set or a malformed view', () => {
 		expect(sanitizePrefs({ watchlist: { columns: [] } }).watchlist.columns).toEqual(
 			DEFAULT_COLUMNS

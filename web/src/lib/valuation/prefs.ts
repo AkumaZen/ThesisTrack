@@ -59,8 +59,9 @@ export interface UserPrefs {
 		sort: { key: SortKey; dir: 'asc' | 'desc' };
 		view: WatchlistView;
 	};
-	/** Metrics shown on each sector rotation card (see SECTOR_CARD_METRICS). */
-	sectorCard: { metrics: SectorCardMetric[] };
+	/** Metrics shown on each sector rotation card (see SECTOR_CARD_METRICS). `version` is
+	 *  SECTOR_CARD_VERSION once the list has been read since 1D was added. */
+	sectorCard: { metrics: SectorCardMetric[]; version: number };
 	/** Previous visit to the watchlist, for highlighting what teammates changed since. */
 	lastWatchlistVisit: number | null;
 }
@@ -80,10 +81,13 @@ export const SECTOR_CARD_METRICS = [
 export type SectorCardMetric = (typeof SECTOR_CARD_METRICS)[number]['id'];
 /** What a card shows until the person picks its metrics. */
 export const DEFAULT_SECTOR_CARD_METRICS: SectorCardMetric[] = ['1d', '1w', '1m', '3m', '6m', 'rs1m'];
+/** Lists saved before version 2 predate the 1D figure, so 1D is switched on for them once; a
+ *  person who then turns it off keeps that choice. */
+export const SECTOR_CARD_VERSION = 2;
 
 export const DEFAULT_PREFS: UserPrefs = {
 	watchlist: { columns: DEFAULT_COLUMNS, sort: { key: 'upside', dir: 'desc' }, view: 'all' },
-	sectorCard: { metrics: DEFAULT_SECTOR_CARD_METRICS },
+	sectorCard: { metrics: DEFAULT_SECTOR_CARD_METRICS, version: SECTOR_CARD_VERSION },
 	lastWatchlistVisit: null
 };
 
@@ -124,10 +128,13 @@ export function sanitizePrefs(raw: unknown): UserPrefs {
 		},
 		sectorCard: {
 			metrics: pickList(
-				card.metrics,
+				Array.isArray(card.metrics) && card.version !== SECTOR_CARD_VERSION && !card.metrics.includes('1d')
+					? ['1d', ...card.metrics]
+					: card.metrics,
 				SECTOR_CARD_METRICS.map((m) => m.id),
 				DEFAULT_SECTOR_CARD_METRICS
-			)
+			),
+			version: SECTOR_CARD_VERSION
 		},
 		lastWatchlistVisit:
 			typeof visit === 'number' && Number.isFinite(visit) && visit > 0 ? visit : null
