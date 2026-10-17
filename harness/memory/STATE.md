@@ -27,7 +27,8 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
   FIRST (adds `scope` to valuation.strength_filter_prefs; idempotent). Code without it fails to read or save Strength filters.
 - OUTSTANDING DATABASE TASKS (PENDING, do in this order; migrations BEFORE merging, because the merged code queries the new columns and tables):
   0. Prereq: NEON_DB_URL in the repo-root `.env` (not available yet). Use env vars only and never print the URL.
-  1. Scorecard (branch `scorecard`): apply `web/drizzle/0018_entry_price.sql` and `0019_thesis_lesson.sql` to production Neon with `web/_prod_migrate.mjs`; run `web/scripts/backfill-entry-price.mjs` as a dry run, then with `--apply`; run the checks on the branch; merge `scorecard` into master.
+  1. Scorecard (branch `scorecard`): apply `web/drizzle/0018_entry_price.sql` and `0019_thesis_lesson.sql` to production Neon with `web/_prod_migrate.mjs`; run `web/scripts/backfill-entry-price.mjs` as a dry run, then with `--apply`; run the checks on the branch; merge `scorecard` into master. The branch now also contains the price target tracker and stale thesis nudge (470ba5d, no migration).
+  1b. After merging scorecard: check the thesis page in a browser with real data (target states, stale banner, Review due badge). Never checked in a browser yet.
   2. Scanner universe (branch `scanner-universe`): apply `web/drizzle/0020_mcap_universe.sql` with `web/_prod_migrate.mjs`; run `node web/scripts/import-mcap-universe.mjs research/companies_mcap_500_20000cr.csv` as a dry run, then with `--apply` (expect 1,496 rows, 14 "No price source"); merge `scanner-universe` into master (a push to master deploys to Vercel production); then on production open the scanner page and press "Load missing history" (admin), 25 companies per batch. The daily cron fills the rest at up to 40 cold symbols per run.
   3. Twice a year: re-import from the new AMFI average market cap file (same script).
   Note: price-chart and stage-analysis reuse stored candles up to 24 h old (`STORED_MAX_AGE_MS` in companyGrowthSeries.ts); the user may shorten that later.
@@ -41,8 +42,20 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
   7. Follow `deploy/ec2/README.md`; set DISABLE_BACKGROUND_JOBS=true so only the systemd timers run.
   8. Merge `ec2-hosting` into master once ready (safe for Vercel: the default build is still adapter-vercel).
   9. DNS cutover; keep Vercel as fallback for 1-2 weeks.
-  10. After cutover: remove crons from master's vercel.json (master push) so jobs do not run twice; optionally enable the GitHub deploy workflow (needs SSH access from GitHub or SSM).
-  Reminder: rotate the Vercel deployment-protection bypass secret (leaked into a session log during the probe), and delete the stray Vercel project `web` if it is a leftover.
+  10. After cutover: remove the crons from master's vercel.json (master push) so jobs do not run twice; optionally enable the GitHub deploy workflow (needs SSH access from GitHub or SSM).
+  11. Rotate the leaked Vercel deployment-protection bypass secret (leaked into a session log during the probe).
+  12. Delete the stray Vercel project `web` if it is unrecognised.
+- OTHER OPEN WORK (ordered):
+  1. HFCL guidance analysis shows "no transcript/PPT" because a BSE 403 is treated as "none". Plan: Screener concall list first, BSE as fallback, "could not retrieve" wording. EC2 may make the BSE part work.
+  2. Not started from the user's plan: rolling forecasts, weekly results check.
+  3. Failing tests: `metrics.test.ts` (undiagnosed); `tests/services.integration.test.ts` cleanup fails with "position_decisions is append-only" (fails on master too); one Screener network test failing (not investigated).
+  4. Batch refresh, batched price paths and the scanner cold-symbol cron cap were only simulated. Measure against real Angel One (ANGEL_* credentials not available locally).
+  5. Compare page is throttled by Screener when many new companies load at once.
+  6. Review Due badge: reasons are only a hover title, so touch users cannot see them. Show them on screen or on tap.
+  7. Review BUGS-TO-FIX.md and re-run the bug review covering Master Tracker.
+  8. Decide whether to commit `research/` (includes nse_bse_announcements_findings.md with the Vercel sin1/bom1 probe results) or keep it untracked.
+  9. Laya local model: parked by the user, not to be used for now.
+  10. Local cleanup (optional): scratchpad folders laya-test (about 2.3 GB) and exchange-probe under C:\Users\RNEGI\AppData\Local\Temp\claude\d--My-Projects-Reports-ThesisTracker\, and the `L:` subst drive mapping (`subst L: /d`).
 - Known symbols with no price source: GUJGASLTD (Gujarat Gas, merged) and INDLMETER are in no Angel One list; remove or replace them in Sector baskets.
 - Strength & Volume (sector > subsector > company filters and team alerts): pure maths in
   `web/src/lib/valuation/strength.ts` (shared by the filter API and the alert checks), rules in
