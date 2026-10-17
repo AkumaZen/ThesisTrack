@@ -4844,3 +4844,39 @@
 .vd .compare-row .cp {
 	flex: 1 1 auto;
 }
+
+/* Phones: toolbars wrap instead of pushing the page sideways, and small controls reach a 40px tap size. */
+@media (max-width: 640px) {
+	.vd .timeframe-bar { flex-wrap: wrap; }
+	.vd .vm-reset { margin-left: 0; }
+	.vd .sector-sort-dir,
+	.vd .sector-export-btn,
+	.vd .vm-reset,
+	.vd .timeframe-btn,
+	.vd .sm-btn,
+	.vd .sm-toggle,
+	.vd .al-chip,
+	.vd .th-sort,
+	.vd .cmp-sort,
+	.vd .wl-strip-btn,
+	.vd .print-btn,
+	.vd .refresh-btn,
+	.vd .reset-btn,
+	.vd .link-btn,
+	.vd .sv-toggle,
+	.vd .sector-card-refresh,
+	.vd .cmp-refresh,
+	.vd .sm-input,
+	.vd .diagnosis-apply {
+		min-height: 40px;
+		min-width: 40px;
+	}
+	.vd .back-link,
+	.vd .sector-constituent-open,
+	.vd .sm-btn:is(a),
+	.vd .cmp-co-name {
+		display: inline-flex;
+		align-items: center;
+		min-height: 40px;
+	}
+}

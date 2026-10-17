@@ -427,4 +427,10 @@
 			grid-template-columns: 1fr;
 		}
 	}
+
+	@media (max-width: 640px) {
+		.role-select {
+			min-height: 40px;
+		}
+	}
 </style>

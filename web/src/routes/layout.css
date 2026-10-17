@@ -574,3 +574,36 @@ a.border.border-border {
 .bg-black\/50 {
 	background-color: rgba(10, 10, 10, 0.45);
 }
+
+/* Phones: form fields at 16px so iOS Safari does not zoom in on focus, and controls at least 40px
+   tall to tap. Checkboxes, radios and the inline-edit cells of data tables keep their size. */
+@media (max-width: 640px) {
+	input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color'], [type='hidden'])),
+	select,
+	textarea {
+		font-size: 16px !important;
+	}
+	input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color'], [type='hidden'], .editable)),
+	select,
+	button:not(.editable),
+	summary {
+		min-height: 40px;
+	}
+	/* Icon-only buttons that are absolutely placed inside cards keep a 40px hit area without growing the card. */
+	button.absolute {
+		min-width: 40px;
+		min-height: 40px;
+	}
+	.btn-sm,
+	.facet-chip {
+		min-height: 40px;
+	}
+	/* A field in a flex row may shrink below its default width (about 20 characters). */
+	.flex > input,
+	.flex > select {
+		min-width: 0;
+	}
+	.pw-toggle {
+		min-width: 40px;
+	}
+}

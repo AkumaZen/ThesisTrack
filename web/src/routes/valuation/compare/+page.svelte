@@ -1341,4 +1341,14 @@
 			min-width: 56px;
 		}
 	}
+
+	@media (max-width: 640px) {
+		.cmp-years button {
+			min-width: 40px;
+			min-height: 40px;
+		}
+		.cmp-chip button {
+			min-width: 40px;
+		}
+	}
 </style>

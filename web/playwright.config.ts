@@ -13,6 +13,6 @@ export default defineConfig({
 	],
 	webServer: {
 		command: 'npm run dev -- --host 127.0.0.1 --port 5179 --strictPort', url: 'http://127.0.0.1:5179/valuation/master-tracker', timeout: 120000, reuseExistingServer: false,
-		env: { DATABASE_URL: 'postgres://test:test@127.0.0.1:1/tracker_test', MASTER_TRACKER_TEST_MODE: 'true', DISABLE_BACKGROUND_JOBS: 'true' }
+		env: { DATABASE_URL: process.env.E2E_DATABASE_URL ?? 'postgres://test:test@127.0.0.1:1/tracker_test', MASTER_TRACKER_TEST_MODE: 'true', DISABLE_BACKGROUND_JOBS: 'true' }
 	}
 });

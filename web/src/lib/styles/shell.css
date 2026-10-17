@@ -571,3 +571,34 @@ kbd {
 .drawer-close {
 	border-color: var(--ink);
 }
+
+/* Phones: header controls reach 40px, and the tools row hints that it scrolls sideways. */
+@media (max-width: 640px) {
+	.brand {
+		min-height: 40px;
+		min-width: 40px;
+	}
+	.module {
+		min-height: 40px;
+	}
+	.tool {
+		padding: 0 var(--space-3);
+	}
+	.tool::after {
+		left: var(--space-3);
+		right: var(--space-3);
+	}
+	.tools {
+		position: relative;
+	}
+	.tools::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 24px;
+		pointer-events: none;
+		background: linear-gradient(to right, transparent, var(--bg));
+	}
+}
