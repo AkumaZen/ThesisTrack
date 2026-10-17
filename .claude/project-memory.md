@@ -46,13 +46,15 @@ from master `175abd5`; updated 2026-10-17.
   then BSE; short error reasons (`failed_sources`); web wording "could not be retrieved (BSE returned HTTP 403)".
   Checked live for HFCL with the BSE API forced to 403: Screener gave Q1 FY27, Q4 and Q3 FY26 transcripts and decks.
 
+## Decisions
+- 2026-10-17: stay on Vercel only; EC2 abandoned because BSE's API returns 403 from AWS too (branch tips in STATE.md).
+
 ## Current Focus
 - Finishing rollout. Production (c342a6b) is deployed and healthy; 0018, 0019, 0020 are applied and the mcap universe
   (1,496 rows) is imported. The entry-price backfill is applied (STLTECH 897.4, BALUFORGE 480.7; 0 left). Pending for the USER: the scanner "Load missing history".
 
 ## Known Issues / Unresolved Decisions
 - Master Tracker: BSE's API returns 403 to all cloud servers (probe 2026-10-10). Worked around, see Completed Work.
-- EC2 plan (branch `ec2-hosting`) assumes EC2 may fix BSE; the AWS bom1 result says it likely will not.
 - A Vercel deployment-protection bypass secret leaked into a session log; rotate it.
 - DB-backed tests pass with the local docker DB up (683/683, 0 skipped); they skip when Docker is down. Apply new
   migrations locally with `docker exec -i thesistrack-postgres-1 psql -U thesis -d thesis` (`_prod_migrate.mjs` refuses non-prod hosts).
@@ -61,7 +63,7 @@ from master `175abd5`; updated 2026-10-17.
 ## Next Steps
 1. User: scanner "Load missing history" (admin). Browser-check the thesis page and the scanner.
 2. Verify the HFCL fix on Vercel (Master Tracker, Jun 2026): documents from Screener/NSE, BSE 403 shown as a short warning.
-3. Not merged: `ec2-hosting`, `feat/guidance-tables-import-redesign`.
+3. Not merged: `feat/guidance-tables-import-redesign`.
 4. Open: Retry/Upload for failed document fetches; rotate the leaked Vercel bypass secret; stale `.production.env`.
 
 ## Verification
