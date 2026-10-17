@@ -14,6 +14,15 @@ export function parseTrackerFinancials(html: string, url: string) {
 	};
 	const metrics = $('#top-ratios li').toArray().map((item) => $(item).text().replace(/\s+/g, ' ').trim());
 	const links = $('#company-info a, .company-links a').toArray().map((a) => ({ title: $(a).text().trim(), url: $(a).attr('href') ?? '' }));
+	// Concall rows read "Jul 2026 | Transcript | AI Summary | PPT": the month the call was held, then its documents.
+	const concalls = $('.documents.concalls li').toArray().flatMap((row) => {
+		const date = $(row).children('div').first().text().trim();
+		return $(row).find('a[href]').toArray().flatMap((a) => {
+			const kind = $(a).text().trim();
+			const title = kind === 'Transcript' ? 'Concall Transcript' : kind === 'PPT' ? 'Investor Presentation' : '';
+			return title ? [{ date, title, url: $(a).attr('href') ?? '' }] : [];
+		});
+	});
 	// Screener's exchange links sit in responsive header rows, outside company-info.
 	const bse = $('a[href*="bseindia.com/stock-share-price/"]').first().attr('href')?.match(/\b(\d{6})\b/)?.[1];
 	return {
@@ -22,7 +31,7 @@ export function parseTrackerFinancials(html: string, url: string) {
 		get_financials_profit_loss: table('profit-loss'),
 		get_financials_balance_sheet: table('balance-sheet'),
 		get_financials_cash_flow: table('cash-flow'),
-		get_document_list: { links }
+		get_document_list: { links, concalls }
 	};
 }
 

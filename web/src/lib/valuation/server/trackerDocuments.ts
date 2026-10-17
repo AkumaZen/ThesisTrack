@@ -3,7 +3,11 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-export async function internalTrackerDocuments(input: { bseCode: string; quarters: string[]; refresh: boolean }) {
+export type DocumentLink = { url: string; title: string; date?: string };
+/** Identity hints and Screener's concall links let the document service work when BSE's API is blocked. */
+export type DocumentRequest = { bseCode: string; quarters: string[]; refresh: boolean; nseSymbol?: string; documentLinks?: DocumentLink[] };
+
+export async function internalTrackerDocuments(input: DocumentRequest) {
 	if (env.VERCEL) {
 		const host = env.VERCEL_URL;
 		if (!host || !env.CONCALL_SERVICE_TOKEN) throw new Error('Internal document function is not configured');

@@ -7,7 +7,7 @@ vi.mock('@modelcontextprotocol/sdk/client/index.js',()=>({Client:class {
 	async callTool(input:{name:string;arguments:Record<string,unknown>}) {stub.calls.push(input);return {structuredContent:{quarters:['Mar 2026','Jun 2026'],data:'Reported structured data'}};}
 }}));
 vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js',()=>({StreamableHTTPClientTransport:class{}}));
-import { analyseResearch, loadResearch, reportedQuarters, trackerConfiguration, overviewBseCode, lookupTrackerIdentity, openaiEvidenceFormat, valuationHistoryIssue, reconcileHistoricalTax, valuationHistoricalPeriods } from './masterTrackerProvider';
+import { analyseResearch, documentLinksFrom, loadResearch, reportedQuarters, trackerConfiguration, overviewBseCode, lookupTrackerIdentity, openaiEvidenceFormat, valuationHistoryIssue, reconcileHistoricalTax, valuationHistoricalPeriods } from './masterTrackerProvider';
 import { mockAnalysis, mockResearch } from './masterTrackerMock';
 import { isTrackerTestRequest, trackerMocksEnabled } from './masterTrackerMock';
 import type { TrackerCompany } from '../masterTracker';
@@ -83,7 +83,27 @@ describe('Master Tracker provider boundaries',()=>{
 		const research=await loadResearch(company,['2026-03-31'],true);
 		expect(stub.calls).toHaveLength(4);expect(stub.calls.every((call)=>call.arguments.symbol===company.symbol)).toBe(true);
 		expect(research.sources).toHaveLength(4);expect(research.sources[0].pages[0].page).toBeNull();expect(research.warnings).toContain('No call found');
-		expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({bseCode:'999001',quarters:['2026-03-31'],refresh:true});
+		expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({bseCode:'999001',quarters:['2026-03-31'],refresh:true,nseSymbol:'SUPREMEPWR',documentLinks:[]});
+	});
+	it('sends Screener transcript and presentation links inside the quarter window, https only',()=>{
+		const raw={links:[{title:'Concalls',url:'https://example.com/concalls'}],concalls:[
+			{date:'Jul 2026',title:'Concall Transcript',url:'https://www.bseindia.com/a.pdf'},{date:'Jul 2026',title:'Investor Presentation',url:'https://www.bseindia.com/b.pdf'},
+			{date:'Jan 2024',title:'Concall Transcript',url:'https://www.bseindia.com/old.pdf'},{date:'Jul 2026',title:'Concall Transcript',url:'http://insecure.example.com/c.pdf'},
+			{date:'Jul 2026',title:'Concall Transcript',url:'https://www.bseindia.com/a.pdf'}]};
+		expect(documentLinksFrom(raw,['2026-06-30'])).toEqual([{url:'https://www.bseindia.com/a.pdf',title:'Concall Transcript',date:'Jul 2026'},{url:'https://www.bseindia.com/b.pdf',title:'Investor Presentation',date:'Jul 2026'}]);
+		const many={concalls:Array.from({length:60},(_,i)=>({date:'Jul 2026',title:'Concall Transcript',url:`https://example.com/${i}.pdf`}))};
+		expect(documentLinksFrom(many,['2026-06-30'])).toHaveLength(40);
+	});
+	it('says documents could not be retrieved, naming the failed sources, when every source failed',async()=>{
+		configured();vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({documents:[],warnings:['Company document download failed; cached sources may be incomplete.'],retrievalFailed:true,failedSources:['BSE returned HTTP 403']}),{status:200})));
+		const research=await loadResearch(company,['2026-03-31']);
+		expect(research.warnings.some((w)=>w.includes('could not be retrieved (BSE returned HTTP 403)'))).toBe(true);
+		expect(research.warnings.some((w)=>w.includes('were found'))).toBe(false);
+	});
+	it('keeps "not found" for successful empty results and notes partial source failures',async()=>{
+		configured();vi.stubGlobal('fetch',vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({documents:[],warnings:[]}),{status:200})).mockResolvedValueOnce(new Response(JSON.stringify({documents:[],warnings:[],retrievalFailed:false,failedSources:['BSE returned HTTP 403']}),{status:200})));
+		expect((await loadResearch(company,['2026-03-31'])).warnings.some((w)=>w.startsWith('No company calls or presentations were found for the selected quarters.'))).toBe(true);
+		expect((await loadResearch(company,['2026-03-31'])).warnings.some((w)=>w.includes('were found for the selected quarters in the sources that responded (BSE returned HTTP 403)'))).toBe(true);
 	});
 	it('rejects unsupported required MCP inputs rather than guessing',async()=>{
 		configured();stub.tools=[{name:'get_company_overview',inputSchema:{properties:{unknown_id:{type:'string'}},required:['unknown_id']}}];

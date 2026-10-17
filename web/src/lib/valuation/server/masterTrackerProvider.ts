@@ -8,7 +8,7 @@ import { analysisSchema, guidanceSchema, modelSchema, validateAnalysis, latestGu
 import { mockAnalysis, mockResearch, trackerMocksEnabled } from './masterTrackerMock';
 import type { TrackerProgress } from '../trackerProgress';
 import { nativeTrackerFinancials } from './trackerFinancials';
-import { internalTrackerDocuments } from './trackerDocuments';
+import { internalTrackerDocuments, type DocumentLink } from './trackerDocuments';
 
 export class TrackerProviderError extends Error {}
 function useMockResearch() { return trackerMocksEnabled() && env.MASTER_TRACKER_LIVE_TEST_MODE !== 'true'; }
@@ -42,6 +42,29 @@ export function overviewBseCode(raw: unknown): string | undefined {
 		}
 	};
 	visit(raw); return candidates.size === 1 ? [...candidates][0] : undefined;
+}
+
+/** Transcript and presentation links from Screener's document list, limited to the selected quarters' window. */
+export function documentLinksFrom(raw: unknown, quarters: string[]): DocumentLink[] {
+	const earliest = quarters.length ? Date.parse([...quarters].sort()[0]) : 0;
+	const latest = quarters.length ? Date.parse([...quarters].sort().at(-1)!) + 130 * 86400000 : Infinity;
+	const links: DocumentLink[] = [];
+	const seen = new Set<string>();
+	const visit = (value: unknown) => {
+		if (Array.isArray(value)) return value.forEach(visit);
+		if (!value || typeof value !== 'object') return;
+		const { url, title, date } = value as Record<string, unknown>;
+		if (typeof url === 'string' && typeof title === 'string' && /transcript|presentation|\bppt\b/i.test(title) && !seen.has(url)) {
+			const held = typeof date === 'string' ? Date.parse(`1 ${date} UTC`) : NaN;
+			if (url.startsWith('https://') && (Number.isNaN(held) || (held >= earliest && held <= latest))) {
+				seen.add(url);
+				links.push({ url, title: title.slice(0, 200), ...(typeof date === 'string' && date ? { date: date.slice(0, 40) } : {}) });
+			}
+		}
+		Object.values(value).forEach(visit);
+	};
+	visit(raw);
+	return links.slice(0, 40);
 }
 
 async function screener(company: Pick<TrackerCompany, 'symbol' | 'name' | 'bseCode'>, names = ['get_company_overview', 'get_quarterly_results', 'get_financials', 'get_document_list']) {
@@ -121,20 +144,25 @@ export async function loadResearch(company: TrackerCompany, quarters?: string[],
 		if (!bseCode) throw new TrackerProviderError('Add the verified six-digit BSE code to fetch this company’s calls and presentations.');
 		try {
 			let body: unknown;
-			if (!env.CONCALL_SERVICE_URL) body = await internalTrackerDocuments({ bseCode, quarters, refresh });
+			const request = { bseCode, quarters, refresh, ...(/^\d{6}$/.test(company.symbol) ? {} : { nseSymbol: company.symbol.toUpperCase() }), documentLinks: documentLinksFrom(raw.get_document_list, quarters) };
+			if (!env.CONCALL_SERVICE_URL) body = await internalTrackerDocuments(request);
 			else {
 			const url = new URL('/research', env.CONCALL_SERVICE_URL);
 			if (url.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(url.hostname)) throw new TrackerProviderError('The hosted Concall service must use HTTPS.');
 			const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.CONCALL_SERVICE_TOKEN}` },
-				body: JSON.stringify({ bseCode, quarters, refresh }), signal: AbortSignal.timeout(120000) });
+				body: JSON.stringify(request), signal: AbortSignal.timeout(120000) });
 			if (response.status === 401 || response.status === 403) throw new TrackerProviderError('The document service rejected authentication. Check that CONCALL_SERVICE_TOKEN matches on both services.');
 			if (!response.ok) throw new TrackerProviderError(`The document service returned HTTP ${response.status}. Check the Concall service and retry.`);
 			body = await response.json();
 			}
-			const validated = z.object({ documents: z.array(z.object({ id: z.string(), title: z.string(), url: z.url().refine((s) => new URL(s).protocol === 'https:'), pages: z.array(z.object({ page: z.number().int().positive(), text: z.string() })) })), warnings: z.array(z.string()) }).parse(body);
+			const validated = z.object({ documents: z.array(z.object({ id: z.string(), title: z.string(), url: z.url().refine((s) => new URL(s).protocol === 'https:'), pages: z.array(z.object({ page: z.number().int().positive(), text: z.string() })) })), warnings: z.array(z.string()), retrievalFailed: z.boolean().optional(), failedSources: z.array(z.string()).optional() }).parse(body);
 			sources.push(...validated.documents);
 			warnings.push(...validated.warnings);
-			if (!validated.documents.length) warnings.push('No company calls or presentations were found for the selected quarters. Do not infer management guidance from financial results.');
+			if (!validated.documents.length) {
+				const failed = validated.failedSources?.join('; ');
+				if (validated.retrievalFailed) warnings.push(`Company calls and presentations could not be retrieved${failed ? ` (${failed})` : ''}. This is a retrieval failure, not proof that none exist; retry later. Do not infer management guidance from financial results.`);
+				else warnings.push(`No company calls or presentations were found for the selected quarters${failed ? ` in the sources that responded (${failed})` : ''}. Do not infer management guidance from financial results.`);
+			}
 		} catch (e) {
 			if (e instanceof TrackerProviderError) throw e;
 			if (e instanceof Error && ['TimeoutError', 'AbortError'].includes(e.name)) throw new TrackerProviderError('Company-document research timed out. Downloads may still be completing. Wait a moment and retry; downloaded files will be reused.');
