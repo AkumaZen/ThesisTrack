@@ -3880,6 +3880,46 @@
 }
 
 
+.vd .scan-note {
+	margin: 0 0 12px;
+	font-size: 12px;
+	color: var(--muted);
+	max-width: 70ch;
+}
+
+
+.vd .scan-more {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin: 12px 0;
+}
+
+
+.vd .scan-nopx {
+	margin: 16px 0;
+	border: var(--border-w) solid var(--ink);
+	background: var(--surface);
+	padding: 8px 12px;
+	font-size: 13px;
+}
+
+
+.vd .scan-nopx summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+
+.vd .scan-nopx ul {
+	margin: 8px 0 0;
+	padding-left: 18px;
+	max-height: 240px;
+	overflow-y: auto;
+}
+
+
 
 /* ---- Valuation templates (company page) ---- */
 

@@ -8,7 +8,7 @@ import { getStageScanUniverse } from '$lib/valuation/server/stageScanUniverse';
 export const GET: RequestHandler = async ({ params }) => {
 	const symbol = params.symbol.toUpperCase();
 	if (!(await getStageScanUniverse()).includes(symbol)) {
-		error(404, `${symbol} is not in the scanner's universe (the sector baskets).`);
+		error(404, `${symbol} is not in the scanner's universe (the sector baskets and the market cap list).`);
 	}
 	try {
 		const result = await getStageScanResult(symbol);

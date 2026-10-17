@@ -1,11 +1,14 @@
 import {
 	bigint,
 	boolean,
+	date,
+	numeric,
 	doublePrecision,
 	integer,
 	jsonb,
 	pgSchema,
 	primaryKey,
+	timestamp,
 	serial,
 	text
 } from 'drizzle-orm/pg-core';
@@ -350,4 +353,29 @@ export const masterTrackerResearch = pgTable('master_tracker_research', {
 export const masterTrackerPreviews = pgTable('master_tracker_previews', {
 	id: text('id').primaryKey(), symbol: text('symbol').notNull().references(() => masterTrackerCompanies.symbol, { onDelete: 'cascade' }), userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 	data: jsonb('data').notNull()
+});
+
+// The breakout scanner's wider universe (migration 0020): AMFI companies with a six-month average
+// market cap of Rs 500 Cr to Rs 20,000 Cr. Loaded by scripts/import-mcap-universe.mjs; `symbol` is
+// the app ticker (null when Angel One has no price source). Rows missing from a newer file stay
+// with active=false.
+export const mcapUniverse = pgTable('mcap_universe', {
+	isin: text('isin').primaryKey(),
+	companyName: text('company_name').notNull(),
+	nseSymbol: text('nse_symbol'),
+	bseCode: text('bse_code'),
+	marketCapCr: numeric('market_cap_cr', { precision: 14, scale: 2 }).notNull(),
+	mcapAsOf: date('mcap_as_of', { mode: 'string' }).notNull(),
+	listedOn: text('listed_on'),
+	angelNseToken: text('angel_nse_token'),
+	angelNseSymbol: text('angel_nse_symbol'),
+	angelBseToken: text('angel_bse_token'),
+	angelBseSymbol: text('angel_bse_symbol'),
+	bseScripCode: text('bse_scrip_code'),
+	priceExchange: text('price_exchange'),
+	priceSourceStatus: text('price_source_status').notNull(),
+	matchMethod: text('match_method'),
+	symbol: text('symbol'),
+	active: boolean('active').notNull().default(true),
+	importedAt: timestamp('imported_at', { withTimezone: true }).notNull().defaultNow()
 });

@@ -91,7 +91,10 @@ export const TIMEFRAME_KEYS = ['1W', '1M', '3M', '6M', '1Y'] as const;
 export const CHART_RANGE_KEYS = ['3M', '6M', '1Y'] as const;
 /** The breakout scanner's stage chips, by short name (the scanner page maps them to stages). */
 export const SCANNER_STAGE_KEYS = ['all', 'breakout', 'near', 'stage2', 'stage1', 'stage3', 'stage4', 'unclassified'] as const;
-export const SCANNER_SORT_KEYS = ['name', 'stage', 'price', 'distance', 'base', 'volume', 'rs', 'breakout'] as const;
+export const SCANNER_SORT_KEYS = ['name', 'stage', 'price', 'distance', 'base', 'volume', 'rs', 'breakout', 'mcap'] as const;
+/** The scanner's market cap bands (MCAP_BANDS in valuation/mcapUniverse.js; a test keeps them in step) and breakout signals (SIGNALS in valuation/scannerFilters.ts). */
+export const SCANNER_MCAP_KEYS = ['all', 'm500', 'm2000', 'm5000', 'm10000', 'none'] as const;
+export const SCANNER_SIGNAL_KEYS = ['all', 'confirmed', 'on_record', 'above_today', 'vol_breakout', 'vol_building'] as const;
 // The alert types of lib/valuation/alerts.ts, plus 'all' (a test keeps the two in step).
 export const ALERT_FILTER_KEYS = ['all', 'price_fair_value', 'sector_rotation', 'near_breakout', 'strength_volume'] as const;
 
@@ -149,6 +152,8 @@ export const VIEWS = {
 		sort: field.oneOf(SCANNER_SORT_KEYS, 'distance', { lasting: true, url: 'sort' }),
 		dir: field.oneOf(['asc', 'desc'] as const, 'asc', { lasting: true, url: 'dir' }),
 		basket: field.text(120, { lasting: true, url: 'basket' }),
+		mcap: field.oneOf(SCANNER_MCAP_KEYS, 'all', { lasting: true, url: 'mcap' }),
+		signal: field.oneOf(SCANNER_SIGNAL_KEYS, 'all', { lasting: true, url: 'signal' }),
 		query: field.text(80),
 		scrollY
 	},
