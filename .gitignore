@@ -22,3 +22,5 @@ web/test-results/
 services/concall/.venv/
 services/concall/downloads/
 web/tracker-build.log
+
+scratch_*.png
