@@ -4,17 +4,30 @@
 	import type { Stage, StageScanResult } from '$lib/valuation/stageScan';
 	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
+	import LoadHistoryPanel from '$lib/valuation/components/LoadHistoryPanel.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
-	import type { SCANNER_STAGE_KEYS } from '$lib/viewMemory';
+	import type { SCANNER_STAGE_KEYS, SCANNER_MCAP_KEYS, SCANNER_SIGNAL_KEYS } from '$lib/viewMemory';
+	import { MCAP_BANDS, formatCr, mcapBand, mcapPeriodLabel } from '$lib/valuation/mcapUniverse.js';
+	import {
+		SIGNALS,
+		matchesFilters,
+		sectorOptions,
+		type ScanEntry,
+		type ScanFilters
+	} from '$lib/valuation/scannerFilters';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	// Results keyed by symbol. Cached ones arrive with the page; the rest are fetched in batches
 	// below. Filtering and sorting only ever read this object - they never refetch.
-	const initialResults: Record<string, StageScanResult | null> = untrack(() => ({
-		...data.cached
-	}));
+	// Companies with no stored prices have nothing to scan (scans read stored prices only): they start
+	// as "no price history" without a request, until Load missing history fetches them.
+	const initialResults: Record<string, StageScanResult | null> = untrack(() => {
+		const start: Record<string, StageScanResult | null> = { ...data.cached };
+		for (const s of data.noSeries) if (!(s in start)) start[s] = null;
+		return start;
+	});
 	let results = $state(initialResults);
 	let failed = $state<Record<string, string>>({});
 	const noHistory = $derived(Object.values(results).filter((r) => r === null).length);
@@ -69,6 +82,21 @@
 		};
 	});
 
+	// Companies of the market cap list whose history was just loaded: scan them now.
+	let loadedNow = $state<string[]>([]);
+	const missingHistory = $derived(
+		data.noSeries.filter((s) => s in data.mcapBySymbol && !loadedNow.includes(s)).length
+	);
+	function historyLoaded(symbols: string[]) {
+		loadedNow = [...loadedNow, ...symbols];
+		for (const s of symbols) {
+			delete results[s];
+			delete failed[s];
+		}
+		void scanMissing();
+	}
+	const canLoadHistory = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
+
 	type StageKey = Exclude<(typeof SCANNER_STAGE_KEYS)[number], 'all'>;
 	const STAGES: { id: Stage; key: StageKey; short: string; tone: string }[] = [
 		{ id: 'Confirmed Stage 2 Breakout', key: 'breakout', short: 'Breakout', tone: 'good' },
@@ -85,13 +113,20 @@
 	const keyOf = (stage: Stage | 'all'): StageKey | 'all' =>
 		stage === 'all' ? 'all' : stageInfo(stage).key;
 
-	type SortKey = 'name' | 'stage' | 'price' | 'distance' | 'base' | 'volume' | 'rs' | 'breakout';
+	type SortKey = 'name' | 'stage' | 'price' | 'distance' | 'base' | 'volume' | 'rs' | 'breakout' | 'mcap';
+	type McapKey = (typeof SCANNER_MCAP_KEYS)[number];
+	type SignalKey = (typeof SCANNER_SIGNAL_KEYS)[number];
 
-	const baskets = $derived(
-		[...new Set(Object.values(data.basketsBySymbol).flat())].sort((a, b) => a.localeCompare(b))
+	// Sector baskets, plus "Unclassified" for the market cap list's companies that sit in none.
+	const sectors = $derived(
+		sectorOptions(
+			Object.values(data.basketsBySymbol).flat(),
+			data.symbols.some((s) => !data.basketsBySymbol[s]?.length)
+		)
 	);
-	// A remembered basket that no longer exists means every basket.
-	const knownBasket = (b: string) => (b && baskets.includes(b) ? b : '');
+	// A remembered sector that no longer exists means every sector.
+	const knownBasket = (b: string) => (b && sectors.includes(b) ? b : '');
+	const mcapNote = $derived(mcapPeriodLabel(data.mcapAsOf ?? ''));
 
 	// Stage, sort and basket are remembered for this person, the search and scroll for this tab
 	// (lib/viewMemory.ts); stage, sort and basket also show in the address, so a view can be shared.
@@ -103,17 +138,23 @@
 			sort: sort.key,
 			dir: sort.dir === 1 ? 'asc' : 'desc',
 			basket: basketFilter,
+			mcap: bandFilter,
+			signal: signalFilter,
 			query
 		}),
 		apply: (s) => {
 			stageFilter = stageOf(s.stage);
 			sort = { key: s.sort, dir: s.dir === 'asc' ? 1 : -1 };
 			basketFilter = knownBasket(s.basket);
+			bandFilter = s.mcap;
+			signalFilter = s.signal;
 			query = s.query;
 		}
 	});
 	let stageFilter = $state<Stage | 'all'>(stageOf(memory.initial.stage));
 	let basketFilter = $state(untrack(() => knownBasket(memory.initial.basket)));
+	let bandFilter = $state<McapKey>(memory.initial.mcap);
+	let signalFilter = $state<SignalKey>(memory.initial.signal);
 	let query = $state(memory.initial.query);
 	let sort = $state<{ key: SortKey; dir: 1 | -1 }>({
 		key: memory.initial.sort,
@@ -125,13 +166,33 @@
 		data.symbols
 			.map((symbol) => ({ symbol, r: results[symbol] }))
 			.filter((x): x is { symbol: string; r: StageScanResult } => x.r != null)
+			.map(
+				({ symbol, r }): ScanEntry => ({
+					symbol,
+					r,
+					name: nameOf(symbol),
+					baskets: data.basketsBySymbol[symbol] ?? [],
+					mcapCr: data.mcapBySymbol[symbol] ?? null
+				})
+			)
 	);
+	const filters = $derived<ScanFilters>({
+		stage: stageFilter,
+		sector: basketFilter,
+		band: bandFilter,
+		signal: signalFilter,
+		query
+	});
+	// The stage chips count within the other filters, so they show what each chip would give.
+	const scoped = $derived(loaded.filter((x) => matchesFilters(x, { ...filters, stage: 'all' })));
 	const counts = $derived(
-		Object.fromEntries(STAGES.map((s) => [s.id, loaded.filter((x) => x.r.stage === s.id).length]))
+		Object.fromEntries(STAGES.map((s) => [s.id, scoped.filter((x) => x.r.stage === s.id).length]))
 	);
 
-	function sortValue(x: { symbol: string; r: StageScanResult }, key: SortKey) {
+	function sortValue(x: ScanEntry, key: SortKey) {
 		switch (key) {
+			case 'mcap':
+				return x.mcapCr;
 			case 'name':
 				return nameOf(x.symbol);
 			case 'stage':
@@ -152,13 +213,7 @@
 	}
 
 	const rows = $derived.by(() => {
-		const q = query.trim().toLowerCase();
-		const out = loaded.filter(
-			(x) =>
-				(stageFilter === 'all' || x.r.stage === stageFilter) &&
-				(!basketFilter || data.basketsBySymbol[x.symbol]?.includes(basketFilter)) &&
-				(!q || x.symbol.toLowerCase().includes(q) || nameOf(x.symbol).toLowerCase().includes(q))
-		);
+		const out = loaded.filter((x) => matchesFilters(x, filters));
 		return out.sort((a, b) => {
 			const va = sortValue(a, sort.key);
 			const vb = sortValue(b, sort.key);
@@ -178,6 +233,25 @@
 				: { key, dir: key === 'name' || key === 'distance' || key === 'stage' ? 1 : -1 };
 	}
 
+	// ~1,700 rows would make every sort and filter re-render a very long table: show a page at a time.
+	const ROWS_STEP = 100;
+	let visible = $state(ROWS_STEP);
+	const filterKey = $derived(JSON.stringify([filters, sort]));
+	$effect(() => {
+		void filterKey;
+		untrack(() => (visible = ROWS_STEP));
+	});
+	const shown = $derived(rows.slice(0, visible));
+
+	// Companies on the list that Angel One cannot price: listed apart, never fetched.
+	const noPriceRows = $derived(
+		data.noPriceSource.filter(
+			(c) =>
+				(bandFilter === 'all' || mcapBand(c.marketCapCr) === bandFilter) &&
+				(!query.trim() || c.name.toLowerCase().includes(query.trim().toLowerCase()))
+		)
+	);
+
 	const COLUMNS: { key: SortKey; label: string; title: string }[] = [
 		{ key: 'name', label: 'Company', title: '' },
 		{ key: 'stage', label: 'Stage', title: 'Weinstein stage from daily closes' },
@@ -194,7 +268,8 @@
 			label: 'Mansfield RS',
 			title: 'Relative strength vs NIFTY 500 against its own 200-day average'
 		},
-		{ key: 'breakout', label: 'Last breakout', title: 'Most recent confirmed breakout close' }
+		{ key: 'breakout', label: 'Last breakout', title: 'Most recent confirmed breakout close' },
+		{ key: 'mcap', label: 'Avg mcap', title: 'Six-month average market cap, Rs crore (AMFI), not a live figure' }
 	];
 
 	let exporting = $state(false);
@@ -207,7 +282,7 @@
 					name: 'Breakout scanner',
 					notes: [
 						`Stage 2 breakout scanner, exported ${new Date().toLocaleString('en-IN')}.`,
-						`Filter: ${stageFilter === 'all' ? 'all stages' : stageFilter}${basketFilter ? `, ${basketFilter}` : ''}${query.trim() ? `, search "${query.trim()}"` : ''}.`
+						`Filter: ${stageFilter === 'all' ? 'all stages' : stageFilter}${basketFilter ? `, ${basketFilter}` : ''}${bandFilter !== 'all' ? `, ${MCAP_BANDS.find((b) => b.key === bandFilter)?.label}` : ''}${signalFilter !== 'all' ? `, ${SIGNALS.find((x) => x.key === signalFilter)?.label}` : ''}${query.trim() ? `, search "${query.trim()}"` : ''}.`
 					],
 					columns: [
 						{ header: 'Company', width: 34 },
@@ -225,7 +300,8 @@
 						{ header: 'Mansfield RS', format: '0.0', width: 13 },
 						{ header: 'RS trend' },
 						{ header: 'Last breakout', width: 14 },
-						{ header: 'Sector basket', width: 34 }
+						{ header: 'Sector basket', width: 34 },
+						{ header: `${mcapNote} (Rs Cr)`, format: FORMATS.int, width: 20 }
 					],
 					rows: rows.map(({ symbol, r }) => [
 						nameOf(symbol),
@@ -243,7 +319,8 @@
 						r.mansfieldRS,
 						r.mansfieldRSTrend,
 						r.breakout?.date.slice(0, 10),
-						data.basketsBySymbol[symbol]?.join('; ')
+						data.basketsBySymbol[symbol]?.join('; '),
+						data.mcapBySymbol[symbol]
 					])
 				}
 			]);
@@ -269,7 +346,8 @@
 	<div class="band-inner">
 		<h1>Stage 2 breakout scanner</h1>
 		<div class="sub">
-			Every stock in the sector baskets, classified by Weinstein stage from daily closes. A breakout
+			Every stock in the sector baskets and the Rs 500 to 20,000 Cr market cap list, classified by
+			Weinstein stage from daily closes. A breakout
 			only counts once a day closes above the base on heavy volume; live prices never confirm one on
 			their own. Thresholds are on the <a href={resolve('/valuation/settings')}>Settings</a> page.
 		</div>
@@ -283,7 +361,7 @@
 			class="al-chip"
 			class:al-chip-on={stageFilter === 'all'}
 			aria-pressed={stageFilter === 'all'}
-			onclick={() => (stageFilter = 'all')}>All <span>{loaded.length}</span></button
+			onclick={() => (stageFilter = 'all')}>All <span>{scoped.length}</span></button
 		>
 		{#each STAGES as s (s.id)}
 			<button
@@ -308,10 +386,23 @@
 			/>
 		</label>
 		<label>
-			<span class="sr-only">Sector basket</span>
-			<select class="sm-input" bind:value={basketFilter}>
-				<option value="">All sector baskets</option>
-				{#each baskets as b (b)}<option value={b}>{b}</option>{/each}
+			<span class="sr-only">Sector</span>
+			<select class="sm-input" bind:value={basketFilter} data-testid="sector-filter">
+				<option value="">All sectors</option>
+				{#each sectors as b (b)}<option value={b}>{b}</option>{/each}
+			</select>
+		</label>
+		<label>
+			<span class="sr-only">Market cap, {mcapNote}</span>
+			<select class="sm-input" bind:value={bandFilter} data-testid="mcap-filter">
+				<option value="all">All market caps</option>
+				{#each MCAP_BANDS as b (b.key)}<option value={b.key}>{b.label}</option>{/each}
+			</select>
+		</label>
+		<label>
+			<span class="sr-only">Breakout type</span>
+			<select class="sm-input" bind:value={signalFilter} data-testid="signal-filter">
+				{#each SIGNALS as sg (sg.key)}<option value={sg.key}>{sg.label}</option>{/each}
 			</select>
 		</label>
 		<button
@@ -326,7 +417,7 @@
 			{#if pending.length > 0}
 				Scanning… {data.symbols.length - pending.length} of {data.symbols.length} done
 			{:else}
-				{loaded.length} of {data.symbols.length} stocks scanned{noHistory
+				{loaded.length} of {data.symbols.length} stocks scanned, {rows.length} shown{noHistory
 					? `; ${noHistory} have no price history`
 					: ''}{Object.keys(failed).length
 					? `; ${Object.keys(failed).length} failed (reload to retry)`
@@ -334,6 +425,17 @@
 			{/if}
 		</span>
 	</div>
+
+	{#if data.mcapAsOf}
+		<p class="scan-note" data-testid="mcap-note">
+			{mcapNote}: a six-month average from AMFI, not a live market cap, so companies near a band edge
+			may sit on the other side today.
+		</p>
+	{/if}
+
+	{#if canLoadHistory && data.mcapAsOf}
+		<LoadHistoryPanel missing={missingHistory} onFinished={historyLoaded} />
+	{/if}
 
 	<div class="table-scroll">
 		<table class="scan-table" data-testid="scan-table">
@@ -356,11 +458,11 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each rows as { symbol, r } (symbol)}
+				{#each shown as { symbol, r } (symbol)}
 					<tr data-testid="scan-row">
 						<td>
 							<a href={resolve('/valuation/company/[symbol]', { symbol })}>{nameOf(symbol)}</a>
-							<span class="scan-sub">{symbol} · {data.basketsBySymbol[symbol]?.[0] ?? ''}</span>
+							<span class="scan-sub">{symbol} · {data.basketsBySymbol[symbol]?.[0] ?? 'Unclassified'}</span>
 						</td>
 						<td>
 							<span class="scan-stage scan-{stageInfo(r.stage).tone}"
@@ -386,6 +488,7 @@
 								? `${r.breakout.date.slice(0, 10)} (${r.breakout.ageDays}d ago)`
 								: '-'}</td
 						>
+						<td class="num" title={mcapNote}>{formatCr(data.mcapBySymbol[symbol])}</td>
 					</tr>
 				{:else}
 					<tr>
@@ -399,4 +502,27 @@
 			</tbody>
 		</table>
 	</div>
+
+	{#if rows.length > shown.length}
+		<p class="scan-more no-print">
+			<button type="button" class="wl-strip-btn" data-testid="scan-more" onclick={() => (visible += ROWS_STEP)}
+				>Show {Math.min(ROWS_STEP, rows.length - shown.length)} more</button
+			>
+			<span class="hint">{shown.length} of {rows.length} shown</span>
+		</p>
+	{/if}
+
+	{#if noPriceRows.length > 0}
+		<details class="scan-nopx" data-testid="no-price-source">
+			<summary>No price source ({noPriceRows.length})</summary>
+			<p class="hint">
+				Angel One has no instrument for these companies, so they are never fetched or scanned.
+			</p>
+			<ul>
+				{#each noPriceRows as c (c.name)}
+					<li>{c.name} <span class="scan-sub">{formatCr(c.marketCapCr)} · No price source</span></li>
+				{/each}
+			</ul>
+		</details>
+	{/if}
 </div>

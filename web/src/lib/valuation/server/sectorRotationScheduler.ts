@@ -1,4 +1,5 @@
 import { listAllSymbols } from './sectorStore';
+import { listUniverseSymbols } from './mcapUniverseStore';
 import { BATCH_SIZE, refreshBatch } from './batchRefresh';
 import { chunk } from './refreshMerge';
 import { refreshBenchmarkCandles } from './benchmarkSeries';
@@ -37,6 +38,34 @@ export function buildRefreshQueue(
 	return unique.filter((s) => now - at(s) > recentMs).sort((a, b) => at(a) - at(b) || a.localeCompare(b));
 }
 
+/** A cold run could otherwise spend the whole time budget: every symbol with no stored series costs a
+ *  full history fetch (about half a second at the candles rate limit), and the market cap list adds
+ *  up to ~1,500 of them. */
+export const MAX_COLD_PER_RUN = 40;
+/** Stop starting batches once this many full history fetches have been made in one run (a batch
+ *  can also turn up gaps, which cost a full fetch too). The stalest go first, so the rest wait. */
+export const MAX_FULL_PER_RUN = 100;
+
+/** Keeps every symbol that already has a stored series (and any in `exempt`, the baskets and
+ *  watchlists, which were never capped), but at most `max` of the others without one. The
+ *  ones kept start at `rotateBy` (positions in the cold list), so a symbol Angel One can never
+ *  price cannot hold the same slots every run: the window moves on. The rest wait for a later run
+ *  or the "Load missing history" button. */
+export function capColdSymbols(
+	queue: string[],
+	hasSeries: Set<string>,
+	max = MAX_COLD_PER_RUN,
+	rotateBy = 0,
+	exempt: Set<string> = new Set()
+): { queue: string[]; deferred: number } {
+	const cold = queue.filter((s) => !hasSeries.has(s) && !exempt.has(s));
+	if (cold.length <= max) return { queue, deferred: 0 };
+	const coldSet = new Set(cold);
+	const start = ((rotateBy % cold.length) + cold.length) % cold.length;
+	const keep = new Set([...cold.slice(start), ...cold.slice(0, start)].slice(0, max));
+	return { queue: queue.filter((s) => !coldSet.has(s) || keep.has(s)), deferred: cold.length - max };
+}
+
 export async function warmAllSectors() {
 	try {
 		await refreshBenchmarkCandles();
@@ -53,17 +82,39 @@ export async function warmAllSectors() {
 		console.error('[sector-rotation-scheduler] watchlist symbols unavailable:', e);
 		return [] as string[];
 	});
+	// The market cap list the breakout scanner covers. A missing table (migration 0020 not applied
+	// yet) must not stop the rest.
+	const universeSymbols = await listUniverseSymbols().catch((e) => {
+		console.error('[sector-rotation-scheduler] market cap universe unavailable:', e);
+		return [] as string[];
+	});
 	const stored = await db
 		.select({ symbol: companyGrowthSeriesCache.symbol, fetchedAt: companyGrowthSeriesCache.fetchedAt })
 		.from(companyGrowthSeriesCache);
 	const fetchedAt = new Map(stored.map((r) => [r.symbol.toUpperCase(), r.fetchedAt]));
-	const queue = buildRefreshQueue([basketSymbols, watchlistSymbols], fetchedAt);
+	const fullQueue = buildRefreshQueue([basketSymbols, watchlistSymbols, universeSymbols], fetchedAt);
+	const hasSeries = new Set(stored.map((r) => r.symbol.toUpperCase()));
+	const { queue, deferred } = capColdSymbols(
+		fullQueue,
+		hasSeries,
+		MAX_COLD_PER_RUN,
+		Math.floor(Date.now() / 86_400_000) * MAX_COLD_PER_RUN,
+		new Set([...basketSymbols, ...watchlistSymbols].map((s) => s.toUpperCase()))
+	);
+	if (deferred > 0) console.log(`[sector-rotation-scheduler] ${deferred} symbols without stored prices wait for a later run`);
 
 	// Fifty at a time: one quote request brings the symbols that are a session behind up to date;
 	// the rest (new, or a longer gap) are fetched in full. A failed batch must not stop the others.
+	let fullFetches = 0;
 	for (const batch of chunk(queue, BATCH_SIZE)) {
+		if (fullFetches >= MAX_FULL_PER_RUN) {
+			console.log('[sector-rotation-scheduler] full fetch budget used up; the rest wait for the next run');
+			break;
+		}
 		try {
-			const { results } = await refreshBatch(batch);
+			const summary = await refreshBatch(batch);
+			fullFetches += summary.fullFetches;
+			const { results } = summary;
 			for (const r of results) {
 				if (r.outcome === 'failed') console.error(`[sector-rotation-scheduler] ${r.symbol} refresh failed: ${r.reason}`);
 			}
