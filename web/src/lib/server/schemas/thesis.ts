@@ -138,6 +138,12 @@ const tickerField = z
 	.or(z.literal(''))
 	.transform((v) => (v ? v : undefined));
 
+export const entryPriceField = z.number({ error: 'entry_price must be a number' }).gt(0, 'entry_price must be above zero').optional();
+export const entryDateField = z
+	.string()
+	.regex(/^\d{4}-\d{2}-\d{2}$/, 'entry_date must be YYYY-MM-DD')
+	.optional();
+
 export const thesisCreate = z
 	.object({
 		// company_id is optional on input - createCompany() derives it from
@@ -162,6 +168,10 @@ export const thesisCreate = z
 		// Defaults to today rather than requiring the analyst to pick a date
 		// just to save a still-empty thesis.
 		last_reviewed: z.string().default(() => new Date().toISOString().slice(0, 10)),
+		// Buy price (Scorecard). Both optional on input: with no price the server fills in the stored
+		// market close on/before entry_date (default today), or says how to send one.
+		entry_price: entryPriceField,
+		entry_date: entryDateField,
 		thesis_data: thesisData.default(() => thesisData.parse({}))
 	})
 	.superRefine((v, ctx) => {

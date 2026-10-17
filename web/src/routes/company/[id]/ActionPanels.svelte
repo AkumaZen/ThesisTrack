@@ -225,6 +225,7 @@
 	// ---- Outcome ----
 	let outcomeValue = $state<'played_out' | 'invalidated' | 'exited_early'>('played_out');
 	let outcomeNote = $state('');
+	let outcomeLesson = $state('');
 	let outcomeSubmitting = $state(false);
 	let outcomeError = $state('');
 	let outcomeSuccess = $state('');
@@ -238,9 +239,10 @@
 		}
 		outcomeSubmitting = true;
 		try {
-			await api.submitOutcome(companyId, { outcome: outcomeValue, note: outcomeNote.trim() });
+			await api.submitOutcome(companyId, { outcome: outcomeValue, note: outcomeNote.trim(), lesson: outcomeLesson.trim() || undefined });
 			outcomeSuccess = 'Outcome recorded - scenario closed.';
 			outcomeNote = '';
+			outcomeLesson = '';
 			await onChanged();
 		} catch (e) {
 			outcomeError = apiErrorMessage(e);
@@ -423,6 +425,13 @@
 			</select>
 			<input placeholder="Note" bind:value={outcomeNote} class="flex-1 rounded-md border border-border px-2 py-1.5 text-sm" />
 		</div>
+		<input
+			placeholder="Lesson learned (one line, optional) - shown on the Scorecard"
+			maxlength="300"
+			bind:value={outcomeLesson}
+			data-testid="outcome-lesson"
+			class="mt-2 w-full rounded-md border border-border px-2 py-1.5 text-sm"
+		/>
 		<button
 			disabled={outcomeSubmitting}
 			onclick={submitOutcome}

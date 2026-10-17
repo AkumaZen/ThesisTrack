@@ -22,6 +22,7 @@
 	import { operatingModelLabel } from '$lib/format';
 	import TableBuilderModal, { type BuiltTable } from '$lib/components/TableBuilderModal.svelte';
 	import TableCard, { type TableSummary } from '$lib/components/TableCard.svelte';
+	import { isValidPrice } from '$lib/entryPrice.js';
 
 	const STATUSES = ['on_track', 'watch_closely', 'broken'];
 	const OPERATORS = ['<', '<=', '>', '>=', '==', '!='];
@@ -87,6 +88,67 @@
 	let currency = $state('INR');
 	let status = $state('on_track');
 	let lastReviewed = $state(new Date().toISOString().slice(0, 10));
+
+	// Buy price (Scorecard). 'auto' = the stored market close on/before the date; 'manual' = typed;
+	// 'keep' (amend only) = leave the recorded one. The server re-checks all of it.
+	type EntryPreview = { status: 'stored' | 'none' | 'no_source'; close: { date: string; price: number } | null };
+	let entryMode = $state<'auto' | 'manual' | 'keep'>('auto');
+	let entryDate = $state(new Date().toISOString().slice(0, 10));
+	let entryPriceText = $state('');
+	let entryPreview = $state<EntryPreview | null>(null);
+	let entryPreviewLoading = $state(false);
+	let entryError = $state('');
+	let existingEntry = $state<{ price: number | null; date: string | null; source: string | null; needs: boolean } | null>(null);
+	let previewSeq = 0;
+	// Amending a company with no price source: the market close can never apply, only a typed price.
+	let autoDisabled = $derived(mode === 'amend' && (existingEntry?.source === 'no_data' || entryPreview?.status === 'no_source'));
+	$effect(() => {
+		if (autoDisabled && entryMode === 'auto') entryMode = 'manual';
+	});
+
+	$effect(() => {
+		const nse = nseTicker.trim();
+		const bse = bseTicker.trim();
+		const date = entryDate;
+		if (entryMode === 'keep' || (!nse && !bse) || !date) {
+			entryPreview = null;
+			entryPreviewLoading = false;
+			return;
+		}
+		entryPreviewLoading = true;
+		const seq = ++previewSeq;
+		const timer = setTimeout(async () => {
+			try {
+				const r = (await api.entryPricePreview(nse, bse, date)) as EntryPreview;
+				if (seq === previewSeq) entryPreview = r;
+			} catch {
+				if (seq === previewSeq) entryPreview = null;
+			} finally {
+				if (seq === previewSeq) entryPreviewLoading = false;
+			}
+		}, 350);
+		return () => clearTimeout(timer);
+	});
+
+	/** Why the buy price can't be saved yet (empty when fine). */
+	function entryProblem(): string {
+		if (entryMode === 'keep') return '';
+		if (!entryDate) return 'Choose the buy date.';
+		if (entryMode === 'manual') {
+			return isValidPrice(Number(entryPriceText)) && entryPriceText !== ''
+				? ''
+				: 'Enter the buy price as a number above zero.';
+		}
+		if (entryPreviewLoading) return 'Still looking up the stored market price. Try again in a moment.';
+		if (entryPreview?.status === 'stored' || entryPreview?.status === 'no_source') return '';
+		return 'No stored market price for this date. Choose "Enter price manually" and type the buy price.';
+	}
+
+	function entryPayload() {
+		if (entryMode === 'keep') return {};
+		if (entryMode === 'manual') return { entry_price: Number(entryPriceText), entry_date: entryDate };
+		return { entry_date: entryDate };
+	}
 
 	// Inline "add new" taxonomy affordances
 	let addingIndustry = $state(false);
@@ -532,7 +594,21 @@
 					last_reviewed: string | null;
 					current_thesis?: ThesisDataShape;
 					has_own_scenario: boolean;
+					entry_price?: number | null;
+					entry_date?: string | null;
+					entry_price_source?: string | null;
+					needs_price?: boolean;
 				};
+				if (mode === 'amend' && detail.has_own_scenario) {
+					existingEntry = {
+						price: detail.entry_price ?? null,
+						date: detail.entry_date ?? null,
+						source: detail.entry_price_source ?? null,
+						needs: !!detail.needs_price
+					};
+					// Already has a price (or was accepted as "no data"): keep it unless changed.
+					if (detail.entry_price != null || detail.entry_price_source === 'no_data') entryMode = 'keep';
+				}
 				// So a section's already-real table blocks (saved on a previous
 				// visit) render as the actual table grid here too, not a chip.
 				api
@@ -647,6 +723,7 @@
 			},
 			status,
 			last_reviewed: lastReviewed,
+			...entryPayload(),
 			thesis_data: buildThesisData(idMap)
 		};
 	}
@@ -673,10 +750,21 @@
 	async function submit() {
 		submitError = '';
 		fieldErrors = [];
+		const problem = entryProblem();
+		if (problem) {
+			entryError = problem;
+			fieldErrors = [problem];
+			return;
+		}
+		entryError = '';
 		submitting = true;
 		try {
 			if (mode === 'amend') {
-				await api.amendThesis(prefillCompanyId, { thesis_data: buildThesisData(), change_note: changeNote.trim() || null });
+				await api.amendThesis(prefillCompanyId, {
+					thesis_data: buildThesisData(),
+					change_note: changeNote.trim() || null,
+					...entryPayload()
+				});
 				const idMap = await createCustomSections(prefillCompanyId);
 				// Any note with a table added just now referenced a queued id that
 				// didn't exist yet at the call above - now that the tables are
@@ -1272,6 +1360,84 @@ My data:
 				{/if}
 			</section>
 		{/if}
+
+		<!-- Buy price: where the return since entry is measured from. -->
+		<section class="mt-5 rounded-xl border border-border bg-surface p-5" data-testid="buy-price-section">
+			<h2 class="text-base font-semibold">Buy price <span class="text-danger" aria-hidden="true">*</span></h2>
+			<p class="text-xs text-muted-fg mt-1">The price this thesis is measured from. Required.</p>
+			{#if mode === 'amend' && existingEntry}
+				<p class="text-sm mt-2" data-testid="buy-price-current">
+					{#if existingEntry.price != null}
+						Recorded: <strong>{existingEntry.price}</strong>{existingEntry.date ? ` on ${existingEntry.date}` : ''}
+					{:else if existingEntry.source === 'no_data'}
+						Recorded: no price data available for this company.
+					{:else}
+						<strong>No buy price recorded yet.</strong> Set one below.
+					{/if}
+				</p>
+			{/if}
+			<fieldset class="mt-3 min-w-0">
+				<legend class="sr-only">How to set the buy price</legend>
+				<div class="flex flex-col gap-2 sm:flex-row sm:gap-5 text-sm">
+					<label class="flex items-center gap-2"
+						><input type="radio" bind:group={entryMode} value="auto" disabled={autoDisabled} /> Use stored market close</label
+					>
+					{#if autoDisabled}
+						<p class="text-xs text-muted-fg" data-testid="auto-disabled-reason">No stored market price source exists for this company, so type the buy price.</p>
+					{/if}
+					<label class="flex items-center gap-2"
+						><input type="radio" bind:group={entryMode} value="manual" /> Enter price manually</label
+					>
+					{#if mode === 'amend' && existingEntry && (existingEntry.price != null || existingEntry.source === 'no_data')}
+						<label class="flex items-center gap-2"
+							><input type="radio" bind:group={entryMode} value="keep" /> Keep as recorded</label
+						>
+					{/if}
+				</div>
+			</fieldset>
+			{#if entryMode !== 'keep'}
+				<div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+					<label class="text-sm"
+						>Buy date
+						<input type="date" bind:value={entryDate} max={new Date().toISOString().slice(0, 10)} class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm" />
+					</label>
+					{#if entryMode === 'manual'}
+						<label class="text-sm"
+							>Buy price ({currency || 'INR'})
+							<input
+								type="number"
+								inputmode="decimal"
+								min="0"
+								step="any"
+								bind:value={entryPriceText}
+								placeholder="e.g. 245.50"
+								data-testid="buy-price-input"
+								class="mt-1 w-full rounded-md border border-border px-2 py-1.5 text-sm"
+							/>
+						</label>
+					{/if}
+				</div>
+				{#if entryMode === 'auto'}
+					<p class="text-sm mt-3" aria-live="polite" data-testid="buy-price-preview">
+						{#if !nseTicker.trim() && !bseTicker.trim()}
+							<span class="text-muted-fg">Enter an NSE or BSE ticker above to look up the stored price.</span>
+						{:else if entryPreviewLoading}
+							<span class="text-muted-fg">Looking up the stored price...</span>
+						{:else if entryPreview?.status === 'stored' && entryPreview.close}
+							Stored market close: <strong>{entryPreview.close.price}</strong> on {entryPreview.close.date}
+							{#if entryPreview.close.date !== entryDate}<span class="text-muted-fg"> (last session on or before {entryDate})</span>{/if}
+						{:else if entryPreview?.status === 'no_source'}
+							<strong>No price data available</strong> for this company. It will be saved without a buy price.
+						{:else if entryPreview}
+							<span class="text-danger">No stored market price on or before {entryDate}. Choose "Enter price manually" and type the buy price.</span>
+						{/if}
+					</p>
+				{/if}
+			{/if}
+			{#if entryError}
+				<p class="text-xs text-danger mt-2" role="alert">{entryError}</p>
+			{/if}
+		</section>
 
 		<!-- Staged data tables for a pillar section - name + row/column count,
 		     with a remove (x) button - reused across every pillar below and the

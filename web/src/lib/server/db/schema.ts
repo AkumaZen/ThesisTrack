@@ -118,6 +118,13 @@ export const thesisScenarios = pgTable(
 		outcome: thesisOutcomeEnum('outcome').notNull().default('open'),
 		conviction: smallint('conviction'),
 		entryDate: date('entry_date'),
+		// Scorecard: the buy price and where it came from (see lib/entryPrice.js). Nullable for
+		// theses entered before it existed (backfill) and for companies with no price source.
+		entryPrice: numeric('entry_price'),
+		entryPriceSource: text('entry_price_source'),
+		needsPrice: boolean('needs_price').notNull().default(false),
+		// One-line lesson written when the thesis is closed out (Scorecard playbook).
+		lesson: text('lesson'),
 		exitDate: date('exit_date'),
 		lastReviewed: date('last_reviewed').notNull(),
 		// FK to thesis_versions.version_id added in the migration (circular with

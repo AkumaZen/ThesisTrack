@@ -56,6 +56,9 @@ export const api = {
 	amendThesis: (id: string, payload: unknown) => request('PUT', `/companies/${encodeURIComponent(id)}/thesis`, payload),
 	getVersions: (id: string, diff?: string) =>
 		request('GET', `/companies/${encodeURIComponent(id)}/versions${diff ? `?diff=${diff}` : ''}`),
+	entryPricePreview: (nse: string, bse: string, date: string) =>
+		request('GET', `/entry-price?nse_ticker=${encodeURIComponent(nse)}&bse_ticker=${encodeURIComponent(bse)}&date=${encodeURIComponent(date)}`),
+	getScorecard: () => request('GET', '/scorecard'),
 	getTaxonomy: () => request('GET', '/taxonomy'),
 	proposeIndustry: (name: string) => request('POST', '/taxonomy', { name }),
 	proposeNiche: (broadIndustry: string, name: string) =>

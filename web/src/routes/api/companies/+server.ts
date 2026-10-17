@@ -15,6 +15,7 @@ import {
 import { errorResponse, requireActor, requireWriteActor, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { thesisCreate } from '$lib/server/schemas/thesis';
 import { createCompany, AlreadyExistsError, TaxonomyError } from '$lib/server/services/versioning';
+import { EntryPriceError } from '$lib/server/services/entryPrice';
 import { listScenarios } from '$lib/server/services/scenarios';
 import {
 	coreMetricsForScenarios,
@@ -176,7 +177,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		const parsed = thesisCreate.safeParse(await request.json());
 		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
-		const scenario = await createCompany(parsed.data, actor.identity);
+		const scenario = await createCompany(parsed.data, actor.identity, { resolveEntry: true });
 		const [company] = await db.select().from(companies).where(eq(companies.companyId, scenario.companyId)).limit(1);
 		const [industry] = await db.select().from(broadIndustries).where(eq(broadIndustries.id, company.broadIndustryId)).limit(1);
 		const [niche] = await db.select().from(specificNiches).where(eq(specificNiches.id, company.specificNicheId)).limit(1);
@@ -185,7 +186,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		return json(scenarioToOut(company, industry.name, niche.name, scenario, scenarioCount), { status: 201 });
 	} catch (err) {
 		if (err instanceof AlreadyExistsError) return errorResponse(409, err.message);
-		if (err instanceof TaxonomyError) return errorResponse(422, err.message);
+		if (err instanceof TaxonomyError || err instanceof EntryPriceError) return errorResponse(422, err.message);
 		return handleAuthError(err);
 	}
 };

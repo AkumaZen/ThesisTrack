@@ -11,6 +11,7 @@ import {
 	thesisVersions
 } from '../db/schema';
 import type { ThesisCreate, ThesisData } from '../schemas/thesis';
+import { entryColumns, NEEDS_PRICE_COLUMNS, resolveForCompany, type ResolvedEntry } from './entryPrice';
 import { getScenarioOptional, ScenarioNotFoundError } from './scenarios';
 
 export class NotFoundError extends Error {}
@@ -108,7 +109,8 @@ async function adoptPlaceholderScenario(
 	scenario: typeof thesisScenarios.$inferSelect,
 	payload: ThesisCreate,
 	actor: string,
-	ex: Executor
+	ex: Executor,
+	entry: ResolvedEntry | null
 ) {
 	const [row] = await ex
 		.select({ maxNo: max(thesisVersions.versionNo) })
@@ -135,22 +137,28 @@ async function adoptPlaceholderScenario(
 			currentVersionId: version.versionId,
 			status: payload.status,
 			statusSource: 'manual',
-			lastReviewed: payload.last_reviewed
+			lastReviewed: payload.last_reviewed,
+			...(entry ? entryColumns(entry) : NEEDS_PRICE_COLUMNS)
 		})
 		.where(eq(thesisScenarios.id, scenario.id))
 		.returning();
 	return updated;
 }
 
-export async function createCompany(payload: ThesisCreate, actor: string) {
+// opts.resolveEntry: the API/form path. Fills in (or rejects) the buy price BEFORE anything is
+// written. Internal callers leave it off and the thesis is flagged needs_price for the backfill.
+export async function createCompany(payload: ThesisCreate, actor: string, opts: { resolveEntry?: boolean } = {}) {
 	const companyId = deriveCompanyId(payload);
 	const [existing] = await db.select().from(companies).where(eq(companies.companyId, companyId)).limit(1);
+	const entry = opts.resolveEntry
+		? await resolveForCompany(existing ?? { nseTicker: payload.nse_ticker, bseTicker: payload.bse_ticker }, payload)
+		: null;
 	const mine = existing ? await getScenarioOptional(companyId, actor) : null;
 	if (mine) {
 		if (await scenarioHasSubstantiveThesis(mine)) {
 			throw new AlreadyExistsError(`'${actor}' already has a thesis on company '${companyId}'`);
 		}
-		return db.transaction((tx) => adoptPlaceholderScenario(mine, payload, actor, tx));
+		return db.transaction((tx) => adoptPlaceholderScenario(mine, payload, actor, tx, entry));
 	}
 
 	// Resolve lookups before writing, then do every write in one transaction:
@@ -190,7 +198,8 @@ export async function createCompany(payload: ThesisCreate, actor: string) {
 				label: 'Thesis',
 				status: payload.status,
 				statusSource: 'manual',
-				lastReviewed: payload.last_reviewed
+				lastReviewed: payload.last_reviewed,
+				...(entry ? entryColumns(entry) : NEEDS_PRICE_COLUMNS)
 			})
 			.returning();
 

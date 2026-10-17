@@ -48,6 +48,12 @@ export type CompanyDetail = {
 	has_own_scenario: boolean;
 	has_active_override: boolean;
 	scenario_id: number | null;
+	entry_price?: number | null;
+	entry_date?: string | null;
+	entry_price_source?: string | null;
+	needs_price?: boolean;
+	current_price?: number | null;
+	current_price_date?: string | null;
 	scenario_owner: string | null;
 	viewing_own_scenario: boolean;
 	current_thesis?: ThesisData;

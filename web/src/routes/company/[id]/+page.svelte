@@ -9,6 +9,7 @@
 	import { api, ApiError } from '$lib/api';
 	import { STATUS_STYLES, operatingModelLabel } from '$lib/format';
 	import { session } from '$lib/session.svelte';
+	import { formatReturn, returnPct } from '$lib/entryPrice.js';
 
 	// Admin-only, irreversible: removes the company with every scenario, version, observation and note.
 	let deleteError = $state('');
@@ -63,6 +64,13 @@ Type the company name to confirm:`
 	// assign it directly after a write, without waiting for a re-navigation.
 	let detail = $derived(data.detail);
 	let viewingOwnScenario = $derived(detail.viewing_own_scenario);
+	let entryReturn = $derived(returnPct(detail.entry_price, detail.current_price));
+	const ENTRY_SOURCE_LABEL: Record<string, string> = {
+		manual: 'entered manually',
+		auto: 'stored market close',
+		backfill_buy: 'from the logged buy decision',
+		backfill_history: 'stored market close at creation'
+	};
 
 	async function reload() {
 		detail = (await api.getCompany(companyId, detail.scenario_owner)) as CompanyDetail;
@@ -548,6 +556,59 @@ Type the company name to confirm:`
 							onclick={() => goto(`/ingest?companyId=${encodeURIComponent(companyId)}`)}
 							class="text-xs px-3 py-1.5 rounded-md bg-fg text-bg hover:brightness-90 shrink-0">+ Start Your Own Thesis</button
 						>
+					</div>
+				{/if}
+
+				{#if detail.scenario_id}
+					<div class="mt-3 rounded-md border border-border p-3" data-testid="entry-card">
+						{#if detail.entry_price != null}
+							<dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+								<div>
+									<dt class="text-xs text-muted-fg">Entry price</dt>
+									<dd class="font-semibold" data-testid="entry-price">{detail.entry_price}</dd>
+									<dd class="text-xs text-muted-fg">
+										{detail.entry_date ?? 'date not recorded'}{detail.entry_price_source ? ` · ${ENTRY_SOURCE_LABEL[detail.entry_price_source] ?? detail.entry_price_source}` : ''}
+									</dd>
+								</div>
+								<div>
+									<dt class="text-xs text-muted-fg">Current price</dt>
+									{#if detail.current_price != null}
+										<dd class="font-semibold" data-testid="current-price">{detail.current_price}</dd>
+										<dd class="text-xs text-muted-fg">stored close, {detail.current_price_date}</dd>
+									{:else}
+										<dd class="text-muted-fg">No stored price yet</dd>
+									{/if}
+								</div>
+								<div>
+									<dt class="text-xs text-muted-fg">Return since entry</dt>
+									{#if entryReturn != null}
+										<dd
+											class="font-semibold {entryReturn > 0 ? 'text-good' : entryReturn < 0 ? 'text-danger' : ''}"
+											data-testid="entry-return"
+										>
+											<span aria-hidden="true">{entryReturn > 0 ? '▲' : entryReturn < 0 ? '▼' : '■'}</span>
+											{formatReturn(entryReturn)}
+											<span class="sr-only">{entryReturn > 0 ? 'gain' : entryReturn < 0 ? 'loss' : 'no change'}</span>
+										</dd>
+									{:else}
+										<dd class="text-muted-fg">Not available</dd>
+									{/if}
+								</div>
+							</dl>
+						{:else if detail.entry_price_source === 'no_data'}
+							<p class="text-sm" data-testid="entry-no-data"><strong>No price data available</strong> for this company, so no return is tracked unless you add a buy price.
+								{#if viewingOwnScenario && !session.isReadOnly}
+									<a href={`/ingest?mode=amend&companyId=${encodeURIComponent(companyId)}`} class="underline ml-2">Add entry price manually</a>
+								{/if}
+							</p>
+						{:else}
+							<p class="text-sm flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="entry-needs-price">
+								<span><strong>Needs price:</strong> no entry price is recorded for this thesis yet.</span>
+								{#if viewingOwnScenario && !session.isReadOnly}
+									<a href={`/ingest?mode=amend&companyId=${encodeURIComponent(companyId)}`} class="underline">Add entry price</a>
+								{/if}
+							</p>
+						{/if}
 					</div>
 				{/if}
 
