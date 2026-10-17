@@ -48,7 +48,7 @@ from master `175abd5`; updated 2026-10-17.
 
 ## Current Focus
 - Finishing rollout. Production (c342a6b) is deployed and healthy; 0018, 0019, 0020 are applied and the mcap universe
-  (1,496 rows) is imported. Pending for the USER: `backfill-entry-price.mjs --apply` and the scanner "Load missing history".
+  (1,496 rows) is imported. The entry-price backfill is applied (STLTECH 897.4, BALUFORGE 480.7; 0 left). Pending for the USER: the scanner "Load missing history".
 
 ## Known Issues / Unresolved Decisions
 - Master Tracker: BSE's API returns 403 to all cloud servers (probe 2026-10-10). Worked around, see Completed Work.
@@ -59,11 +59,10 @@ from master `175abd5`; updated 2026-10-17.
 - Production has 35 companies but only 2 thesis_scenarios (both siddhesh.dige); confirm expected.
 
 ## Next Steps
-1. User: `node scripts/backfill-entry-price.mjs --apply` against production (dry run first; reads `DATABASE_URL`, direct Neon URL).
-2. User: scanner "Load missing history" (admin). Browser-check the thesis page and the scanner.
-3. Verify the HFCL fix on Vercel (Master Tracker, Jun 2026): documents from Screener/NSE, BSE 403 shown as a short warning.
-4. Not merged: `ec2-hosting`, `feat/guidance-tables-import-redesign`.
-5. Open: Retry/Upload for failed document fetches; rotate the leaked Vercel bypass secret; stale `.production.env`.
+1. User: scanner "Load missing history" (admin). Browser-check the thesis page and the scanner.
+2. Verify the HFCL fix on Vercel (Master Tracker, Jun 2026): documents from Screener/NSE, BSE 403 shown as a short warning.
+3. Not merged: `ec2-hosting`, `feat/guidance-tables-import-redesign`.
+4. Open: Retry/Upload for failed document fetches; rotate the leaked Vercel bypass secret; stale `.production.env`.
 
 ## Verification
 - From `web/`: `npm run check`; `npx vitest run <files>` (full suite: `npx vitest run`);
