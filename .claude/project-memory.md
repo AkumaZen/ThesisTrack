@@ -47,25 +47,23 @@ from master `175abd5`; updated 2026-10-17.
   Checked live for HFCL with the BSE API forced to 403: Screener gave Q1 FY27, Q4 and Q3 FY26 transcripts and decks.
 
 ## Current Focus
-- User asked to finish everything and push. Approved: merge to master, push (deploys Vercel) and the additive
-  production migrations/imports. The auto-mode classifier blocked production DB access, so the USER runs those
-  steps; the master push should wait until 0018, 0019, 0020 are applied.
+- Finishing rollout. Production (c342a6b) is deployed and healthy; 0018, 0019, 0020 are applied and the mcap universe
+  (1,496 rows) is imported. Pending for the USER: `backfill-entry-price.mjs --apply` and the scanner "Load missing history".
 
 ## Known Issues / Unresolved Decisions
 - Master Tracker: BSE's API returns 403 to all cloud servers (probe 2026-10-10). Worked around, see Completed Work.
 - EC2 plan (branch `ec2-hosting`) assumes EC2 may fix BSE; the AWS bom1 result says it likely will not.
 - A Vercel deployment-protection bypass secret leaked into a session log; rotate it.
-- DB-backed tests (`metrics`, `services.integration`, `sectors`, `createThesis`, `thesisInsights`) skip when
-  Docker/local Postgres is down; not run since the merges. Run them with Docker up.
+- DB-backed tests pass with the local docker DB up (683/683, 0 skipped); they skip when Docker is down. Apply new
+  migrations locally with `docker exec -i thesistrack-postgres-1 psql -U thesis -d thesis` (`_prod_migrate.mjs` refuses non-prod hosts).
 - Production has 35 companies but only 2 thesis_scenarios (both siddhesh.dige); confirm expected.
 
 ## Next Steps
-1. User applies to production (Neon, direct URL): `web/drizzle/0018`, `0019`, `0020` via `web/_prod_migrate.mjs <env> <sql>`
-   (all additive, idempotent), then `web/scripts/backfill-entry-price.mjs` (dry run, then `--apply`) and
-   `import-mcap-universe.mjs research/companies_mcap_500_20000cr.csv` (dry run, then `--apply`; both read `DATABASE_URL`).
-2. Then merge `merge-valuation` into master and push (deploys); check the thesis page and the scanner in a browser.
-3. Not merged: `ec2-hosting`, `feat/guidance-tables-import-redesign`.
-4. Open: Retry/Upload for failed document fetches; rotate the leaked Vercel bypass secret; stale `.production.env`.
+1. User: `node scripts/backfill-entry-price.mjs --apply` against production (dry run first; reads `DATABASE_URL`, direct Neon URL).
+2. User: scanner "Load missing history" (admin). Browser-check the thesis page and the scanner.
+3. Verify the HFCL fix on Vercel (Master Tracker, Jun 2026): documents from Screener/NSE, BSE 403 shown as a short warning.
+4. Not merged: `ec2-hosting`, `feat/guidance-tables-import-redesign`.
+5. Open: Retry/Upload for failed document fetches; rotate the leaked Vercel bypass secret; stale `.production.env`.
 
 ## Verification
 - From `web/`: `npm run check`; `npx vitest run <files>` (full suite: `npx vitest run`);
