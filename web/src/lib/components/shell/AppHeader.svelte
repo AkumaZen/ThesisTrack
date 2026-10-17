@@ -22,7 +22,8 @@
 	// The thesis module is the app's home; the valuation tools live under /valuation.
 	const THESIS: Tool[] = [
 		{ href: '/', label: 'Companies', match: (p) => p === '/' || starts('/company')(p) },
-		{ href: '/review', label: 'Review queue', match: starts('/review') }
+		{ href: '/review', label: 'Review queue', match: starts('/review') },
+		{ href: '/scorecard', label: 'Scorecard', match: starts('/scorecard') }
 	];
 	const VALUATION: Tool[] = [
 		{
