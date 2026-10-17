@@ -5,9 +5,10 @@
 	import { beforeNavigate } from '$app/navigation';
 	import {
 		buildSteps,
-		estimateMinutes,
+		countCompanies,
 		forgetSectorCards,
 		runSteps,
+		stepsForFailed,
 		type RefreshPlan,
 		type RefreshStep,
 		type RunProgress
@@ -20,7 +21,7 @@
 	let progress = $state<RunProgress | null>(null);
 	let cancelled = $state(false);
 	let planError = $state<string | null>(null);
-	let stepsTotal = $state(0);
+	let companiesTotal = $state(0);
 	// Totals across the first run and any "Retry failed" runs, so the summary stays honest.
 	let allOk = $state(0);
 	let allUnlisted = $state(0);
@@ -29,8 +30,8 @@
 	let destroyed = false;
 
 	const busy = $derived(phase !== 'idle' && phase !== 'done');
-	const pct = $derived(progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0);
-	const now = $derived(progress?.current[0]);
+	const pct = $derived(progress && progress.stepsTotal > 0 ? Math.round((progress.stepsDone / progress.stepsTotal) * 100) : 0);
+	const now = $derived(progress?.current);
 
 	async function start() {
 		if (busy) return;
@@ -50,7 +51,7 @@
 			phase = 'idle';
 			return;
 		}
-		stepsTotal = steps.length;
+		companiesTotal = countCompanies(steps);
 		startedAt = Date.now();
 		await run(steps);
 	}
@@ -83,11 +84,12 @@
 	}
 
 	function retryFailed() {
-		if (busy || !progress || progress.failedSteps.length === 0) return;
-		stepsTotal = progress.failedSteps.length;
+		if (busy || !progress || progress.failedItems.length === 0) return;
+		const steps = stepsForFailed(progress.failedItems);
+		companiesTotal = countCompanies(steps);
 		allOk = 0;
 		allUnlisted = 0;
-		void run(progress.failedSteps);
+		void run(steps);
 	}
 
 	function dismiss() {
@@ -126,8 +128,8 @@
 		</button>
 		{#if phase === 'idle'}
 			<span class="ra-hint"
-				>Fetches new prices for every sector, subsector and company, one at a time. Takes several
-				minutes; you can keep using the page.</span
+				>Brings every sector, subsector and company up to date in batches of 50. Usually under a
+				minute; longer for companies with no stored prices yet. You can keep using the page.</span
 			>
 		{/if}
 	</div>
@@ -143,9 +145,13 @@
 						Cancelling… finishing the requests in flight.
 					{:else}
 						<span class="ra-spin" aria-hidden="true"></span>
-						Refreshing {Math.min(progress.done + 1, progress.total)} / {progress.total}
+						{#if progress.batchIndex > 0}
+							Batch {progress.batchIndex}/{progress.batchTotal}
+						{:else}
+							Refreshing
+						{/if}
 						{#if now}
-							<span class="ra-where">· {now.where}{now.symbol ? ` · ${now.symbol}` : ''}</span>
+							<span class="ra-where">· {now.where}</span>
 						{/if}
 					{/if}
 				</p>
@@ -154,15 +160,14 @@
 					role="progressbar"
 					aria-label="Refreshing sectors"
 					aria-valuemin="0"
-					aria-valuemax={progress.total}
-					aria-valuenow={progress.done}
+					aria-valuemax={progress.stepsTotal}
+					aria-valuenow={progress.stepsDone}
 				>
 					<div class="ra-fill" class:ra-active={phase === 'running'} style="width: {pct}%"></div>
 				</div>
 				<p class="ra-counts">
-					{progress.done} done · <span class:ra-bad={progress.failed > 0}>{progress.failed} failed</span>
+					{progress.done} of {progress.total} done · <span class:ra-bad={progress.failed > 0}>{progress.failed} failed</span>
 					{#if progress.unlisted > 0}· {progress.unlisted} without a price source{/if}
-					{#if phase === 'running' && stepsTotal > 20}· about {estimateMinutes(stepsTotal)} min in all{/if}
 				</p>
 				{#if phase === 'running'}
 					<button type="button" class="ra-btn ra-secondary" onclick={cancel}>Cancel</button>
@@ -170,22 +175,22 @@
 			{:else}
 				<p class="ra-line">
 					{cancelled ? 'Cancelled.' : 'Finished.'}
-					Refreshed {allOk} of {stepsTotal} in {fmtDuration(finishedInMs)}{allUnlisted > 0
+					Refreshed {allOk} of {companiesTotal} in {fmtDuration(finishedInMs)}{allUnlisted > 0
 						? `, ${allUnlisted} have no price source`
 						: ''}{progress.failed > 0 ? `, ${progress.failed} failed` : ''}.
 				</p>
 				{#if cancelled && progress.total - progress.done > 0}
 					<p class="ra-counts">{progress.total - progress.done} were not reached. Run it again to carry on.</p>
 				{/if}
-				{#if progress.failedSteps.length > 0}
+				{#if progress.failedItems.length > 0}
 					<ul class="ra-fails">
-						{#each progress.failedSteps as s, i (i)}
+						{#each progress.failedItems as s, i (i)}
 							<li><strong>{s.symbol ?? 'Nifty 50'}</strong> <span class="ra-where">{s.where}</span></li>
 						{/each}
 					</ul>
 				{/if}
 				<div class="ra-actions">
-					{#if progress.failedSteps.length > 0}
+					{#if progress.failedItems.length > 0}
 						<button type="button" class="ra-btn" onclick={retryFailed}>Retry failed</button>
 					{/if}
 					<button type="button" class="ra-btn ra-secondary" onclick={dismiss}>Dismiss</button>

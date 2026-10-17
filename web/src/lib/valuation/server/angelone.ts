@@ -357,6 +357,9 @@ export interface Candle {
 	low: number;
 	close: number;
 	volume: number;
+	/** Built from a live quote while the session was still settling; the next refresh replaces it
+	 *  with the exchange's final figures. Absent on candles that came from the history endpoint. */
+	provisional?: true;
 }
 
 function formatDateForAngel(d: Date): string {
@@ -551,4 +554,114 @@ async function fetchMarketDepthUncached(symbol: string): Promise<MarketDepth | n
 			sell: mapDepthLevels(item.depth?.sell)
 		}
 	};
+}
+
+
+/** The most tokens Angel One's quote endpoint accepts in one request. */
+export const QUOTE_MAX_TOKENS = 50;
+
+/** One symbol's session so far, from the quote endpoint's FULL mode. */
+export interface DayQuote {
+	symbol: string;
+	/** Exchange date of the figures (IST, YYYY-MM-DD), from the exchange feed timestamp. */
+	date: string;
+	open: number;
+	high: number;
+	low: number;
+	/** Last traded price: today's close once the market has shut. */
+	ltp: number;
+	/** The PREVIOUS session's official close (the quote's `close` field). */
+	prevClose: number;
+	volume: number;
+}
+
+const MONTHS: Record<string, string> = {
+	Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+	Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
+};
+
+/** "17-Oct-2026 15:30:00" (the exchange timestamp format) -> "2026-10-17"; null when unreadable. */
+export function quoteDate(stamp: unknown): string | null {
+	if (typeof stamp !== 'string') return null;
+	const m = /^(\d{1,2})-([A-Za-z]{3})-(\d{4})/.exec(stamp.trim());
+	if (m) {
+		const month = MONTHS[m[2][0].toUpperCase() + m[2].slice(1).toLowerCase()];
+		return month ? `${m[3]}-${month}-${m[1].padStart(2, '0')}` : null;
+	}
+	const iso = /^(\d{4}-\d{2}-\d{2})/.exec(stamp.trim());
+	return iso ? iso[1] : null;
+}
+
+/** Raw quote-endpoint call (FULL mode) for up to QUOTE_MAX_TOKENS tokens, grouped by exchange. */
+export async function fetchQuoteItems(
+	exchangeTokens: Record<string, string[]>
+): Promise<{ fetched: Record<string, unknown>[]; unfetched: unknown[] }> {
+	const apiKey = readRawEnvFile().ANGEL_API_KEY;
+	if (!apiKey) throw new Error('ANGEL_CREDENTIALS_MISSING');
+	const request = async (token: string) => {
+		await quoteLimiter.acquire();
+		return fetch(`${ROOT_URL}${QUOTE_PATH}`, {
+			method: 'POST',
+			headers: buildHeaders(token, apiKey),
+			body: JSON.stringify({ mode: 'FULL', exchangeTokens })
+		});
+	};
+	const res = await requestWithAuthRetry(request);
+	if (!res.ok) throw new Error(`ANGEL_QUOTE_FAILED: HTTP ${res.status} ${await res.text()}`);
+	const body = (await res.json()) as {
+		status?: boolean;
+		message?: string;
+		data?: { fetched?: Record<string, unknown>[]; unfetched?: unknown[] };
+	};
+	if (!body.status) throw new Error(`ANGEL_QUOTE_FAILED: ${body.message ?? JSON.stringify(body)}`);
+	return { fetched: body.data?.fetched ?? [], unfetched: body.data?.unfetched ?? [] };
+}
+
+/** Today's session figures for many symbols at once, one quote request per 50 symbols (against one
+ *  candle request PER symbol). `unlisted` are symbols Angel One has no listing for; `missing` are
+ *  listed symbols the quote answered nothing for. */
+export async function fetchDayQuotes(
+	symbols: string[]
+): Promise<{ quotes: Map<string, DayQuote>; unlisted: string[]; missing: string[] }> {
+	const index = await getScripIndex();
+	const quotes = new Map<string, DayQuote>();
+	const unlisted: string[] = [];
+	const missing: string[] = [];
+	const byToken = new Map<string, string>(); // "NSE:2885" -> RELIANCE
+	const listed: { symbol: string; exch: string; token: string }[] = [];
+	for (const raw of symbols) {
+		const symbol = raw.toUpperCase();
+		const scrip = index.get(symbol);
+		if (!scrip) {
+			unlisted.push(symbol);
+			continue;
+		}
+		byToken.set(`${scrip.exch_seg}:${scrip.token}`, symbol);
+		listed.push({ symbol, exch: scrip.exch_seg, token: scrip.token });
+	}
+	for (let i = 0; i < listed.length; i += QUOTE_MAX_TOKENS) {
+		const chunk = listed.slice(i, i + QUOTE_MAX_TOKENS);
+		const exchangeTokens: Record<string, string[]> = {};
+		for (const l of chunk) (exchangeTokens[l.exch] ??= []).push(l.token);
+		const { fetched } = await fetchQuoteItems(exchangeTokens);
+		for (const item of fetched) {
+			const symbol = byToken.get(`${item.exchange}:${item.symbolToken}`);
+			if (!symbol) continue;
+			const date = quoteDate(item.exchFeedTime) ?? quoteDate(item.exchTradeTime);
+			const ltp = num(item.ltp as number | string | undefined);
+			if (!date || !(ltp > 0)) continue;
+			quotes.set(symbol, {
+				symbol,
+				date,
+				open: num(item.open as number | string | undefined),
+				high: num(item.high as number | string | undefined),
+				low: num(item.low as number | string | undefined),
+				ltp,
+				prevClose: num(item.close as number | string | undefined),
+				volume: num(item.tradeVolume as number | string | undefined)
+			});
+		}
+		for (const l of chunk) if (!quotes.has(l.symbol)) missing.push(l.symbol);
+	}
+	return { quotes, unlisted, missing };
 }

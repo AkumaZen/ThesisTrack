@@ -1,5 +1,6 @@
 import { listAllSymbols } from './sectorStore';
-import { refreshCompanySeries } from './companyGrowthSeries';
+import { BATCH_SIZE, refreshBatch } from './batchRefresh';
+import { chunk } from './refreshMerge';
 import { refreshBenchmarkCandles } from './benchmarkSeries';
 import { runStructuralChecks } from './alertChecks';
 import { dueRefreshSlot } from './refreshSlots';
@@ -58,11 +59,16 @@ export async function warmAllSectors() {
 	const fetchedAt = new Map(stored.map((r) => [r.symbol.toUpperCase(), r.fetchedAt]));
 	const queue = buildRefreshQueue([basketSymbols, watchlistSymbols], fetchedAt);
 
-	for (const symbol of queue) {
+	// Fifty at a time: one quote request brings the symbols that are a session behind up to date;
+	// the rest (new, or a longer gap) are fetched in full. A failed batch must not stop the others.
+	for (const batch of chunk(queue, BATCH_SIZE)) {
 		try {
-			await refreshCompanySeries(symbol);
+			const { results } = await refreshBatch(batch);
+			for (const r of results) {
+				if (r.outcome === 'failed') console.error(`[sector-rotation-scheduler] ${r.symbol} refresh failed: ${r.reason}`);
+			}
 		} catch (e) {
-			console.error(`[sector-rotation-scheduler] ${symbol} refresh failed:`, e);
+			console.error(`[sector-rotation-scheduler] batch starting ${batch[0]} failed:`, e);
 		}
 	}
 

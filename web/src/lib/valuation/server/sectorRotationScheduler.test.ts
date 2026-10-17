@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/server/db', () => ({ db: {} }));
 vi.mock('./sectorStore', () => ({ listAllSymbols: vi.fn() }));
-vi.mock('./companyGrowthSeries', () => ({ refreshCompanySeries: vi.fn() }));
+vi.mock('./batchRefresh', () => ({ BATCH_SIZE: 50, refreshBatch: vi.fn() }));
 vi.mock('./benchmarkSeries', () => ({ refreshBenchmarkCandles: vi.fn() }));
 vi.mock('./alertChecks', () => ({ runStructuralChecks: vi.fn() }));
 
