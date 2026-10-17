@@ -74,7 +74,7 @@ test.describe('phone width', () => {
 		await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
 		await page.getByRole('button', { name: 'Open menu' }).click();
 		const links = page.locator('#mobile-drawer .drawer-link');
-		expect(await links.count()).toBeGreaterThanOrEqual(10);
+		expect(await links.count()).toBeGreaterThanOrEqual(11);
 		for (const box of await links.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) expect(box).toBeGreaterThanOrEqual(40);
 	});
 });

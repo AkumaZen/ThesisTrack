@@ -161,6 +161,8 @@ export const VIEWS = {
 	baskets: { query: field.text(80), scrollY },
 	/** The thesis companies on the home page. */
 	theses: { query: field.text(80), scrollY },
+	/** The review queue's search. */
+	reviewQueue: { query: field.text(80), scrollY },
 	thesisSectors: {
 		query: field.text(80),
 		layout: field.oneOf(['cards', 'table'] as const, 'cards', { lasting: true }),

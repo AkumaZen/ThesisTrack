@@ -254,9 +254,11 @@ Type the company name to confirm:`
 </script>
 
 <!-- Persistent action header -->
-	<div class="flex items-center gap-3 flex-wrap -mx-4 sm:mx-0 px-4 sm:px-0 py-3 border-b border-border sticky top-[var(--shell-h)] z-10 bg-bg-ink">
-		<a href="/" class="text-sm px-2 py-1.5 rounded-md hover:bg-surface-3 text-muted-fg hover:text-fg shrink-0">&larr; Back</a>
+	<div class="flex items-center gap-3 max-sm:gap-y-2 flex-wrap -mx-4 sm:mx-0 px-4 sm:px-0 py-3 border-b border-border sm:sticky top-[var(--shell-h)] z-10 bg-bg-ink">
+		<a href="/" class="text-sm px-2 py-1.5 rounded-md hover:bg-surface-3 text-muted-fg hover:text-fg shrink-0 max-sm:order-1 max-sm:-ml-2">&larr; Back</a>
 		{#if detail.scenario_id}
+			<!-- Phones: its own row under the name. -->
+			<div class="contents max-sm:flex max-sm:order-4 max-sm:w-full max-sm:flex-wrap max-sm:items-center max-sm:gap-x-2 max-sm:gap-y-1">
 			<span class="inline-block h-2 w-2 rounded-full {style.dot} shrink-0"></span>
 			<span class="text-xs font-medium {style.pill} px-2 py-0.5 rounded-full ring-1 shrink-0">{style.label}</span>
 			{#if detail.has_active_override}
@@ -266,26 +268,27 @@ Type the company name to confirm:`
 					>Warning Overridden</span
 				>
 			{/if}
+			</div>
 		{/if}
-		<h1 class="text-xl font-bold flex-1 min-w-0 sm:truncate">{detail.name}</h1>
+		<h1 class="text-xl max-sm:text-[clamp(1.5rem,6vw,2rem)] max-sm:leading-[1.2] max-sm:order-3 max-sm:basis-full font-bold flex-1 min-w-0 sm:truncate">{detail.name}</h1>
 		{#if detail.nse_ticker}
 			<a
 				href={`/valuation/company/${encodeURIComponent(detail.nse_ticker)}`}
-				class="text-sm px-3 py-1.5 border border-border shrink-0"
+				class="text-sm max-sm:text-xs px-3 py-1.5 border border-border shrink-0 max-sm:order-2 max-sm:ml-auto"
 				title="Open the bear / base / bull valuation for {detail.nse_ticker}">Valuation &rarr;</a
 			>
 		{/if}
 		{#if session.isAdmin}
 			<button
 				type="button"
-				class="text-sm px-3 py-1.5 border border-danger text-danger shrink-0"
+				class="text-sm px-3 py-1.5 border border-danger text-danger shrink-0 max-sm:order-7"
 				title="Permanently delete this company and all its theses"
 				onclick={deleteThesis}>Delete</button
 			>
 		{/if}
-		{#if deleteError}<p class="text-sm text-danger w-full" role="alert">{deleteError}</p>{/if}
+		{#if deleteError}<p class="text-sm text-danger w-full max-sm:order-8" role="alert">{deleteError}</p>{/if}
 		{#if detail.scenario_id}
-			<div class="flex items-center gap-2 shrink-0 relative">
+			<div class="flex items-center gap-2 shrink-0 relative max-sm:order-6">
 				{#if !viewingOwnScenario}
 					<span
 						class="text-xs px-2 py-1.5 rounded-md bg-surface-2 ring-1 ring-border shrink-0"
@@ -585,10 +588,10 @@ Type the company name to confirm:`
 				{/snippet}
 
 				<!-- 1. The Business -->
-				<section id="cp-sec-business" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-business" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
-					<p class="text-sm mt-3">{t.the_business?.what_it_does}</p>
-					<div class="mt-3 space-y-2">
+					<p class="text-sm mt-3 empty:hidden">{t.the_business?.what_it_does}</p>
+					<div class="mt-3 space-y-2 empty:hidden">
 						{#each t.the_business?.revenue_split ?? [] as r (r.segment)}
 							<div class="flex justify-between text-sm"><span>{r.segment}</span><span class="font-mono">{r.share_pct}%</span></div>
 						{/each}
@@ -598,7 +601,7 @@ Type the company name to confirm:`
 				</section>
 
 				<!-- 2. The Growth Engine -->
-				<section id="cp-sec-growth" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-growth" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">2. The Growth Engine</h3>
 					<ul class="list-disc list-inside text-sm leading-normal mt-3 space-y-2">
 						{#each t.the_growth_engine ?? [] as g, i (i)}
@@ -610,7 +613,7 @@ Type the company name to confirm:`
 				</section>
 
 				<!-- 3. The Big Change -->
-				<section id="cp-sec-change" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-change" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">3. The Big Change</h3>
 					<p class="text-sm mt-3">{t.the_big_change?.summary}</p>
 					<div class="text-xs text-muted-fg mt-3">Expected completion: <span class="font-mono">{t.the_big_change?.expected_completion}</span></div>
@@ -619,7 +622,7 @@ Type the company name to confirm:`
 				</section>
 
 				<!-- 4. Proof Points -->
-				<section id="cp-sec-proof" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-proof" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">4. Proof Points</h3>
 					<ul class="list-disc list-inside text-sm leading-normal mt-3 space-y-2">
 						{#each t.proof_points?.hard_evidence ?? [] as e, i (i)}
@@ -631,7 +634,7 @@ Type the company name to confirm:`
 				</section>
 
 				<!-- 5. What Can Kill It -->
-				<section id="cp-sec-kill" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-kill" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">5. What Can Kill It</h3>
 					{#if detail.kill_triggers.length}
 						<div class="mt-3">
@@ -681,7 +684,7 @@ Type the company name to confirm:`
 				</section>
 
 				<!-- 6. Why We Believe It -->
-				<section id="cp-sec-believe" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-believe" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">6. Why We Believe It</h3>
 					<ol class="list-decimal list-inside text-sm leading-normal mt-3 space-y-2">
 						{#each t.why_we_believe_it ?? [] as w, i (i)}
@@ -693,7 +696,7 @@ Type the company name to confirm:`
 				</section>
 
 				<!-- Thesis Performance / price + 7. Health Check -->
-				<section id="cp-sec-health" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-health" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">7. Quarterly Review</h3>
 					<p class="text-sm mt-3 text-muted-fg">{t.health_check?.latest_quarter_review}</p>
 					<div class="mt-3">
@@ -719,7 +722,7 @@ Type the company name to confirm:`
 					<ProposalReview proposals={detail.pending_proposals ?? []} readOnly={!viewingOwnScenario || session.isReadOnly} onResolved={reload} />
 				</section>
 
-				<section id="cp-sec-trackables" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-trackables" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide mb-3">8. Trackables</h3>
 					<Trackables items={readTrackables(t)} />
 					{@render pillarNotesDisplay('trackables')}
@@ -727,7 +730,7 @@ Type the company name to confirm:`
 				</section>
 
 				<!-- Buy/Sell Decisions + Observations + Price/Performance + Outcome (ActionPanels) -->
-				<section id="cp-sec-decisions" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-decisions" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">9. Buy / Sell Decision</h3>
 					<p class="mt-3 text-sm whitespace-pre-wrap break-words">{t.buy_sell_decision || 'No decision reasoning added yet.'}</p>
 					<ActionPanels {companyId} readOnly={!viewingOwnScenario || session.isReadOnly} viewedOwner={detail.scenario_owner} onChanged={reload} />
@@ -735,7 +738,7 @@ Type the company name to confirm:`
 				</section>
 
 				<!-- References -->
-				<section id="cp-sec-references" class="mt-5 rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+				<section id="cp-sec-references" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">References</h3>
 					<div class="mt-3 space-y-2">
 						{#each t.references ?? [] as r (r.url)}
@@ -750,7 +753,7 @@ Type the company name to confirm:`
 
 				<!-- Custom Sections (untagged tables) - each one also gets its own
 				     named entry in the left nav (see SECTIONS above) -->
-				<section id="cp-sec-custom" class="mt-5 rounded-xl border border-border bg-surface p-5 mb-10 scroll-mt-20">
+				<section id="cp-sec-custom" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 mb-10 scroll-mt-20">
 					<CustomTables {companyId} heading="Custom Sections" onTablesChange={(t) => (customTables = t)} />
 				</section>
 			</div>

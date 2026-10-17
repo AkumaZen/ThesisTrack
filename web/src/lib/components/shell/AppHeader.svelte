@@ -3,6 +3,7 @@
 	import { afterNavigate } from '$app/navigation';
 	import { endSession } from '$lib/viewMemory';
 	import { ROLE_LABELS, type SessionUser } from '$lib/auth';
+	import { MODULES, moduleOf, type ModuleKey } from '$lib/modules';
 	import GlobalSearch from './GlobalSearch.svelte';
 	import AlertBell from './AlertBell.svelte';
 
@@ -21,11 +22,7 @@
 	// The thesis module is the app's home; the valuation tools live under /valuation.
 	const THESIS: Tool[] = [
 		{ href: '/', label: 'Companies', match: (p) => p === '/' || starts('/company')(p) },
-		{ href: '/sectors', label: 'Sectors', match: starts('/sectors') },
-		{ href: '/review', label: 'Review queue', match: starts('/review') },
-		{ href: '/guidance', label: 'Guidance', match: starts('/guidance') },
-		{ href: '/ingest', label: 'Ingest', match: starts('/ingest') },
-		{ href: '/export', label: 'Export', match: starts('/export') }
+		{ href: '/review', label: 'Review queue', match: starts('/review') }
 	];
 	const VALUATION: Tool[] = [
 		{
@@ -33,32 +30,37 @@
 			label: 'Watchlist',
 			match: (p) => p === '/valuation' || starts('/valuation/company')(p)
 		},
-		{ href: '/valuation/compare', label: 'Compare', match: starts('/valuation/compare') },
 		{ href: '/valuation/master-tracker', label: 'Master Tracker', match: starts('/valuation/master-tracker') },
+		{ href: '/valuation/alerts', label: 'Alerts', match: starts('/valuation/alerts') },
+		{ href: '/valuation/settings', label: 'Settings', match: starts('/valuation/settings') }
+	];
+	const SECTOR: Tool[] = [
 		{
 			href: '/valuation/sector-rotation',
 			label: 'Sector rotation',
 			match: starts('/valuation/sector-rotation')
 		},
 		{
-			href: '/valuation/stage-scanner',
-			label: 'Breakout scanner',
-			match: starts('/valuation/stage-scanner')
-		},
-		{ href: '/valuation/alerts', label: 'Alerts', match: starts('/valuation/alerts') },
-		{
 			href: '/valuation/sectors',
 			label: 'Sector baskets',
 			match: starts('/valuation/sectors'),
 			adminOnly: true
-		},
-		{ href: '/valuation/settings', label: 'Settings', match: starts('/valuation/settings') }
+		}
 	];
+	const ANALYSIS: Tool[] = [
+		{
+			href: '/valuation/stage-scanner',
+			label: 'Breakout scanner',
+			match: starts('/valuation/stage-scanner')
+		},
+		{ href: '/valuation/compare', label: 'Compare', match: starts('/valuation/compare') }
+	];
+	const TOOLS: Record<ModuleKey, Tool[]> = { thesis: THESIS, valuation: VALUATION, sector: SECTOR, analysis: ANALYSIS };
 
 	const path = $derived(page.url.pathname);
-	const inValuation = $derived(starts('/valuation')(path));
+	const current = $derived(moduleOf(path));
 	const visible = (tools: Tool[]) => tools.filter((t) => !t.adminOnly || user.role === 'admin');
-	const tools = $derived(visible(inValuation ? VALUATION : THESIS));
+	const tools = $derived(visible(TOOLS[current]));
 	const onAccountPage = $derived(starts('/account')(path) || starts('/admin')(path));
 
 	let drawerOpen = $state(false);
@@ -107,12 +109,13 @@
 			</a>
 
 			<nav class="modules" aria-label="Module">
-				<a href="/" class="module" aria-current={!inValuation && !onAccountPage ? 'true' : undefined}
-					>Thesis</a
-				>
-				<a href="/valuation" class="module" aria-current={inValuation ? 'true' : undefined}
-					>Valuation</a
-				>
+				{#each MODULES as m (m.key)}
+					<a
+						href={m.landing}
+						class="module"
+						aria-current={current === m.key && !onAccountPage ? 'true' : undefined}>{m.label}</a
+					>
+				{/each}
 			</nav>
 
 			<div class="shell-actions">
@@ -161,7 +164,7 @@
 		</div>
 	</div>
 
-	<nav class="tools" aria-label={inValuation ? 'Valuation tools' : 'Thesis tools'}>
+	<nav class="tools" aria-label="{MODULES.find((m) => m.key === current)?.label} tools">
 		<div class="shell-inner tools-inner">
 			{#each tools as t (t.href)}
 				<a href={t.href} class="tool" aria-current={t.match(path) ? 'page' : undefined}>{t.label}</a>
@@ -188,7 +191,8 @@
 			</button>
 		</div>
 		<div class="drawer-search"><GlobalSearch compact /></div>
-		{#each [{ name: 'Thesis', list: visible(THESIS) }, { name: 'Valuation', list: visible(VALUATION) }] as group (group.name)}
+		{#each MODULES as m (m.key)}
+			{@const group = { name: m.label, list: visible(TOOLS[m.key]) }}
 			<div class="drawer-group">
 				<div class="eyebrow">{group.name}</div>
 				{#each group.list as t (t.href)}

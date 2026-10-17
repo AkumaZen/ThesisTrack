@@ -554,8 +554,35 @@ kbd {
 	.brand-name {
 		display: none;
 	}
+	:root:root {
+		--shell-h: 155px;
+	}
+	/* Four modules do not fit beside the brand, bell and menu: the switch gets its own full-width row. */
+	.shell-bar .shell-inner {
+		height: auto;
+		flex-wrap: wrap;
+		row-gap: 0;
+		padding-bottom: var(--space-2);
+	}
+	.brand,
+	.shell-actions {
+		height: calc(var(--header-h) - var(--space-2));
+		margin-top: var(--space-2);
+	}
+	.brand {
+		order: 1;
+	}
+	.shell-actions {
+		order: 2;
+	}
+	.modules {
+		order: 3;
+		width: 100%;
+	}
 	.module {
-		padding: 0 var(--space-2);
+		flex: 1 1 0;
+		justify-content: center;
+		padding: 0 var(--space-1);
 	}
 	.app-main {
 		padding: var(--space-3) var(--space-3) var(--space-6);

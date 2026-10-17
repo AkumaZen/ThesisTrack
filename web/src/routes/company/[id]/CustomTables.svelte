@@ -255,7 +255,7 @@
 
 </script>
 
-<section class={compact ? 'mt-2' : 'mt-6'}>
+<section class={compact ? 'mt-2 max-sm:mt-1' : 'mt-6'}>
 	{#if !compact}
 		<div class="flex items-center justify-between">
 			<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">{heading}</h3>
@@ -316,7 +316,7 @@
 	{/if}
 
 	{#if compact}
-		<div class="mt-1 flex items-center justify-end gap-1">
+		<div class="mt-1 max-sm:mt-0 flex items-center justify-end gap-1">
 			<button
 				type="button"
 				onclick={() => openNoteBuilder()}
