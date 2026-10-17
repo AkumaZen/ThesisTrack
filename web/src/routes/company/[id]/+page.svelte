@@ -10,6 +10,7 @@
 	import { STATUS_STYLES, operatingModelLabel } from '$lib/format';
 	import { session } from '$lib/session.svelte';
 	import { formatReturn, returnPct } from '$lib/entryPrice.js';
+	import ThesisPriceStatus from '$lib/components/ThesisPriceStatus.svelte';
 
 	// Admin-only, irreversible: removes the company with every scenario, version, observation and note.
 	let deleteError = $state('');
@@ -561,6 +562,7 @@ Type the company name to confirm:`
 
 				{#if detail.scenario_id}
 					<div class="mt-3 rounded-md border border-border p-3" data-testid="entry-card">
+						<ThesisPriceStatus priceTarget={detail.price_target} stale={detail.stale} entryPrice={detail.entry_price} currentPrice={detail.current_price} />
 						{#if detail.entry_price != null}
 							<dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
 								<div>

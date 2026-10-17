@@ -86,6 +86,12 @@
 			<span class="text-xs font-medium {style.pill} px-2 py-0.5 rounded-full ring-1 shrink-0">{style.label}</span>
 		</div>
 		<div class="flex items-center gap-1.5 shrink-0">
+			{#if active?.stale}
+				<span
+					class="text-[10px] font-semibold uppercase tracking-wide text-warn bg-warn/10 px-2 py-0.5 rounded-full ring-1 ring-warn/30"
+					title={(active.stale_reasons ?? []).join('. ')}>Review due</span
+				>
+			{/if}
 			{#if active?.has_active_override}
 				<span
 					class="text-[10px] font-semibold uppercase tracking-wide text-danger bg-danger/10 px-2 py-0.5 rounded-full ring-1 ring-danger/20"

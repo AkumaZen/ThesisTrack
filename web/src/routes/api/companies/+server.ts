@@ -16,6 +16,7 @@ import { errorResponse, requireActor, requireWriteActor, handleAuthError, zodErr
 import { thesisCreate } from '$lib/server/schemas/thesis';
 import { createCompany, AlreadyExistsError, TaxonomyError } from '$lib/server/services/versioning';
 import { EntryPriceError } from '$lib/server/services/entryPrice';
+import { staleForMany } from '$lib/server/services/thesisInsights';
 import { listScenarios } from '$lib/server/services/scenarios';
 import {
 	coreMetricsForScenarios,
@@ -134,6 +135,19 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		const trackables = await trackablesForScenarios(allScenariosOnPage);
 		const guidance = await openGuidanceForScenarios(companyIds, allScenariosOnPage);
 
+		// One batched price read for every scenario on the page (not one per row).
+		const staleKeys: { companyId: string; owner: string }[] = [];
+		const staleRequests: Parameters<typeof staleForMany>[0] = [];
+		const companyById = new Map(rows.map((r) => [r.company.companyId, r.company]));
+		for (const s of allScenariosOnPage) {
+			const company = companyById.get(s.companyId);
+			if (!company) continue;
+			staleKeys.push({ companyId: s.companyId, owner: s.owner });
+			staleRequests.push({ company, lastReviewed: s.lastReviewed });
+		}
+		const staleResults = await staleForMany(staleRequests);
+		const staleByScenario = new Map(staleKeys.map((k, i) => [`${k.companyId}|${k.owner}`, staleResults[i]]));
+
 		const items = rows.map((r) => {
 			// My own scenario first (so the card defaults to "your" view same
 			// as today), then every other analyst's, in creation order -
@@ -145,6 +159,8 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 					owner: s.owner,
 					status: s.status,
 					last_reviewed: s.lastReviewed,
+					stale: staleByScenario.get(`${s.companyId}|${s.owner}`)?.stale ?? false,
+					stale_reasons: staleByScenario.get(`${s.companyId}|${s.owner}`)?.reasons ?? [],
 					has_active_override: overrideFlags[s.id] ?? false,
 					core_metrics: coreMetrics[s.id] ?? {},
 					trackables: trackables[s.id] ?? [],
