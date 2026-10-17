@@ -31,6 +31,18 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
   2. Scanner universe (branch `scanner-universe`): apply `web/drizzle/0020_mcap_universe.sql` with `web/_prod_migrate.mjs`; run `node web/scripts/import-mcap-universe.mjs research/companies_mcap_500_20000cr.csv` as a dry run, then with `--apply` (expect 1,496 rows, 14 "No price source"); merge `scanner-universe` into master (a push to master deploys to Vercel production); then on production open the scanner page and press "Load missing history" (admin), 25 companies per batch. The daily cron fills the rest at up to 40 cold symbols per run.
   3. Twice a year: re-import from the new AMFI average market cap file (same script).
   Note: price-chart and stage-analysis reuse stored candles up to 24 h old (`STORED_MAX_AGE_MS` in companyGrowthSeries.ts); the user may shorten that later.
+- EC2 MIGRATION TASKS (user does these, in this order):
+  1. Code prep is on branch `ec2-hosting` (adapter-node via ADAPTER=node, `deploy/ec2/` runbook, systemd service and timers, nginx, `deploy.sh` with rollback, `bse-check.mjs`, manual-only GitHub workflow). First confirm the ec2-hosting Vercel preview build passed.
+  2. Check the Neon project region. If Singapore, consider EC2 in Singapore (if BSE passes there) or moving Neon to Mumbai, to avoid Mumbai-Singapore latency on every query.
+  3. Launch EC2 t3.small (2 GB swap), Ubuntu 24.04, 20 GB gp3, Elastic IP, security group: 22 from own IP, 80/443. About 24 USD/month.
+  4. Run `node deploy/ec2/bse-check.mjs` on the box FIRST; if 403, stop (the move would not fix BSE).
+  5. Get a domain you control (vercel.app cannot move); certbot for TLS.
+  6. Fill /etc/thesistracker.env by name from Vercel env (ANGEL_* from the original source, Vercel masks them); add the Elastic IP to the Neon allowlist if used; set up the repo deploy key.
+  7. Follow `deploy/ec2/README.md`; set DISABLE_BACKGROUND_JOBS=true so only the systemd timers run.
+  8. Merge `ec2-hosting` into master once ready (safe for Vercel: the default build is still adapter-vercel).
+  9. DNS cutover; keep Vercel as fallback for 1-2 weeks.
+  10. After cutover: remove crons from master's vercel.json (master push) so jobs do not run twice; optionally enable the GitHub deploy workflow (needs SSH access from GitHub or SSM).
+  Reminder: rotate the Vercel deployment-protection bypass secret (leaked into a session log during the probe), and delete the stray Vercel project `web` if it is a leftover.
 - Known symbols with no price source: GUJGASLTD (Gujarat Gas, merged) and INDLMETER are in no Angel One list; remove or replace them in Sector baskets.
 - Strength & Volume (sector > subsector > company filters and team alerts): pure maths in
   `web/src/lib/valuation/strength.ts` (shared by the filter API and the alert checks), rules in
