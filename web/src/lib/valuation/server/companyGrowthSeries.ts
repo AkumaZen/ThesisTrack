@@ -74,3 +74,24 @@ export async function refreshCompanySeries(symbol: string): Promise<CachedSeries
 		});
 	return { candles, fetchedAt };
 }
+
+/** Stored prices are used for a chart or analysis view only while this fresh (the daily refresh
+ *  runs after the close, so a weekday-morning view of yesterday's data qualifies). */
+export const STORED_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** The stored prices for a view that would otherwise fetch `days` calendar days from Angel One:
+ *  the last `days` of the stored series when it was fetched within `maxAgeMs`, else null (nothing
+ *  stored, too old or too short) and the caller fetches live as before. Never goes to Angel One. */
+export async function readFreshCandles(
+	symbol: string,
+	days: number,
+	now = Date.now(),
+	maxAgeMs = STORED_MAX_AGE_MS
+): Promise<Candle[] | null> {
+	const stored = await readCachedSeries(symbol).catch(() => null);
+	if (!stored || now - stored.fetchedAt > maxAgeMs) return null;
+	const from = new Date(now - days * 86_400_000).toISOString().slice(0, 10);
+	const candles = stored.candles.filter((c) => c.date.slice(0, 10) >= from);
+	// Fewer than the live fetch would return means the stored series is too short for this view.
+	return candles.length >= 10 ? candles : null;
+}

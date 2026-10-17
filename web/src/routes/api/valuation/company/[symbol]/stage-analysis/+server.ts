@@ -1,6 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { fetchDailyCandles, fetchIndexCandles } from '$lib/valuation/server/angelone';
+import { readFreshCandles } from '$lib/valuation/server/companyGrowthSeries';
 import { BENCHMARK_INDEX } from '$lib/valuation/server/sectorIndices';
 import { computeStageAnalysis } from '$lib/valuation/stageAnalysis';
 
@@ -9,7 +10,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		// 400 calendar days of buffer so the 200-day MA still has ~20 trading days of margin
 		// behind it to check whether it's trending up (see computeStageAnalysis).
 		const [candles, niftyCandles] = await Promise.all([
-			fetchDailyCandles(params.symbol, 400),
+			readFreshCandles(params.symbol, 400).then((c) => c ?? fetchDailyCandles(params.symbol, 400)),
 			fetchIndexCandles(BENCHMARK_INDEX.token, 400).catch(() => null)
 		]);
 

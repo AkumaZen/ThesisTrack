@@ -3,7 +3,7 @@ import { db } from '$lib/server/db';
 import { stageScanCache } from '$lib/server/db/valuationSchema';
 import { getCompanySeries } from './companyGrowthSeries';
 import { getNifty500Candles } from './nifty500Series';
-import { fetchMarketDepth, type Candle } from './angelone';
+import { fetchMarketDepth, type Candle, type LiveSnapshot } from './angelone';
 import { isMarketOpenIST } from './marketHours';
 import { getAnalysisSettings } from './analysisSettingsStore';
 import {
@@ -18,7 +18,7 @@ import {
 
 // The live overlay's real freshness target — see LiveQuote/combineLiveOverlay in stageScan.ts
 // for why this doesn't require re-fetching the full candle history on the same cadence.
-const LIVE_TTL_MS = 10 * 60 * 1000;
+export const LIVE_TTL_MS = 10 * 60 * 1000;
 
 function todayIST(now: Date = new Date()): string {
 	// en-CA formats as YYYY-MM-DD, matching the date prefix Angel One's candle dates use.
@@ -61,7 +61,9 @@ export async function getStageScanResult(
 	symbol: string,
 	// Alert checks pass allowLive: false - they only need the structural stage, so they must not
 	// trigger a live quote call for every symbol in the universe on each pass.
-	options: { allowLive?: boolean } = {}
+	// liveSnapshot: a quote already fetched in a batch (stageScanBatch.ts). null means the batch
+	// found none, so the cached overlay stays; undefined means fetch this symbol's own.
+	options: { allowLive?: boolean; liveSnapshot?: LiveSnapshot | null } = {}
 ): Promise<StageScanResult | null> {
 	const key = symbol.toUpperCase();
 	const [row] = await db.select().from(stageScanCache).where(eq(stageScanCache.symbol, key));
@@ -97,7 +99,7 @@ export async function getStageScanResult(
 
 	if (options.allowLive !== false && liveStale && isMarketOpenIST()) {
 		try {
-			const depth = await fetchMarketDepth(key);
+			const depth = options.liveSnapshot !== undefined ? options.liveSnapshot : await fetchMarketDepth(key);
 			if (depth) {
 				live = {
 					fetchedAt: Date.now(),

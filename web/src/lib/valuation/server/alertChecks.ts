@@ -1,5 +1,6 @@
 import { getCompanyData } from './companyCache';
 import { fetchLtp } from './angelone';
+import { liveSnapshotsFor } from './liveBatch';
 import { isMarketOpenIST } from './marketHours';
 import { getSavedValuationRow, listSavedValuationRows } from './savedValuationsStore';
 import { listAllBaskets, listAllMajorSectors, getSymbolNames, listAllSymbols } from './sectorStore';
@@ -92,7 +93,18 @@ export async function runPriceChecks(opts: { force?: boolean } = {}): Promise<Ch
 
 		const states = await loadStates('fv:');
 		const { fairValuePct } = (await getAnalysisSettings()).valuation;
-		for (const { symbol } of await listSavedValuationRows()) {
+		const saved = await listSavedValuationRows();
+		// One quote request per 50 saved symbols; a failed batch falls back to one LTP call each.
+		const live = marketOpen
+			? await liveSnapshotsFor(
+					saved.map((r) => r.symbol),
+					async (s) => {
+						const ltp = await fetchLtp(s);
+						return ltp == null ? null : { ltp, tradeVolume: 0 };
+					}
+				)
+			: new Map();
+		for (const { symbol } of saved) {
 			try {
 				const record = await getSavedValuationRow(symbol);
 				if (!record) continue;
@@ -101,8 +113,9 @@ export async function runPriceChecks(opts: { force?: boolean } = {}): Promise<Ch
 				const fairValue = fairValueFromTarget(computed?.target, fairValuePct);
 				if (fairValue == null) continue;
 
-				const live = marketOpen ? await fetchLtp(symbol) : null;
-				const price = live ?? data.cmp;
+				const outcome = live.get(symbol.toUpperCase()) ?? null;
+				if (outcome instanceof Error) throw outcome;
+				const price = outcome?.ltp ?? data.cmp;
 				if (price == null || !(price > 0)) continue;
 
 				summary.checked++;

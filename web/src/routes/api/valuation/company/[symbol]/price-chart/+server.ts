@@ -1,6 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { fetchDailyCandles } from '$lib/valuation/server/angelone';
+import { readFreshCandles } from '$lib/valuation/server/companyGrowthSeries';
 import { buildPriceSeries } from '$lib/valuation/priceChart';
 
 // About 700 calendar days (~480 sessions) so the 200-day average is complete across a full
@@ -15,7 +16,8 @@ export const GET: RequestHandler = async ({ params }) => {
 	if (hit && Date.now() - hit.at < TTL_MS) return json(hit.body);
 
 	try {
-		const candles = await fetchDailyCandles(symbol, DAYS);
+		// Stored prices (refreshed daily) first; the live fetch only when they are missing or old.
+		const candles = (await readFreshCandles(symbol, DAYS)) ?? (await fetchDailyCandles(symbol, DAYS));
 		if (!candles)
 			error(404, `${symbol} isn't listed on Angel One (NSE equity only), so there is no price history.`);
 		if (candles.length < 10) error(502, `Not enough price history returned for ${symbol}.`);

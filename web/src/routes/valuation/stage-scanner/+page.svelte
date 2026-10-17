@@ -10,8 +10,8 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Results keyed by symbol. Cached ones arrive with the page; the rest are fetched one at a
-	// time below. Filtering and sorting only ever read this object - they never refetch.
+	// Results keyed by symbol. Cached ones arrive with the page; the rest are fetched in batches
+	// below. Filtering and sorting only ever read this object - they never refetch.
 	const initialResults: Record<string, StageScanResult | null> = untrack(() => ({
 		...data.cached
 	}));
@@ -20,24 +20,52 @@
 	const noHistory = $derived(Object.values(results).filter((r) => r === null).length);
 	const pending = $derived(data.symbols.filter((s) => !(s in results) && !(s in failed)));
 
-	$effect(() => {
-		let cancelled = false;
-		(async () => {
-			for (const symbol of data.symbols) {
-				if (cancelled) return;
-				if (symbol in results) continue;
-				try {
-					const res = await fetch(`/api/valuation/stage-scan/${encodeURIComponent(symbol)}`);
-					if (res.ok) results[symbol] = (await res.json()) as StageScanResult;
-					else if (res.status === 404) results[symbol] = null;
-					else failed[symbol] = `HTTP ${res.status}`;
-				} catch {
-					failed[symbol] = 'network error';
-				}
+	// Missing scans are fetched 50 at a time (one Angel One quote request per batch for the live
+	// overlay). If a batch request itself fails, its symbols are fetched one by one as before.
+	const SCAN_BATCH = 50;
+
+	async function scanOne(symbol: string) {
+		try {
+			const res = await fetch(`/api/valuation/stage-scan/${encodeURIComponent(symbol)}`);
+			if (res.ok) results[symbol] = (await res.json()) as StageScanResult;
+			else if (res.status === 404) results[symbol] = null;
+			else failed[symbol] = `HTTP ${res.status}`;
+		} catch {
+			failed[symbol] = 'network error';
+		}
+	}
+
+	async function scanBatch(symbols: string[]) {
+		try {
+			const res = await fetch(`/api/valuation/stage-scan-batch?symbols=${encodeURIComponent(symbols.join(','))}`);
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const body = (await res.json()) as {
+				results: { symbol: string; result: StageScanResult | null; error?: string }[];
+			};
+			for (const item of body.results) {
+				if (item.error) failed[item.symbol] = item.error;
+				else results[item.symbol] = item.result;
 			}
-		})();
+		} catch {
+			for (const symbol of symbols) await scanOne(symbol);
+		}
+	}
+
+	// One scan pass at a time; a newer pass (or leaving the page) stops the older one. Reads are
+	// untracked so the pass is not restarted by its own results.
+	let scanRun = 0;
+	async function scanMissing() {
+		const run = ++scanRun;
+		const missing = untrack(() => data.symbols.filter((s) => !(s in results)));
+		for (let i = 0; i < missing.length; i += SCAN_BATCH) {
+			if (run !== scanRun) return;
+			await scanBatch(missing.slice(i, i + SCAN_BATCH));
+		}
+	}
+	$effect(() => {
+		void scanMissing();
 		return () => {
-			cancelled = true;
+			scanRun++;
 		};
 	});
 

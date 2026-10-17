@@ -665,3 +665,60 @@ export async function fetchDayQuotes(
 	}
 	return { quotes, unlisted, missing };
 }
+
+/** The live figures the alert and scanner checks need from a quote. */
+export interface LiveSnapshot {
+	ltp: number;
+	tradeVolume: number;
+}
+
+/** Live price and volume for many symbols, one quote request per 50 symbols (against one
+ *  LTP or depth request PER symbol). Unlike fetchDayQuotes a failed request does not throw: its
+ *  symbols come back in `failed` so the caller can fall back to one call each. `unlisted` have
+ *  no Angel One listing; `missing` are listed symbols the quote answered nothing for. */
+export async function fetchLiveSnapshots(symbols: string[]): Promise<{
+	snapshots: Map<string, LiveSnapshot>;
+	unlisted: string[];
+	missing: string[];
+	failed: string[];
+}> {
+	const index = await getScripIndex();
+	const snapshots = new Map<string, LiveSnapshot>();
+	const unlisted: string[] = [];
+	const missing: string[] = [];
+	const failed: string[] = [];
+	const byToken = new Map<string, string>();
+	const listed: { symbol: string; exch: string; token: string }[] = [];
+	for (const raw of new Set(symbols.map((s) => s.toUpperCase()))) {
+		const scrip = index.get(raw);
+		if (!scrip) {
+			unlisted.push(raw);
+			continue;
+		}
+		byToken.set(`${scrip.exch_seg}:${scrip.token}`, raw);
+		listed.push({ symbol: raw, exch: scrip.exch_seg, token: scrip.token });
+	}
+	for (let i = 0; i < listed.length; i += QUOTE_MAX_TOKENS) {
+		const chunk = listed.slice(i, i + QUOTE_MAX_TOKENS);
+		const exchangeTokens: Record<string, string[]> = {};
+		for (const l of chunk) (exchangeTokens[l.exch] ??= []).push(l.token);
+		let fetched: Record<string, unknown>[];
+		try {
+			({ fetched } = await fetchQuoteItems(exchangeTokens));
+		} catch (e) {
+			// Without credentials every call would fail the same way: let the caller see that.
+			if (e instanceof Error && e.message === 'ANGEL_CREDENTIALS_MISSING') throw e;
+			for (const l of chunk) failed.push(l.symbol);
+			continue;
+		}
+		for (const item of fetched) {
+			const symbol = byToken.get(`${item.exchange}:${item.symbolToken}`);
+			if (!symbol) continue;
+			const ltp = num(item.ltp as number | string | undefined);
+			if (!(ltp > 0)) continue;
+			snapshots.set(symbol, { ltp, tradeVolume: num(item.tradeVolume as number | string | undefined) });
+		}
+		for (const l of chunk) if (!snapshots.has(l.symbol)) missing.push(l.symbol);
+	}
+	return { snapshots, unlisted, missing, failed };
+}
