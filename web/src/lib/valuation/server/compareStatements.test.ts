@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { write, cached } = vi.hoisted(() => ({
 	write: vi.fn().mockResolvedValue(undefined),
@@ -26,8 +26,15 @@ function page(populated: boolean, consolidated = false) {
 		<tr><td>Net Profit +</td>${populated ? '<td>0</td><td>45</td>' : ''}</tr></tbody></table></section>`;
 }
 
+// Import once: a cold import (parsing cheerio and the module graph) can take seconds under a full-suite
+// run, and inside a 5 s test it timed out, after which the abandoned test kept calling the next test's
+// fetch mock. The module only keeps a request-slot clock and an in-flight map, both empty between tests.
+let getCompareStatements: typeof import('./compareStatements').getCompareStatements;
+beforeAll(async () => {
+	({ getCompareStatements } = await import('./compareStatements'));
+}, 60_000);
+
 beforeEach(() => {
-	vi.resetModules();
 	// The module spaces Screener requests 450 ms apart; waiting for real made these tests slow enough
 	// to time out under load, and a timed-out test kept fetching into the next one's mock.
 	vi.stubGlobal('setTimeout', (run: () => void) => {
@@ -45,7 +52,6 @@ describe('comparison standalone fallback', () => {
 			new Response(page(!url.includes('/consolidated/')))
 		);
 		vi.stubGlobal('fetch', request);
-		const { getCompareStatements } = await import('./compareStatements');
 		const data = await getCompareStatements(symbol, { refresh: true });
 		expect(request.mock.calls.map(([url]) => url)).toEqual([
 			`https://www.screener.in/company/${symbol}/consolidated/`,
@@ -61,7 +67,6 @@ describe('comparison standalone fallback', () => {
 	it.each([true, false])('keeps populated pages without an unnecessary fallback (consolidated=%s)', async (consolidated) => {
 		const request = vi.fn(async () => new Response(page(true, consolidated)));
 		vi.stubGlobal('fetch', request);
-		const { getCompareStatements } = await import('./compareStatements');
 		const data = await getCompareStatements('LINDEINDIA', { refresh: true });
 		expect(request).toHaveBeenCalledOnce();
 		expect(data.basis).toBe(consolidated ? 'consolidated' : 'standalone_only');
@@ -72,7 +77,6 @@ describe('comparison standalone fallback', () => {
 		cached.rows = [{ fetchedAt: Date.now(), data: { shapeVersion: 1, sections: [] } }];
 		const request = vi.fn(async (url: string) => new Response(page(!url.includes('/consolidated/'))));
 		vi.stubGlobal('fetch', request);
-		const { getCompareStatements } = await import('./compareStatements');
 		const data = await getCompareStatements('ELLEN');
 		expect(request).toHaveBeenCalledTimes(2);
 		expect(data.sections.find((s) => s.id === 'pl')?.rows[0].values).toEqual([377, 431]);
@@ -80,7 +84,6 @@ describe('comparison standalone fallback', () => {
 
 	it('does not cache a successful-looking empty company when both pages lack statements', async () => {
 		vi.stubGlobal('fetch', vi.fn(async () => new Response(page(false))));
-		const { getCompareStatements } = await import('./compareStatements');
 		await expect(getCompareStatements('EMPTY', { refresh: true })).rejects.toThrow(
 			'No financial statements available on Screener: EMPTY'
 		);
@@ -104,7 +107,6 @@ describe('bank statements', () => {
 				: new Response(bankPage)
 		);
 		vi.stubGlobal('fetch', request);
-		const { getCompareStatements } = await import('./compareStatements');
 		const pl = (await getCompareStatements('BANK', { refresh: true })).sections.find((s) => s.id === 'pl')!;
 		expect(pl.rows.map((r) => r.key)).toEqual([
 			'pl:Sales',
@@ -135,7 +137,6 @@ describe('valuation multiples', () => {
 			url.includes('/chart/') ? Response.json(chart) : new Response(withId)
 		);
 		vi.stubGlobal('fetch', request);
-		const { getCompareStatements } = await import('./compareStatements');
 		const data = await getCompareStatements('ABC', { refresh: true });
 		const charts = request.mock.calls.map(([url]) => url).filter((u) => u.includes('/chart/'));
 		expect(charts).toHaveLength(1);
@@ -160,7 +161,6 @@ describe('valuation multiples', () => {
 			'fetch',
 			vi.fn(async (url: string) => (url.includes('/chart/') ? new Response('', { status: 500 }) : new Response(withId)))
 		);
-		const { getCompareStatements } = await import('./compareStatements');
 		const data = await getCompareStatements('ABC', { refresh: true });
 		expect(data.sections.some((s) => s.id === 'val')).toBe(false);
 		expect(data.sections.find((s) => s.id === 'pl')?.rows[0].values).toEqual([377, 431]);
@@ -176,7 +176,6 @@ describe('Refresh', () => {
 		cached.rows = storedAt(60_000);
 		const request = vi.fn(async () => new Response(page(true)));
 		vi.stubGlobal('fetch', request);
-		const { getCompareStatements } = await import('./compareStatements');
 		expect((await getCompareStatements('ELLEN', { refresh: true })).name).toBe('Cached');
 		expect(request).not.toHaveBeenCalled();
 	});
@@ -185,7 +184,6 @@ describe('Refresh', () => {
 		cached.rows = storedAt(6 * 60_000);
 		const request = vi.fn(async () => new Response(page(true)));
 		vi.stubGlobal('fetch', request);
-		const { getCompareStatements } = await import('./compareStatements');
 		expect((await getCompareStatements('ELLEN', { refresh: true })).name).toBe('Example Ltd');
 		expect(request).toHaveBeenCalledOnce();
 	});
