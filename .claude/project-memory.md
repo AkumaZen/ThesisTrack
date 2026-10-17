@@ -2,7 +2,7 @@
 
 Compact continuity file. Detailed todo and history: `harness/memory/STATE.md`; ADRs in
 `harness/memory/decisions.md`; gotchas in `harness/memory/gotchas.md`. Initialised 2026-10-17
-from the repo at master `175abd5`.
+from master `175abd5`; updated 2026-10-17.
 
 ## Project Overview
 - Thesis Tracker: a team web app for Indian equity research. Thesis module at `/` (7-pillar
@@ -39,28 +39,36 @@ from the repo at master `175abd5`.
 - Master Tracker shipped (2026-10-10, `d9a41bb`); its tables (0015/0016) exist in production.
 - Mobile fit, header split into Thesis/Valuation/Sector/Analysis, batched price refresh (2026-10-17).
 - Multi-agent setup: `.claude/agents/` master + executor-medium + executor-low (2026-10-17).
+- Branch `merge-valuation` (LOCAL, unpushed; master `175abd5` + setup + merges) now also holds `scorecard` and
+  `scanner-universe` (clean merges), the HFCL document fix, and the compareStatements test flake fix. svelte-check
+  0 errors; full vitest 655 passed / 28 skipped (twice); Python `test_server` + `test_hints` 14 pass.
+- HFCL fix (not deployed): `services/concall` accepts `nseSymbol`/`isin`/`documentLinks`; order Screener links, NSE,
+  then BSE; short error reasons (`failed_sources`); web wording "could not be retrieved (BSE returned HTTP 403)".
+  Checked live for HFCL with the BSE API forced to 403: Screener gave Q1 FY27, Q4 and Q3 FY26 transcripts and decks.
 
 ## Current Focus
-- Unknown until the user picks the next task (see Next Steps).
+- User asked to finish everything and push. Approved: merge to master, push (deploys Vercel) and the additive
+  production migrations/imports. The auto-mode classifier blocked production DB access, so the USER runs those
+  steps; the master push should wait until 0018, 0019, 0020 are applied.
 
 ## Known Issues / Unresolved Decisions
-- Master Tracker: BSE's API returns 403 to all cloud servers (probe 2026-10-10: Vercel sin1 and
-  bom1 both 403). BSE file server PDFs, NSE API/archives, Screener and company sites work. The
-  downloader stops at the BSE lookup, so HFCL shows "no calls found". Unfixed.
+- Master Tracker: BSE's API returns 403 to all cloud servers (probe 2026-10-10). Worked around, see Completed Work.
 - EC2 plan (branch `ec2-hosting`) assumes EC2 may fix BSE; the AWS bom1 result says it likely will not.
 - A Vercel deployment-protection bypass secret leaked into a session log; rotate it.
-- Failing tests: `metrics.test.ts`; `services.integration.test.ts` cleanup (append-only); one
-  Screener network test.
+- DB-backed tests (`metrics`, `services.integration`, `sectors`, `createThesis`, `thesisInsights`) skip when
+  Docker/local Postgres is down; not run since the merges. Run them with Docker up.
 - Production has 35 companies but only 2 thesis_scenarios (both siddhesh.dige); confirm expected.
 
 ## Next Steps
-1. Fix Master Tracker sources: NSE + Screener concall links first, BSE fallback, "could not retrieve" wording.
-2. Branch `scorecard`: apply 0018 + 0019 to production, entry-price backfill, merge, browser check.
-3. Branch `scanner-universe`: apply 0020, import the market-cap universe, merge, load history.
-4. Correct stale STATE.md header and BUGS-TO-FIX.md (most items there are already fixed).
+1. User applies to production (Neon, direct URL): `web/drizzle/0018`, `0019`, `0020` via `web/_prod_migrate.mjs <env> <sql>`
+   (all additive, idempotent), then `web/scripts/backfill-entry-price.mjs` (dry run, then `--apply`) and
+   `import-mcap-universe.mjs research/companies_mcap_500_20000cr.csv` (dry run, then `--apply`; both read `DATABASE_URL`).
+2. Then merge `merge-valuation` into master and push (deploys); check the thesis page and the scanner in a browser.
+3. Not merged: `ec2-hosting`, `feat/guidance-tables-import-redesign`.
+4. Open: Retry/Upload for failed document fetches; rotate the leaked Vercel bypass secret; stale `.production.env`.
 
 ## Verification
 - From `web/`: `npm run check`; `npx vitest run <files>` (full suite: `npx vitest run`);
   `npm run test:tracker` (mock Master Tracker, desktop + mobile); `tests/e2e/mobile-overflow.spec.ts`.
-- Python downloader: `services/concall/.venv/Scripts/python.exe -m unittest test_server -v`.
+- Python downloader: `services/concall/.venv/Scripts/python.exe -m unittest test_server test_hints -v` (from `services/concall`).
 - Local Windows build fails at the adapter-vercel step (EPERM); the Vercel build log is the real check.

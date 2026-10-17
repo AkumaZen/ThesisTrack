@@ -1,6 +1,6 @@
 # Bugs to fix
 
-Open issues found on 2026-10-09. Work through them from the PC that has access to the production
+Open issues found on 2026-10-09. Status checked against the code on 2026-10-17 (see the **Status** lines). Work through them from the PC that has access to the production
 Neon database and the Vercel project.
 
 > **Before deploying `master`:** production currently runs a guidance-analysis feature ("Read calls
@@ -11,6 +11,8 @@ Neon database and the Vercel project.
 ---
 
 ## 1. "'siddhesh.dige@rdc.in' already has a thesis on company 'SOTL'", but no card shows (urgent)
+
+**Status:** code fix is in place (`isSubstantiveThesis` and the single-transaction create in `web/src/lib/server/services/versioning.ts`). The production cleanup SQL below is still to be run by the user; not verified against a real database.
 
 **What happens:** Siddhesh can't create a SOTL thesis. The app says he already has one, but there
 is no SOTL card on the dashboard.
@@ -71,6 +73,8 @@ company.
 
 ## 2. HFCL "No company calls or presentations were found" when they exist
 
+**Status:** fixed in code locally, not deployed (2026-10-17): Screener concall links first, NSE next, BSE last (`services/concall/concall_downloader/downloader.py`, `sources/screener.py`), and "could not be retrieved (BSE returned HTTP 403)" wording in `web/src/lib/valuation/server/masterTrackerProvider.ts`. Tests: `services/concall/test_hints.py`, `masterTrackerProvider.test.ts`. A Retry/Upload offer is not built.
+
 **What happens:** the guidance review for HFCL (quarter ended 2026-06-30) said there was no
 earnings-call transcript or presentation, so it created no guidance. Both exist.
 
@@ -93,6 +97,8 @@ app then reports this failure as "none found".
 
 ## 3. Compare page can fail on Vercel when many companies load at once
 
+**Status:** partly fixed: the client loads at most 2 at a time (`MAX_PARALLEL = 2`) and each failed company has a Retry button (`web/src/routes/valuation/compare/+page.svelte`). Cron pre-warm and the production test are not done.
+
 The Screener rate limiter runs separately in each serverless instance. Up to 10 parallel loads can
 hit Screener 429s or blocks, or run past the 60s limit if they queue.
 
@@ -100,6 +106,8 @@ hit Screener 429s or blocks, or run past the 60s limit if they queue.
 production, and pre-warm the cache with a cron job if still needed.
 
 ## 4. Production scripts can hit the wrong database
+
+**Status:** the guard is in place: all four `web/_prod_*.mjs` scripts use `productionDatabaseUrl` in `web/_prod_db.mjs`, which prints the host and refuses a non-Neon-production endpoint. The stale `.production.env` file still exists in the repo root.
 
 `web/_prod_check.mjs`, `_prod_migrate.mjs` and `_prod_reset_password.mjs` read whatever env file
 they are given. `.production.env` still points to the old Aiven database.
@@ -109,11 +117,15 @@ and rename or delete the stale file.
 
 ## 5. Health check doesn't check the database
 
+**Status:** fixed: `web/src/routes/api/health/+server.ts` runs `select 1` with a 3 s timeout, returns 503 on failure, and reports the commit SHA.
+
 `/api/health` always returns `ok`.
 
 **Fix:** run `select 1` with a short timeout and return 503 if it fails.
 
 ## 6. Bank results show "—" for Revenue and OPM on Compare
+
+**Status:** fixed: the "files Revenue and Financing Margin under the rows other companies use" test in `web/src/lib/valuation/server/compareStatements.test.ts` passes.
 
 Screener labels bank results "Revenue", "Financing Profit" and "Financing Margin %". Compare
 doesn't map these labels.
@@ -121,6 +133,8 @@ doesn't map these labels.
 **Fix:** map the bank labels onto Revenue and OPM.
 
 ## 7. Smaller issues
+
+**Status:** mixed. Fixed: the sectors and metrics tests now skip (not fail) when the database is down (`describe.skipIf(!dbUp)`), and `/api/health` shows the commit SHA. Not verified or still open: Hobby cron limit, GUJGASLTD and INDLMETER price sources, the "ThesisTrack" vs "Thesis Tracker" tab title (`web/src/app.html` still says ThesisTrack), and the EPERM adapter-vercel build.
 
 - Vercel Hobby runs each cron job only once a day (alerts at 09:30 UTC and sector rotation at
   11:00 UTC, weekdays).
