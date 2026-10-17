@@ -25,7 +25,12 @@ APIs at `/api/valuation/*`. Source lives in `web/src/lib/valuation/` and `web/sr
   `web/drizzle/0013_fix_basket_symbols.sql` (renamed tickers in baskets: AGREVOIND, SPEL, AMIORG, TATAMOTORS) to production.
 - BEFORE DEPLOYING the view-memory fixes (2026-10-04): apply `web/drizzle/0014_strength_prefs_per_place.sql` to production
   FIRST (adds `scope` to valuation.strength_filter_prefs; idempotent). Code without it fails to read or save Strength filters.
-- BEFORE MERGING branch `scorecard` to master (Scorecard Part A/B code selects the new columns): apply `web/drizzle/0018_entry_price.sql` and `0019_thesis_lesson.sql` to production Neon with `web/_prod_migrate.mjs`, then run `web/scripts/backfill-entry-price.mjs` as a dry run, then with `--apply`. Needs NEON_DB_URL in the repo-root `.env`, not available yet. Use env vars only and never print the URL (PENDING).
+- OUTSTANDING DATABASE TASKS (PENDING, do in this order; migrations BEFORE merging, because the merged code queries the new columns and tables):
+  0. Prereq: NEON_DB_URL in the repo-root `.env` (not available yet). Use env vars only and never print the URL.
+  1. Scorecard (branch `scorecard`): apply `web/drizzle/0018_entry_price.sql` and `0019_thesis_lesson.sql` to production Neon with `web/_prod_migrate.mjs`; run `web/scripts/backfill-entry-price.mjs` as a dry run, then with `--apply`; run the checks on the branch; merge `scorecard` into master.
+  2. Scanner universe (branch `scanner-universe`): apply `web/drizzle/0020_mcap_universe.sql` with `web/_prod_migrate.mjs`; run `node web/scripts/import-mcap-universe.mjs research/companies_mcap_500_20000cr.csv` as a dry run, then with `--apply` (expect 1,496 rows, 14 "No price source"); merge `scanner-universe` into master (a push to master deploys to Vercel production); then on production open the scanner page and press "Load missing history" (admin), 25 companies per batch. The daily cron fills the rest at up to 40 cold symbols per run.
+  3. Twice a year: re-import from the new AMFI average market cap file (same script).
+  Note: price-chart and stage-analysis reuse stored candles up to 24 h old (`STORED_MAX_AGE_MS` in companyGrowthSeries.ts); the user may shorten that later.
 - Known symbols with no price source: GUJGASLTD (Gujarat Gas, merged) and INDLMETER are in no Angel One list; remove or replace them in Sector baskets.
 - Strength & Volume (sector > subsector > company filters and team alerts): pure maths in
   `web/src/lib/valuation/strength.ts` (shared by the filter API and the alert checks), rules in
