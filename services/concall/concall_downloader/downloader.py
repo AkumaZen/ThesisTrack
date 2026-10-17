@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 import logging
 from pathlib import Path
@@ -9,12 +10,15 @@ from concall_downloader.dates import resolve_period
 from concall_downloader.dedupe import Deduper, sha256_bytes
 from concall_downloader.http import DownloadError, HttpClient
 from concall_downloader.metadata import write_metadata
-from concall_downloader.models import CandidateDocument, Company, RunSummary, StoredRecord
+from concall_downloader.models import CandidateDocument, Company, CompanyHints, RunSummary, StoredRecord
 from concall_downloader.naming import build_document_path, company_folder_name, sanitize_component
 from concall_downloader.pdf_text import extract_pdf_text
 from concall_downloader.sources.bse import BseSource
 from concall_downloader.sources.ir import IrSource, discover_ir_urls
 from concall_downloader.sources.nse import NseSource
+from concall_downloader.sources.screener import ScreenerLinkSource
+
+import requests
 
 DEFAULT_START_DATE = date(2000, 1, 1)
 LOGGER = logging.getLogger("concall_downloader")
@@ -27,6 +31,7 @@ class ConcallDownloader:
         self.bse = BseSource(self.http)
         self.nse = NseSource(self.http)
         self.ir = IrSource(self.http)
+        self.screener = ScreenerLinkSource()
         self.deduper = Deduper()
 
     def run(
@@ -34,6 +39,7 @@ class ConcallDownloader:
         bse_codes: list[str],
         start_date: date = DEFAULT_START_DATE,
         end_date: date | None = None,
+        hints: CompanyHints | None = None,
     ) -> RunSummary:
         summary = RunSummary()
         effective_end = end_date or date.today()
@@ -46,7 +52,7 @@ class ConcallDownloader:
         for index, bse_code in enumerate(bse_codes, start=1):
             _log_progress(index - 1, len(bse_codes), f"starting company {bse_code}")
             try:
-                company_summary = self._process_company(bse_code, start_date, effective_end)
+                company_summary = self._process_company(bse_code, start_date, effective_end, hints)
             except Exception as exc:
                 LOGGER.error("%s: unexpected crash, skipping company: %s", bse_code, exc)
                 company_summary = RunSummary(
@@ -56,13 +62,21 @@ class ConcallDownloader:
             summary.records.extend(company_summary.records)
             summary.warnings.extend(company_summary.warnings)
             summary.failed_companies.extend(company_summary.failed_companies)
+            summary.failed_sources.extend(company_summary.failed_sources)
             _log_progress(index, len(bse_codes), f"finished company {bse_code}")
 
         LOGGER.info("Writing metadata index files under %s", self.out_dir)
         write_metadata(self.out_dir, summary.records)
         return summary
 
-    def _process_company(self, bse_code: str, start_date: date, end_date: date) -> RunSummary:
+    def _process_company(
+        self,
+        bse_code: str,
+        start_date: date,
+        end_date: date,
+        hints: CompanyHints | None = None,
+    ) -> RunSummary:
+        hints = hints or CompanyHints()
         summary = RunSummary()
         source_failures = 0
         source_attempts = 0
@@ -79,35 +93,40 @@ class ConcallDownloader:
                 company.isin or "",
             )
         except Exception as exc:
-            company = Company(bse_code=bse_code, name=bse_code)
-            _warn(summary, f"{bse_code}: BSE company resolution failed: {exc}")
+            # BSE's API is blocked from some hosts (HTTP 403 from cloud IPs); carry on with the hints.
+            company = Company(bse_code=bse_code, name=hints.nse_symbol or bse_code)
+            _warn(summary, f"{bse_code}: BSE company lookup unavailable: {_describe_error(exc)}")
+        if hints.isin and not company.isin:
+            company = replace(company, isin=hints.isin.upper())
 
+        nse_symbol: str | None = None
         try:
-            LOGGER.info("%s: validating NSE symbol from BSE identity", bse_code)
+            LOGGER.info("%s: validating NSE symbol", bse_code)
             nse_symbol = self.nse.validate_symbol(company)
-            company = Company(
-                bse_code=company.bse_code,
-                name=company.name,
-                security_id=company.security_id,
-                isin=company.isin,
-                nse_symbol=nse_symbol,
-            )
-            if company.security_id and company.isin and not nse_symbol:
+            if nse_symbol:
+                LOGGER.info("%s: NSE symbol validated as %s", bse_code, nse_symbol)
+            elif hints.nse_symbol:
+                nse_symbol, company = self._adopt_nse_hint(bse_code, company, hints.nse_symbol, summary)
+            elif company.security_id and company.isin:
                 _warn(
                     summary,
                     f"{bse_code}: NSE symbol {company.security_id} was not validated against ISIN; skipped NSE."
                 )
-            elif nse_symbol:
-                LOGGER.info("%s: NSE symbol validated as %s", bse_code, nse_symbol)
         except Exception as exc:
-            _warn(summary, f"{bse_code}: NSE validation failed: {exc}")
+            _warn(summary, f"{bse_code}: NSE validation {_describe_error(exc)}")
+        company = replace(company, nse_symbol=nse_symbol)
 
         candidates: list[CandidateDocument] = []
-        source_fetches = [
-            ("BSE", lambda: self.bse.fetch_announcements(company, start_date, end_date)),
-        ]
+        # Screener's links and NSE come first; BSE announcements are still tried, but its failure
+        # must not hide what the others returned.
+        source_fetches = []
+        if hints.document_links:
+            source_fetches.append(
+                ("Screener", lambda: self.screener.fetch_documents(company, hints.document_links, start_date, end_date))
+            )
         if company.nse_symbol:
             source_fetches.append(("NSE", lambda: self.nse.fetch_announcements(company, start_date, end_date)))
+        source_fetches.append(("BSE", lambda: self.bse.fetch_announcements(company, start_date, end_date)))
 
         for source_name, fetch in source_fetches:
             source_attempts += 1
@@ -118,7 +137,9 @@ class ConcallDownloader:
                 LOGGER.info("%s: %s returned %s candidate filings", bse_code, source_name, len(fetched))
             except Exception as exc:
                 source_failures += 1
-                _warn(summary, f"{bse_code}: {source_name} source failed: {exc}")
+                reason = f"{source_name} {_describe_error(exc)}"
+                summary.failed_sources.append(reason)
+                _warn(summary, f"{bse_code}: {reason}")
 
         seen_urls: set[str] = set()
         LOGGER.info("%s: checking %s unique candidate filings", bse_code, len(candidates))
@@ -180,6 +201,19 @@ class ConcallDownloader:
         if source_attempts and source_failures == source_attempts:
             summary.failed_companies.append(bse_code)
         return summary
+
+    def _adopt_nse_hint(
+        self, bse_code: str, company: Company, symbol: str, summary: RunSummary
+    ) -> tuple[str | None, Company]:
+        """Use the caller's NSE symbol: checked against the ISIN when known, else its ISIN is adopted."""
+        symbol = symbol.upper()
+        if company.isin:
+            if self.nse.validate_symbol(replace(company, security_id=symbol)):
+                return symbol, company
+            _warn(summary, f"{bse_code}: NSE symbol {symbol} did not match ISIN {company.isin}; skipped NSE.")
+            return None, company
+        isin = self.nse.lookup_isin(symbol)
+        return symbol, replace(company, isin=isin) if isin else company
 
     def _process_candidate(self, candidate: CandidateDocument) -> StoredRecord | None:
         # Business-event types (orders, capex, M&A, management changes) are
@@ -328,6 +362,24 @@ class ConcallDownloader:
             status=status,
             warning=warning,
         )
+
+
+def _root_cause(exc: BaseException) -> BaseException:
+    while exc.__cause__ is not None:
+        exc = exc.__cause__
+    return exc
+
+
+def _describe_error(exc: BaseException) -> str:
+    """A short reason for a failed request, not the raw exception text."""
+    exc = _root_cause(exc)
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        return f"returned HTTP {exc.response.status_code}"
+    if isinstance(exc, requests.Timeout):
+        return "timed out"
+    if isinstance(exc, requests.ConnectionError):
+        return "could not be reached"
+    return f"error: {str(exc)[:120]}"
 
 
 def _warn(summary: RunSummary, message: str) -> None:

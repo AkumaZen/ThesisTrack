@@ -29,6 +29,24 @@ class Company:
 
 
 @dataclass(frozen=True)
+class DocumentLink:
+    """A transcript or presentation link already known to the caller (from Screener's concall list)."""
+
+    url: str
+    title: str = ""
+    date: str = ""
+
+
+@dataclass(frozen=True)
+class CompanyHints:
+    """Identity and links the caller already has, used when BSE's API cannot be reached."""
+
+    nse_symbol: str | None = None
+    isin: str | None = None
+    document_links: tuple[DocumentLink, ...] = ()
+
+
+@dataclass(frozen=True)
 class CandidateDocument:
     company: Company
     source: str
@@ -91,6 +109,8 @@ class RunSummary:
     records: list[StoredRecord] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     failed_companies: list[str] = field(default_factory=list)
+    # Short, readable reasons per failed source, e.g. "BSE returned HTTP 403".
+    failed_sources: list[str] = field(default_factory=list)
 
     @property
     def exit_code(self) -> int:

@@ -60,7 +60,7 @@ class DocumentServiceTests(unittest.TestCase):
             record = {"period_end_date": "2026-03-31", "document_type": "Transcript", "saved_path": str(pdf), "source_url": "https://example.com/call.pdf", "sha256": "abc", "company_name": "Mock", "fy": "FY26", "quarter": "Q4", "original_filename": "call.pdf"}
             (directory / "index.jsonl").write_text(json.dumps(record) + "\n", encoding="utf-8")
             with patch("server.ConcallDownloader") as downloader, patch("server.PdfReader", return_value=SimpleNamespace(pages=[])):
-                downloader.return_value.run.return_value = SimpleNamespace(warnings=[], failed_companies=[])
+                downloader.return_value.run.return_value = SimpleNamespace(warnings=[], failed_companies=[], failed_sources=[])
                 research_documents(ResearchRequest(bseCode="999001", quarters=["2026-03-31"], refresh=True))
                 downloader.return_value.run.assert_called_once()
                 self.assertIn("abc", (directory / "index.jsonl").read_text())
@@ -91,7 +91,7 @@ class DocumentServiceTests(unittest.TestCase):
             incoming = {**original, "period_end_date": "2026-05-02", "quarter_basis": "filing_date_fallback", "source_url": "https://example.com/different-filing.pdf"}
             def download(*args, **kwargs):
                 index.write_text(json.dumps(incoming) + "\n", encoding="utf-8")
-                return SimpleNamespace(warnings=[], failed_companies=[])
+                return SimpleNamespace(warnings=[], failed_companies=[], failed_sources=[])
             with patch("server.ConcallDownloader") as downloader, patch("server.PdfReader", return_value=SimpleNamespace(pages=[])):
                 downloader.return_value.run.side_effect = download
                 research_documents(ResearchRequest(bseCode="999001", quarters=["2026-06-30"], refresh=True))
@@ -112,7 +112,7 @@ class DocumentServiceTests(unittest.TestCase):
             verified = {**old, "period_end_date": "2026-06-30", "quarter_basis": "detected_period", "source_url": "https://example.com/verified-call.pdf"}
             def download(*args, **kwargs):
                 index.write_text(json.dumps(verified) + "\n", encoding="utf-8")
-                return SimpleNamespace(warnings=[], failed_companies=[])
+                return SimpleNamespace(warnings=[], failed_companies=[], failed_sources=[])
             page = SimpleNamespace(extract_text=lambda: "Verified selected-quarter guidance.")
             with patch("server.ConcallDownloader") as downloader, patch("server.PdfReader", return_value=SimpleNamespace(pages=[page])):
                 downloader.return_value.run.side_effect = download

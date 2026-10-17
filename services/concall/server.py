@@ -2,17 +2,20 @@
 from __future__ import annotations
 
 import hmac
+import ipaddress
 import json
 import os
 from datetime import date, timedelta
 from pathlib import Path
 from threading import Lock
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from pypdf import PdfReader
 
 from concall_downloader.downloader import ConcallDownloader
+from concall_downloader.models import CompanyHints, DocumentLink
 
 app = FastAPI(title="ThesisTrack Concall Research", docs_url=None, redoc_url=None)
 # One worker process with a persistent volume. The downloader rewrites index.jsonl, so serialize
@@ -20,8 +23,32 @@ app = FastAPI(title="ThesisTrack Concall Research", docs_url=None, redoc_url=Non
 _lock = Lock()
 
 
+class DocumentLinkRequest(BaseModel):
+    url: str = Field(max_length=2000)
+    title: str = Field(default="", max_length=200)
+    date: str = Field(default="", max_length=40)
+
+    @field_validator("url")
+    @classmethod
+    def public_https(cls, value: str) -> str:
+        parsed = urlparse(value)
+        host = parsed.hostname or ""
+        try:
+            ipaddress.ip_address(host)
+            is_ip = True
+        except ValueError:
+            is_ip = False
+        if parsed.scheme != "https" or not host or is_ip or host == "localhost" or "." not in host:
+            raise ValueError("Document links must be https URLs on a public host name")
+        return value
+
+
 class ResearchRequest(BaseModel):
     bseCode: str = Field(pattern=r"^\d{6}$")
+    # Optional identity hints, used when BSE's API cannot be reached from the host.
+    nseSymbol: str | None = Field(default=None, pattern=r"^[A-Z0-9&_-]{1,20}$")
+    isin: str | None = Field(default=None, pattern=r"^IN[A-Z0-9]{10}$")
+    documentLinks: list[DocumentLinkRequest] = Field(default_factory=list, max_length=40)
     quarters: list[date] = Field(min_length=1, max_length=12)
     refresh: bool = False
 
@@ -48,13 +75,22 @@ def research_documents(request: ResearchRequest) -> dict:
         records = cached_records(directory)
         covered = {r["period_end_date"] for r in records if r.get("document_type") in {"Transcript", "Presentation"} and Path(r.get("saved_path", "")).is_file()}
         warnings: list[str] = []
+        failed_sources: list[str] = []
+        retrieval_failed = False
         if request.refresh or not selected.issubset(covered):
             # Disclosures arrive after the reporting period; include up to 100 days after it.
             first = min(request.quarters) - timedelta(days=92)
             last = min(date.today(), max(request.quarters) + timedelta(days=100))
-            result = ConcallDownloader(directory).run([request.bseCode], start_date=first, end_date=last)
+            hints = CompanyHints(
+                nse_symbol=request.nseSymbol,
+                isin=request.isin,
+                document_links=tuple(DocumentLink(l.url, l.title, l.date) for l in request.documentLinks),
+            )
+            result = ConcallDownloader(directory).run([request.bseCode], start_date=first, end_date=last, hints=hints)
             warnings.extend(result.warnings)
-            if result.failed_companies:
+            failed_sources = list(dict.fromkeys(result.failed_sources))
+            retrieval_failed = bool(result.failed_companies)
+            if retrieval_failed:
                 warnings.append("Company document download failed; cached sources may be incomplete.")
             combined = {}
             for record in records + cached_records(directory):
@@ -87,7 +123,7 @@ def research_documents(request: ResearchRequest) -> dict:
                 documents.append({"id": "doc-" + record["sha256"], "title": f"{record['company_name']} {record['fy']} {record['quarter']} {record['document_type']}", "url": record["source_url"], "pages": pages})
             except Exception:
                 warnings.append(f"{record['original_filename']}: PDF could not be read.")
-        return {"documents": documents, "warnings": warnings}
+        return {"documents": documents, "warnings": warnings, "retrievalFailed": retrieval_failed, "failedSources": failed_sources}
 
 
 @app.post("/research")

@@ -66,6 +66,22 @@ class NseSource:
             raise RuntimeError("; ".join(errors))
         return None
 
+    def lookup_isin(self, symbol: str) -> str | None:
+        """The ISIN NSE lists for `symbol`, or None when NSE does not return one."""
+        self._bootstrap()
+        for endpoint in ("equity-meta-info", "quote-equity"):
+            try:
+                payload = self.http.get_json(
+                    f"{NSE_HOME}/api/{endpoint}",
+                    params={"symbol": symbol.upper()},
+                    headers=NSE_HEADERS,
+                )
+            except Exception:
+                continue
+            if isinstance(payload, dict) and (isin := _extract_isin(payload)):
+                return isin
+        return None
+
     def fetch_announcements(
         self,
         company: Company,
