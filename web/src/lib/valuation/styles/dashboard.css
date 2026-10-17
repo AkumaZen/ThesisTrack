@@ -1046,6 +1046,40 @@
 }
 
 
+.vd .trend-note,
+.vd .trend-act {
+	display: inline-block;
+	font-size: 11px;
+	line-height: 1.2;
+	color: var(--muted);
+	white-space: nowrap;
+}
+
+
+.vd .trend-act {
+	font: inherit;
+	font-size: 11px;
+	padding: 2px 6px;
+	border: 1px solid var(--ink);
+	background: var(--surface);
+	color: var(--ink);
+	cursor: pointer;
+}
+
+
+.vd .trend-act:hover:not(:disabled) {
+	background: var(--ink);
+	color: var(--surface);
+}
+
+
+.vd .trend-act:disabled {
+	cursor: default;
+	color: var(--muted);
+	border-color: var(--muted);
+}
+
+
 .vd .spark-neg polyline {
 	stroke: var(--red);
 }

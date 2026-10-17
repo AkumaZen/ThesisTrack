@@ -12,6 +12,7 @@
 	import { untrack } from 'svelte';
 	import { refreshSector } from '$lib/valuation/seriesRefresh';
 	import { fetchCard, peekCard } from '$lib/valuation/cardCache';
+	import RefreshAllPanel from '$lib/valuation/components/RefreshAllPanel.svelte';
 	import SectorSearch from '$lib/valuation/components/SectorSearch.svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
 	import { trackView, type ViewTracker } from '$lib/viewMemory.svelte';
@@ -197,6 +198,16 @@
 		refreshing[key] = null;
 	}
 
+	/** After "Refresh all sectors": every card shows the new prices (a few load at a time). */
+	async function reloadAllMajors() {
+		const keys = data.majors.map((m) => m.key);
+		await Promise.all(
+			Array.from({ length: 3 }, async () => {
+				for (let key = keys.shift(); key !== undefined; key = keys.shift()) await loadMajor(key, true);
+			})
+		);
+	}
+
 	// Ask for every card not already in hand (cardCache.ts caps how many requests run at once).
 	$effect(() => {
 		const keys = data.majors.map((m) => m.key);
@@ -278,6 +289,11 @@
 
 <div class="wrap">
 	<SectorSearch entries={data.search} />
+
+	<!-- Read-only accounts can't refresh prices (the server refuses it), so they don't get the button. -->
+	{#if data.user?.role && data.user.role !== 'read_only'}
+		<RefreshAllPanel onFinished={reloadAllMajors} />
+	{/if}
 
 	<!-- Editing the shared sector taxonomy is admin-only (enforced server-side too). -->
 	{#if data.user?.role === 'admin'}

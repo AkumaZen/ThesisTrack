@@ -4,7 +4,7 @@ import { refreshBenchmarkCandles } from './benchmarkSeries';
 import { runStructuralChecks } from './alertChecks';
 import { dueRefreshSlot } from './refreshSlots';
 import { db } from '$lib/server/db';
-import { companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
+import { companyGrowthSeriesCache, savedValuations, watchlistMembers } from '$lib/server/db/valuationSchema';
 
 // Prices are refreshed on four fixed moments each weekday (see refreshSlots.ts) and when someone
 // presses Refresh - never because a page was opened. Every symbol is stored as soon as it is
@@ -14,6 +14,28 @@ import { companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
 // A symbol fetched this recently is left alone (two runs close together do not repeat the work).
 const RECENT_MS = 30 * 60 * 1000;
 
+/** Every company on the watchlist (saved valuations and named-list members). These are not in any
+ *  sector basket, so without them a watchlist-only company never got stored prices and its Trend
+ *  column stayed empty. */
+async function listWatchlistSymbols(): Promise<string[]> {
+	const saved = await db.select({ symbol: savedValuations.symbol }).from(savedValuations);
+	const members = await db.select({ symbol: watchlistMembers.symbol }).from(watchlistMembers);
+	return [...saved, ...members].map((r) => r.symbol);
+}
+
+/** The symbols to fetch this run, stalest first (never-fetched ones lead): the union of both
+ *  universes, de-duplicated case-insensitively, minus anything fetched within `recentMs`. */
+export function buildRefreshQueue(
+	symbolLists: string[][],
+	fetchedAt: Map<string, number>,
+	now = Date.now(),
+	recentMs = RECENT_MS
+): string[] {
+	const at = (symbol: string) => fetchedAt.get(symbol) ?? 0;
+	const unique = [...new Set(symbolLists.flat().map((s) => s.toUpperCase()))];
+	return unique.filter((s) => now - at(s) > recentMs).sort((a, b) => at(a) - at(b) || a.localeCompare(b));
+}
+
 export async function warmAllSectors() {
 	try {
 		await refreshBenchmarkCandles();
@@ -21,18 +43,20 @@ export async function warmAllSectors() {
 		console.error('[sector-rotation-scheduler] benchmark refresh failed:', e);
 	}
 
-	// Every basket's constituents, deduped - several baskets share a symbol. Read from the DB each
+	// Every basket's constituents plus every watchlist company, deduped - several baskets share a symbol. Read from the DB each
 	// run so baskets edited in the Sector Manager are picked up. Sequential: every call queues
 	// through the same Angel One rate limiter regardless.
-	const symbols = await listAllSymbols();
+	const basketSymbols = await listAllSymbols();
+	// A failed read of the watchlist must not stop the sector refresh.
+	const watchlistSymbols = await listWatchlistSymbols().catch((e) => {
+		console.error('[sector-rotation-scheduler] watchlist symbols unavailable:', e);
+		return [] as string[];
+	});
 	const stored = await db
 		.select({ symbol: companyGrowthSeriesCache.symbol, fetchedAt: companyGrowthSeriesCache.fetchedAt })
 		.from(companyGrowthSeriesCache);
-	const fetchedAt = new Map(stored.map((r) => [r.symbol, r.fetchedAt]));
-	const at = (symbol: string) => fetchedAt.get(symbol.toUpperCase()) ?? 0;
-	const queue = symbols
-		.filter((s) => Date.now() - at(s) > RECENT_MS)
-		.sort((a, b) => at(a) - at(b));
+	const fetchedAt = new Map(stored.map((r) => [r.symbol.toUpperCase(), r.fetchedAt]));
+	const queue = buildRefreshQueue([basketSymbols, watchlistSymbols], fetchedAt);
 
 	for (const symbol of queue) {
 		try {

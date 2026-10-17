@@ -1,4 +1,5 @@
 import type { MethodId } from './valuationEngine';
+import type { TrendState } from './trendState';
 import { forgetTab, readTab, writeTab } from '$lib/tabCache';
 
 export interface ScenarioRead {
@@ -16,6 +17,8 @@ export interface WatchRowData {
 	base: ScenarioRead;
 	bull: ScenarioRead;
 	sparkline: number[] | null;
+	/** Only a final trend state is kept ('ok' or 'unlisted'); anything else is asked for again. */
+	trend?: TrendState;
 	fetchedAt: number;
 	error: boolean;
 }

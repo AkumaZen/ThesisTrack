@@ -43,6 +43,7 @@
 	import ActivityFeed from '$lib/valuation/components/ActivityFeed.svelte';
 	import RemovedValuations from '$lib/valuation/components/RemovedValuations.svelte';
 	import ColumnChooser from '$lib/valuation/components/ColumnChooser.svelte';
+	import { interpretSparkline, isFinalTrend, TREND_LABEL, type TrendState } from '$lib/valuation/trendState';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -85,6 +86,7 @@
 		base: ScenarioRead;
 		bull: ScenarioRead;
 		sparkline: number[] | null;
+		trend: TrendState;
 		lastUpdated: number;
 		updatedBy: string | null;
 		status: ReviewStatus | null;
@@ -126,6 +128,74 @@
 		const cagrPct = cmp ? cagr(impliedPrice, cmp, 2) : null;
 		const pctAchieved = cmp && impliedPrice > 0 ? (cmp / impliedPrice) * 100 : null;
 		return { impliedPrice, cagrPct, pctAchieved };
+	}
+
+	function patchRow(symbol: string, patch: Partial<WatchRow>) {
+		watchRows = watchRows.map((r) => (r.symbol === symbol ? { ...r, ...patch } : r));
+	}
+
+	/** Remembers the row in the browser cache with its trend. */
+	function cacheTrend(symbol: string, trend: TrendState, sparkline: number[] | null) {
+		const row = watchRows.find((r) => r.symbol === symbol);
+		if (!row) return;
+		setCachedRow(symbol, {
+			cmp: row.cmp,
+			marketCap: row.marketCap,
+			method: row.method,
+			methodLabel: row.methodLabel,
+			bear: row.bear,
+			base: row.base,
+			bull: row.bull,
+			sparkline,
+			// Only final answers are remembered: a failure or "not stored yet" is asked again on
+			// the next visit instead of sticking as an empty cell.
+			trend: isFinalTrend(trend) ? trend : undefined,
+			fetchedAt: Date.now(),
+			error: false
+		});
+	}
+
+	/** Reads the company's stored prices for the Trend cell. A temporary failure is retried once
+	 *  before the cell offers a Retry button. */
+	async function loadTrend(symbol: string) {
+		patchRow(symbol, { trend: 'loading' });
+		let outcome = interpretSparkline(0, null);
+		for (let attempt = 0; attempt < 2; attempt++) {
+			try {
+				const res = await fetch(`/api/valuation/company/${encodeURIComponent(symbol)}/sparkline`);
+				outcome = interpretSparkline(res.status, await res.json().catch(() => null));
+			} catch {
+				outcome = interpretSparkline(0, null);
+			}
+			if (outcome.state !== 'error') break;
+			await new Promise((r) => setTimeout(r, 1500));
+		}
+		patchRow(symbol, { trend: outcome.state, sparkline: outcome.closes });
+		cacheTrend(symbol, outcome.state, outcome.closes);
+	}
+
+	/** Someone pressed Fetch/Retry: pulls the company's prices from Angel One now (the one place
+	 *  the watchlist spends an Angel One call), then shows the trend. */
+	async function fetchTrendNow(symbol: string) {
+		patchRow(symbol, { trend: 'fetching' });
+		try {
+			const res = await fetch(`/api/valuation/company/${encodeURIComponent(symbol)}/refresh-series`, {
+				method: 'POST'
+			});
+			if (res.status === 404) {
+				patchRow(symbol, { trend: 'unlisted', sparkline: null });
+				cacheTrend(symbol, 'unlisted', null);
+				return;
+			}
+			if (!res.ok) {
+				patchRow(symbol, { trend: 'error' });
+				return;
+			}
+		} catch {
+			patchRow(symbol, { trend: 'error' });
+			return;
+		}
+		await loadTrend(symbol);
 	}
 
 	async function loadRow(symbol: string) {
@@ -204,20 +274,8 @@
 			);
 			setCachedRow(symbol, { ...values, sparkline: null, fetchedAt: Date.now(), error: false });
 
-			// Best-effort: not every saved symbol is Angel One-listed, and a missing sparkline
-			// shouldn't fail the whole row.
-			try {
-				const sparkRes = await fetch(`/api/valuation/company/${symbol}/sparkline`);
-				const sparkline: number[] | null = sparkRes.ok
-					? ((await sparkRes.json()).closes ?? null)
-					: null;
-				if (sparkline) {
-					watchRows = watchRows.map((r) => (r.symbol === symbol ? { ...r, sparkline } : r));
-					setCachedRow(symbol, { ...values, sparkline, fetchedAt: Date.now(), error: false });
-				}
-			} catch {
-				/* sparkline is optional */
-			}
+			// The trend reads stored prices (cheap) and has its own states, so a miss is explained.
+			await loadTrend(symbol);
 		} catch {
 			watchRows = watchRows.map((r) =>
 				r.symbol === symbol ? { ...r, loading: false, error: true } : r
@@ -268,11 +326,15 @@
 						base: cached?.base ?? EMPTY_SCENARIO,
 						bull: cached?.bull ?? EMPTY_SCENARIO,
 						sparkline: cached?.sparkline ?? null,
+						trend: cached?.trend ?? 'loading',
 						loading: cached == null,
 						error: cached?.error ?? false
 					}
 				];
 				if (!cached) loadRow(s.symbol);
+				// Values are remembered but the trend was not final when last seen (still loading,
+				// failed, or not stored yet): ask again, which only reads stored prices.
+				else if (!isFinalTrend(cached.trend)) void loadTrend(s.symbol);
 			}
 		});
 	});
@@ -1252,8 +1314,23 @@
 					>
 						<polyline points={sparklinePoints(r.sparkline)} />
 					</svg>
-				{:else if !r.loading}
-					<span class="wl-symbol">—</span>
+				{:else if r.error}
+					<span class="trend-note">—</span>
+				{:else if r.loading || r.trend === 'loading'}
+					<span class="trend-note">…</span>
+				{:else if r.trend === 'unlisted'}
+					<span class="trend-note" title={TREND_LABEL.unlisted.title}>{TREND_LABEL.unlisted.text}</span>
+				{:else if r.trend === 'fetching'}
+					<button type="button" class="trend-act" disabled title={TREND_LABEL.fetching.title}
+						>{TREND_LABEL.fetching.text}</button
+					>
+				{:else if data.user?.role === 'read_only'}
+					<span class="trend-note" title="No trend yet. The next scheduled price refresh will fill it.">No data yet</span>
+				{:else}
+					{@const label = TREND_LABEL[r.trend === 'error' ? 'error' : 'not_stored']}
+					<button type="button" class="trend-act" title={label.title} onclick={() => fetchTrendNow(r.symbol)}
+						>{label.text}</button
+					>
 				{/if}
 			</td>
 		{:else if col === 'status'}
