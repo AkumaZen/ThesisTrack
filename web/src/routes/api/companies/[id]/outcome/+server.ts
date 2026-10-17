@@ -12,7 +12,9 @@ import { scenarioToOut } from '$lib/server/services/companiesShared';
 
 const outcomeIn = z.object({
 	outcome: z.enum(['played_out', 'invalidated', 'exited_early']),
-	note: z.string().min(1)
+	note: z.string().min(1),
+	// One line on what the team should take from this call (shown on the Scorecard playbook).
+	lesson: z.string().trim().max(300).optional()
 });
 
 export const POST: RequestHandler = async ({ locals, params, request }) => {
@@ -22,7 +24,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const parsed = outcomeIn.safeParse(body);
 		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
-		const scenario = await closeOutcome(params.id!, parsed.data.outcome, parsed.data.note, actor.identity);
+		const scenario = await closeOutcome(params.id!, parsed.data.outcome, parsed.data.note, actor.identity, parsed.data.lesson);
 
 		const [company] = await db.select().from(companies).where(eq(companies.companyId, params.id!)).limit(1);
 		const [industry] = await db.select().from(broadIndustries).where(eq(broadIndustries.id, company.broadIndustryId)).limit(1);

@@ -19,6 +19,8 @@ import { AuthError } from '$lib/server/auth';
 import { requireActor, requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
 import { listScenarios } from '$lib/server/services/scenarios';
 import { latestTriggerEvaluations, scenarioToOut } from '$lib/server/services/companiesShared';
+import { lookupStored, todayIst } from '$lib/server/services/entryPrice';
+import { priceTargetFor, staleForMany } from '$lib/server/services/thesisInsights';
 import { updateCompanyDetails, NotFoundError, TaxonomyError } from '$lib/server/services/versioning';
 
 const companyPatch = z.object({
@@ -158,8 +160,19 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 			mine != null
 		);
 
+		// Latest STORED close for the return-since-entry figure (never a live Angel One call).
+		const { latest } = await lookupStored(company, todayIst(), false);
+		const entryNum = base.entry_price;
+		const [priceTarget, [stale]] = await Promise.all([
+			priceTargetFor(company, entryNum, latest?.price ?? null),
+			staleForMany([{ company, lastReviewed: scenario.lastReviewed }])
+		]);
 		return json({
 			...base,
+			price_target: priceTarget,
+			stale,
+			current_price: latest?.price ?? null,
+			current_price_date: latest?.date ?? null,
 			scenario_owner: scenario.owner,
 			viewing_own_scenario: scenario.owner === actor.identity,
 			current_thesis: currentVersion?.thesisData ?? {},

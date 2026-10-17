@@ -35,6 +35,20 @@ export type ThesisData = {
 	references?: { title: string; url: string }[];
 	pillar_notes?: Record<string, string[]>;
 };
+export type PriceTargetData =
+	| { state: 'no_valuation'; symbol: string | null }
+	| { state: 'no_target'; symbol: string; reason: 'no_company_data' | 'not_computable' }
+	| {
+			state: 'no_current' | 'reached' | 'no_entry' | 'target_below_entry' | 'below_entry' | 'in_progress';
+			target: number;
+			symbol: string;
+			method: string;
+			upside_pct: number | null;
+			progress_pct: number | null;
+			bar_pct: number | null;
+			required_annual_pct: number | null;
+	  };
+export type StaleData = { stale: boolean; reasons: string[]; days: number | null; move_pct: number | null };
 export type CompanyDetail = {
 	company_id: string;
 	name: string;
@@ -48,6 +62,14 @@ export type CompanyDetail = {
 	has_own_scenario: boolean;
 	has_active_override: boolean;
 	scenario_id: number | null;
+	entry_price?: number | null;
+	entry_date?: string | null;
+	entry_price_source?: string | null;
+	needs_price?: boolean;
+	current_price?: number | null;
+	current_price_date?: string | null;
+	price_target?: PriceTargetData;
+	stale?: StaleData;
 	scenario_owner: string | null;
 	viewing_own_scenario: boolean;
 	current_thesis?: ThesisData;

@@ -26,6 +26,10 @@ export function scenarioToOut(
 		conviction: number | null;
 		lastReviewed: string;
 		currentVersionId: number | null;
+		entryPrice?: string | null;
+		entryDate?: string | null;
+		entryPriceSource?: string | null;
+		needsPrice?: boolean;
 	} | null,
 	scenarioCount: number,
 	hasActiveOverride = false,
@@ -54,6 +58,10 @@ export function scenarioToOut(
 		last_reviewed: scenario?.lastReviewed ?? null,
 		current_version_id: scenario?.currentVersionId ?? null,
 		scenario_id: scenario?.id ?? null,
+		entry_price: scenario?.entryPrice != null ? Number(scenario.entryPrice) : null,
+		entry_date: scenario?.entryDate ?? null,
+		entry_price_source: scenario?.entryPriceSource ?? null,
+		needs_price: scenario?.needsPrice ?? false,
 		has_own_scenario: hasOwnScenario ?? scenario != null,
 		scenario_count: scenarioCount,
 		has_active_override: hasActiveOverride,

@@ -20,9 +20,9 @@
 		);
 	});
 	let groups = $derived.by(() => {
-		const byCompany = new Map<string, { id: string; name: string; items: string[] }>();
+		const byCompany = new Map<string, { id: string; name: string; items: string[]; stale: boolean; reasons: string[] }>();
 		for (const item of visible) {
-			const group = byCompany.get(item.company_id) ?? { id: item.company_id, name: item.company_name, items: [] };
+			const group = byCompany.get(item.company_id) ?? { id: item.company_id, name: item.company_name, items: [], stale: !!item.stale, reasons: item.stale_reasons ?? [] };
 			group.items.push(item.label);
 			byCompany.set(item.company_id, group);
 		}
@@ -70,7 +70,10 @@
 <div class="space-y-4">
 	{#each groups as group (group.id)}
 		<section class="rounded-xl border border-border bg-surface p-5">
-			<h3 class="font-semibold mb-3"><a class="hover:underline" href="/company/{encodeURIComponent(group.id)}#cp-sec-trackables">{group.name}</a></h3>
+			<h3 class="font-semibold mb-3 flex flex-wrap items-center gap-2"><a class="hover:underline" href="/company/{encodeURIComponent(group.id)}#cp-sec-trackables">{group.name}</a>
+				{#if group.stale}
+					<span class="text-[10px] font-semibold uppercase tracking-wide text-warn bg-warn/10 px-2 py-0.5 rounded-full ring-1 ring-warn/30" title={group.reasons.join('. ')}>Review due</span>
+				{/if}</h3>
 			<Trackables items={group.items} />
 		</section>
 	{:else}

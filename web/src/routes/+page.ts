@@ -27,6 +27,8 @@ export type CompanyScenario = {
 	owner: string;
 	status: string | null;
 	last_reviewed: string | null;
+	stale?: boolean;
+	stale_reasons?: string[];
 	has_active_override: boolean;
 	core_metrics: Record<string, number>;
 	trackables: Trackable[];

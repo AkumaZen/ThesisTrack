@@ -152,12 +152,14 @@ export async function submitHealthCheck(companyId: string, period: string, verdi
 	return health;
 }
 
-export async function closeOutcome(companyId: string, outcome: string, note: string, actor: string) {
+export async function closeOutcome(companyId: string, outcome: string, note: string, actor: string, lesson?: string | null) {
 	const scenario = await getMyScenario(companyId, actor);
 
 	await db
 		.update(thesisScenarios)
-		.set({ outcome: outcome as 'played_out' | 'invalidated' | 'exited_early', exitDate: new Date().toISOString().slice(0, 10) })
+		.set({ outcome: outcome as 'played_out' | 'invalidated' | 'exited_early', exitDate: new Date().toISOString().slice(0, 10),
+			...(lesson?.trim() ? { lesson: lesson.trim() } : {})
+		})
 		.where(eq(thesisScenarios.id, scenario.id));
 
 	await db.insert(statusEvents).values({
