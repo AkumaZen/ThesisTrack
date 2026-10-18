@@ -136,6 +136,9 @@ describe('decideAccess: read only', () => {
 	});
 
 	it('can keep their own display preferences and remembered filters', () => {
+		expect(d('/api/valuation/tracking', 'POST', viewer)).toBe('allow');
+		expect(d('/api/valuation/tracking/HFCL', 'DELETE', viewer)).toBe('allow');
+		expect(d('/api/valuation/push/subscribe', 'POST', viewer)).toBe('allow');
 		expect(d('/api/valuation/me/prefs', 'PUT', viewer)).toBe('allow');
 		expect(d('/api/valuation/me/reset', 'POST', viewer)).toBe('allow');
 		expect(d('/api/valuation/me/visit', 'POST', viewer)).toBe('allow');

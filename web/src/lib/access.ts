@@ -23,7 +23,12 @@ const SESSION_ONLY_API_PREFIXES = ['/api/valuation', '/api/admin', '/api/account
 
 /** Each person's own display preferences (layout, remembered filters, last visit). Writing them
  *  changes nothing anyone else sees, so read-only accounts may write them too. */
-const PERSONAL_API_PREFIXES = ['/api/valuation/me', '/api/valuation/strength/prefs'];
+const PERSONAL_API_PREFIXES = [
+	'/api/valuation/me',
+	'/api/valuation/strength/prefs',
+	'/api/valuation/tracking',
+	'/api/valuation/push'
+];
 
 /** Reachable while the password still has to be changed. */
 const CHANGE_PASSWORD_ALLOWED = ['/account/password', '/api/account/password', '/logout', '/api/auth/me'];
