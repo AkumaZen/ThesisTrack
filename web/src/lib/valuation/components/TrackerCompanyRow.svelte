@@ -33,6 +33,7 @@
 		<p class="muted">Execution: {count('Met')+count('Beat')} achieved · {count('Miss')} missed · {count('Pending')} pending</p>
 		{#if company.valuation}<button aria-expanded={expanded} onclick={onExpand}>{expanded ? 'Hide scenarios' : 'View scenarios & reasoning'}</button>{/if}
 		{#if company.valuation}<a href="/valuation">View in watchlist</a>{/if}
+		<a href={`/valuation/concalls/${encodeURIComponent(company.symbol)}`}>Concalls and red flags</a>
 		{#if company.valuation && writable}<button disabled={busy} onclick={onModelEdit}>Edit valuation</button>{/if}
 	</aside><div class="left">
 		{#if company.quarters.length}

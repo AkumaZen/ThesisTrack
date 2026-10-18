@@ -106,3 +106,39 @@ export const quarterLabel = (date: string) => {
 	const q = ({ 6: 1, 9: 2, 12: 3, 3: 4 } as Record<number, number>)[month];
 	return q ? `Q${q} FY${String(fy).slice(2)}` : date;
 };
+
+export type SortKey = 'company' | 'quarter' | 'quality' | 'sentiment' | 'congratulations' | 'next';
+export interface RowFilter { query: string; quarter: string; sector: string; symbols: Set<string> | null }
+
+export function filterRows(rows: ConcallRow[], f: RowFilter): ConcallRow[] {
+	const q = f.query.trim().toLowerCase();
+	return rows.filter((r) =>
+		(!f.quarter || r.quarter === f.quarter) &&
+		(!f.sector || r.sector === f.sector) &&
+		(!f.symbols || f.symbols.has(r.symbol)) &&
+		(!q || `${r.name} ${r.symbol} ${r.sector} ${r.positives.join(' ')} ${r.negatives.join(' ')}`.toLowerCase().includes(q))
+	);
+}
+
+const QUALITY_RANK: Record<string, number> = { beat: 3, 'in-line': 2, miss: 1, 'n/a': 0 };
+
+/** Sorts a copy. Rows without a value for the key always go last, whichever way the sort runs. */
+export function sortRows(rows: ConcallRow[], key: SortKey, dir: 'asc' | 'desc'): ConcallRow[] {
+	const value = (r: ConcallRow): number | string | null => {
+		switch (key) {
+			case 'company': return r.name.toLowerCase();
+			case 'quarter': return r.quarter;
+			case 'quality': return r.quality ? QUALITY_RANK[r.quality.verdict] : null;
+			case 'sentiment': return r.sentiment;
+			case 'congratulations': return r.congratulations;
+			case 'next': return r.next?.date ?? null;
+		}
+	};
+	const sign = dir === 'asc' ? 1 : -1;
+	return [...rows].sort((a, b) => {
+		const x = value(a), y = value(b);
+		if (x == null || y == null) return x == null && y == null ? a.name.localeCompare(b.name) : x == null ? 1 : -1;
+		const c = typeof x === 'string' ? x.localeCompare(y as string) : (x as number) - (y as number);
+		return c ? c * sign : a.name.localeCompare(b.name) || b.quarter.localeCompare(a.quarter);
+	});
+}

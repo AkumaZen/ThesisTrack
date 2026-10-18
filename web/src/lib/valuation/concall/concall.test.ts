@@ -223,3 +223,38 @@ describe('concall rows', () => {
 		expect(quarterLabel('2026-03-31')).toBe('Q4 FY26');
 	});
 });
+
+describe('row filters and sorting', async () => {
+	const { filterRows, sortRows } = await import('./rows');
+	const row = (over: object) => ({
+		key: 'k', symbol: 'AAA', name: 'Alpha', sector: 'Tech', quarter: '2026-06-30', quality: null, hasTranscript: true, transcriptTitle: null, analysed: true,
+		sentiment: null, tone: null, positives: [], negatives: [], guidanceCount: 0, congratulations: null, next: null, ...over
+	}) as import('./rows').ConcallRow;
+	const rows = [
+		row({ symbol: 'AAA', name: 'Alpha', sentiment: 10, congratulations: 3, positives: ['Strong order book'] }),
+		row({ symbol: 'BBB', name: 'Beta', sector: 'Pharma', sentiment: -20, quarter: '2026-03-31', quality: { verdict: 'miss', opm: 1, opmChange: 0, metrics: [] }, next: { date: '2026-11-01', kind: 'Concall' } }),
+		row({ symbol: 'CCC', name: 'Gamma', sentiment: null, quality: { verdict: 'beat', opm: 1, opmChange: 0, metrics: [] }, next: { date: '2026-10-25', kind: 'Concall' } })
+	];
+	it('filters by search text, quarter, sector and watchlist symbols', () => {
+		const base = { query: '', quarter: '', sector: '', symbols: null };
+		expect(filterRows(rows, { ...base, query: 'order book' }).map((r) => r.symbol)).toEqual(['AAA']);
+		expect(filterRows(rows, { ...base, quarter: '2026-03-31' }).map((r) => r.symbol)).toEqual(['BBB']);
+		expect(filterRows(rows, { ...base, sector: 'Pharma' }).map((r) => r.symbol)).toEqual(['BBB']);
+		expect(filterRows(rows, { ...base, symbols: new Set(['AAA', 'CCC']) }).map((r) => r.symbol)).toEqual(['AAA', 'CCC']);
+	});
+	it('sorts both ways with empty values always last', () => {
+		expect(sortRows(rows, 'sentiment', 'desc').map((r) => r.symbol)).toEqual(['AAA', 'BBB', 'CCC']);
+		expect(sortRows(rows, 'sentiment', 'asc').map((r) => r.symbol)).toEqual(['BBB', 'AAA', 'CCC']);
+		expect(sortRows(rows, 'quality', 'desc').map((r) => r.symbol)).toEqual(['CCC', 'BBB', 'AAA']);
+		expect(sortRows(rows, 'next', 'asc').map((r) => r.symbol)).toEqual(['CCC', 'BBB', 'AAA']);
+		expect(sortRows(rows, 'company', 'desc').map((r) => r.symbol)).toEqual(['CCC', 'BBB', 'AAA']);
+	});
+});
+
+describe('describeTarget', async () => {
+	const { describeTarget } = await import('./guidance');
+	it('reads naturally', () => {
+		expect(describeTarget({ basis: 'growth_pct', comparator: 'at_least', target: 15, targetHigh: null, period: 'Q1 FY27' })).toBe('at least 15% growth in Q1 FY27');
+		expect(describeTarget({ basis: 'level', comparator: 'between', target: 1200, targetHigh: 1300, period: 'FY27' })).toBe('between 1200 and 1300 Rs Cr in FY27');
+	});
+});

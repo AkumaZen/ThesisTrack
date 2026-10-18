@@ -104,3 +104,15 @@ export function credibility(items: { status: string }[]): { kept: number; resolv
 	const resolved = kept + items.filter((i) => i.status === 'missed').length;
 	return { kept, resolved, pct: resolved ? Math.round((kept / resolved) * 100) : null };
 }
+
+const WORDS: Record<string, string> = { at_least: 'at least', at_most: 'at most', approx: 'about', between: 'between' };
+const UNITS: Record<string, string> = { growth_pct: '% growth', level: ' Rs Cr', margin_pct: '% margin' };
+
+/** "at least 15% growth in Q1 FY27", for display next to the quote. */
+export function describeTarget(g: { basis: string; comparator: string; target: number | null; targetHigh: number | null; period: string }): string {
+	if (g.target == null) return g.period;
+	const unit = UNITS[g.basis] ?? '';
+	const plain = (n: number) => String(Math.round(n * 10) / 10);
+	const range = g.comparator === 'between' && g.targetHigh != null ? `${plain(g.target)} and ${plain(g.targetHigh)}${unit}` : `${plain(g.target)}${unit}`;
+	return `${WORDS[g.comparator] ?? ''} ${range} in ${g.period}`.trim();
+}
