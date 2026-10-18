@@ -31,6 +31,12 @@ export function previousWeekday(day: string): string {
 	return ymd(d);
 }
 
+/** Saturday or Sunday (the exchanges do not trade; special sessions are not stored as candles). */
+export function isWeekend(day: string): boolean {
+	const wd = new Date(`${day}T00:00:00Z`).getUTCDay();
+	return wd === 0 || wd === 6;
+}
+
 /** 'current': the stored series already covers the quote's session. 'append': it ends at the
  *  trading day just before. 'gap': anything else. */
 export function classifyGap(lastStoredDay: string, quoteDay: string): 'current' | 'append' | 'gap' {
@@ -76,6 +82,9 @@ function quoteToCandle(q: DayQuote, suffix: string, provisional: boolean): Candl
 export function mergeQuote(stored: Candle[], q: DayQuote, now: Date = new Date()): MergeResult {
 	const last = stored.at(-1);
 	if (!last) return { kind: 'full', reason: 'empty' };
+	// Outside a trading week the quote endpoint keeps answering with a feed time stamped on the
+	// weekend (a re-dated copy of Friday's figures). That is never a session: do not store it.
+	if (isWeekend(q.date)) return { kind: 'unchanged' };
 	const lastDay = candleDay(last);
 	const gap = classifyGap(lastDay, q.date);
 	if (gap === 'gap') return { kind: 'full', reason: 'gap' };

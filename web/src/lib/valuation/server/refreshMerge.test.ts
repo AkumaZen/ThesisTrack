@@ -95,6 +95,12 @@ describe('mergeQuote', () => {
 		const r = mergeQuote([candle('2026-10-16', 100)], quote('2026-10-16'), new Date('2026-10-17T06:00:00Z'));
 		expect(r).toEqual({ kind: 'unchanged' });
 	});
+	it('never stores a weekend-dated quote (Saturday feed time over Friday figures)', () => {
+		const stored = [candle('2026-10-15', 99), candle('2026-10-16', 100)];
+		const sunday = new Date('2026-10-18T06:00:00Z');
+		expect(mergeQuote(stored, quote('2026-10-17'), sunday)).toEqual({ kind: 'unchanged' });
+		expect(mergeQuote(stored, quote('2026-10-18'), sunday)).toEqual({ kind: 'unchanged' });
+	});
 	it('falls back to a full fetch for an empty series or a gap', () => {
 		expect(mergeQuote([], quote('2026-10-19'), afterClose)).toEqual({ kind: 'full', reason: 'empty' });
 		expect(mergeQuote([candle('2026-10-14', 100)], quote('2026-10-19'), afterClose)).toEqual({
