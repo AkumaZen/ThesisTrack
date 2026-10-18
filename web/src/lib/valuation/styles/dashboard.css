@@ -5275,3 +5275,20 @@
 .vd .res-down {
 	color: var(--red);
 }
+
+.vd .scan-data {
+	margin: 0 0 12px;
+}
+
+.vd .scan-data summary {
+	cursor: pointer;
+	font-family: var(--font-sans);
+	font-size: 13px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.vd .preset-group .preset-chips-label {
+	flex-basis: 100%;
+	margin: 4px 0 0;
+}

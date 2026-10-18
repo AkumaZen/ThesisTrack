@@ -5,11 +5,15 @@ CREATE TABLE IF NOT EXISTS valuation.company_segments (
   fetched_at bigint NOT NULL
 );
 --> statement-breakpoint
--- Highest high of up to five years of daily candles (the stored series is shorter than that), and the first date it covers.
+-- What the stored daily series (about 2 years) cannot give: the highest high of up to five years of
+-- daily candles, the first date they cover, and the close about three years ago (for 3Y returns).
+-- Index series are kept here too, under their index key (e.g. NIFTY50).
 CREATE TABLE IF NOT EXISTS valuation.long_term_highs (
   symbol text PRIMARY KEY,
   high_5y double precision NOT NULL,
   from_date text NOT NULL,
+  close_3y double precision,
+  close_3y_date text,
   fetched_at bigint NOT NULL
 );
 --> statement-breakpoint

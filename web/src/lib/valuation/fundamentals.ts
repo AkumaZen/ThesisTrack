@@ -142,8 +142,8 @@ export function computeFundamentalMetrics(input: FundamentalInputs): Fundamental
 		salesCagr3: spaced(y0, yN, CAGR_YEARS) ? cagr(y0?.sales, yN?.sales, CAGR_YEARS) : null,
 		profitCagr3: spaced(y0, yN, CAGR_YEARS) ? cagr(y0?.netProfit, yN?.netProfit, CAGR_YEARS) : null,
 		capexGrowthPct:
-			spaced(y0, y1, 1) && y0.fixedAssets != null && y1!.fixedAssets != null
-				? changePct(y0.fixedAssets + (y0.cwip ?? 0), y1!.fixedAssets + (y1!.cwip ?? 0))
+			y0 && y1 && spaced(y0, y1, 1) && y0.fixedAssets != null && y1.fixedAssets != null
+				? changePct(y0.fixedAssets + (y0.cwip ?? 0), y1.fixedAssets + (y1.cwip ?? 0))
 				: null,
 		cwipPct:
 			y0 && y0.cwip != null && y0.fixedAssets != null && y0.fixedAssets > 0
@@ -167,7 +167,8 @@ export type FundamentalPresetId =
 	| 'deleverage'
 	| 'super-growth';
 
-const ge = (v: number | null | undefined, min: number) => v != null && v >= min;
+// A hair of tolerance so a figure that is exactly on the threshold is not lost to floating point (719.99999 vs 720).
+const ge = (v: number | null | undefined, min: number) => v != null && v >= min - 1e-9;
 
 export function passesFundamentalPreset(id: FundamentalPresetId, m: FundamentalMetrics | null | undefined): boolean {
 	if (!m) return false;

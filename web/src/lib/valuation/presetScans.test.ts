@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
 	computePresetMetrics,
+	countPresets,
+	hasCurrentPresets,
 	matchedPresets,
 	passesPreset,
 	percentileRanks,
 	presetDetail,
 	quarterlyGrowth,
 	rsBasis,
+	type PresetId,
 	type PresetMetrics
 } from './presetScans';
 import type { Candle } from './stageScan';
@@ -295,5 +298,85 @@ describe('presetDetail', () => {
 		expect(presetDetail('near-high', input)).toContain('52W high');
 		expect(presetDetail('volume-surge', { stage: null, metrics: null })).toBe('');
 		expect(presetDetail('growth-stage2', { stage: null, metrics: null })).toBe('');
+	});
+});
+
+describe('technical presets', () => {
+	const tech = (over: Partial<NonNullable<PresetMetrics['tech']>> = {}): NonNullable<PresetMetrics['tech']> => ({
+		rsi14: 50,
+		adx14: 20,
+		plusDI: 20,
+		minusDI: 15,
+		superTrend: { dir: 1, flipAge: 30, value: 90 },
+		goldenCross: { fast: 105, slow: 100, crossAgeWeeks: 20 },
+		...over
+	});
+	const input = (t: ReturnType<typeof tech> | undefined, extra: Partial<Parameters<typeof passesPreset>[1]> = {}) => ({
+		stage: 'Stage 1 Base' as const,
+		metrics: metrics({ close: 98, tech: t }),
+		...extra
+	});
+
+	it('RSI oversold at 30 or below, strong at 60 or above', () => {
+		expect(passesPreset('rsi-oversold', input(tech({ rsi14: 30 })))).toBe(true);
+		expect(passesPreset('rsi-oversold', input(tech({ rsi14: 30.1 })))).toBe(false);
+		expect(passesPreset('rsi-strong', input(tech({ rsi14: 60 })))).toBe(true);
+		expect(passesPreset('rsi-strong', input(tech({ rsi14: 59.9 })))).toBe(false);
+		expect(passesPreset('rsi-strong', input(tech({ rsi14: null })))).toBe(false);
+	});
+
+	it('ADX trend needs ADX 25+ with +DI above -DI', () => {
+		expect(passesPreset('adx-trend', input(tech({ adx14: 25, plusDI: 30, minusDI: 10 })))).toBe(true);
+		expect(passesPreset('adx-trend', input(tech({ adx14: 24.9, plusDI: 30, minusDI: 10 })))).toBe(false);
+		expect(passesPreset('adx-trend', input(tech({ adx14: 40, plusDI: 10, minusDI: 30 })))).toBe(false);
+	});
+
+	it('SuperTrend buy: bullish and flipped within the last 10 sessions', () => {
+		expect(passesPreset('supertrend-buy', input(tech({ superTrend: { dir: 1, flipAge: 9, value: 90 } })))).toBe(true);
+		expect(passesPreset('supertrend-buy', input(tech({ superTrend: { dir: 1, flipAge: 10, value: 90 } })))).toBe(false);
+		expect(passesPreset('supertrend-buy', input(tech({ superTrend: { dir: -1, flipAge: 2, value: 90 } })))).toBe(false);
+		expect(passesPreset('supertrend-buy', input(tech({ superTrend: { dir: 1, flipAge: null, value: 90 } })))).toBe(false);
+	});
+
+	it('golden cross: crossed within the last 8 weeks and still above', () => {
+		expect(passesPreset('golden-cross', input(tech({ goldenCross: { fast: 1, slow: 1, crossAgeWeeks: 7 } })))).toBe(true);
+		expect(passesPreset('golden-cross', input(tech({ goldenCross: { fast: 1, slow: 1, crossAgeWeeks: 8 } })))).toBe(false);
+		expect(passesPreset('golden-cross', input(tech({ goldenCross: null })))).toBe(false);
+	});
+
+	it('5-year high: close within 2% of the stored high, never without one', () => {
+		expect(passesPreset('five-year-high', input(tech(), { high5y: 100 }))).toBe(true); // 98 vs 100
+		expect(passesPreset('five-year-high', input(tech(), { high5y: 100.1 }))).toBe(false);
+		expect(passesPreset('five-year-high', input(tech(), { high5y: null }))).toBe(false);
+		expect(passesPreset('five-year-high', input(tech()))).toBe(false);
+	});
+
+	it('results stored before the technical numbers existed count as out of date', () => {
+		expect(hasCurrentPresets({ presets: metrics() })).toBe(false);
+		expect(hasCurrentPresets({ presets: metrics({ tech: tech() }) })).toBe(true);
+		expect(hasCurrentPresets({ presets: null })).toBe(true);
+		expect(hasCurrentPresets({})).toBe(false);
+	});
+
+	it('detail lines say why', () => {
+		expect(presetDetail('rsi-oversold', input(tech({ rsi14: 28.04 })))).toBe('RSI(14) 28.0');
+		expect(presetDetail('five-year-high', input(tech(), { high5y: 100 }))).toContain('2.0% below the 5Y high');
+	});
+});
+
+describe('countPresets', () => {
+	it('counts every symbol given, whatever stage tab is on screen', () => {
+		const matched = new Map<string, PresetId[]>([
+			['A', ['stage2', 'rsi-strong']],
+			['B', ['rsi-strong']],
+			['C', ['golden-cross']]
+		]);
+		const all = countPresets(['A', 'B', 'C'], matched);
+		expect(all['rsi-strong']).toBe(2);
+		expect(all['stage2']).toBe(1);
+		expect(all['golden-cross']).toBe(1);
+		expect(all['high-roce']).toBe(0);
+		// Symbols outside the list are not counted.
+		expect(countPresets(['B'], matched)['rsi-strong']).toBe(1);
 	});
 });

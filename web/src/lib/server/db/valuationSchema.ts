@@ -545,6 +545,8 @@ export const longTermHighs = pgTable('long_term_highs', {
 	symbol: text('symbol').primaryKey(),
 	high5y: doublePrecision('high_5y').notNull(),
 	fromDate: text('from_date').notNull(),
+	close3y: doublePrecision('close_3y'),
+	close3yDate: text('close_3y_date'),
 	fetchedAt: bigint('fetched_at', { mode: 'number' }).notNull()
 });
 

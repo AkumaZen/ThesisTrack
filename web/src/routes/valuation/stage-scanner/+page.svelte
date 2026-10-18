@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { replaceState } from '$app/navigation';
+	import { invalidateAll, replaceState } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import type { Stage, StageScanResult } from '$lib/valuation/stageScan';
 	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
@@ -21,9 +21,13 @@
 	import ViewToggle from '$lib/valuation/components/ViewToggle.svelte';
 	import { changeVsPrev, type GridItem } from '$lib/valuation/chartGrid';
 	import PresetBadges from '$lib/valuation/components/PresetBadges.svelte';
+	import BatchLoadPanel from '$lib/valuation/components/BatchLoadPanel.svelte';
+	import { FINANCIALS_BATCH_SIZE } from '$lib/valuation/financialsLoad';
+	import { LONG_RANGE_BATCH_SIZE, currentHigh5y } from '$lib/valuation/longRange';
 	import {
 		PRESETS,
-		matchedPresets,
+		PRESET_GROUPS,
+		countPresets,		matchedPresets,
 		percentileRanks,
 		presetDetail,
 		rsBasis,
@@ -249,6 +253,9 @@
 			stage: x.r.stage,
 			metrics: x.r.presets,
 			growth: data.growth[x.symbol] ?? null,
+			fundamentals: data.fundamentals[x.symbol] ?? null,
+			// The stored 5-year high, kept current with the last year of stored candles.
+			high5y: x.symbol in data.high5y ? currentHigh5y(data.high5y[x.symbol], x.r.presets?.high52) : null,
 			universeRank: a != null && b != null ? { r3m: a, r6m: b } : null
 		};
 	}
@@ -256,12 +263,10 @@
 	const inScope = $derived(loaded.filter((x) => matchesFilters(x, filters)));
 	// Like the stage chips, the preset chips count within the search, sector, market cap and signal
 	// filters but across EVERY stage, so a count does not shrink to the selected stage tab.
-	const presetCounts = $derived(
-		Object.fromEntries(
-			PRESETS.map((p) => [p.id, scoped.filter((x) => matches.get(x.symbol)?.includes(p.id)).length])
-		)
-	);
+	const presetCounts = $derived(countPresets(scoped.map((x) => x.symbol), matches));
 	const growthCoverage = $derived(loaded.filter((x) => data.growth[x.symbol]).length);
+	const fundamentalCoverage = $derived(loaded.filter((x) => data.fundamentals[x.symbol]).length);
+	const highCoverage = $derived(loaded.filter((x) => x.symbol in data.high5y).length);
 	const usesUniverseRank = $derived(loaded.some((x) => rsBasis(x.r.presets) === 'universe'));
 	const activePreset = $derived(PRESETS.find((p) => p.id === presetFilter) ?? null);
 
@@ -451,18 +456,23 @@
 			aria-pressed={presetFilter === 'all'}
 			onclick={() => pickPreset('all')}>None</button
 		>
-		{#each PRESETS as p (p.id)}
-			<button
-				type="button"
-				class="al-chip"
-				class:al-chip-on={presetFilter === p.id}
-				aria-pressed={presetFilter === p.id}
-				title={p.description}
-				data-testid="preset-chip"
-				onclick={() => pickPreset(p.id)}>{p.label} <span>{presetCounts[p.id]}</span></button
-			>
-		{/each}
 	</div>
+	{#each PRESET_GROUPS as g (g.key)}
+		<div class="preset-chips preset-group no-print" role="group" aria-label="{g.label} presets">
+			<span class="preset-chips-label">{g.label}</span>
+			{#each PRESETS.filter((p) => p.group === g.key) as p (p.id)}
+				<button
+					type="button"
+					class="al-chip"
+					class:al-chip-on={presetFilter === p.id}
+					aria-pressed={presetFilter === p.id}
+					title={p.description}
+					data-testid="preset-chip"
+					onclick={() => pickPreset(p.id)}>{p.label} <span>{presetCounts[p.id]}</span></button
+				>
+			{/each}
+		</div>
+	{/each}
 	{#if activePreset}
 		<p class="preset-note" data-testid="preset-note">
 			{activePreset.description}
@@ -471,6 +481,12 @@
 			{/if}
 			{#if activePreset.id === 'growth-stage2'}
 				Quarterly results are stored for {growthCoverage} of {loaded.length} scanned stocks; the rest cannot be judged.
+			{/if}
+			{#if activePreset.group === 'fundamental'}
+				Screener statements are stored for {fundamentalCoverage} of {loaded.length} scanned stocks; the rest cannot be judged.
+			{/if}
+			{#if activePreset.id === 'five-year-high'}
+				5-year highs are stored for {highCoverage} of {loaded.length} scanned stocks; the rest cannot be judged.
 			{/if}
 		</p>
 	{/if}
@@ -536,6 +552,31 @@
 
 	{#if canLoadHistory && data.mcapAsOf}
 		<LoadHistoryPanel missing={missingHistory} onFinished={historyLoaded} />
+	{/if}
+	{#if canLoadHistory}
+		<details class="scan-data no-print">
+			<summary>Data for the fundamental and 5-year-high presets</summary>
+			<BatchLoadPanel
+				label="Load missing financials"
+				noun="financial statements"
+				missingUrl="/api/valuation/financials/missing"
+				batchUrl="/api/valuation/financials/batch"
+				batchSize={FINANCIALS_BATCH_SIZE}
+				missing={data.missingFinancials}
+				testId="load-financials"
+				onFinished={() => invalidateAll()}
+			/>
+			<BatchLoadPanel
+				label="Load 5-year highs"
+				noun="5-year highs"
+				missingUrl="/api/valuation/long-range/missing"
+				batchUrl="/api/valuation/long-range/batch"
+				batchSize={LONG_RANGE_BATCH_SIZE}
+				missing={data.missingLongRange}
+				testId="load-long-range"
+				onFinished={() => invalidateAll()}
+			/>
+		</details>
 	{/if}
 
 	{#if layout === 'grid'}

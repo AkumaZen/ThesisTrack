@@ -3,6 +3,8 @@ import { db } from '$lib/server/db';
 import { stageScanCache } from '$lib/server/db/valuationSchema';
 import { listAllBaskets, getSymbolNames } from '$lib/valuation/server/sectorStore';
 import { readQuarterlyGrowth } from '$lib/valuation/server/presetStore';
+import { readFundamentalMetrics, symbolsMissingFinancials } from '$lib/valuation/server/fundamentalStore';
+import { readLongRange, symbolsMissingLongRange } from '$lib/valuation/server/longRangeStore';
 import { hasCurrentPresets } from '$lib/valuation/presetScans';
 import { getAnalysisSettings } from '$lib/valuation/server/analysisSettingsStore';
 import { listActiveUniverse, symbolsWithSeries, type UniverseCompany } from '$lib/valuation/server/mcapUniverseStore';
@@ -20,14 +22,21 @@ import {
 // The universe is the sector baskets plus the market cap list (valuation.mcap_universe); a
 // company on the list with no price source is shown apart and never scanned.
 export const load: PageServerLoad = async () => {
-	const [baskets, rows, settings, listed, growthMap] = await Promise.all([
+	const [baskets, rows, settings, listed, growthMap, fundamentalMap, longRange, missingFinancials, missingLongRange] =
+		await Promise.all([
 		listAllBaskets(),
 		db.select().from(stageScanCache),
 		getAnalysisSettings(),
 		// The list is optional: before migration 0020 / the import the scanner shows the baskets only.
 		listActiveUniverse().catch((): UniverseCompany[] => []),
 		// Stored quarterly results (only for companies someone has opened): the growth preset needs them.
-		readQuarterlyGrowth().catch(() => new Map())
+		readQuarterlyGrowth().catch(() => new Map()),
+		// Yearly statements (ROCE, debt, CWIP, CAGR) for the fundamental presets, 5-year highs for the
+		// technical one. Both are optional: before migration 0030 or the loads they are simply empty.
+		readFundamentalMetrics().catch(() => new Map()),
+		readLongRange().catch(() => new Map()),
+		symbolsMissingFinancials().catch((): string[] => []),
+		symbolsMissingLongRange().catch((): string[] => [])
 	]);
 	const basketsBySymbol: Record<string, string[]> = {};
 	for (const b of baskets) {
@@ -63,5 +72,21 @@ export const load: PageServerLoad = async () => {
 		cached[r.symbol] = combineLiveOverlay(structural, (r.live as LiveQuote | null) ?? null);
 	}
 	const growth = Object.fromEntries(growthMap);
-	return { symbols, names, basketsBySymbol, cached, mcapBySymbol, mcapAsOf, noPriceSource, noSeries, growth };
+	const fundamentals = Object.fromEntries(fundamentalMap);
+	const high5y = Object.fromEntries([...longRange].map(([symbol, v]) => [symbol, v.high5y]));
+	return {
+		symbols,
+		names,
+		basketsBySymbol,
+		cached,
+		mcapBySymbol,
+		mcapAsOf,
+		noPriceSource,
+		noSeries,
+		growth,
+		fundamentals,
+		high5y,
+		missingFinancials: missingFinancials.length,
+		missingLongRange: missingLongRange.length
+	};
 };
