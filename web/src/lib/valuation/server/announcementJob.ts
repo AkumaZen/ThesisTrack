@@ -5,10 +5,8 @@ import {
 	claimDelivery,
 	distinctTrackedSymbols,
 	listPendingDeliveries,
-	listSubscriptions,
 	listToSummarise,
 	noteSummaryFailure,
-	recordPushOutcome,
 	saveAnnouncements,
 	saveSummary,
 	type AnnouncementRow
@@ -28,10 +26,11 @@ import {
 	type IntelDeps,
 	type IntelSummary
 } from './intelJob';
-import { telegramConfigured, sendTelegramMessage, TelegramError, type TelegramSender } from '$lib/server/telegram';
-import { formatTelegramAlert } from '../telegram';
-import { getTelegramChat, unlinkChat } from './telegramStore';
-import { pushConfigured, pushToTargets, sendWebPush, type PushSender } from '$lib/server/webPush';
+import { telegramConfigured, sendTelegramMessage, type TelegramSender } from '$lib/server/telegram';
+import { pushConfigured, sendWebPush, type PushSender } from '$lib/server/webPush';
+import { createNotifier, type Notify } from './notify';
+import { defaultAlertDeps, emptyAlertSummary, runHoldingAlerts, runPriceAlerts, type AlertDeps, type AlertSummary } from './alertsJob';
+import { runMarketIntel, type MarketSummary } from './marketIntelJob';
 
 /** NSE is asked for the last few days each run; older filings only matter for the company page. */
 const POLL_DAYS = 3;
@@ -49,6 +48,9 @@ export interface JobDeps {
 	pushOn: () => boolean;
 	now: () => Date;
 	intel: IntelDeps;
+	alerts: AlertDeps;
+	/** Tops up the market-wide NSE feeds (announcements, insider trades, corporate actions) within a time budget. Null (the default, so tests never reach NSE) skips it; the cron route turns it on. */
+	marketIntel: ((budgetMs: number) => Promise<MarketSummary>) | null;
 	/** Slow best-effort sources (calendar, ...) are skipped once a run is this far in. */
 	extrasBudgetMs: number;
 }
@@ -63,8 +65,13 @@ const defaultDeps: JobDeps = {
 	pushOn: pushConfigured,
 	now: () => new Date(),
 	intel: defaultIntelDeps,
+	alerts: defaultAlertDeps,
+	marketIntel: null,
 	extrasBudgetMs: 30_000
 };
+
+/** What the production poller passes in `marketIntel`. */
+export const liveMarketIntel = (budgetMs: number) => runMarketIntel({}, budgetMs);
 
 export interface JobSummary {
 	symbols: number;
@@ -81,6 +88,8 @@ export interface JobSummary {
 	suppressed: number;
 	dealsNotified: number;
 	intel: IntelSummary;
+	alerts: AlertSummary;
+	market: MarketSummary | null;
 	errors: string[];
 }
 
@@ -91,13 +100,13 @@ export interface JobSummary {
  * and pushed with its raw subject even if the LLM is down).
  */
 export async function runAnnouncementCheck(
-	overrides: Partial<Omit<JobDeps, 'intel'>> & { intel?: Partial<IntelDeps> } = {}
+	overrides: Partial<Omit<JobDeps, 'intel' | 'alerts'>> & { intel?: Partial<IntelDeps>; alerts?: Partial<AlertDeps> } = {}
 ): Promise<JobSummary> {
-	const deps = { ...defaultDeps, ...overrides, intel: { ...defaultIntelDeps, ...overrides.intel } };
+	const deps = { ...defaultDeps, ...overrides, intel: { ...defaultIntelDeps, ...overrides.intel }, alerts: { ...defaultAlertDeps, ...overrides.alerts } };
 	const now = deps.now();
 	const summary: JobSummary = {
 		symbols: 0, fetched: 0, newAnnouncements: 0, summarised: 0, notified: 0,
-		pushSent: 0, pushFailed: 0, telegramSent: 0, telegramFailed: 0, subscriptionsRemoved: 0, suppressed: 0, dealsNotified: 0, intel: emptyIntelSummary(), errors: []
+		pushSent: 0, pushFailed: 0, telegramSent: 0, telegramFailed: 0, subscriptionsRemoved: 0, suppressed: 0, dealsNotified: 0, intel: emptyIntelSummary(), alerts: emptyAlertSummary(), market: null, errors: []
 	};
 	const startedAt = Date.now();
 
@@ -106,7 +115,6 @@ export async function runAnnouncementCheck(
 
 	const symbols = await distinctTrackedSymbols();
 	summary.symbols = symbols.length;
-	if (!symbols.length) return summary;
 
 	// 1. Fetch (a few symbols at a time, to stay gentle with NSE).
 	for (let i = 0; i < symbols.length; i += POLL_CONCURRENCY) {
@@ -142,6 +150,13 @@ export async function runAnnouncementCheck(
 	const channelsOn = deps.pushOn() || deps.telegramOn();
 	if (channelsOn) await deliver(deps, now, summary, summariesOn, notify);
 
+	// 3b. Personal price-level alerts (any stock, not only tracked ones).
+	if (channelsOn) {
+		await runPriceAlerts(notify, now, summary.alerts, deps.alerts).catch((err) =>
+			summary.errors.push(`price alerts: ${err instanceof Error ? err.message : String(err)}`)
+		);
+	}
+
 	// 4. Best-effort extras; they never delay or break the alerts above.
 	if (Date.now() - startedAt < deps.extrasBudgetMs) {
 		const guard = (name: string) => (err: unknown) =>
@@ -151,45 +166,24 @@ export async function runAnnouncementCheck(
 		await refreshShareholding(deps.intel, now, summary.intel).catch(guard('shareholding'));
 		summary.errors.push(...summary.intel.errors);
 		if (channelsOn) await deliverDeals(now, summary, notify).catch(guard('deal alerts'));
+		if (channelsOn) await runHoldingAlerts(summary.intel.newHoldingPeriods, notify, summary.alerts).catch(guard('holding alerts'));
+		summary.errors.push(...summary.alerts.errors);
+		// The market-wide feeds take whatever time is left of the budget (never less than a few seconds).
+		if (deps.marketIntel) {
+			const left = Math.max(5_000, deps.extrasBudgetMs - (Date.now() - startedAt));
+			summary.market = await deps.marketIntel(left).catch((err) => {
+				guard('market feeds')(err);
+				return null;
+			});
+			if (summary.market) summary.errors.push(...summary.market.errors);
+		}
 	}
 	return summary;
 }
 
-type Notify = (userId: number, payload: PushPayload, link?: string | null) => Promise<void>;
-
-/** Sends one message to a person's devices, remembering their subscriptions for the rest of the run. */
+/** Sends one message to a person's devices; counts go straight into the run summary. */
 function makeNotifier(deps: JobDeps, summary: JobSummary): Notify {
-	const subsByUser = new Map<number, Awaited<ReturnType<typeof listSubscriptions>>>();
-	const chatByUser = new Map<number, string | null>();
-	return async (userId, payload, link) => {
-		if (deps.telegramOn()) {
-			let chat = chatByUser.get(userId);
-			if (chat === undefined) chatByUser.set(userId, (chat = await getTelegramChat(userId)));
-			if (chat) {
-				try {
-					await deps.sendTelegram(chat, formatTelegramAlert(payload, link));
-					summary.telegramSent++;
-				} catch (err) {
-					summary.telegramFailed++;
-					// 403/400: the person blocked the bot or deleted the chat, so stop trying.
-					if (err instanceof TelegramError && (err.status === 403 || err.status === 400)) {
-						await unlinkChat(chat);
-						chatByUser.set(userId, null);
-					}
-				}
-			}
-		}
-		if (!deps.pushOn()) return;
-		let targets = subsByUser.get(userId);
-		if (!targets) subsByUser.set(userId, (targets = await listSubscriptions(userId)));
-		if (!targets.length) return;
-		const outcome = await pushToTargets(targets, payload, deps.send);
-		await recordPushOutcome(outcome);
-		summary.pushSent += outcome.sent;
-		summary.pushFailed += outcome.failed;
-		summary.subscriptionsRemoved += outcome.gone.length;
-		if (outcome.gone.length) subsByUser.set(userId, targets.filter((t) => !outcome.gone.includes(t.id)));
-	};
+	return createNotifier(deps, summary).notify;
 }
 
 async function deliver(deps: JobDeps, now: Date, summary: JobSummary, summariesOn: boolean, notify: Notify) {
