@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { stageScanCache } from '$lib/server/db/valuationSchema';
 import { listAllBaskets, getSymbolNames } from '$lib/valuation/server/sectorStore';
 import { readQuarterlyGrowth } from '$lib/valuation/server/presetStore';
+import { hasCurrentPresets } from '$lib/valuation/presetScans';
 import { getAnalysisSettings } from '$lib/valuation/server/analysisSettingsStore';
 import { listActiveUniverse, symbolsWithSeries, type UniverseCompany } from '$lib/valuation/server/mcapUniverseStore';
 import {
@@ -57,8 +58,8 @@ export const load: PageServerLoad = async () => {
 	const cached: Record<string, StageScanResult> = {};
 	for (const r of rows) {
 		const structural = r.structural as StructuralResult;
-		// Rows saved before the preset scans existed (no preset numbers) are fetched fresh.
-		if (!known.has(r.symbol) || resultParamsKey(structural) !== key || structural.presets === undefined) continue;
+		// Rows saved before the preset or technical numbers existed are fetched fresh.
+		if (!known.has(r.symbol) || resultParamsKey(structural) !== key || !hasCurrentPresets(structural)) continue;
 		cached[r.symbol] = combineLiveOverlay(structural, (r.live as LiveQuote | null) ?? null);
 	}
 	const growth = Object.fromEntries(growthMap);

@@ -2,6 +2,7 @@ import { inArray, not, sql, like } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { companyCache, stageScanCache } from '$lib/server/db/valuationSchema';
 import {
+	hasCurrentPresets,
 	matchedPresets,
 	quarterlyGrowth,
 	type PresetId,
@@ -49,7 +50,7 @@ export async function presetMatchesFor(symbols: string[]): Promise<Record<string
 	const out: Record<string, PresetId[]> = {};
 	for (const r of rows) {
 		const s = r.structural as StructuralResult;
-		if (s.presets === undefined) continue; // saved before presets existed
+		if (!hasCurrentPresets(s)) continue; // saved before the preset or technical numbers existed
 		out[r.symbol] = matchedPresets({
 			stage: s.stage as Stage,
 			metrics: s.presets,

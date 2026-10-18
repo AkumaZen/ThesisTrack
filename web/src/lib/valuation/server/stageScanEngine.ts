@@ -6,6 +6,7 @@ import { getNifty500Candles } from './nifty500Series';
 import { fetchMarketDepth, type Candle, type LiveSnapshot } from './angelone';
 import { isMarketOpenIST } from './marketHours';
 import { getAnalysisSettings } from './analysisSettingsStore';
+import { hasCurrentPresets } from '../presetScans';
 import {
 	computeStructuralResult,
 	combineLiveOverlay,
@@ -84,8 +85,8 @@ export async function getStageScanResult(
 		row &&
 		row.structuralSourceDate === latestClosedDate &&
 		cachedStructural != null &&
-		// Rows saved before the preset scans existed have no preset numbers: recompute them once.
-		cachedStructural.presets !== undefined &&
+		// Rows saved before the preset or technical numbers existed are recomputed once.
+		hasCurrentPresets(cachedStructural) &&
 		resultParamsKey(cachedStructural) === scanParamsKey(params)
 	) {
 		structural = row.structural as StructuralResult;

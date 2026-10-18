@@ -12,7 +12,7 @@ import {
 import type { Candle } from './stageScan';
 
 function candle(i: number, close: number, volume = 1000, high = close): Candle {
-	return { date: `d${String(i).padStart(4, '0')}`, open: close, high, low: close, close, volume };
+	return { date: new Date(Date.UTC(2024, 0, 1 + i)).toISOString().slice(0, 10), open: close, high, low: close, close, volume };
 }
 
 /** n flat sessions at `price`. */

@@ -254,9 +254,11 @@
 	}
 	const matches = $derived(new Map(loaded.map((x) => [x.symbol, matchedPresets(presetInput(x))])));
 	const inScope = $derived(loaded.filter((x) => matchesFilters(x, filters)));
+	// Like the stage chips, the preset chips count within the search, sector, market cap and signal
+	// filters but across EVERY stage, so a count does not shrink to the selected stage tab.
 	const presetCounts = $derived(
 		Object.fromEntries(
-			PRESETS.map((p) => [p.id, inScope.filter((x) => matches.get(x.symbol)?.includes(p.id)).length])
+			PRESETS.map((p) => [p.id, scoped.filter((x) => matches.get(x.symbol)?.includes(p.id)).length])
 		)
 	);
 	const growthCoverage = $derived(loaded.filter((x) => data.growth[x.symbol]).length);

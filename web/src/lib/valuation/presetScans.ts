@@ -5,6 +5,27 @@
  * per preset. Nothing here reads a database or the network.
  */
 import type { Candle, Stage } from './stageScan';
+import { growthPct, monthIndex, type QuarterRow } from './quarters';
+import { computeTechnicalMetrics, type TechnicalMetrics } from './indicators';
+import {
+	CAGR_3Y_MIN_PCT,
+	CAGR_YEARS,
+	CAPEX_CWIP_MIN_PCT,
+	CAPEX_GROWTH_MIN_PCT,
+	DELEVERAGE_MIN_FALL_PCT,
+	HIGH_ROCE_AVG3_PCT,
+	HIGH_ROCE_PCT,
+	LOW_DEBT_MAX_DE,
+	OPM_EXPANSION_PP,
+	SUPER_PROFIT_YOY_PCT,
+	SUPER_SALES_YOY_PCT,
+	fundamentalDetail,
+	passesFundamentalPreset,
+	type FundamentalMetrics,
+	type FundamentalPresetId
+} from './fundamentals';
+
+export { growthPct, monthIndex, type QuarterRow };
 
 export type PresetId =
 	| 'stage2'
@@ -12,7 +33,11 @@ export type PresetId =
 	| 'volume-surge'
 	| 'relative-strength'
 	| 'fresh-breakout'
-	| 'growth-stage2';
+	| 'growth-stage2'
+	| TechnicalPresetId
+	| FundamentalPresetId;
+
+export type TechnicalPresetId = 'rsi-oversold' | 'rsi-strong' | 'adx-trend' | 'supertrend-buy' | 'golden-cross' | 'five-year-high';
 
 // ---- Named thresholds ----
 
@@ -37,6 +62,18 @@ export const BREAKOUT_HIGH_SESSIONS = 50;
 export const FRESH_BREAKOUT_SESSIONS = 2;
 /** Growth: latest quarter vs the same quarter a year earlier, both sales and net profit. */
 export const GROWTH_MIN_YOY_PCT = 15;
+/** Technical presets, on closed daily candles (indicators.ts). */
+/** RSI(14) at or below this is oversold; at or above the second figure is strong momentum. */
+export const RSI_OVERSOLD = 30;
+export const RSI_STRONG = 60;
+/** ADX(14) at or above this is a trend worth following, with +DI above -DI for an up-trend. */
+export const ADX_TREND_MIN = 25;
+/** SuperTrend(10,3) turned bullish within this many sessions and is still bullish. */
+export const SUPERTREND_FRESH_SESSIONS = 10;
+/** 10-week average crossed above the 30-week average within this many weeks and is still above it. */
+export const GOLDEN_CROSS_FRESH_WEEKS = 8;
+/** "At a 5-year high": the close is within this % of the highest high of the last five years. */
+export const FIVE_YEAR_HIGH_PCT = 2;
 
 export interface PresetMetrics {
 	/** Closed sessions the numbers came from. */
@@ -57,7 +94,13 @@ export interface PresetMetrics {
 	/** The Nifty 500 over the same windows; null when no index series is stored. */
 	bench3m: number | null;
 	bench6m: number | null;
+	/** RSI, ADX, SuperTrend and the weekly golden cross. Absent on results stored before they existed. */
+	tech?: TechnicalMetrics;
 }
+
+/** Stored results that predate the preset numbers, or the technical ones, are recomputed once. */
+export const hasCurrentPresets = (s: { presets?: PresetMetrics | null }): boolean =>
+	s.presets !== undefined && (s.presets === null || s.presets.tech !== undefined);
 
 function pctChange(series: number[], sessions: number): number | null {
 	const n = series.length;
@@ -108,37 +151,17 @@ export function computePresetMetrics(candles: Candle[], indexCloses: number[] | 
 		ret3m: pctChange(closes, RETURN_3M_SESSIONS),
 		ret6m: pctChange(closes, RETURN_6M_SESSIONS),
 		bench3m: indexCloses ? pctChange(indexCloses, RETURN_3M_SESSIONS) : null,
-		bench6m: indexCloses ? pctChange(indexCloses, RETURN_6M_SESSIONS) : null
+		bench6m: indexCloses ? pctChange(indexCloses, RETURN_6M_SESSIONS) : null,
+		tech: computeTechnicalMetrics(candles)
 	};
 }
 
 // ---- Quarterly growth ----
 
-export interface QuarterRow {
-	label: string; // "Jun 2026"
-	sales: number | null;
-	netProfit: number | null;
-}
-
 export interface QuarterlyGrowth {
 	label: string;
 	salesYoY: number | null;
 	profitYoY: number | null;
-}
-
-const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-
-/** "Jun 2026" -> a running month number, or null when the label is not that shape. */
-export function monthIndex(label: string): number | null {
-	const m = /^([A-Za-z]{3})\w*\s+(\d{4})$/.exec(label.trim());
-	if (!m) return null;
-	const month = MONTHS.indexOf(m[1].toLowerCase());
-	return month < 0 ? null : Number(m[2]) * 12 + month;
-}
-
-export function growthPct(now: number | null, then: number | null): number | null {
-	if (now == null || then == null || !(then > 0)) return null;
-	return (now / then - 1) * 100;
 }
 
 /** Latest quarter against the same quarter a year before. Null when the series has no quarter
@@ -159,38 +182,130 @@ export function quarterlyGrowth(quarters: QuarterRow[] | null | undefined): Quar
 
 // ---- Presets ----
 
+export type PresetGroup = 'price' | 'technical' | 'fundamental';
+
 export interface PresetDef {
 	id: PresetId;
 	label: string;
 	description: string;
+	group: PresetGroup;
 }
 
+export const PRESET_GROUPS: { key: PresetGroup; label: string }[] = [
+	{ key: 'price', label: 'Price and volume' },
+	{ key: 'technical', label: 'Technical' },
+	{ key: 'fundamental', label: 'Fundamental' }
+];
+
 export const PRESETS: PresetDef[] = [
-	{ id: 'stage2', label: 'Stage 2', description: 'Weinstein Stage 2: advancing, or a confirmed breakout.' },
+	{ id: 'stage2', group: 'price', label: 'Stage 2', description: 'Weinstein Stage 2: advancing, or a confirmed breakout.' },
 	{
 		id: 'near-high',
+		group: 'price',
 		label: 'Near 52-week high',
 		description: `Close within ${NEAR_HIGH_PCT}% of the 52-week high (needs ${MIN_SESSIONS_52W}+ sessions).`
 	},
 	{
 		id: 'volume-surge',
+		group: 'price',
 		label: 'Volume surge',
 		description: `Latest volume at least ${VOLUME_SURGE_RATIO}x the average of the ${VOLUME_AVG_SESSIONS} sessions before it.`
 	},
 	{
 		id: 'relative-strength',
+		group: 'price',
 		label: 'Relative strength',
 		description: `Beats the Nifty 500 by ${RS_EXCESS_POINTS}+ points over 3 and 6 months. Without a stored index: top ${100 - RS_UNIVERSE_PERCENTILE}% of our universe on both.`
 	},
 	{
 		id: 'fresh-breakout',
+		group: 'price',
 		label: 'Fresh breakout',
 		description: `Closed above the prior ${BREAKOUT_HIGH_SESSIONS}-day high in the last ${FRESH_BREAKOUT_SESSIONS + 1} sessions and still above it.`
 	},
 	{
 		id: 'growth-stage2',
+		group: 'price',
 		label: 'Growth + Stage 2',
 		description: `Stage 2 with latest quarter sales and net profit both up ${GROWTH_MIN_YOY_PCT}%+ on a year earlier (needs stored quarterly results).`
+	},
+	{
+		id: 'rsi-oversold',
+		group: 'technical',
+		label: 'RSI oversold',
+		description: `RSI(14) at or below ${RSI_OVERSOLD}.`
+	},
+	{
+		id: 'rsi-strong',
+		group: 'technical',
+		label: 'RSI strong',
+		description: `RSI(14) at or above ${RSI_STRONG}: momentum, not yet a verdict on overbought.`
+	},
+	{
+		id: 'adx-trend',
+		group: 'technical',
+		label: 'ADX trend',
+		description: `ADX(14) at or above ${ADX_TREND_MIN} with +DI above -DI: a trending advance.`
+	},
+	{
+		id: 'supertrend-buy',
+		group: 'technical',
+		label: 'SuperTrend buy',
+		description: `SuperTrend(10,3) turned bullish in the last ${SUPERTREND_FRESH_SESSIONS} sessions and is still bullish.`
+	},
+	{
+		id: 'golden-cross',
+		group: 'technical',
+		label: 'Golden cross 10W/30W',
+		description: `The 10-week average crossed above the 30-week average in the last ${GOLDEN_CROSS_FRESH_WEEKS} weeks and is still above it.`
+	},
+	{
+		id: 'five-year-high',
+		group: 'technical',
+		label: '5-year high',
+		description: `Close within ${FIVE_YEAR_HIGH_PCT}% of the highest high of the last five years (needs the 5-year history loaded for the stock).`
+	},
+	{
+		id: 'high-roce',
+		group: 'fundamental',
+		label: 'High ROCE',
+		description: `ROCE at least ${HIGH_ROCE_PCT}% with a 3-year average of at least ${HIGH_ROCE_AVG3_PCT}%. Banks and lenders are left out.`
+	},
+	{
+		id: 'low-debt',
+		group: 'fundamental',
+		label: 'Low debt/equity',
+		description: `Borrowings at most ${LOW_DEBT_MAX_DE}x equity (equity capital plus reserves). Banks and lenders are left out.`
+	},
+	{
+		id: 'opm-expansion',
+		group: 'fundamental',
+		label: 'OPM expansion',
+		description: `Latest quarter's operating margin at least ${OPM_EXPANSION_PP} points above the same quarter a year earlier.`
+	},
+	{
+		id: 'cagr-3y',
+		group: 'fundamental',
+		label: '3Y sales and profit CAGR',
+		description: `Sales and net profit each compounding at ${CAGR_3Y_MIN_PCT}%+ a year over ${CAGR_YEARS} financial years.`
+	},
+	{
+		id: 'heavy-capex',
+		group: 'fundamental',
+		label: 'Heavy capex',
+		description: `Fixed assets plus capital work in progress up ${CAPEX_GROWTH_MIN_PCT}%+ in the latest year, with CWIP at least ${CAPEX_CWIP_MIN_PCT}% of fixed assets.`
+	},
+	{
+		id: 'deleverage',
+		group: 'fundamental',
+		label: 'Deleverage',
+		description: `Borrowings down ${DELEVERAGE_MIN_FALL_PCT}%+ in the latest year and not up the year before.`
+	},
+	{
+		id: 'super-growth',
+		group: 'fundamental',
+		label: 'Super growth',
+		description: `Latest quarter sales up ${SUPER_SALES_YOY_PCT}%+ and net profit up ${SUPER_PROFIT_YOY_PCT}%+ on a year earlier, with a 3-year sales CAGR of ${CAGR_3Y_MIN_PCT}%+.`
 	}
 ];
 
@@ -203,6 +318,9 @@ export interface PresetInput {
 	/** Percentile (0-100) of the 3 and 6 month returns inside the scanned universe. Only used
 	 *  when metrics carry no index returns. */
 	universeRank?: { r3m: number; r6m: number } | null;
+	/** Highest high of the last five years (long history, stored separately); null when not loaded. */
+	high5y?: number | null;
+	fundamentals?: FundamentalMetrics | null;
 }
 
 export type RsBasis = 'nifty500' | 'universe';
@@ -243,6 +361,41 @@ export function passesPreset(id: PresetId, input: PresetInput): boolean {
 		}
 		case 'fresh-breakout':
 			return !!m && m.breakoutAge != null && m.breakoutLevel != null && m.close >= m.breakoutLevel;
+		case 'rsi-oversold':
+			return m?.tech?.rsi14 != null && m.tech.rsi14 <= RSI_OVERSOLD;
+		case 'rsi-strong':
+			return m?.tech?.rsi14 != null && m.tech.rsi14 >= RSI_STRONG;
+		case 'adx-trend': {
+			const t = m?.tech;
+			return (
+				!!t &&
+				t.adx14 != null &&
+				t.plusDI != null &&
+				t.minusDI != null &&
+				t.adx14 >= ADX_TREND_MIN &&
+				t.plusDI > t.minusDI
+			);
+		}
+		case 'supertrend-buy': {
+			const st = m?.tech?.superTrend;
+			return !!st && st.dir === 1 && st.flipAge != null && st.flipAge < SUPERTREND_FRESH_SESSIONS;
+		}
+		case 'golden-cross': {
+			const g = m?.tech?.goldenCross;
+			return !!g && g.crossAgeWeeks != null && g.crossAgeWeeks < GOLDEN_CROSS_FRESH_WEEKS;
+		}
+		case 'five-year-high': {
+			const h = input.high5y;
+			return !!m && h != null && h > 0 && ((h - m.close) / h) * 100 <= FIVE_YEAR_HIGH_PCT;
+		}
+		case 'high-roce':
+		case 'low-debt':
+		case 'opm-expansion':
+		case 'cagr-3y':
+		case 'heavy-capex':
+		case 'deleverage':
+		case 'super-growth':
+			return passesFundamentalPreset(id, input.fundamentals);
 		case 'growth-stage2': {
 			const g = input.growth;
 			return (
@@ -309,6 +462,39 @@ export function presetDetail(id: PresetId, input: PresetInput): string {
 			return m && m.breakoutAge != null && m.breakoutLevel != null
 				? `${m.breakoutAge === 0 ? 'Latest close' : `${m.breakoutAge}d ago`} above 50D high ${num(m.breakoutLevel, 2)}`
 				: '';
+		case 'rsi-oversold':
+		case 'rsi-strong':
+			return m?.tech?.rsi14 != null ? `RSI(14) ${num(m.tech.rsi14)}` : '';
+		case 'adx-trend': {
+			const t = m?.tech;
+			return t && t.adx14 != null && t.plusDI != null && t.minusDI != null
+				? `ADX ${num(t.adx14)}, +DI ${num(t.plusDI)} vs -DI ${num(t.minusDI)}`
+				: '';
+		}
+		case 'supertrend-buy': {
+			const st = m?.tech?.superTrend;
+			return st && st.flipAge != null
+				? `Turned bullish ${st.flipAge === 0 ? 'on the latest close' : `${st.flipAge}d ago`}, stop ${num(st.value, 2)}`
+				: '';
+		}
+		case 'golden-cross': {
+			const g = m?.tech?.goldenCross;
+			return g && g.crossAgeWeeks != null
+				? `10W ${num(g.fast, 2)} over 30W ${num(g.slow, 2)}, crossed ${g.crossAgeWeeks === 0 ? 'this week' : `${g.crossAgeWeeks}w ago`}`
+				: '';
+		}
+		case 'five-year-high': {
+			const h = input.high5y;
+			return m && h != null && h > 0 ? `${num(((h - m.close) / h) * 100)}% below the 5Y high ${num(h, 2)}` : '';
+		}
+		case 'high-roce':
+		case 'low-debt':
+		case 'opm-expansion':
+		case 'cagr-3y':
+		case 'heavy-capex':
+		case 'deleverage':
+		case 'super-growth':
+			return fundamentalDetail(id, input.fundamentals);
 		case 'growth-stage2': {
 			const g = input.growth;
 			return g && g.salesYoY != null && g.profitYoY != null
@@ -316,4 +502,12 @@ export function presetDetail(id: PresetId, input: PresetInput): string {
 				: '';
 		}
 	}
+}
+
+/** How many of `symbols` pass each preset. The scanner's chips count over every stage (the stage tab only
+ *  narrows the table), so a preset's number never shrinks because another tab is selected. */
+export function countPresets(symbols: string[], matched: Map<string, PresetId[]>): Record<PresetId, number> {
+	const out = Object.fromEntries(PRESETS.map((p) => [p.id, 0])) as Record<PresetId, number>;
+	for (const s of symbols) for (const id of matched.get(s) ?? []) out[id]++;
+	return out;
 }
