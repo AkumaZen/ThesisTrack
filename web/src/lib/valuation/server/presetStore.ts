@@ -11,6 +11,9 @@ import {
 } from '../presetScans';
 import type { Stage, StructuralResult } from '../stageScan';
 import { getStageScanResult } from './stageScanEngine';
+import { readFundamentalMetrics } from './fundamentalStore';
+import { readLongRange } from './longRangeStore';
+import { currentHigh5y } from '../longRange';
 
 /** Latest-quarter growth for every company whose Screener results are stored. Reads only the
  *  `quarters` part of each stored record. Companies nobody has opened yet have no stored results
@@ -40,12 +43,15 @@ export async function readQuarterlyGrowth(symbols?: string[]): Promise<Map<strin
 export async function presetMatchesFor(symbols: string[]): Promise<Record<string, PresetId[]>> {
 	const wanted = [...new Set(symbols.map((s) => s.toUpperCase()))];
 	if (wanted.length === 0) return {};
-	const [rows, growth] = await Promise.all([
+	const [rows, growth, fundamentals, longRange] = await Promise.all([
 		db
 			.select({ symbol: stageScanCache.symbol, structural: stageScanCache.structural })
 			.from(stageScanCache)
 			.where(inArray(stageScanCache.symbol, wanted)),
-		readQuarterlyGrowth(wanted)
+		readQuarterlyGrowth(wanted),
+		// Stored statements and 5-year highs feed the fundamental and 5-year-high presets; absent ones just cannot match.
+		readFundamentalMetrics(wanted).catch(() => new Map()),
+		readLongRange().catch(() => new Map())
 	]);
 	const out: Record<string, PresetId[]> = {};
 	for (const r of rows) {
@@ -54,7 +60,9 @@ export async function presetMatchesFor(symbols: string[]): Promise<Record<string
 		out[r.symbol] = matchedPresets({
 			stage: s.stage as Stage,
 			metrics: s.presets,
-			growth: growth.get(r.symbol) ?? null
+			growth: growth.get(r.symbol) ?? null,
+			fundamentals: fundamentals.get(r.symbol) ?? null,
+			high5y: longRange.has(r.symbol) ? currentHigh5y(longRange.get(r.symbol)!.high5y, s.presets?.high52) : null
 		});
 	}
 	return out;
@@ -71,6 +79,7 @@ export async function scanMatchFor(symbol: string): Promise<PresetId[] | null> {
 	return matchedPresets({
 		stage: result.stage,
 		metrics: result.presets,
-		growth: (await readQuarterlyGrowth([key])).get(key) ?? null
+		growth: (await readQuarterlyGrowth([key])).get(key) ?? null,
+		fundamentals: (await readFundamentalMetrics([key]).catch(() => new Map())).get(key) ?? null
 	});
 }
