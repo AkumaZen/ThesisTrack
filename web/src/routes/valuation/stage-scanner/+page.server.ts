@@ -6,6 +6,8 @@ import { readQuarterlyGrowth } from '$lib/valuation/server/presetStore';
 import { readFundamentalMetrics, symbolsMissingFinancials } from '$lib/valuation/server/fundamentalStore';
 import { readLongRange, symbolsMissingLongRange } from '$lib/valuation/server/longRangeStore';
 import { hasCurrentPresets } from '$lib/valuation/presetScans';
+import { isScanId } from '$lib/valuation/savedScans';
+import { getScan } from '$lib/valuation/server/savedScanStore';
 import { getAnalysisSettings } from '$lib/valuation/server/analysisSettingsStore';
 import { listActiveUniverse, symbolsWithSeries, type UniverseCompany } from '$lib/valuation/server/mcapUniverseStore';
 import {
@@ -21,7 +23,7 @@ import {
 // Results computed with different settings are left out so the page fetches them fresh.
 // The universe is the sector baskets plus the market cap list (valuation.mcap_universe); a
 // company on the list with no price source is shown apart and never scanned.
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
 	const [baskets, rows, settings, listed, growthMap, fundamentalMap, longRange, missingFinancials, missingLongRange] =
 		await Promise.all([
 		listAllBaskets(),
@@ -74,7 +76,12 @@ export const load: PageServerLoad = async () => {
 	const growth = Object.fromEntries(growthMap);
 	const fundamentals = Object.fromEntries(fundamentalMap);
 	const high5y = Object.fromEntries([...longRange].map(([symbol, v]) => [symbol, v.high5y]));
+	// ?scan=<id> opens a saved scan (yours or a shared one): its filters are applied on load.
+	const scanId = url.searchParams.get('scan');
+	const found = scanId && isScanId(scanId) ? await getScan(scanId).catch(() => null) : null;
+	const appliedScan = found ? { id: found.id, name: found.name, config: found.config } : null;
 	return {
+		appliedScan,
 		symbols,
 		names,
 		basketsBySymbol,

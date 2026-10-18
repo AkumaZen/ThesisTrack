@@ -244,6 +244,43 @@
 		else url.searchParams.set('preset', next);
 		replaceState(url, page.state);
 	}
+	// A saved scan opened with ?scan=<id> replaces the remembered filters with its own.
+	untrack(() => {
+		const c = data.appliedScan?.config;
+		if (!c) return;
+		stageFilter = c.stage;
+		basketFilter = knownBasket(c.sector);
+		bandFilter = c.band as McapKey;
+		signalFilter = c.signal;
+		query = c.query;
+		presetFilter = c.preset;
+	});
+
+	// Saving the current filters as a named scan (writers only).
+	let saveName = $state('');
+	let saveNotify = $state(false);
+	let saveState = $state<{ kind: 'idle' | 'saving' | 'saved' | 'error'; text: string }>({ kind: 'idle', text: '' });
+	async function saveScan() {
+		saveState = { kind: 'saving', text: '' };
+		try {
+			const res = await fetch('/api/valuation/scans', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					name: saveName,
+					notify: saveNotify,
+					config: { stage: stageFilter, sector: basketFilter, band: bandFilter, signal: signalFilter, query, preset: presetFilter }
+				})
+			});
+			const body = await res.json().catch(() => null);
+			if (!res.ok) throw new Error(body?.message ?? `HTTP ${res.status}`);
+			saveState = { kind: 'saved', text: 'Saved.' };
+			saveName = '';
+		} catch (e) {
+			saveState = { kind: 'error', text: e instanceof Error ? e.message : 'Could not save the scan.' };
+		}
+	}
+
 	// Without a stored Nifty 500, relative strength falls back to rank within the scanned universe.
 	const rank3m = $derived(percentileRanks(new Map(loaded.map((x) => [x.symbol, x.r.presets?.ret3m ?? null]))));
 	const rank6m = $derived(percentileRanks(new Map(loaded.map((x) => [x.symbol, x.r.presets?.ret6m ?? null]))));
@@ -549,6 +586,38 @@
 			{mcapNote}: a six-month average from AMFI, not a live market cap, so companies near a band edge
 			may sit on the other side today.
 		</p>
+	{/if}
+
+	{#if data.appliedScan}
+		<p class="scan-note" data-testid="applied-scan">
+			Showing the saved scan "{data.appliedScan.name}". <a href={resolve('/valuation/scans')}>Saved scans</a>
+		</p>
+	{/if}
+	{#if canLoadHistory}
+		<details class="scan-data no-print" data-testid="save-scan">
+			<summary>Save this scan</summary>
+			<form
+				class="scan-save"
+				onsubmit={(e) => {
+					e.preventDefault();
+					saveScan();
+				}}
+			>
+				<label>
+					<span class="sr-only">Scan name</span>
+					<input class="sm-input" type="text" maxlength="60" required placeholder="Name this scan" bind:value={saveName} data-testid="save-scan-name" />
+				</label>
+				<label class="pc-toggle">
+					<input type="checkbox" bind:checked={saveNotify} /> Alert me when it gains a match
+				</label>
+				<button type="submit" class="wl-strip-btn" disabled={saveState.kind === 'saving' || !saveName.trim()} data-testid="save-scan-submit">Save</button>
+				{#if saveState.text}
+					<span class="hint" role="status">
+						{saveState.text}{#if saveState.kind === 'saved'} <a href={resolve('/valuation/scans')}>View saved scans</a>{/if}
+					</span>
+				{/if}
+			</form>
+		</details>
 	{/if}
 
 	{#if canLoadHistory && data.mcapAsOf}

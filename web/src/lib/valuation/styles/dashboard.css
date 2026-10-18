@@ -5465,3 +5465,64 @@
 	padding-left: 18px;
 	font-size: 13px;
 }
+
+.vd .scan-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 12px;
+}
+
+.vd .scan-item {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 10px 16px;
+	padding: 10px 12px;
+	border: var(--border-w) solid var(--ink);
+	background: var(--bg);
+	box-shadow: var(--shadow-hard-sm);
+}
+
+.vd .scan-item-main {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	flex: 1 1 260px;
+}
+
+.vd .scan-item-name {
+	font-family: var(--font-display);
+	font-size: 17px;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.vd .scan-item-stats {
+	font-size: 13px;
+}
+
+.vd .scan-item-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.vd .scan-danger {
+	color: var(--danger);
+}
+
+.vd .scan-save {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+}
+
+.vd .scan-save .sm-input {
+	width: 240px;
+	max-width: 100%;
+}
