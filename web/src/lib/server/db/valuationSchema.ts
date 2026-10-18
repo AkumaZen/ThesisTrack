@@ -547,6 +547,8 @@ export const longTermHighs = pgTable('long_term_highs', {
 	fromDate: text('from_date').notNull(),
 	close3y: doublePrecision('close_3y'),
 	close3yDate: text('close_3y_date'),
+	// Weekly closes of about three years, for the returns benchmark's 3Y chart.
+	weekly3y: jsonb('weekly_3y').$type<{ date: string; close: number }[]>(),
 	fetchedAt: bigint('fetched_at', { mode: 'number' }).notNull()
 });
 

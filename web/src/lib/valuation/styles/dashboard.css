@@ -5390,3 +5390,23 @@
 .vd .an-key-b {
 	border-top: 3px dashed var(--ink);
 }
+
+.vd .ret-picker {
+	flex: 1 1 280px;
+	max-width: 420px;
+	min-width: 0;
+}
+
+.vd .ret-legend {
+	list-style: none;
+	margin: 8px 0 4px;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 16px;
+	font-size: 13px;
+}
+
+.vd .ret-legend .an-key {
+	margin-left: 0;
+}
