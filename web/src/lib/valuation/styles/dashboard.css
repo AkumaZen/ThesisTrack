@@ -5171,3 +5171,61 @@
 .vd .cg-down {
 	color: var(--red);
 }
+
+/* Sector basket earnings trend */
+.vd .sector-earnings {
+	margin-top: 20px;
+}
+
+.vd .se-heading {
+	font-size: 16px;
+	margin: 0 0 4px;
+}
+
+.vd .se-coverage {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	color: var(--muted);
+	margin: 0 0 10px;
+}
+
+.vd .se-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.vd .se-table th,
+.vd .se-table td {
+	padding: 6px 10px;
+	white-space: nowrap;
+	text-align: left;
+	border-bottom: 1px solid var(--surface-3);
+}
+
+.vd .se-table th.num,
+.vd .se-table td.num {
+	text-align: right;
+}
+
+.vd .se-table tbody th {
+	font-weight: 600;
+}
+
+.vd .se-sub {
+	display: block;
+	font-family: var(--font-sans);
+	font-size: 10.5px;
+	color: var(--muted);
+}
+
+.vd .se-up {
+	color: var(--green);
+}
+
+.vd .se-down {
+	color: var(--red);
+}
+
+.vd .se-table tbody th {
+	background: transparent;
+}
