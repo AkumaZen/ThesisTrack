@@ -2,7 +2,6 @@
 	import './layout.css';
 	import '$lib/styles/shell.css';
 	import { onNavigate } from '$app/navigation';
-	import favicon from '$lib/assets/favicon.svg';
 	import { session } from '$lib/session.svelte';
 	import AppHeader from '$lib/components/shell/AppHeader.svelte';
 	import KeyboardShortcuts from '$lib/components/shell/KeyboardShortcuts.svelte';
@@ -33,7 +32,10 @@
 	});
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+	<link rel="icon" href="/favicon.ico" sizes="any" />
+</svelte:head>
 
 {#if data.user && !data.user.mustChangePassword}
 	<AppHeader user={data.user} />
