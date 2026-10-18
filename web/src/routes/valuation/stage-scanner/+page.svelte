@@ -27,7 +27,8 @@
 	import {
 		PRESETS,
 		PRESET_GROUPS,
-		countPresets,		matchedPresets,
+		countPresets,
+		matchedPresets,
 		percentileRanks,
 		presetDetail,
 		rsBasis,
