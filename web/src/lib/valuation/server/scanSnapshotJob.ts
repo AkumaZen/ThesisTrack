@@ -1,10 +1,6 @@
 import { diffSnapshots, scanShareHref, type SnapshotDiff } from '../savedScans';
-import { formatTelegramAlert } from '../telegram';
 import type { PushPayload } from '../announcements';
-import { pushConfigured, pushToTargets } from '$lib/server/webPush';
-import { telegramConfigured, sendTelegramMessage } from '$lib/server/telegram';
-import { listSubscriptions, recordPushOutcome } from './announcementStore';
-import { getTelegramChat } from './telegramStore';
+import { createNotifier, type Notify, type NotifyCounters } from './notify';
 import {
 	evaluateInContext,
 	listAllScans,
@@ -35,35 +31,6 @@ export function newMatchPayload(scan: Pick<SavedScan, 'id' | 'name'>, added: str
 	};
 }
 
-/** Sends one person's alert to their devices and Telegram chat. Failures are swallowed: a dead channel must not stop the run. */
-async function notifyOwner(userId: number, payload: PushPayload): Promise<boolean> {
-	let sent = false;
-	if (telegramConfigured()) {
-		try {
-			const chat = await getTelegramChat(userId);
-			if (chat) {
-				await sendTelegramMessage(chat, formatTelegramAlert(payload));
-				sent = true;
-			}
-		} catch {
-			// Best effort, as for announcement alerts.
-		}
-	}
-	if (pushConfigured()) {
-		try {
-			const targets = await listSubscriptions(userId);
-			if (targets.length) {
-				const outcome = await pushToTargets(targets, payload);
-				await recordPushOutcome(outcome);
-				sent = sent || outcome.sent > 0;
-			}
-		} catch {
-			// Best effort.
-		}
-	}
-	return sent;
-}
-
 /** Stores a snapshot of one scan for the data date (no alerts): a new scan gets its first one at once. */
 export async function snapshotOne(scan: SavedScan): Promise<{ date: string; matches: number } | null> {
 	const ctx = await loadScanContext();
@@ -77,7 +44,7 @@ export async function snapshotOne(scan: SavedScan): Promise<{ date: string; matc
  *  newest session in the data, so running twice a day or on a holiday never invents a new day), and
  *  alerts the owners of scans with the alert switch on when something new has matched since the
  *  previous snapshot. The first snapshot of a scan never alerts: nothing is "new" yet. */
-export async function runScanSnapshots(): Promise<SnapshotSummary> {
+export async function runScanSnapshots(notifier: { notify: Notify; counters: NotifyCounters } = createNotifier()): Promise<SnapshotSummary> {
 	const summary: SnapshotSummary = { scans: 0, snapped: 0, date: null, alerts: 0, errors: [] };
 	const scans = await listAllScans();
 	summary.scans = scans.length;
@@ -95,9 +62,12 @@ export async function runScanSnapshots(): Promise<SnapshotSummary> {
 			summary.snapped++;
 			if (!scan.notify || alreadyToday) continue;
 			const diff: SnapshotDiff = diffSnapshots(previous?.symbols ?? null, symbols);
-			if (diff.added.length > 0 && (await notifyOwner(scan.ownerId, newMatchPayload(scan, diff.added, ctx.dataDate)))) {
-				summary.alerts++;
-			}
+			if (diff.added.length === 0) continue;
+			// A dead channel must not stop the run: the notifier counts failures, a throw is logged as an error.
+			const { counters } = notifier;
+			const before = counters.pushSent + counters.telegramSent;
+			await notifier.notify(scan.ownerId, newMatchPayload(scan, diff.added, ctx.dataDate));
+			if (counters.pushSent + counters.telegramSent > before) summary.alerts++;
 		} catch (e) {
 			summary.errors.push(`${scan.name}: ${e instanceof Error ? e.message : String(e)}`);
 		}
