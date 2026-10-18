@@ -11,6 +11,7 @@ import {
 	uniqueIndex,
 	timestamp,
 	serial,
+	uuid,
 	text
 } from 'drizzle-orm/pg-core';
 import { users } from './schema';
@@ -531,4 +532,57 @@ export const telegramLinkTokens = pgTable('telegram_link_tokens', {
 		.notNull()
 		.references(() => users.id, { onDelete: 'cascade' }),
 	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull()
+});
+
+// Analytics features (drizzle/0030_analytics.sql).
+export const companySegments = pgTable('company_segments', {
+	symbol: text('symbol').primaryKey(),
+	data: jsonb('data').notNull(),
+	fetchedAt: bigint('fetched_at', { mode: 'number' }).notNull()
+});
+
+export const longTermHighs = pgTable('long_term_highs', {
+	symbol: text('symbol').primaryKey(),
+	high5y: doublePrecision('high_5y').notNull(),
+	fromDate: text('from_date').notNull(),
+	fetchedAt: bigint('fetched_at', { mode: 'number' }).notNull()
+});
+
+export const savedScans = pgTable('saved_scans', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	ownerId: integer('owner_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	name: text('name').notNull(),
+	config: jsonb('config').notNull(),
+	notify: boolean('notify').notNull().default(false),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const scanSnapshots = pgTable(
+	'scan_snapshots',
+	{
+		scanId: uuid('scan_id')
+			.notNull()
+			.references(() => savedScans.id, { onDelete: 'cascade' }),
+		snapDate: date('snap_date', { mode: 'string' }).notNull(),
+		symbols: jsonb('symbols').notNull().$type<string[]>()
+	},
+	(t) => [primaryKey({ columns: [t.scanId, t.snapDate] })]
+);
+
+export const marketBreadth = pgTable('market_breadth', {
+	asOf: date('as_of', { mode: 'string' }).primaryKey(),
+	total: integer('total').notNull(),
+	advances: integer('advances').notNull(),
+	declines: integer('declines').notNull(),
+	unchanged: integer('unchanged').notNull(),
+	withDma50: integer('with_dma50').notNull(),
+	aboveDma50: integer('above_dma50').notNull(),
+	withDma200: integer('with_dma200').notNull(),
+	aboveDma200: integer('above_dma200').notNull(),
+	highs52w: integer('highs_52w').notNull(),
+	lows52w: integer('lows_52w').notNull(),
+	computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow()
 });

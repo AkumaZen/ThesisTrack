@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import type { AnnualRow } from '../fundamentals';
 
 const USER_AGENT =
 	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
@@ -72,6 +73,9 @@ export interface CompanyFinancials {
 		opmPct: number | null;
 		eps: number | null;
 	}[];
+	/** Every financial year joined across Screener's P&L, balance sheet and ratios tables (TTM excluded):
+	 *  what the fundamental presets and the quarterly results table need. Absent in older cache rows. */
+	annual?: AnnualRow[];
 }
 
 /** One in-flight fetch per symbol at a time, with a small polite delay before each Screener request. */
@@ -247,6 +251,41 @@ function extractQuarters($: cheerio.CheerioAPI): CompanyFinancials['quarters'] {
 	}));
 }
 
+/** Rows by year label from the P&L, balance sheet and ratios tables. A year missing from a table stays null. */
+export function extractAnnual($: cheerio.CheerioAPI): AnnualRow[] {
+	const plLabels = extractYearLabels($, 'profit-loss').filter((l) => !/TTM/i.test(l));
+	const bsLabels = extractYearLabels($, 'balance-sheet');
+	const ratioLabels = extractYearLabels($, 'ratios');
+	const sales = extractRow($, 'profit-loss', 'Sales');
+	const opm = extractRow($, 'profit-loss', 'OPM %');
+	const netProfit = extractRow($, 'profit-loss', 'Net Profit');
+	const equityCapital = extractRow($, 'balance-sheet', 'Equity Capital');
+	const reserves = extractRow($, 'balance-sheet', 'Reserves');
+	const borrowings = extractRow($, 'balance-sheet', 'Borrowings');
+	const fixedAssets = extractRow($, 'balance-sheet', 'Fixed Assets');
+	const cwip = extractRow($, 'balance-sheet', 'CWIP');
+	const roce = extractRow($, 'ratios', 'ROCE %');
+	const at = (cells: (number | null)[], labels: string[], label: string) => {
+		const i = labels.indexOf(label);
+		return i < 0 ? null : (cells[i] ?? null);
+	};
+	return plLabels.map((label, i) => {
+		const eq = at(equityCapital, bsLabels, label);
+		const res = at(reserves, bsLabels, label);
+		return {
+			label,
+			sales: sales[i] ?? null,
+			opmPct: opm[i] ?? null,
+			netProfit: netProfit[i] ?? null,
+			equity: eq != null && res != null ? eq + res : null,
+			borrowings: at(borrowings, bsLabels, label),
+			fixedAssets: at(fixedAssets, bsLabels, label),
+			cwip: at(cwip, bsLabels, label),
+			roce: at(roce, ratioLabels, label)
+		};
+	});
+}
+
 function extractLatestRatio($: cheerio.CheerioAPI, rowLabel: string): number | null {
 	const row = extractRow($, 'ratios', rowLabel);
 	return row.length > 0 ? (row[row.length - 1] ?? null) : null;
@@ -393,7 +432,8 @@ async function scrapeOnce(symbol: string): Promise<CompanyFinancials> {
 		cashConversionCycle: extractLatestRatio($, 'Cash Conversion Cycle'),
 		debtorDays: extractLatestRatio($, 'Debtor Days'),
 		inventoryDays: extractLatestRatio($, 'Inventory Days'),
-		quarters: extractQuarters($)
+		quarters: extractQuarters($),
+		annual: extractAnnual($)
 	};
 }
 

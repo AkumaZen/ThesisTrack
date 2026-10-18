@@ -5247,3 +5247,31 @@
 		vertical-align: bottom;
 	}
 }
+
+/* ---- Analytics pages: quarterly results, saved scans, returns, breadth, reverse DCF, segments ---- */
+.vd .res-page {
+	padding-top: 20px;
+}
+
+.vd .res-table th.text,
+.vd .res-table td.text {
+	text-align: left;
+}
+
+.vd .res-table td {
+	vertical-align: top;
+	white-space: nowrap;
+}
+
+.vd .res-table td.res-name {
+	white-space: normal;
+	min-width: 180px;
+}
+
+.vd .res-up {
+	color: var(--green);
+}
+
+.vd .res-down {
+	color: var(--red);
+}

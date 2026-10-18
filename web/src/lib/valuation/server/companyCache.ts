@@ -14,11 +14,11 @@ export async function getCompanyData(
 	const key = symbol.toUpperCase();
 	const [row] = await db.select().from(companyCache).where(eq(companyCache.symbol, key));
 
-	// Freshness marker for schema growth: `sector` is the newest field added to
+	// Freshness marker for schema growth: `annual` is the newest field added to
 	// CompanyFinancials, and every field is set together in one `scrapeOnce()` return, so its
 	// presence implies every earlier addition is present too. Bump this to whatever's newest
 	// so stale cache rows self-heal instead of needing a manual wipe each time the shape grows.
-	if (row && Date.now() - row.fetchedAt < TTL_MS && 'sector' in (row.data as object)) {
+	if (row && Date.now() - row.fetchedAt < TTL_MS && 'annual' in (row.data as object)) {
 		return { data: row.data as CompanyFinancials, cacheHit: true };
 	}
 
