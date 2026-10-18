@@ -8,6 +8,7 @@ import {
 	jsonb,
 	pgSchema,
 	primaryKey,
+	uniqueIndex,
 	timestamp,
 	serial,
 	text
@@ -378,4 +379,61 @@ export const mcapUniverse = pgTable('mcap_universe', {
 	symbol: text('symbol'),
 	active: boolean('active').notNull().default(true),
 	importedAt: timestamp('imported_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+// Announcement alerts (drizzle/0021_announcement_alerts.sql).
+export const trackedCompanies = pgTable(
+	'tracked_companies',
+	{
+		id: serial('id').primaryKey(),
+		userId: integer('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		nseSymbol: text('nse_symbol').notNull(),
+		companyName: text('company_name').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [uniqueIndex('tracked_companies_user_symbol_uq').on(t.userId, t.nseSymbol)]
+);
+
+export const announcements = pgTable('announcements', {
+	id: serial('id').primaryKey(),
+	dedupeKey: text('dedupe_key').notNull().unique(),
+	nseSymbol: text('nse_symbol').notNull(),
+	companyName: text('company_name').notNull(),
+	subject: text('subject').notNull(),
+	details: text('details').notNull().default(''),
+	announcedAt: timestamp('announced_at', { withTimezone: true }).notNull(),
+	pdfUrl: text('pdf_url'),
+	summary: text('summary'),
+	summarisedAt: timestamp('summarised_at', { withTimezone: true }),
+	summaryAttempts: integer('summary_attempts').notNull().default(0),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const announcementDeliveries = pgTable(
+	'announcement_deliveries',
+	{
+		userId: integer('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		announcementId: integer('announcement_id')
+			.notNull()
+			.references(() => announcements.id, { onDelete: 'cascade' }),
+		sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [primaryKey({ columns: [t.userId, t.announcementId] })]
+);
+
+export const pushSubscriptions = pgTable('push_subscriptions', {
+	id: serial('id').primaryKey(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	endpoint: text('endpoint').notNull().unique(),
+	p256dh: text('p256dh').notNull(),
+	auth: text('auth').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	lastSuccessAt: timestamp('last_success_at', { withTimezone: true }),
+	lastFailureAt: timestamp('last_failure_at', { withTimezone: true })
 });
