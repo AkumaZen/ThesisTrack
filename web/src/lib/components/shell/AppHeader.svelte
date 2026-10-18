@@ -19,7 +19,7 @@
 		newUntil?: string;
 	}
 
-	// The analytics pages carry a "New" badge for a few weeks after launch.
+	// The analytics and market intel pages carry a "New" badge for a few weeks after launch.
 	const NEW_UNTIL = '2026-12-15';
 	const today = new Date().toISOString().slice(0, 10);
 	const isNew = (t: Tool) => t.newUntil != null && today <= t.newUntil;
@@ -41,6 +41,8 @@
 		{ href: '/valuation/master-tracker', label: 'Master Tracker', match: starts('/valuation/master-tracker') },
 		{ href: '/valuation/alerts', label: 'Alerts', match: starts('/valuation/alerts') },
 		{ href: '/valuation/tracking', label: 'Tracked companies', match: starts('/valuation/tracking') },
+		{ href: '/valuation/lists', label: 'Lists', match: starts('/valuation/lists'), newUntil: NEW_UNTIL },
+		{ href: '/valuation/price-alerts', label: 'Price alerts', match: starts('/valuation/price-alerts'), newUntil: NEW_UNTIL },
 		{ href: '/valuation/settings', label: 'Settings', match: starts('/valuation/settings') }
 	];
 	const SECTOR: Tool[] = [
@@ -66,7 +68,15 @@
 		{ href: '/valuation/results', label: 'Quarterly results', match: starts('/valuation/results'), newUntil: NEW_UNTIL },
 		{ href: '/valuation/scans', label: 'Saved scans', match: starts('/valuation/scans'), newUntil: NEW_UNTIL },
 		{ href: '/valuation/returns', label: 'Returns', match: starts('/valuation/returns'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/breadth', label: 'Market breadth', match: starts('/valuation/breadth'), newUntil: NEW_UNTIL }
+		{ href: '/valuation/breadth', label: 'Market breadth', match: starts('/valuation/breadth'), newUntil: NEW_UNTIL },
+		{
+			href: '/valuation/announcements',
+			label: 'Announcements',
+			match: (p) => starts('/valuation/announcements')(p) || starts('/valuation/filings')(p),
+			newUntil: NEW_UNTIL
+		},
+		{ href: '/valuation/insider-trades', label: 'Insider trades', match: starts('/valuation/insider-trades'), newUntil: NEW_UNTIL },
+		{ href: '/valuation/corporate-actions', label: 'Corporate actions', match: starts('/valuation/corporate-actions'), newUntil: NEW_UNTIL }
 	];
 	const TOOLS: Record<ModuleKey, Tool[]> = { thesis: THESIS, valuation: VALUATION, sector: SECTOR, analysis: ANALYSIS };
 

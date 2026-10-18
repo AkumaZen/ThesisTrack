@@ -23,7 +23,13 @@ describe('moduleOf', () => {
 		['/valuation/returns', 'analysis'],
 		['/valuation/breadth', 'analysis'],
 		['/valuation/scans', 'analysis'],
-		['/valuation/scans/shared/3f2b8c1e-9d4a-4e7b-8a1c-0123456789ab', 'analysis']
+		['/valuation/scans/shared/3f2b8c1e-9d4a-4e7b-8a1c-0123456789ab', 'analysis'],
+		['/valuation/announcements', 'analysis'],
+		['/valuation/filings/TCS', 'analysis'],
+		['/valuation/insider-trades', 'analysis'],
+		['/valuation/corporate-actions', 'analysis'],
+		['/valuation/lists', 'valuation'],
+		['/valuation/price-alerts', 'valuation']
 	] as const)('%s is %s', (path, expected) => expect(moduleOf(path)).toBe(expected));
 
 	it('does not confuse similar prefixes', () => {
