@@ -29,6 +29,7 @@
 	import PriceChart from '$lib/valuation/components/PriceChart.svelte';
 	import ReverseDcfPanel from '$lib/valuation/components/ReverseDcfPanel.svelte';
 	import SegmentsPanel from '$lib/valuation/components/SegmentsPanel.svelte';
+	import CompanyFilings from '$lib/valuation/components/CompanyFilings.svelte';
 	import type { PricePoint } from '$lib/valuation/priceChart';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
@@ -81,6 +82,7 @@
 			showIntegrity = s.integrity;
 		}
 	});
+	let filingsOpened = $state(false);
 	let chartRange = $state(memory.initial.chartRange);
 	let strengthPanel = $state(memory.initial.strength);
 	// The list this company was opened from, so "back" returns to that same list.
@@ -1025,6 +1027,15 @@
 	/>
 
 	<SegmentsPanel symbol={company.symbol} initial={data.segments} canLoad={data.user?.role !== 'read_only'} />
+
+	<!-- Loaded on first open: it asks NSE for fresh filings, which not every page view needs. -->
+	<details class="stage-panel pc-panel" ontoggle={(e) => (filingsOpened ||= e.currentTarget.open)}>
+		<summary class="exhibit-cap" style="margin:0; cursor:pointer">Corporate actions, dividends and insider trades</summary>
+		{#if filingsOpened}
+			<CompanyFilings symbol={company.symbol} />
+			<p class="sm-hint"><a href={resolve(`/valuation/filings/${encodeURIComponent(company.symbol)}`)}>Open the full filings page</a></p>
+		{/if}
+	</details>
 
 	<div class="sv-company">
 		<StrengthPanel
