@@ -387,6 +387,7 @@
 			padding: 0 0.8rem;
 		}
 		.cc-head [role='columnheader'] {
+			min-height: 2.75rem;
 			display: flex;
 			align-items: center;
 			font: 700 0.72rem/1.2 var(--font-display, inherit);

@@ -2,6 +2,7 @@
 	// Per-company panel: red-flag checks with their inputs, guidance credibility history, and the
 	// analysed calls. Mount it anywhere with <ConcallPanel symbol="HFCL" {writable} />. It reads stored data
 	// only; "Refresh" and "Analyse" are explicit buttons shown to people who can write.
+	import { untrack } from 'svelte';
 	import StatusBadge from './StatusBadge.svelte';
 	import { runBatches } from '../concallClient';
 	import { describeTarget } from '../concall/guidance';
@@ -33,11 +34,14 @@
 		}
 	}
 
+	// Reload when the company changes. The body is untracked: it writes the state it would otherwise read.
 	$effect(() => {
-		void symbol;
-		data = initial?.company.symbol === symbol ? initial : null;
-		loading = !data;
-		void load();
+		const current = symbol, seed = initial;
+		untrack(() => {
+			data = seed?.company.symbol === current ? seed : null;
+			loading = !data;
+			void load();
+		});
 	});
 
 	async function run(mode: 'refresh' | 'analyse') {
@@ -133,8 +137,9 @@
 							{data.credibility.resolved ? `${pct(data.credibility.pct)} of resolved statements kept. ` : ''}Pending and not-measurable statements are not counted.
 						</span>
 					</p>
-					<ul class="cp-guidance">
-						{#each data.guidance as g (g.id)}
+					{#snippet guidanceList(list: PanelData["guidance"])}
+						<ul class="cp-guidance">
+							{#each list as g (g.id)}
 							<li class="cp-g">
 								<div class="cp-checkhead">
 									<StatusBadge status={g.status} />
@@ -148,7 +153,15 @@
 								<blockquote class="cp-quote">{g.quote}{g.page ? ` (page ${g.page})` : ''}</blockquote>
 							</li>
 						{/each}
-					</ul>
+						</ul>
+					{/snippet}
+					{@render guidanceList(data.guidance.filter((g) => g.status !== 'unverified'))}
+					{#if data.guidance.some((g) => g.status === 'unverified')}
+						<details class="cp-more">
+							<summary>{data.guidance.filter((g) => g.status === 'unverified').length} statements not measurable from the stored financials</summary>
+							{@render guidanceList(data.guidance.filter((g) => g.status === 'unverified'))}
+						</details>
+					{/if}
 				{/if}
 			</div>
 
