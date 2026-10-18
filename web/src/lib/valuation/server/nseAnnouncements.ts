@@ -40,10 +40,10 @@ export async function fetchSymbolAnnouncements(
 }
 
 /** GET a JSON document from nseindia.com/api with the same headers and timeout as the announcements. */
-export async function fetchNseJson(path: string, fetcher: typeof fetch = fetch): Promise<unknown> {
+export async function fetchNseJson(path: string, fetcher: typeof fetch = fetch, timeoutMs = TIMEOUT_MS): Promise<unknown> {
 	const res = await fetcher(`https://www.nseindia.com/api/${path}`, {
 		headers: NSE_HEADERS,
-		signal: AbortSignal.timeout(TIMEOUT_MS)
+		signal: AbortSignal.timeout(timeoutMs)
 	});
 	if (!res.ok) throw new Error(`NSE ${path.split('?')[0]} failed (HTTP ${res.status})`);
 	return res.json();
