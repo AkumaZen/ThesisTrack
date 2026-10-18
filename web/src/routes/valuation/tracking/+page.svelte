@@ -5,6 +5,7 @@
 	import { sectorApi } from '$lib/valuation/sectorClient';
 	import { ANNOUNCEMENT_TAGS, TAG_LABELS, isAnnouncementTag, type AnnouncementTag } from '$lib/valuation/announcementTags';
 	import { formatMeetingDay } from '$lib/valuation/boardMeetings';
+	import { formatQty } from '$lib/valuation/dealFormat';
 	import type { SymbolHit } from '$lib/valuation/symbolSearch';
 	import type { PageData } from './$types';
 
@@ -19,6 +20,30 @@
 		announcedAt: string;
 		tag: string | null;
 	}
+
+	interface Deal {
+		id: number;
+		kind: string;
+		dealDate: string;
+		clientName: string;
+		side: string;
+		quantity: number;
+		price: number | null;
+	}
+	interface Holding {
+		period: string;
+		prevPeriod: string | null;
+		pledgedPct: number | null;
+		rows: { label: string; value: number | null; change: number | null }[];
+	}
+	let deals = $state<Deal[]>([]);
+	let holding = $state<Holding | null>(null);
+	// Open by default on a wide screen, collapsed on a phone (the person can open it).
+	let wide = $state(false);
+	$effect(() => {
+		wide = window.matchMedia('(min-width: 640px)').matches;
+	});
+	const signed = (n: number | null) => (n == null ? 'n/a' : n > 0 ? `+${n.toFixed(2)}` : n.toFixed(2));
 
 	// Which company's announcements are open; the page's own pick until the person chooses one.
 	let chosen = $state<string | null>(null);
@@ -55,12 +80,16 @@
 		const token = ++loadToken;
 		shown = 15;
 		tagFilter = null;
+		deals = [];
+		holding = null;
 		loadingItems = true;
 		fetch(`/api/valuation/tracking/${encodeURIComponent(symbol)}`)
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-			.then((body: { announcements: Item[]; stale: boolean }) => {
+			.then((body: { announcements: Item[]; stale: boolean; deals: Deal[]; shareholding: Holding | null }) => {
 				if (token !== loadToken) return;
 				items = body.announcements;
+				deals = body.deals;
+				holding = body.shareholding;
 				stale = body.stale;
 			})
 			.catch(() => {
@@ -252,6 +281,45 @@
 				{#if stale}
 					<p class="sm-hint">NSE did not respond, so this may not include the latest announcements.</p>
 				{/if}
+				<details class="tk-hold" open={wide} data-testid="holdings">
+					<summary>Shareholding and deals (last 30 days)</summary>
+					{#if holding}
+						<table class="tk-table">
+							<caption>Shareholding pattern, {holding.period}{holding.prevPeriod ? `, change vs ${holding.prevPeriod}` : ''}</caption>
+							<thead>
+								<tr><th scope="col">Holder</th><th scope="col">%</th><th scope="col">QoQ (pts)</th></tr>
+							</thead>
+							<tbody>
+								{#each holding.rows as r (r.label)}
+									<tr>
+										<th scope="row">{r.label}</th>
+										<td>{r.value == null ? 'n/a' : r.value.toFixed(2)}</td>
+										<td>{signed(r.change)}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+						<p class="sm-hint">
+							{holding.pledgedPct == null
+								? 'No promoter pledge reported.'
+								: `Promoters have pledged ${holding.pledgedPct}% of their holding.`}
+						</p>
+					{:else}
+						<p class="sm-hint">Shareholding is fetched daily; nothing yet for this company.</p>
+					{/if}
+					{#if deals.length}
+						<ul class="tk-deals" aria-label="Bulk and block deals">
+							{#each deals as d (d.id)}
+								<li>
+									<span class="tk-meta">{d.dealDate} {d.kind === 'block' ? 'Block' : 'Bulk'}</span>
+									<span><strong>{d.side}</strong> {formatQty(d.quantity)} shares{d.price ? ` at Rs ${d.price}` : ''} by {d.clientName}</span>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="sm-hint">No bulk or block deals in the last 30 days.</p>
+					{/if}
+				</details>
 				{#if loadingItems && items.length === 0}
 					<p class="sm-hint">Loading announcements...</p>
 				{:else if items.length === 0}
@@ -394,6 +462,59 @@
 		font-family: var(--font-mono);
 		font-size: 0.75rem;
 		color: var(--muted);
+	}
+	.tk-hold {
+		border: var(--border-w) solid var(--ink);
+		padding: 0.6rem 0.9rem;
+		display: grid;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+	.tk-hold summary {
+		cursor: pointer;
+		font-weight: 700;
+		min-height: 2.5rem;
+		display: flex;
+		align-items: center;
+	}
+	.tk-table {
+		border-collapse: collapse;
+		width: 100%;
+		font-size: 0.875rem;
+	}
+	.tk-table caption {
+		text-align: left;
+		font-size: 0.75rem;
+		color: var(--muted);
+		padding-bottom: 0.3rem;
+	}
+	.tk-table th,
+	.tk-table td {
+		text-align: left;
+		padding: 0.25rem 0.4rem;
+		border-top: 1px solid var(--ink);
+		font-weight: 500;
+	}
+	.tk-table thead th {
+		font-weight: 700;
+	}
+	.tk-table td {
+		font-family: var(--font-mono);
+	}
+	.tk-deals {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+	}
+	.tk-deals li {
+		display: grid;
+		gap: 0.1rem;
+		overflow-wrap: anywhere;
+		border-top: 1px solid var(--ink);
+		padding-top: 0.4rem;
 	}
 	.tk-sub {
 		margin: 0.4rem 0 0;

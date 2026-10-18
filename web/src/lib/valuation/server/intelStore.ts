@@ -1,15 +1,20 @@
-import { and, asc, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, notExists, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import {
 	announcements,
 	boardMeetings,
+	dealDeliveries,
+	marketDeals,
 	savedValuations,
+	shareholdingSnapshots,
 	symbolRefresh,
 	trackedCompanies,
 	userNotificationSettings
 } from '$lib/server/db/valuationSchema';
 import { classifyAnnouncement } from '../announcementTags';
 import { isDue, type ParsedMeeting } from '../boardMeetings';
+import type { ParsedDeal } from '../deals';
+import type { ShareholdingParsed } from './shareholding';
 
 // Storage for the results calendar, the refresh throttle and per-person notification settings.
 
@@ -165,4 +170,92 @@ export async function setOnlyImportant(userId: number, onlyImportant: boolean) {
 export async function calendarSymbols(): Promise<string[]> {
 	const tracked = await db.selectDistinct({ symbol: trackedCompanies.nseSymbol }).from(trackedCompanies);
 	return [...new Set([...tracked.map((t) => t.symbol), ...(await watchlistNseSymbols())])];
+}
+
+// ---- bulk / block deals ----
+
+/** Stores deals of the companies we watch; returns how many were new (by dedupe key). */
+export async function saveDeals(rows: ParsedDeal[], symbols: string[]): Promise<number> {
+	const watched = new Set(symbols);
+	const mine = rows.filter((r) => watched.has(r.nseSymbol));
+	if (!mine.length) return 0;
+	const inserted = await db
+		.insert(marketDeals)
+		.values(
+			mine.map((r) => ({
+				dedupeKey: r.dedupeKey,
+				kind: r.kind,
+				nseSymbol: r.nseSymbol,
+				companyName: r.companyName,
+				dealDate: r.dealDate,
+				clientName: r.clientName,
+				side: r.side,
+				quantity: r.quantity,
+				price: r.price
+			}))
+		)
+		.onConflictDoNothing({ target: marketDeals.dedupeKey })
+		.returning({ id: marketDeals.id });
+	return inserted.length;
+}
+
+export const listDeals = (symbol: string, sinceDay: string) =>
+	db
+		.select()
+		.from(marketDeals)
+		.where(and(eq(marketDeals.nseSymbol, symbol), gte(marketDeals.dealDate, sinceDay)))
+		.orderBy(desc(marketDeals.dealDate), desc(marketDeals.id));
+
+export type DealRow = typeof marketDeals.$inferSelect;
+
+export interface PendingDealDelivery {
+	userId: number;
+	trackedSince: Date;
+	deal: DealRow;
+}
+
+/** (person, deal) pairs for tracked companies not yet delivered; recent deals only. */
+export function listPendingDealDeliveries(sinceDay: string): Promise<PendingDealDelivery[]> {
+	return db
+		.select({ userId: trackedCompanies.userId, trackedSince: trackedCompanies.createdAt, deal: marketDeals })
+		.from(marketDeals)
+		.innerJoin(trackedCompanies, eq(trackedCompanies.nseSymbol, marketDeals.nseSymbol))
+		.where(
+			and(
+				gte(marketDeals.dealDate, sinceDay),
+				notExists(
+					db
+						.select({ one: sql`1` })
+						.from(dealDeliveries)
+						.where(and(eq(dealDeliveries.userId, trackedCompanies.userId), eq(dealDeliveries.dealId, marketDeals.id)))
+				)
+			)
+		)
+		.orderBy(asc(marketDeals.id))
+		.limit(200);
+}
+
+/** True only for the caller that inserted the row (claim before send, as with announcements). */
+export async function claimDealDelivery(userId: number, dealId: number): Promise<boolean> {
+	const rows = await db
+		.insert(dealDeliveries)
+		.values({ userId, dealId })
+		.onConflictDoNothing()
+		.returning({ userId: dealDeliveries.userId });
+	return rows.length > 0;
+}
+
+// ---- shareholding ----
+
+export async function saveShareholding(symbol: string, s: ShareholdingParsed) {
+	const values = { ...s, fetchedAt: new Date() };
+	await db
+		.insert(shareholdingSnapshots)
+		.values({ nseSymbol: symbol, ...values })
+		.onConflictDoUpdate({ target: shareholdingSnapshots.nseSymbol, set: values });
+}
+
+export async function getShareholding(symbol: string) {
+	const [row] = await db.select().from(shareholdingSnapshots).where(eq(shareholdingSnapshots.nseSymbol, symbol));
+	return row ?? null;
 }
