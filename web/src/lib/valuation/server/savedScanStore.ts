@@ -127,7 +127,9 @@ export async function loadScanContext(): Promise<ScanContext> {
 		const structural = r.structural as StructuralResult;
 		if (resultParamsKey(structural) !== key || !hasCurrentPresets(structural)) continue;
 		if (!basketsBySymbol.has(r.symbol) && !mcap.has(r.symbol)) continue; // no longer in the universe
-		if (!dataDate || r.structuralSourceDate > dataDate) dataDate = r.structuralSourceDate;
+		// The scan stores the session date with a time and zone; a snapshot is dated by the day alone.
+		const day = r.structuralSourceDate.slice(0, 10);
+		if (!dataDate || day > dataDate) dataDate = day;
 		entries.push({
 			symbol: r.symbol,
 			name: names[r.symbol] ?? r.symbol,
