@@ -28,6 +28,9 @@ import {
 	type IntelDeps,
 	type IntelSummary
 } from './intelJob';
+import { telegramConfigured, sendTelegramMessage, TelegramError, type TelegramSender } from '$lib/server/telegram';
+import { formatTelegramAlert } from '../telegram';
+import { getTelegramChat, unlinkChat } from './telegramStore';
 import { pushConfigured, pushToTargets, sendWebPush, type PushSender } from '$lib/server/webPush';
 
 /** NSE is asked for the last few days each run; older filings only matter for the company page. */
@@ -40,6 +43,8 @@ export interface JobDeps {
 	fetchAnnouncements: (symbol: string, days: number) => Promise<ParsedAnnouncement[]>;
 	summarise: (a: AnnouncementRow) => Promise<string>;
 	send: PushSender;
+	sendTelegram: TelegramSender;
+	telegramOn: () => boolean;
 	summariesOn: () => boolean;
 	pushOn: () => boolean;
 	now: () => Date;
@@ -52,6 +57,8 @@ const defaultDeps: JobDeps = {
 	fetchAnnouncements: (symbol, days) => fetchSymbolAnnouncements(symbol, days),
 	summarise: (a) => summariseAnnouncement(a),
 	send: sendWebPush,
+	sendTelegram: sendTelegramMessage,
+	telegramOn: telegramConfigured,
 	summariesOn: summariesEnabled,
 	pushOn: pushConfigured,
 	now: () => new Date(),
@@ -67,6 +74,8 @@ export interface JobSummary {
 	notified: number;
 	pushSent: number;
 	pushFailed: number;
+	telegramSent: number;
+	telegramFailed: number;
 	subscriptionsRemoved: number;
 	/** Pushes skipped because the person only wants important filings and this one is routine. */
 	suppressed: number;
@@ -88,7 +97,7 @@ export async function runAnnouncementCheck(
 	const now = deps.now();
 	const summary: JobSummary = {
 		symbols: 0, fetched: 0, newAnnouncements: 0, summarised: 0, notified: 0,
-		pushSent: 0, pushFailed: 0, subscriptionsRemoved: 0, suppressed: 0, dealsNotified: 0, intel: emptyIntelSummary(), errors: []
+		pushSent: 0, pushFailed: 0, telegramSent: 0, telegramFailed: 0, subscriptionsRemoved: 0, suppressed: 0, dealsNotified: 0, intel: emptyIntelSummary(), errors: []
 	};
 	const startedAt = Date.now();
 
@@ -128,9 +137,10 @@ export async function runAnnouncementCheck(
 		}
 	}
 
-	// 3. Push. Without VAPID keys nothing is claimed, so the filings go out once keys exist.
+	// 3. Push and Telegram. With neither configured nothing is claimed, so the filings go out once one is.
 	const notify = makeNotifier(deps, summary);
-	if (deps.pushOn()) await deliver(deps, now, summary, summariesOn, notify);
+	const channelsOn = deps.pushOn() || deps.telegramOn();
+	if (channelsOn) await deliver(deps, now, summary, summariesOn, notify);
 
 	// 4. Best-effort extras; they never delay or break the alerts above.
 	if (Date.now() - startedAt < deps.extrasBudgetMs) {
@@ -140,17 +150,36 @@ export async function runAnnouncementCheck(
 		await refreshDeals(deps.intel, now, summary.intel).catch(guard('deals'));
 		await refreshShareholding(deps.intel, now, summary.intel).catch(guard('shareholding'));
 		summary.errors.push(...summary.intel.errors);
-		if (deps.pushOn()) await deliverDeals(now, summary, notify).catch(guard('deal alerts'));
+		if (channelsOn) await deliverDeals(now, summary, notify).catch(guard('deal alerts'));
 	}
 	return summary;
 }
 
-type Notify = (userId: number, payload: PushPayload) => Promise<void>;
+type Notify = (userId: number, payload: PushPayload, link?: string | null) => Promise<void>;
 
 /** Sends one message to a person's devices, remembering their subscriptions for the rest of the run. */
 function makeNotifier(deps: JobDeps, summary: JobSummary): Notify {
 	const subsByUser = new Map<number, Awaited<ReturnType<typeof listSubscriptions>>>();
-	return async (userId, payload) => {
+	const chatByUser = new Map<number, string | null>();
+	return async (userId, payload, link) => {
+		if (deps.telegramOn()) {
+			let chat = chatByUser.get(userId);
+			if (chat === undefined) chatByUser.set(userId, (chat = await getTelegramChat(userId)));
+			if (chat) {
+				try {
+					await deps.sendTelegram(chat, formatTelegramAlert(payload, link));
+					summary.telegramSent++;
+				} catch (err) {
+					summary.telegramFailed++;
+					// 403/400: the person blocked the bot or deleted the chat, so stop trying.
+					if (err instanceof TelegramError && (err.status === 403 || err.status === 400)) {
+						await unlinkChat(chat);
+						chatByUser.set(userId, null);
+					}
+				}
+			}
+		}
+		if (!deps.pushOn()) return;
 		let targets = subsByUser.get(userId);
 		if (!targets) subsByUser.set(userId, (targets = await listSubscriptions(userId)));
 		if (!targets.length) return;
@@ -176,7 +205,7 @@ async function deliver(deps: JobDeps, now: Date, summary: JobSummary, summariesO
 			continue;
 		}
 		summary.notified++;
-		await notify(p.userId, buildPushPayload(a));
+		await notify(p.userId, buildPushPayload(a), a.pdfUrl);
 	}
 }
 

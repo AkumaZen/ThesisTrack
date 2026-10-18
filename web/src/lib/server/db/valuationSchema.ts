@@ -515,3 +515,20 @@ export const shareholdingSnapshots = pgTable('shareholding_snapshots', {
 	prevPublic: numeric('prev_public', { mode: 'number' }),
 	fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow()
 });
+
+// Telegram delivery (drizzle/0023_deals_shareholding_telegram.sql).
+export const telegramLinks = pgTable('telegram_links', {
+	userId: integer('user_id')
+		.primaryKey()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	chatId: text('chat_id').notNull().unique(),
+	linkedAt: timestamp('linked_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const telegramLinkTokens = pgTable('telegram_link_tokens', {
+	tokenHash: text('token_hash').primaryKey(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull()
+});

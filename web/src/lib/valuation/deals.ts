@@ -72,7 +72,7 @@ export function parseLargeDeals(payload: unknown): ParsedDeal[] {
 }
 
 export function buildDealPayload(
-	d: { id: number } & Pick<ParsedDeal, 'kind' | 'nseSymbol' | 'side' | 'quantity' | 'price' | 'clientName'>
+	d: { id: number; kind: string; nseSymbol: string; side: string; quantity: number; price: number | null; clientName: string }
 ): PushPayload {
 	const label = d.kind === 'block' ? 'Block deal' : 'Bulk deal';
 	const verb = d.side === 'BUY' ? 'bought' : 'sold';

@@ -3,6 +3,8 @@ import { listTracked } from '$lib/valuation/server/announcementStore';
 import { getOnlyImportant, listUpcomingMeetings, watchlistNseSymbols } from '$lib/valuation/server/intelStore';
 import { groupMeetings, istDay } from '$lib/valuation/boardMeetings';
 import { pushConfigured } from '$lib/server/webPush';
+import { telegramConfigured } from '$lib/server/telegram';
+import { getTelegramChat } from '$lib/valuation/server/telegramStore';
 
 // The person's own tracked companies. Each company's announcements load on demand (the API
 // refreshes them from NSE), so this page renders from the database alone.
@@ -32,6 +34,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		initial: tracked.some((t) => t.nseSymbol === wanted) ? wanted : (tracked[0]?.nseSymbol ?? null),
 		pushConfigured: pushConfigured(),
 		calendar: groupMeetings(meetings, now),
-		onlyImportant: await getOnlyImportant(userId)
+		onlyImportant: await getOnlyImportant(userId),
+		telegram: { available: telegramConfigured(), linked: telegramConfigured() && Boolean(await getTelegramChat(userId)) }
 	};
 };

@@ -150,6 +150,25 @@
 			: { kind: 'error', text: res.message };
 	}
 
+	let tgUrl = $state<string | null>(null);
+
+	async function connectTelegram() {
+		busy = true;
+		const res = await sectorApi<{ url: string }>('POST', '/api/valuation/push/telegram');
+		busy = false;
+		if (res.ok) tgUrl = res.data.url;
+		else status = { kind: 'error', text: res.message };
+	}
+
+	async function disconnectTelegram() {
+		busy = true;
+		const res = await sectorApi('DELETE', '/api/valuation/push/telegram');
+		busy = false;
+		tgUrl = null;
+		if (!res.ok) status = { kind: 'error', text: res.message };
+		await invalidateAll();
+	}
+
 	async function saveOnlyImportant(next: boolean) {
 		onlyImportantPick = next;
 		const res = await sectorApi('PUT', '/api/valuation/push/settings', { onlyImportant: next });
@@ -204,6 +223,22 @@
 			<button class="sm-btn sm-btn-primary" type="button" disabled={busy} onclick={allow}>
 				Allow notifications
 			</button>
+		{/if}
+		{#if data.telegram.available}
+			<div class="tk-tg" data-testid="telegram-box">
+				<strong>Telegram backup</strong>
+				{#if data.telegram.linked}
+					<p class="sm-hint">Connected. Alerts also arrive in your Telegram chat with the bot.</p>
+					<button class="sm-btn" type="button" disabled={busy} onclick={disconnectTelegram}>Disconnect Telegram</button>
+				{:else if tgUrl}
+					<p class="sm-hint">Open Telegram, press Start in the chat, then come back and check.</p>
+					<a class="sm-btn sm-btn-primary tk-link" href={tgUrl} target="_blank" rel="noopener noreferrer">Open Telegram</a>
+					<button class="sm-btn" type="button" onclick={() => invalidateAll()}>I pressed Start, check now</button>
+				{:else}
+					<p class="sm-hint">Get the same alerts in Telegram as a backup to push notifications.</p>
+					<button class="sm-btn" type="button" disabled={busy} onclick={connectTelegram}>Connect Telegram</button>
+				{/if}
+			</div>
 		{/if}
 		<label class="tk-check">
 			<input type="checkbox" checked={onlyImportant} onchange={(e) => saveOnlyImportant(e.currentTarget.checked)} />
@@ -515,6 +550,19 @@
 		overflow-wrap: anywhere;
 		border-top: 1px solid var(--ink);
 		padding-top: 0.4rem;
+	}
+	.tk-tg {
+		display: grid;
+		gap: 0.4rem;
+		justify-items: start;
+		border-top: 1px solid var(--ink);
+		padding-top: 0.6rem;
+	}
+	.tk-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		text-decoration: none;
 	}
 	.tk-sub {
 		margin: 0.4rem 0 0;
