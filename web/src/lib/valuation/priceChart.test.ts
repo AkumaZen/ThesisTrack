@@ -35,7 +35,9 @@ describe('buildPriceSeries', () => {
 
 	it('drops bad closes and trims dates to the day', () => {
 		const s = buildPriceSeries([{ date: '2025-03-04T00:00:00+05:30', close: 10, volume: NaN }, { date: 'x', close: 0, volume: 1 }]);
-		expect(s).toEqual([{ date: '2025-03-04', close: 10, volume: 0, sma50: null, sma200: null }]);
+		expect(s).toEqual([
+			{ date: '2025-03-04', close: 10, volume: 0, sma50: null, sma200: null, rsi: null, stUp: null, stDown: null }
+		]);
 	});
 });
 
@@ -44,5 +46,32 @@ describe('gapTo200', () => {
 		const s = buildPriceSeries(candles(300, () => 100).map((c, i) => (i === 299 ? { ...c, close: 110 } : c)));
 		expect(gapTo200(s)).toBeCloseTo((110 / ((199 * 100 + 110) / 200) - 1) * 100, 6);
 		expect(gapTo200(buildPriceSeries(candles(50)))).toBeNull();
+	});
+});
+
+describe('buildPriceSeries indicators', () => {
+	const bars = (n: number) =>
+		Array.from({ length: n }, (_, i) => ({
+			date: new Date(Date.UTC(2025, 0, 1) + i * 86_400_000).toISOString(),
+			open: 100 + i,
+			high: 102 + i,
+			low: 99 + i,
+			close: 101 + i,
+			volume: 10
+		}));
+
+	it('adds RSI and a bullish SuperTrend line for a steady uptrend', () => {
+		const s = buildPriceSeries(bars(80), 60);
+		const last = s[s.length - 1];
+		expect(last.rsi).toBe(100); // every change is a gain
+		expect(last.stUp).not.toBeNull();
+		expect(last.stDown).toBeNull();
+		expect(last.stUp!).toBeLessThan(last.close);
+	});
+
+	it('leaves SuperTrend out when candles carry no highs and lows, but still gives RSI', () => {
+		const s = buildPriceSeries(bars(40).map(({ date, close, volume }) => ({ date, close, volume })));
+		expect(s[s.length - 1].rsi).toBe(100);
+		expect(s.every((p) => p.stUp === null && p.stDown === null)).toBe(true);
 	});
 });

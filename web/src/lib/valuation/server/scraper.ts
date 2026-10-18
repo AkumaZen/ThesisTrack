@@ -83,7 +83,7 @@ const inFlight = new Map<string, Promise<CompanyFinancials>>();
 let lastRequestAt = 0;
 const MIN_GAP_MS = 800;
 
-async function politeFetch(url: string): Promise<string> {
+export async function politeFetch(url: string, extraHeaders: Record<string, string> = {}): Promise<string> {
 	const wait = Math.max(0, lastRequestAt + MIN_GAP_MS - Date.now());
 	if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 	lastRequestAt = Date.now();
@@ -91,7 +91,8 @@ async function politeFetch(url: string): Promise<string> {
 	const res = await fetch(url, {
 		headers: {
 			'User-Agent': USER_AGENT,
-			Accept: 'text/html,application/xhtml+xml'
+			Accept: 'text/html,application/xhtml+xml',
+			...extraHeaders
 		}
 	});
 	if (res.status === 404) throw new Error(`NOT_FOUND: ${url}`);

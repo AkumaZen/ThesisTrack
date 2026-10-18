@@ -19,7 +19,11 @@
 	const PRICE_H = 260;
 	const VOL_H = 56;
 	const GAP = 20;
-	const H = PRICE_H + GAP + VOL_H;
+	const RSI_H = 64;
+	// Indicators are optional overlays; RSI adds a strip below the volume bars.
+	let showST = $state(false);
+	let showRSI = $state(false);
+	const H = $derived(PRICE_H + GAP + VOL_H + (showRSI ? GAP + RSI_H : 0));
 	const PAD_L = 4;
 	const PAD_R = 56;
 
@@ -33,6 +37,8 @@
 			vals.push(p.close);
 			if (p.sma50 != null) vals.push(p.sma50);
 			if (p.sma200 != null) vals.push(p.sma200);
+			if (showST && p.stUp != null) vals.push(p.stUp);
+			if (showST && p.stDown != null) vals.push(p.stDown);
 		}
 		const lo = Math.min(...vals);
 		const hi = Math.max(...vals);
@@ -62,6 +68,25 @@
 	const closePath = $derived(path((p) => p.close));
 	const sma50Path = $derived(path((p) => p.sma50));
 	const sma200Path = $derived(path((p) => p.sma200));
+	const stUpPath = $derived(path((p) => p.stUp));
+	const stDownPath = $derived(path((p) => p.stDown));
+	const RSI_TOP = PRICE_H + GAP + VOL_H + GAP;
+	const yRsi = (v: number) => RSI_TOP + RSI_H - (v / 100) * RSI_H;
+	function rsiLine(): string {
+		let d = '';
+		let pen = false;
+		shown.forEach((p, i) => {
+			if (p.rsi == null) {
+				pen = false;
+				return;
+			}
+			d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)} ${yRsi(p.rsi).toFixed(1)}`;
+			pen = true;
+		});
+		return d;
+	}
+	const haveST = $derived(shown.some((p) => p.stUp != null || p.stDown != null));
+	const haveRsi = $derived(shown.some((p) => p.rsi != null));
 
 	const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 	const fmtMonth = (d: string) => `${MONTHS[Number(d.slice(5, 7)) - 1]} ${d.slice(2, 4)}`;
@@ -123,6 +148,15 @@
 				<span class="pc-key"><i class="pc-sw pc-sw-50"></i>50 DMA <b>{inr(current.sma50)}</b></span>
 				<span class="pc-key"><i class="pc-sw pc-sw-200"></i>200 DMA <b>{inr(current.sma200)}</b></span>
 				<span class="pc-key">Volume <b>{compact(current.volume)}</b></span>
+				{#if showRSI && current.rsi != null}<span class="pc-key">RSI(14) <b>{current.rsi.toFixed(1)}</b></span>{/if}
+			</div>
+			<div class="pc-toggles" role="group" aria-label="Indicators">
+				{#if haveST}
+					<label class="pc-toggle"><input type="checkbox" bind:checked={showST} data-testid="pc-supertrend" /> SuperTrend (10,3)</label>
+				{/if}
+				{#if haveRsi}
+					<label class="pc-toggle"><input type="checkbox" bind:checked={showRSI} data-testid="pc-rsi" /> RSI (14)</label>
+				{/if}
 			</div>
 			<div class="timeframe-bar pc-ranges" role="group" aria-label="Chart range">
 				{#each RANGES as r (r.label)}
@@ -163,6 +197,10 @@
 			{/each}
 
 			{#if have200}<path d={sma200Path} class="pc-line pc-200" />{/if}
+			{#if showST}
+				<path d={stUpPath} class="pc-line pc-st-up" />
+				<path d={stDownPath} class="pc-line pc-st-down" />
+			{/if}
 			<path d={sma50Path} class="pc-line pc-50" />
 			<path d={closePath} class="pc-line pc-close" />
 
@@ -176,6 +214,14 @@
 					class:pc-vol-up={i > 0 && p.close >= shown[i - 1].close}
 				/>
 			{/each}
+
+			{#if showRSI}
+				{#each [30, 70] as level (level)}
+					<line x1={PAD_L} x2={W - PAD_R} y1={yRsi(level)} y2={yRsi(level)} class="pc-grid pc-rsi-level" />
+					<text x={W - PAD_R + 6} y={yRsi(level) + 3} class="pc-axis">{level}</text>
+				{/each}
+				<path d={rsiLine()} class="pc-line pc-rsi" />
+			{/if}
 
 			{#if hover != null}
 				<line x1={x(hover)} x2={x(hover)} y1="0" y2={H} class="pc-cross" />
@@ -192,7 +238,8 @@
 			{:else}
 				Fewer than 200 sessions of history so far, so there is no 200-day average to draw yet.
 			{/if}
-			Daily closes, simple moving averages. Volume bars are green on up days.
+			Daily closes, simple moving averages. Volume bars are green on up days.{#if showST}
+				SuperTrend is green while price is above its trailing stop and red below it.{/if}
 		</p>
 	</div>
 {/if}

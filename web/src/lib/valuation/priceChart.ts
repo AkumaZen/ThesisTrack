@@ -2,6 +2,8 @@
 // The averages are computed over the FULL history fetched, then only the last `bars` sessions are
 // returned, so the 200-day line is complete across the whole visible range (it needs 200 earlier
 // sessions behind the first plotted day).
+import { rsiSeries, superTrendSeries } from './indicators';
+import type { Candle } from './stageScan';
 
 export interface PricePoint {
 	date: string;
@@ -9,6 +11,11 @@ export interface PricePoint {
 	volume: number;
 	sma50: number | null;
 	sma200: number | null;
+	/** RSI(14); null until 14 sessions of history, and when the candles carry no highs and lows. */
+	rsi: number | null;
+	/** SuperTrend(10,3) trailing stop: set in `stUp` while bullish (below price) and `stDown` while bearish. */
+	stUp: number | null;
+	stDown: number | null;
 }
 
 /** Simple moving average of the `period` values ending at index `end` (inclusive), or null. */
@@ -20,11 +27,15 @@ export function smaAt(values: number[], period: number, end: number): number | n
 }
 
 export function buildPriceSeries(
-	candles: { date: string; close: number; volume: number }[],
+	candles: { date: string; close: number; volume: number; high?: number; low?: number; open?: number }[],
 	bars = 252
 ): PricePoint[] {
 	const usable = candles.filter((c) => Number.isFinite(c.close) && c.close > 0);
 	const closes = usable.map((c) => c.close);
+	// RSI needs only closes; SuperTrend needs highs and lows, so it is left out when they are missing.
+	const rsi = rsiSeries(closes);
+	const hasRange = usable.every((c) => Number.isFinite(c.high) && Number.isFinite(c.low));
+	const st = hasRange ? superTrendSeries(usable as Candle[]) : null;
 	const start = Math.max(0, usable.length - bars);
 	const out: PricePoint[] = [];
 	for (let i = start; i < usable.length; i++) {
@@ -33,7 +44,10 @@ export function buildPriceSeries(
 			close: usable[i].close,
 			volume: Number.isFinite(usable[i].volume) ? usable[i].volume : 0,
 			sma50: smaAt(closes, 50, i),
-			sma200: smaAt(closes, 200, i)
+			sma200: smaAt(closes, 200, i),
+			rsi: rsi[i] ?? null,
+			stUp: st?.[i]?.dir === 1 ? st[i]!.value : null,
+			stDown: st?.[i]?.dir === -1 ? st[i]!.value : null
 		});
 	}
 	return out;
