@@ -25,6 +25,7 @@
 	let items = $state<Item[]>([]);
 	let loadingItems = $state(false);
 	let stale = $state(false);
+	let shown = $state(15);
 	let status = $state<{ kind: 'ok' | 'error'; text: string } | null>(null);
 	let busy = $state(false);
 	let permission = $state<NotificationPermission | 'unsupported'>('unsupported');
@@ -41,6 +42,7 @@
 			return;
 		}
 		const token = ++loadToken;
+		shown = 15;
 		loadingItems = true;
 		fetch(`/api/valuation/tracking/${encodeURIComponent(symbol)}`)
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
@@ -210,7 +212,7 @@
 					<p class="sm-empty">No announcements in the last 90 days.</p>
 				{:else}
 					<ul class="tk-list" data-testid="announcement-list">
-						{#each items as a (a.id)}
+						{#each items.slice(0, shown) as a (a.id)}
 							<li class="tk-item">
 								<div class="tk-meta">{when(a.announcedAt)}</div>
 								<div class="tk-subject">{a.subject}</div>
@@ -225,6 +227,11 @@
 							</li>
 						{/each}
 					</ul>
+					{#if items.length > shown}
+						<button class="sm-btn tk-more" type="button" onclick={() => (shown += 15)}>
+							Show more ({items.length - shown} older)
+						</button>
+					{/if}
 				{/if}
 			</section>
 		{/each}
@@ -338,6 +345,9 @@
 	.tk-details {
 		color: var(--muted);
 		font-size: 0.875rem;
+	}
+	.tk-more {
+		justify-self: start;
 	}
 	.tk-pdf {
 		justify-self: start;

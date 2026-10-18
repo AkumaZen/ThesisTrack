@@ -2,6 +2,9 @@
 Phase: BUILD_PLAN.md v1 complete; ongoing user-requested work. Latest (2026-10-17): branch `merge-valuation` holds
 master + multi-agent setup + scorecard + scanner-universe + HFCL document fix, all LOCAL and unpushed; production DB steps below still PENDING.
 
+## 2026-10-18: announcement alerts (branch feat/announcement-alerts, LOCAL, NOT pushed)
+Tracked companies page `/valuation/tracking`, NSE announcement polling, LLM summaries, Web Push to Android. BEFORE merging: apply `web/drizzle/0021_announcement_alerts.sql` to production Neon, set VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT on Vercel (generate with web-push generateVAPIDKeys; local dev keys are in web/.env only), then create the cron-job.org job (GET https://<app>/api/cron/announcements every 1 minute, header `Authorization: Bearer <CRON_SECRET>`). Verified locally: real NSE HFCL parse, real OpenAI summary, real FCM subscribe and test push.
+
 ## 2026-10-04: Valuation Dashboard merged into ThesisTrack (branch merge-valuation, NOT pushed or deployed)
 
 One app now: thesis module at `/`, valuation tools (watchlist, company valuation, compare,
