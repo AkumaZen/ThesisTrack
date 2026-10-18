@@ -1,0 +1,365 @@
+/* Market intel pages and components: announcement feed, insider trades, corporate actions, price
+   alerts and watchlist sections. Scoped under .vd like the rest of the valuation CSS, own prefix
+   (mi-) so nothing here can collide with the shared dashboard blocks. */
+
+.vd .mi {
+	display: grid;
+	gap: 1rem;
+	min-width: 0;
+}
+
+.vd .mi-box {
+	border: var(--border-w) solid var(--ink);
+	background: var(--bg);
+	padding: 0.9rem 1rem;
+	display: grid;
+	gap: 0.6rem;
+	min-width: 0;
+}
+
+.vd .mi-box h2,
+.vd .mi-h {
+	margin: 0;
+	font-size: 1rem;
+	font-family: var(--font-display);
+}
+
+.vd .mi-box p {
+	margin: 0;
+}
+
+.vd .mi-sub {
+	margin: 0;
+	font-size: 0.8rem;
+	font-family: var(--font-display);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.vd .mi-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+/* Filter forms: one column on a phone, a wrapping grid beyond. */
+.vd .mi-form {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.6rem;
+	align-items: end;
+}
+
+.vd .mi-field {
+	display: grid;
+	gap: 0.2rem;
+	min-width: 0;
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+.vd .mi-field .sm-input,
+.vd .mi-field select {
+	width: 100%;
+	min-height: 2.75rem;
+	box-sizing: border-box;
+}
+
+.vd .mi-field select {
+	border: var(--border-w) solid var(--ink);
+	background: var(--bg);
+	color: var(--ink);
+	font: inherit;
+	padding: 0.3rem 0.5rem;
+}
+
+@media (min-width: 640px) {
+	.vd .mi-form {
+		grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+	}
+}
+
+.vd .mi-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.vd .mi-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	min-height: 2.5rem;
+	padding: 0.2rem 0.7rem;
+	border: var(--border-w) solid var(--ink);
+	background: var(--bg);
+	color: var(--ink);
+	font: 600 0.8rem/1.2 var(--font-body, inherit);
+	text-decoration: none;
+	cursor: pointer;
+	max-width: 100%;
+	overflow-wrap: anywhere;
+}
+
+.vd .mi-chip:hover {
+	box-shadow: var(--shadow-sm);
+}
+
+.vd .mi-chip[aria-current='true'],
+.vd .mi-chip-on {
+	background: var(--ink);
+	color: var(--bg);
+	box-shadow: var(--shadow-sm);
+}
+
+.vd .mi-chip small {
+	font-family: var(--font-mono);
+	font-weight: 500;
+	font-size: 0.7rem;
+}
+
+.vd .mi-chip-x {
+	min-height: 2.5rem;
+	min-width: 2.5rem;
+	padding: 0;
+	border: var(--border-w) solid var(--ink);
+	background: var(--bg);
+	color: var(--ink);
+	font: inherit;
+	cursor: pointer;
+}
+
+.vd .mi-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.6rem;
+	min-width: 0;
+}
+
+.vd .mi-item {
+	border: var(--border-w) solid var(--ink);
+	padding: 0.7rem 0.9rem;
+	display: grid;
+	gap: 0.3rem;
+	min-width: 0;
+	background: var(--bg);
+}
+
+.vd .mi-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.3rem 0.6rem;
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	color: var(--muted);
+}
+
+.vd .mi-title {
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.vd .mi-title a {
+	color: inherit;
+}
+
+.vd .mi-text {
+	margin: 0;
+	overflow-wrap: anywhere;
+	font-size: 0.875rem;
+}
+
+.vd .mi-muted {
+	color: var(--muted);
+}
+
+.vd .mi-link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 2.5rem;
+	font-weight: 600;
+}
+
+.vd .mi-tag {
+	display: inline-block;
+	padding: 0.1rem 0.45rem;
+	border: 1.5px solid var(--ink);
+	background: var(--bg);
+	color: var(--ink);
+	font: 600 0.72rem/1.3 var(--font-body, inherit);
+}
+
+.vd .mi-tag-hi {
+	background: var(--accent);
+	color: var(--accent-ink);
+}
+
+.vd .mi-tag-dash {
+	border-style: dashed;
+	color: var(--muted);
+}
+
+/* Facts of a filing: label over value, wrapping, never wider than the card. */
+.vd .mi-facts {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+	gap: 0.4rem 0.8rem;
+	margin: 0;
+	font-size: 0.85rem;
+}
+
+.vd .mi-facts div {
+	min-width: 0;
+}
+
+.vd .mi-facts dt {
+	font-size: 0.7rem;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.vd .mi-facts dd {
+	margin: 0;
+	font-family: var(--font-mono);
+	overflow-wrap: anywhere;
+}
+
+.vd .mi-pager {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.6rem;
+	flex-wrap: wrap;
+}
+
+.vd .mi-pager a {
+	display: inline-flex;
+	align-items: center;
+	min-height: 2.75rem;
+	padding: 0 1rem;
+	border: var(--border-w) solid var(--ink);
+	color: var(--ink);
+	text-decoration: none;
+	font-weight: 600;
+	background: var(--bg);
+}
+
+.vd .mi-pager a:hover {
+	box-shadow: var(--shadow-sm);
+}
+
+.vd .mi-side-buy {
+	color: var(--good);
+	font-weight: 700;
+}
+
+.vd .mi-side-sell {
+	color: var(--danger);
+	font-weight: 700;
+}
+
+.vd .mi-flag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.vd .mi-dot {
+	width: 0.8rem;
+	height: 0.8rem;
+	border: 1.5px solid var(--ink);
+	flex: none;
+	background: var(--dot, transparent);
+}
+
+.vd .mi-tabs {
+	display: flex;
+	gap: 0.4rem;
+	flex-wrap: wrap;
+}
+
+.vd .mi-details {
+	border: var(--border-w) solid var(--ink);
+	padding: 0.6rem 0.9rem;
+	display: grid;
+	gap: 0.6rem;
+	min-width: 0;
+	background: var(--bg);
+}
+
+.vd .mi-details summary {
+	cursor: pointer;
+	font-weight: 700;
+	min-height: 2.5rem;
+	display: flex;
+	align-items: center;
+}
+
+.vd .mi-table-wrap {
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+.vd .mi-table {
+	border-collapse: collapse;
+	width: 100%;
+	font-size: 0.85rem;
+}
+
+.vd .mi-table th,
+.vd .mi-table td {
+	text-align: left;
+	padding: 0.25rem 0.4rem;
+	border-top: 1px solid var(--ink);
+	font-weight: 500;
+	vertical-align: top;
+}
+
+.vd .mi-table thead th {
+	font-weight: 700;
+}
+
+.vd .mi-table td {
+	font-family: var(--font-mono);
+}
+
+.vd .mi-check {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.6rem;
+	font-size: 0.875rem;
+	min-height: 2.75rem;
+}
+
+.vd .mi-swatches {
+	display: flex;
+	gap: 0.4rem;
+	flex-wrap: wrap;
+}
+
+.vd .mi-swatch {
+	width: 2.5rem;
+	height: 2.5rem;
+	border: var(--border-w) solid var(--ink);
+	background: var(--dot, transparent);
+	cursor: pointer;
+	padding: 0;
+	font: inherit;
+	font-size: 0.7rem;
+	color: var(--ink);
+}
+
+.vd .mi-swatch[aria-pressed='true'] {
+	box-shadow: var(--shadow-sm);
+	outline: 3px solid var(--ink);
+	outline-offset: 1px;
+}

@@ -11,6 +11,7 @@ import {
 	trackedCompanies,
 	userNotificationSettings
 } from '$lib/server/db/valuationSchema';
+import { watchlistSectionItems } from '$lib/server/db/marketIntelSchema';
 import { classifyAnnouncement } from '../announcementTags';
 import { isDue, type ParsedMeeting } from '../boardMeetings';
 import type { ParsedDeal } from '../deals';
@@ -166,10 +167,12 @@ export async function setOnlyImportant(userId: number, onlyImportant: boolean) {
 		});
 }
 
-/** Symbols to build the calendar for: everything tracked by anybody plus the watchlist. */
+/** Symbols to build the calendar for: everything tracked by anybody, the watchlist and anyone's list sections. */
 export async function calendarSymbols(): Promise<string[]> {
 	const tracked = await db.selectDistinct({ symbol: trackedCompanies.nseSymbol }).from(trackedCompanies);
-	return [...new Set([...tracked.map((t) => t.symbol), ...(await watchlistNseSymbols())])];
+	const sectioned = await db.selectDistinct({ symbol: watchlistSectionItems.nseSymbol }).from(watchlistSectionItems);
+	const nse = (s: string) => /^[A-Z0-9&-]{1,20}$/.test(s) && !/^\d+$/.test(s);
+	return [...new Set([...tracked.map((t) => t.symbol), ...(await watchlistNseSymbols()), ...sectioned.map((t) => t.symbol).filter(nse)])];
 }
 
 // ---- bulk / block deals ----

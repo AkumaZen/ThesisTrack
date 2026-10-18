@@ -4,6 +4,7 @@ import { fetchLatestDeals } from './nseDeals';
 import { fetchShareholding, type ShareholdingParsed } from './shareholding';
 import type { ParsedDeal } from '../deals';
 import { distinctTrackedSymbols } from './announcementStore';
+import { isNewHoldingPeriod } from '../alertRules';
 import {
 	calendarSymbols,
 	claimDueSymbols,
@@ -11,6 +12,7 @@ import {
 	markRefreshFailed,
 	saveDeals,
 	saveMeetings,
+	getShareholding,
 	saveShareholding,
 	tagUntagged
 } from './intelStore';
@@ -37,10 +39,12 @@ export interface IntelSummary {
 	meetingsStored: number;
 	newDeals: number;
 	shareholdingUpdated: number;
+	/** Companies whose latest shareholding is a new quarter compared with what we held. */
+	newHoldingPeriods: string[];
 	errors: string[];
 }
 
-export const emptyIntelSummary = (): IntelSummary => ({ tagged: 0, calendarSymbols: 0, meetingsStored: 0, newDeals: 0, shareholdingUpdated: 0, errors: [] });
+export const emptyIntelSummary = (): IntelSummary => ({ tagged: 0, calendarSymbols: 0, meetingsStored: 0, newDeals: 0, shareholdingUpdated: 0, newHoldingPeriods: [], errors: [] });
 
 export interface IntelDeps {
 	fetchMeetings: (symbol: string, now: Date) => Promise<ParsedMeeting[]>;
@@ -105,6 +109,8 @@ export async function refreshShareholding(deps: Pick<IntelDeps, 'fetchShareholdi
 		try {
 			const parsed = await deps.fetchShareholding(symbol);
 			if (!parsed) throw new Error('no shareholding table');
+			const stored = await getShareholding(symbol);
+			if (isNewHoldingPeriod(stored?.period ?? null, parsed.period)) summary.newHoldingPeriods.push(symbol);
 			await saveShareholding(symbol, parsed);
 			summary.shareholdingUpdated++;
 		} catch (err) {
