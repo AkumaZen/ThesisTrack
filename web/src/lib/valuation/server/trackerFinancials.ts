@@ -1,17 +1,20 @@
 import * as cheerio from 'cheerio';
 
+/** One Screener statement section as reported: period headings plus labelled rows. */
+export function screenerTable($: cheerio.CheerioAPI, section: string) {
+	const element = $(`#${section} table`).first();
+	const years = element.find('thead th').toArray().slice(1).map((cell) => $(cell).text().trim());
+	const rows = element.find('tbody tr').toArray().map((row) => ({
+		label: $(row).find('td').first().text().replace(/\s+/g, ' ').trim(),
+		values: $(row).find('td').toArray().slice(1).map((cell) => $(cell).text().replace(/\s+/g, ' ').trim())
+	})).filter((row) => row.label && row.values.length);
+	return { years, rows };
+}
+
 /** In-process Screener adapter: complete statements, preserving reported labels and blanks. */
 export function parseTrackerFinancials(html: string, url: string) {
 	const $ = cheerio.load(html);
-	const table = (section: string) => {
-		const element = $(`#${section} table`).first();
-		const years = element.find('thead th').toArray().slice(1).map((cell) => $(cell).text().trim());
-		const rows = element.find('tbody tr').toArray().map((row) => ({
-			label: $(row).find('td').first().text().replace(/\s+/g, ' ').trim(),
-			values: $(row).find('td').toArray().slice(1).map((cell) => $(cell).text().replace(/\s+/g, ' ').trim())
-		})).filter((row) => row.label && row.values.length);
-		return { years, rows };
-	};
+	const table = (section: string) => screenerTable($, section);
 	const metrics = $('#top-ratios li').toArray().map((item) => $(item).text().replace(/\s+/g, ' ').trim());
 	const links = $('#company-info a, .company-links a').toArray().map((a) => ({ title: $(a).text().trim(), url: $(a).attr('href') ?? '' }));
 	// Concall rows read "Jul 2026 | Transcript | AI Summary | PPT": the month the call was held, then its documents.
@@ -35,15 +38,21 @@ export function parseTrackerFinancials(html: string, url: string) {
 	};
 }
 
-export async function nativeTrackerFinancials(symbol: string) {
+/** Fetches the company page (consolidated first) and parses it; the HTML is returned for extra sections such as ratios. */
+export async function fetchScreenerPage(symbol: string) {
 	if (!/^[A-Z0-9&_.-]{1,40}$/i.test(symbol)) throw new Error('Invalid company identifier');
 	const base = `https://www.screener.in/company/${encodeURIComponent(symbol)}/`;
 	for (const url of [base + 'consolidated/', base]) {
 		const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' }, signal: AbortSignal.timeout(30000) });
 		if (response.status === 404) continue;
 		if (!response.ok) throw new Error(`Financial source returned HTTP ${response.status}`);
-		const result = parseTrackerFinancials(await response.text(), url);
-		if (result.get_quarterly_results.years.length && result.get_financials_profit_loss.years.length) return result;
+		const html = await response.text();
+		const result = parseTrackerFinancials(html, url);
+		if (result.get_quarterly_results.years.length && result.get_financials_profit_loss.years.length) return { result, html };
 	}
 	throw new Error('No reported financial statements found for this company');
+}
+
+export async function nativeTrackerFinancials(symbol: string) {
+	return (await fetchScreenerPage(symbol)).result;
 }
