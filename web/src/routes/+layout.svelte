@@ -6,6 +6,7 @@
 	import { session } from '$lib/session.svelte';
 	import AppHeader from '$lib/components/shell/AppHeader.svelte';
 	import KeyboardShortcuts from '$lib/components/shell/KeyboardShortcuts.svelte';
+	import PushPrompt from '$lib/components/shell/PushPrompt.svelte';
 
 	let { children, data } = $props();
 
@@ -36,6 +37,7 @@
 
 {#if data.user && !data.user.mustChangePassword}
 	<AppHeader user={data.user} />
+	<PushPrompt userId={data.user.id} />
 	<KeyboardShortcuts />
 	<main id="main" class="app-main">
 		{@render children()}

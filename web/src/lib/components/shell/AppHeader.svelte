@@ -33,6 +33,7 @@
 		},
 		{ href: '/valuation/master-tracker', label: 'Master Tracker', match: starts('/valuation/master-tracker') },
 		{ href: '/valuation/alerts', label: 'Alerts', match: starts('/valuation/alerts') },
+		{ href: '/valuation/tracking', label: 'Tracked companies', match: starts('/valuation/tracking') },
 		{ href: '/valuation/settings', label: 'Settings', match: starts('/valuation/settings') }
 	];
 	const SECTOR: Tool[] = [

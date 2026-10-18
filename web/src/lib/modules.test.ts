@@ -11,6 +11,7 @@ describe('moduleOf', () => {
 		['/valuation/company/TCS', 'valuation'],
 		['/valuation/master-tracker', 'valuation'],
 		['/valuation/alerts', 'valuation'],
+		['/valuation/tracking', 'valuation'],
 		['/valuation/settings', 'valuation'],
 		['/valuation/sector-rotation', 'sector'],
 		['/valuation/sector-rotation/auto', 'sector'],
