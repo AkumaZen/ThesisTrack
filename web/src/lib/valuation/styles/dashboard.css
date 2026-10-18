@@ -4954,3 +4954,278 @@
 		min-height: 40px;
 	}
 }
+
+/* Scan Match: preset scans a stock passes now */
+.vd .preset-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 4px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.vd .preset-badge {
+	font-family: var(--font-sans);
+	font-size: 10.5px;
+	font-weight: 600;
+	line-height: 1.3;
+	padding: 1px 6px;
+	border: 1.5px solid var(--ink);
+	background: var(--blue-bg);
+	color: var(--ink);
+}
+
+.vd .preset-none {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.vd .scan-match-line {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 10px;
+	margin-top: 8px;
+}
+
+.vd .scan-match-line .preset-badges {
+	margin: 0;
+}
+
+.vd .scan-match-line .scan-match-label {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.vd .preset-chips {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.vd .preset-chips-label {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	font-weight: 600;
+	margin-right: 4px;
+}
+
+.vd .preset-note {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	color: var(--muted);
+	margin: 0 0 12px;
+}
+
+.vd .scan-table td.scan-why {
+	white-space: normal;
+	min-width: 200px;
+	font-family: var(--font-sans);
+	font-size: 12px;
+}
+
+/* Chart grid: mini price chart tiles for scanner results and the watchlist */
+.vd .view-toggle {
+	display: inline-flex;
+}
+
+.vd .view-toggle button {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	font-weight: 600;
+	padding: 5px 12px;
+	color: var(--ink);
+	background: var(--zebra);
+	border: var(--border-w) solid var(--ink);
+	cursor: pointer;
+}
+
+.vd .view-toggle button + button {
+	margin-left: -2px;
+}
+
+.vd .view-toggle button[aria-pressed='true'] {
+	color: var(--accent-ink);
+	background: var(--blue);
+	border-color: var(--blue);
+}
+
+.vd .view-toggle button:focus-visible {
+	outline: 2px solid var(--blue);
+	outline-offset: 1px;
+	position: relative;
+}
+
+.vd .chart-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 12px;
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+@media (min-width: 600px) {
+	.vd .chart-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 900px) {
+	.vd .chart-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 1200px) {
+	.vd .chart-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+.vd .cg-tile {
+	min-width: 0;
+}
+
+.vd .cg-link {
+	display: grid;
+	gap: 4px;
+	padding: 10px 12px;
+	color: var(--ink);
+	text-decoration: none;
+	background: var(--bg);
+	border: var(--border-w) solid var(--ink);
+}
+
+.vd .cg-link:hover {
+	background: var(--blue-bg);
+}
+
+.vd .cg-link:focus-visible {
+	outline: 2px solid var(--blue);
+	outline-offset: 2px;
+}
+
+.vd .cg-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.vd .cg-symbol {
+	font-weight: 700;
+	font-size: 14px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.vd .cg-change,
+.vd .cg-price {
+	font-family: var(--font-mono);
+	font-size: 12.5px;
+	white-space: nowrap;
+}
+
+.vd .cg-name {
+	font-family: var(--font-sans);
+	font-size: 11px;
+	color: var(--muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.vd .cg-chart {
+	display: block;
+	width: 100%;
+	height: 56px;
+}
+
+.vd .cg-chart polyline {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	vector-effect: non-scaling-stroke;
+}
+
+.vd .cg-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-sans);
+	font-size: 11px;
+	color: var(--muted);
+	background: var(--zebra);
+}
+
+.vd .cg-up {
+	color: var(--green);
+}
+
+.vd .cg-down {
+	color: var(--red);
+}
+
+/* Sector basket earnings trend */
+.vd .sector-earnings {
+	margin-top: 20px;
+}
+
+.vd .se-heading {
+	font-size: 16px;
+	margin: 0 0 4px;
+}
+
+.vd .se-coverage {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	color: var(--muted);
+	margin: 0 0 10px;
+}
+
+.vd .se-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.vd .se-table th,
+.vd .se-table td {
+	padding: 6px 10px;
+	white-space: nowrap;
+	text-align: left;
+	border-bottom: 1px solid var(--surface-3);
+}
+
+.vd .se-table th.num,
+.vd .se-table td.num {
+	text-align: right;
+}
+
+.vd .se-table tbody th {
+	font-weight: 600;
+}
+
+.vd .se-sub {
+	display: block;
+	font-family: var(--font-sans);
+	font-size: 10.5px;
+	color: var(--muted);
+}
+
+.vd .se-up {
+	color: var(--green);
+}
+
+.vd .se-down {
+	color: var(--red);
+}
+
+.vd .se-table tbody th {
+	background: transparent;
+}

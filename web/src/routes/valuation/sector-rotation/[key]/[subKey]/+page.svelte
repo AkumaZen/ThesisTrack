@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import ConstituentCard from '$lib/valuation/components/ConstituentCard.svelte';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
+	import SectorEarnings from '$lib/valuation/components/SectorEarnings.svelte';
 	import Pagination from '$lib/valuation/components/Pagination.svelte';
 	import { untrack } from 'svelte';
 	import { refreshSymbols } from '$lib/valuation/seriesRefresh';
@@ -209,6 +210,10 @@
 			bind:openState={strengthPanel}
 		/>
 	</div>
+
+	{#if data.earnings}
+		<SectorEarnings earnings={data.earnings} label={data.label} />
+	{/if}
 
 	<div class="timeframe-bar" style="margin-top:20px">
 		<span class="sector-sort-label">Chart range</span>

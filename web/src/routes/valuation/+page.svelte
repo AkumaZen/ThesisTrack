@@ -3,6 +3,11 @@
 	import { untrack } from 'svelte';
 	import { tabWatchlistPrefs } from '$lib/valuation/tabPrefs';
 	import { trackView } from '$lib/viewMemory.svelte';
+	import ChartGrid from '$lib/valuation/components/ChartGrid.svelte';
+	import ViewToggle from '$lib/valuation/components/ViewToggle.svelte';
+	import { lastChangePct, type GridItem } from '$lib/valuation/chartGrid';
+	import PresetBadges from '$lib/valuation/components/PresetBadges.svelte';
+	import type { PresetId } from '$lib/valuation/presetScans';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -112,6 +117,25 @@
 	// new reference via map/filter/spread — nothing ever mutates a row's fields in place — so
 	// there's no need to pay for Svelte's deep reactive proxy on every row object.
 	let watchRows = $state.raw<WatchRow[]>([]);
+
+	// Scan Match badges: the preset scans each watchlist company passes now, from stored scan results.
+	// A failure just leaves the badges off; the watchlist does not depend on them.
+	let presetMatches = $state.raw<Record<string, PresetId[]>>({});
+	let presetKey = '';
+	$effect(() => {
+		const symbols = watchRows.map((r) => r.symbol).sort().slice(0, 300);
+		const key = symbols.join(',');
+		if (!key || key === presetKey) return;
+		presetKey = key;
+		void (async () => {
+			try {
+				const res = await fetch(`/api/valuation/presets?symbols=${encodeURIComponent(key)}`);
+				if (res.ok) presetMatches = ((await res.json()) as { matches: Record<string, PresetId[]> }).matches;
+			} catch {
+				// badges are optional
+			}
+		})();
+	});
 
 	function readScenario(
 		method: MethodId,
@@ -597,6 +621,18 @@
 		return n == null ? '' : `${Math.round(n)}%`;
 	}
 
+	// List or chart grid. The grid shows the same rows in the same order; its change is the last stored session.
+	let layout = $state<'list' | 'grid'>('list');
+	const gridItems = $derived<GridItem[]>(
+		sortedRows.map((r) => ({
+			symbol: r.symbol,
+			name: r.name,
+			price: r.cmp,
+			changePct: lastChangePct(r.sparkline),
+			closes: r.sparkline
+		}))
+	);
+
 	// A 60x20 SVG polyline of the last ~90 daily closes, normalized to the row's own min/max —
 	// each sparkline is scaled to its own range, so it shows shape (the trend), not magnitude.
 	function sparklinePoints(closes: number[] | null): string | null {
@@ -1021,6 +1057,7 @@
 				</div>
 				<div class="wl-tools">
 					<ColumnChooser {columns} onChange={setColumns} />
+					<ViewToggle bind:value={layout} />
 					<button
 						class="wl-strip-btn"
 						type="button"
@@ -1120,6 +1157,9 @@
 					{/if}
 				</p>
 			{:else}
+				{#if layout === 'grid'}
+					<ChartGrid items={gridItems} />
+				{:else}
 				<!-- Scrollable regions must be keyboard-focusable (WCAG 2.1.1). -->
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 				<div class="table-scroll" tabindex="0" role="region" aria-label="Watchlist table">
@@ -1189,6 +1229,7 @@
 													>{r.methodLabel.split(' — ')[0]} · FY+2E</span
 												>{/if}
 										</span>
+									<PresetBadges ids={presetMatches[r.symbol] ?? []} />
 									</td>
 									{#if r.error}
 										<td colspan={columns.length} class="wl-error">
@@ -1230,6 +1271,7 @@
 						</tbody>
 					</table>
 				</div>
+				{/if}
 			{/if}
 		</div>
 	{:else if savedLoaded}

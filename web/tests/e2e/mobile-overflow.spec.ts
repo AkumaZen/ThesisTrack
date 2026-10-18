@@ -64,7 +64,8 @@ test.describe('phone width', () => {
 		});
 		const routes = [
 			'/', '/review', '/guidance', '/ingest', '/export', '/sectors', '/account/password', '/admin/users',
-			'/valuation', '/valuation/sector-rotation', '/valuation/sectors', '/valuation/stage-scanner', '/valuation/alerts', '/valuation/settings', '/valuation/tracking'
+			'/valuation', '/valuation/sector-rotation', '/valuation/sectors', '/valuation/stage-scanner', '/valuation/stage-scanner?preset=near-high', '/valuation/company/HDFCBANK',
+			'/valuation/sector-rotation/conventional_energy/transformers_manufacturing', '/valuation/alerts', '/valuation/settings', '/valuation/tracking'
 		];
 		for (const route of routes) test(`${route} has no sideways page scroll`, async ({ page }) => visit(page, route));
 	});

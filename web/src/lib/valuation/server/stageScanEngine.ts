@@ -84,6 +84,8 @@ export async function getStageScanResult(
 		row &&
 		row.structuralSourceDate === latestClosedDate &&
 		cachedStructural != null &&
+		// Rows saved before the preset scans existed have no preset numbers: recompute them once.
+		cachedStructural.presets !== undefined &&
 		resultParamsKey(cachedStructural) === scanParamsKey(params)
 	) {
 		structural = row.structural as StructuralResult;

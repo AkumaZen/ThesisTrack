@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { tick } from 'svelte';
 	import type { PageData } from './$types';
+	import PresetBadges from '$lib/valuation/components/PresetBadges.svelte';
 	import {
 		project,
 		cagr,
@@ -677,6 +678,15 @@
 					})}>{path.majorLabel} &rsaquo; {path.basketLabel} &rarr;</a
 				>
 			{/each}
+		</div>
+		<div class="scan-match-line" data-testid="scan-match">
+			<span class="scan-match-label">Scan Match</span>
+			{#if data.scanMatch}
+				<PresetBadges ids={data.scanMatch} empty="Passes none of the preset scans" />
+			{:else}
+				<span class="preset-none">No stored prices to scan yet</span>
+			{/if}
+			<span class="co-links"><a href={resolve('/valuation/stage-scanner')}>Preset scans &rarr;</a></span>
 		</div>
 		<div class="wl-strip" data-testid="watchlist-strip">
 			{#if hydratedFor !== company.symbol}

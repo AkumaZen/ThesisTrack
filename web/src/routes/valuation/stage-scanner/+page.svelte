@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import type { Stage, StageScanResult } from '$lib/valuation/stageScan';
 	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
@@ -15,6 +17,19 @@
 		type ScanEntry,
 		type ScanFilters
 	} from '$lib/valuation/scannerFilters';
+	import ChartGrid from '$lib/valuation/components/ChartGrid.svelte';
+	import ViewToggle from '$lib/valuation/components/ViewToggle.svelte';
+	import { changeVsPrev, type GridItem } from '$lib/valuation/chartGrid';
+	import PresetBadges from '$lib/valuation/components/PresetBadges.svelte';
+	import {
+		PRESETS,
+		matchedPresets,
+		percentileRanks,
+		presetDetail,
+		rsBasis,
+		type PresetId,
+		type PresetInput
+	} from '$lib/valuation/presetScans';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -212,8 +227,49 @@
 		}
 	}
 
+	// Preset scans. The choice is kept in the address (?preset=near-high) so a scan can be shared.
+	const presetFromUrl = page.url.searchParams.get('preset');
+	let presetFilter = $state<PresetId | 'all'>(
+		PRESETS.some((p) => p.id === presetFromUrl) ? (presetFromUrl as PresetId) : 'all'
+	);
+	function pickPreset(next: PresetId | 'all') {
+		presetFilter = next;
+		const url = new URL(page.url);
+		if (next === 'all') url.searchParams.delete('preset');
+		else url.searchParams.set('preset', next);
+		replaceState(url, page.state);
+	}
+	// Without a stored Nifty 500, relative strength falls back to rank within the scanned universe.
+	const rank3m = $derived(percentileRanks(new Map(loaded.map((x) => [x.symbol, x.r.presets?.ret3m ?? null]))));
+	const rank6m = $derived(percentileRanks(new Map(loaded.map((x) => [x.symbol, x.r.presets?.ret6m ?? null]))));
+	function presetInput(x: ScanEntry): PresetInput {
+		const a = rank3m.get(x.symbol);
+		const b = rank6m.get(x.symbol);
+		return {
+			stage: x.r.stage,
+			metrics: x.r.presets,
+			growth: data.growth[x.symbol] ?? null,
+			universeRank: a != null && b != null ? { r3m: a, r6m: b } : null
+		};
+	}
+	const matches = $derived(new Map(loaded.map((x) => [x.symbol, matchedPresets(presetInput(x))])));
+	const inScope = $derived(loaded.filter((x) => matchesFilters(x, filters)));
+	const presetCounts = $derived(
+		Object.fromEntries(
+			PRESETS.map((p) => [p.id, inScope.filter((x) => matches.get(x.symbol)?.includes(p.id)).length])
+		)
+	);
+	const growthCoverage = $derived(loaded.filter((x) => data.growth[x.symbol]).length);
+	const usesUniverseRank = $derived(loaded.some((x) => rsBasis(x.r.presets) === 'universe'));
+	const activePreset = $derived(PRESETS.find((p) => p.id === presetFilter) ?? null);
+
+	// List or chart grid for the results.
+	let layout = $state<'list' | 'grid'>('list');
+
 	const rows = $derived.by(() => {
-		const out = loaded.filter((x) => matchesFilters(x, filters));
+		const out = inScope.filter(
+			(x) => presetFilter === 'all' || matches.get(x.symbol)?.includes(presetFilter)
+		);
 		return out.sort((a, b) => {
 			const va = sortValue(a, sort.key);
 			const vb = sortValue(b, sort.key);
@@ -236,12 +292,21 @@
 	// ~1,700 rows would make every sort and filter re-render a very long table: show a page at a time.
 	const ROWS_STEP = 100;
 	let visible = $state(ROWS_STEP);
-	const filterKey = $derived(JSON.stringify([filters, sort]));
+	const filterKey = $derived(JSON.stringify([filters, sort, presetFilter]));
 	$effect(() => {
 		void filterKey;
 		untrack(() => (visible = ROWS_STEP));
 	});
 	const shown = $derived(rows.slice(0, visible));
+
+	const gridItems = $derived<GridItem[]>(
+		rows.map(({ symbol, r }) => ({
+			symbol,
+			name: nameOf(symbol),
+			price: r.effectivePrice,
+			changePct: changeVsPrev(r.effectivePrice, r.presets?.prevClose)
+		}))
+	);
 
 	// Companies on the list that Angel One cannot price: listed apart, never fetched.
 	const noPriceRows = $derived(
@@ -375,6 +440,39 @@
 		{/each}
 	</div>
 
+	<div class="preset-chips no-print" role="group" aria-label="Preset scans" data-testid="preset-chips">
+		<span class="preset-chips-label">Preset scan</span>
+		<button
+			type="button"
+			class="al-chip"
+			class:al-chip-on={presetFilter === 'all'}
+			aria-pressed={presetFilter === 'all'}
+			onclick={() => pickPreset('all')}>None</button
+		>
+		{#each PRESETS as p (p.id)}
+			<button
+				type="button"
+				class="al-chip"
+				class:al-chip-on={presetFilter === p.id}
+				aria-pressed={presetFilter === p.id}
+				title={p.description}
+				data-testid="preset-chip"
+				onclick={() => pickPreset(p.id)}>{p.label} <span>{presetCounts[p.id]}</span></button
+			>
+		{/each}
+	</div>
+	{#if activePreset}
+		<p class="preset-note" data-testid="preset-note">
+			{activePreset.description}
+			{#if activePreset.id === 'relative-strength' && usesUniverseRank}
+				No Nifty 500 series is stored for some of these, so they are ranked inside our own universe instead.
+			{/if}
+			{#if activePreset.id === 'growth-stage2'}
+				Quarterly results are stored for {growthCoverage} of {loaded.length} scanned stocks; the rest cannot be judged.
+			{/if}
+		</p>
+	{/if}
+
 	<div class="scan-toolbar no-print">
 		<label>
 			<span class="sr-only">Search companies</span>
@@ -405,6 +503,7 @@
 				{#each SIGNALS as sg (sg.key)}<option value={sg.key}>{sg.label}</option>{/each}
 			</select>
 		</label>
+		<ViewToggle bind:value={layout} />
 		<button
 			class="wl-strip-btn"
 			type="button"
@@ -437,6 +536,9 @@
 		<LoadHistoryPanel missing={missingHistory} onFinished={historyLoaded} />
 	{/if}
 
+	{#if layout === 'grid'}
+		<ChartGrid items={gridItems} fetchCloses />
+	{:else}
 	<div class="table-scroll">
 		<table class="scan-table" data-testid="scan-table">
 			<thead>
@@ -455,14 +557,18 @@
 							>
 						</th>
 					{/each}
+					{#if activePreset}<th scope="col">Why it matches</th>{/if}
 				</tr>
 			</thead>
 			<tbody>
-				{#each shown as { symbol, r } (symbol)}
+				{#each shown as entry (entry.symbol)}
+					{@const symbol = entry.symbol}
+					{@const r = entry.r}
 					<tr data-testid="scan-row">
 						<td>
 							<a href={resolve('/valuation/company/[symbol]', { symbol })}>{nameOf(symbol)}</a>
 							<span class="scan-sub">{symbol} · {data.basketsBySymbol[symbol]?.[0] ?? 'Unclassified'}</span>
+							<PresetBadges ids={matches.get(symbol) ?? []} />
 						</td>
 						<td>
 							<span class="scan-stage scan-{stageInfo(r.stage).tone}"
@@ -489,10 +595,11 @@
 								: '-'}</td
 						>
 						<td class="num" title={mcapNote}>{formatCr(data.mcapBySymbol[symbol])}</td>
+							{#if activePreset}<td class="scan-why">{presetDetail(activePreset.id, presetInput(entry)) || '-'}</td>{/if}
 					</tr>
 				{:else}
 					<tr>
-						<td colspan={COLUMNS.length} class="muted scan-empty" data-testid="scan-empty">
+						<td colspan={COLUMNS.length + (activePreset ? 1 : 0)} class="muted scan-empty" data-testid="scan-empty">
 							{pending.length > 0
 								? 'Nothing matches yet - more stocks are still being scanned.'
 								: 'No stocks match these filters.'}
@@ -510,6 +617,8 @@
 			>
 			<span class="hint">{shown.length} of {rows.length} shown</span>
 		</p>
+	{/if}
+
 	{/if}
 
 	{#if noPriceRows.length > 0}

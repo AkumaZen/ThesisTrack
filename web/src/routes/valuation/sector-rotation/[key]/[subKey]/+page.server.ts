@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { getSectorEarnings } from '$lib/valuation/server/sectorEarningsStore';
 import { findAnyMajorSector, findAnyCustomSector } from '$lib/valuation/server/sectorStore';
 
 // Static metadata only — no live fetch, so this is instant. Each constituent's own chart/growth
@@ -14,11 +15,15 @@ export const load: PageServerLoad = async ({ params }) => {
 		error(404, `Unknown basket "${params.subKey}" in sector "${params.key}"`);
 	}
 
+	// Stored results only; a failure just leaves the panel off.
+	const earnings = await getSectorEarnings(sector.symbols).catch(() => null);
+
 	return {
 		majorKey: major.key,
 		majorLabel: major.label,
 		key: sector.key,
 		label: sector.label,
-		symbols: sector.symbols
+		symbols: sector.symbols,
+		earnings
 	};
 };

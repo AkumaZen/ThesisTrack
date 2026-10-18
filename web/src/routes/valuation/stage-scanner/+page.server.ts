@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { stageScanCache } from '$lib/server/db/valuationSchema';
 import { listAllBaskets, getSymbolNames } from '$lib/valuation/server/sectorStore';
+import { readQuarterlyGrowth } from '$lib/valuation/server/presetStore';
 import { getAnalysisSettings } from '$lib/valuation/server/analysisSettingsStore';
 import { listActiveUniverse, symbolsWithSeries, type UniverseCompany } from '$lib/valuation/server/mcapUniverseStore';
 import {
@@ -18,12 +19,14 @@ import {
 // The universe is the sector baskets plus the market cap list (valuation.mcap_universe); a
 // company on the list with no price source is shown apart and never scanned.
 export const load: PageServerLoad = async () => {
-	const [baskets, rows, settings, listed] = await Promise.all([
+	const [baskets, rows, settings, listed, growthMap] = await Promise.all([
 		listAllBaskets(),
 		db.select().from(stageScanCache),
 		getAnalysisSettings(),
 		// The list is optional: before migration 0020 / the import the scanner shows the baskets only.
-		listActiveUniverse().catch((): UniverseCompany[] => [])
+		listActiveUniverse().catch((): UniverseCompany[] => []),
+		// Stored quarterly results (only for companies someone has opened): the growth preset needs them.
+		readQuarterlyGrowth().catch(() => new Map())
 	]);
 	const basketsBySymbol: Record<string, string[]> = {};
 	for (const b of baskets) {
@@ -54,8 +57,10 @@ export const load: PageServerLoad = async () => {
 	const cached: Record<string, StageScanResult> = {};
 	for (const r of rows) {
 		const structural = r.structural as StructuralResult;
-		if (!known.has(r.symbol) || resultParamsKey(structural) !== key) continue;
+		// Rows saved before the preset scans existed (no preset numbers) are fetched fresh.
+		if (!known.has(r.symbol) || resultParamsKey(structural) !== key || structural.presets === undefined) continue;
 		cached[r.symbol] = combineLiveOverlay(structural, (r.live as LiveQuote | null) ?? null);
 	}
-	return { symbols, names, basketsBySymbol, cached, mcapBySymbol, mcapAsOf, noPriceSource, noSeries };
+	const growth = Object.fromEntries(growthMap);
+	return { symbols, names, basketsBySymbol, cached, mcapBySymbol, mcapAsOf, noPriceSource, noSeries, growth };
 };
