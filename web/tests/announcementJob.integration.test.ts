@@ -44,7 +44,9 @@ function deps(over: Partial<JobDeps> = {}): Partial<JobDeps> {
 		},
 		summariesOn: () => false,
 		pushOn: () => true,
+		telegramOn: () => false,
 		now: () => NOW,
+		intel: { fetchMeetings: async () => [], fetchDeals: async () => [], fetchShareholding: async () => null },
 		...over
 	};
 }

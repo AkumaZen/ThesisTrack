@@ -5,8 +5,9 @@ import type { SessionUser } from './auth';
 
 export type AccessDecision = 'allow' | 'login' | 'forbidden' | 'change-password';
 
-/** /api/cron/* checks its own CRON_SECRET (Vercel Cron calls it without a session). */
-const PUBLIC_PATHS = ['/login', '/logout', '/api/auth/login', '/api/health', '/api/cron'];
+/** /api/cron/* checks its own CRON_SECRET (Vercel Cron calls it without a session); the Telegram webhook
+ *  checks its own X-Telegram-Bot-Api-Secret-Token (Telegram's servers have no session either). */
+const PUBLIC_PATHS = ['/login', '/logout', '/api/auth/login', '/api/health', '/api/cron', '/api/telegram/webhook'];
 
 /** Pages only an admin may open (they edit shared configuration or manage people). */
 const ADMIN_PAGE_PREFIXES = ['/admin', '/valuation/sectors'];

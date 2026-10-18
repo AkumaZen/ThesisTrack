@@ -3,6 +3,9 @@
 	import CompanyPicker from '$lib/components/CompanyPicker.svelte';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { sectorApi } from '$lib/valuation/sectorClient';
+	import { ANNOUNCEMENT_TAGS, TAG_LABELS, isAnnouncementTag, type AnnouncementTag } from '$lib/valuation/announcementTags';
+	import { formatMeetingDay } from '$lib/valuation/boardMeetings';
+	import { formatQty } from '$lib/valuation/dealFormat';
 	import type { SymbolHit } from '$lib/valuation/symbolSearch';
 	import type { PageData } from './$types';
 
@@ -15,7 +18,32 @@
 		summary: string | null;
 		pdfUrl: string | null;
 		announcedAt: string;
+		tag: string | null;
 	}
+
+	interface Deal {
+		id: number;
+		kind: string;
+		dealDate: string;
+		clientName: string;
+		side: string;
+		quantity: number;
+		price: number | null;
+	}
+	interface Holding {
+		period: string;
+		prevPeriod: string | null;
+		pledgedPct: number | null;
+		rows: { label: string; value: number | null; change: number | null }[];
+	}
+	let deals = $state<Deal[]>([]);
+	let holding = $state<Holding | null>(null);
+	// Open by default on a wide screen, collapsed on a phone (the person can open it).
+	let wide = $state(false);
+	$effect(() => {
+		wide = window.matchMedia('(min-width: 640px)').matches;
+	});
+	const signed = (n: number | null) => (n == null ? 'n/a' : n > 0 ? `+${n.toFixed(2)}` : n.toFixed(2));
 
 	// Which company's announcements are open; the page's own pick until the person chooses one.
 	let chosen = $state<string | null>(null);
@@ -26,6 +54,14 @@
 	let loadingItems = $state(false);
 	let stale = $state(false);
 	let shown = $state(15);
+	let tagFilter = $state<AnnouncementTag | null>(null);
+	// null until the person flips the box; then their choice, else what the server says.
+	let onlyImportantPick = $state<boolean | null>(null);
+	const onlyImportant = $derived(onlyImportantPick ?? data.onlyImportant);
+	const tagOf = (i: Item): AnnouncementTag => (isAnnouncementTag(i.tag) ? i.tag : 'other');
+	const visible = $derived(tagFilter ? items.filter((i) => tagOf(i) === tagFilter) : items);
+	// Only tags that exist in the open list get a filter chip, in the fixed order of ANNOUNCEMENT_TAGS.
+	const presentTags = $derived(ANNOUNCEMENT_TAGS.filter((t) => items.some((i) => tagOf(i) === t)));
 	let status = $state<{ kind: 'ok' | 'error'; text: string } | null>(null);
 	let busy = $state(false);
 	let permission = $state<NotificationPermission | 'unsupported'>('unsupported');
@@ -43,12 +79,17 @@
 		}
 		const token = ++loadToken;
 		shown = 15;
+		tagFilter = null;
+		deals = [];
+		holding = null;
 		loadingItems = true;
 		fetch(`/api/valuation/tracking/${encodeURIComponent(symbol)}`)
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-			.then((body: { announcements: Item[]; stale: boolean }) => {
+			.then((body: { announcements: Item[]; stale: boolean; deals: Deal[]; shareholding: Holding | null }) => {
 				if (token !== loadToken) return;
 				items = body.announcements;
+				deals = body.deals;
+				holding = body.shareholding;
 				stale = body.stale;
 			})
 			.catch(() => {
@@ -109,6 +150,34 @@
 			: { kind: 'error', text: res.message };
 	}
 
+	let tgUrl = $state<string | null>(null);
+
+	async function connectTelegram() {
+		busy = true;
+		const res = await sectorApi<{ url: string }>('POST', '/api/valuation/push/telegram');
+		busy = false;
+		if (res.ok) tgUrl = res.data.url;
+		else status = { kind: 'error', text: res.message };
+	}
+
+	async function disconnectTelegram() {
+		busy = true;
+		const res = await sectorApi('DELETE', '/api/valuation/push/telegram');
+		busy = false;
+		tgUrl = null;
+		if (!res.ok) status = { kind: 'error', text: res.message };
+		await invalidateAll();
+	}
+
+	async function saveOnlyImportant(next: boolean) {
+		onlyImportantPick = next;
+		const res = await sectorApi('PUT', '/api/valuation/push/settings', { onlyImportant: next });
+		if (!res.ok) {
+			onlyImportantPick = !next;
+			status = { kind: 'error', text: res.message };
+		}
+	}
+
 	const when = (iso: string) =>
 		new Date(iso).toLocaleString('en-IN', {
 			day: '2-digit',
@@ -155,7 +224,48 @@
 				Allow notifications
 			</button>
 		{/if}
+		{#if data.telegram.available}
+			<div class="tk-tg" data-testid="telegram-box">
+				<strong>Telegram backup</strong>
+				{#if data.telegram.linked}
+					<p class="sm-hint">Connected. Alerts also arrive in your Telegram chat with the bot.</p>
+					<button class="sm-btn" type="button" disabled={busy} onclick={disconnectTelegram}>Disconnect Telegram</button>
+				{:else if tgUrl}
+					<p class="sm-hint">Open Telegram, press Start in the chat, then come back and check.</p>
+					<a class="sm-btn sm-btn-primary tk-link" href={tgUrl} target="_blank" rel="noopener noreferrer">Open Telegram</a>
+					<button class="sm-btn" type="button" onclick={() => invalidateAll()}>I pressed Start, check now</button>
+				{:else}
+					<p class="sm-hint">Get the same alerts in Telegram as a backup to push notifications.</p>
+					<button class="sm-btn" type="button" disabled={busy} onclick={connectTelegram}>Connect Telegram</button>
+				{/if}
+			</div>
+		{/if}
+		<label class="tk-check">
+			<input type="checkbox" checked={onlyImportant} onchange={(e) => saveOnlyImportant(e.currentTarget.checked)} />
+			<span>Only notify important filings (routine paperwork such as trading window notices is still listed, but not sent)</span>
+		</label>
 	</section>
+
+	{#if data.calendar.thisWeek.length || data.calendar.later.length}
+		<section class="tk-box" aria-labelledby="tk-cal" data-testid="results-calendar">
+			<h2 id="tk-cal">Upcoming results / board meetings</h2>
+			<p class="sm-hint">Your tracked companies and the watchlist. Dates are IST.</p>
+			{#each [{ title: 'This week', rows: data.calendar.thisWeek }, { title: 'Later', rows: data.calendar.later }] as group (group.title)}
+				{#if group.rows.length}
+					<h3 class="tk-sub">{group.title}</h3>
+					<ul class="tk-cal">
+						{#each group.rows as m (m.nseSymbol + m.meetingDate + m.isResults)}
+							<li class="tk-cal-row">
+								<span class="tk-cal-date">{formatMeetingDay(m.meetingDate)}</span>
+								<span class="tk-cal-co"><strong>{m.nseSymbol}</strong> {m.companyName}</span>
+								<span class="tk-tag" class:tk-tag-key={m.isResults}>{m.isResults ? 'Results' : m.purpose}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			{/each}
+		</section>
+	{/if}
 
 	<section class="tk-box" aria-labelledby="tk-add">
 		<h2 id="tk-add">Track a company</h2>
@@ -206,15 +316,66 @@
 				{#if stale}
 					<p class="sm-hint">NSE did not respond, so this may not include the latest announcements.</p>
 				{/if}
+				<details class="tk-hold" open={wide} data-testid="holdings">
+					<summary>Shareholding and deals (last 30 days)</summary>
+					{#if holding}
+						<table class="tk-table">
+							<caption>Shareholding pattern, {holding.period}{holding.prevPeriod ? `, change vs ${holding.prevPeriod}` : ''}</caption>
+							<thead>
+								<tr><th scope="col">Holder</th><th scope="col">%</th><th scope="col">QoQ (pts)</th></tr>
+							</thead>
+							<tbody>
+								{#each holding.rows as r (r.label)}
+									<tr>
+										<th scope="row">{r.label}</th>
+										<td>{r.value == null ? 'n/a' : r.value.toFixed(2)}</td>
+										<td>{signed(r.change)}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+						<p class="sm-hint">
+							{holding.pledgedPct == null
+								? 'No promoter pledge reported.'
+								: `Promoters have pledged ${holding.pledgedPct}% of their holding.`}
+						</p>
+					{:else}
+						<p class="sm-hint">Shareholding is fetched daily; nothing yet for this company.</p>
+					{/if}
+					{#if deals.length}
+						<ul class="tk-deals" aria-label="Bulk and block deals">
+							{#each deals as d (d.id)}
+								<li>
+									<span class="tk-meta">{d.dealDate} {d.kind === 'block' ? 'Block' : 'Bulk'}</span>
+									<span><strong>{d.side}</strong> {formatQty(d.quantity)} shares{d.price ? ` at Rs ${d.price}` : ''} by {d.clientName}</span>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="sm-hint">No bulk or block deals in the last 30 days.</p>
+					{/if}
+				</details>
 				{#if loadingItems && items.length === 0}
 					<p class="sm-hint">Loading announcements...</p>
 				{:else if items.length === 0}
 					<p class="sm-empty">No announcements in the last 90 days.</p>
 				{:else}
+					<div class="tk-filters" role="group" aria-label="Filter by type">
+						<button type="button" class="tk-tag tk-tagbtn" class:tk-tagbtn-on={tagFilter === null} aria-pressed={tagFilter === null} onclick={() => (tagFilter = null)}>All</button>
+						{#each presentTags as tag (tag)}
+							<button type="button" class="tk-tag tk-tagbtn" class:tk-tagbtn-on={tagFilter === tag} aria-pressed={tagFilter === tag} onclick={() => { tagFilter = tag; shown = 15; }}>{TAG_LABELS[tag]}</button>
+						{/each}
+					</div>
+					{#if visible.length === 0}
+						<p class="sm-empty">Nothing of this type in the last 90 days.</p>
+					{/if}
 					<ul class="tk-list" data-testid="announcement-list">
-						{#each items.slice(0, shown) as a (a.id)}
+						{#each visible.slice(0, shown) as a (a.id)}
 							<li class="tk-item">
-								<div class="tk-meta">{when(a.announcedAt)}</div>
+								<div class="tk-meta">
+									<span>{when(a.announcedAt)}</span>
+									<span class="tk-tag tk-tag-{tagOf(a)}">{TAG_LABELS[tagOf(a)]}</span>
+								</div>
 								<div class="tk-subject">{a.subject}</div>
 								{#if a.summary}
 									<p class="tk-summary">{a.summary}</p>
@@ -227,9 +388,9 @@
 							</li>
 						{/each}
 					</ul>
-					{#if items.length > shown}
+					{#if visible.length > shown}
 						<button class="sm-btn tk-more" type="button" onclick={() => (shown += 15)}>
-							Show more ({items.length - shown} older)
+							Show more ({visible.length - shown} older)
 						</button>
 					{/if}
 				{/if}
@@ -329,9 +490,173 @@
 		min-width: 0;
 	}
 	.tk-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem 0.6rem;
 		font-family: var(--font-mono);
 		font-size: 0.75rem;
 		color: var(--muted);
+	}
+	.tk-hold {
+		border: var(--border-w) solid var(--ink);
+		padding: 0.6rem 0.9rem;
+		display: grid;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+	.tk-hold summary {
+		cursor: pointer;
+		font-weight: 700;
+		min-height: 2.5rem;
+		display: flex;
+		align-items: center;
+	}
+	.tk-table {
+		border-collapse: collapse;
+		width: 100%;
+		font-size: 0.875rem;
+	}
+	.tk-table caption {
+		text-align: left;
+		font-size: 0.75rem;
+		color: var(--muted);
+		padding-bottom: 0.3rem;
+	}
+	.tk-table th,
+	.tk-table td {
+		text-align: left;
+		padding: 0.25rem 0.4rem;
+		border-top: 1px solid var(--ink);
+		font-weight: 500;
+	}
+	.tk-table thead th {
+		font-weight: 700;
+	}
+	.tk-table td {
+		font-family: var(--font-mono);
+	}
+	.tk-deals {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+	}
+	.tk-deals li {
+		display: grid;
+		gap: 0.1rem;
+		overflow-wrap: anywhere;
+		border-top: 1px solid var(--ink);
+		padding-top: 0.4rem;
+	}
+	.tk-tg {
+		display: grid;
+		gap: 0.4rem;
+		justify-items: start;
+		border-top: 1px solid var(--ink);
+		padding-top: 0.6rem;
+	}
+	.tk-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		text-decoration: none;
+	}
+	.tk-sub {
+		margin: 0.4rem 0 0;
+		font-size: 0.8rem;
+		font-family: var(--font-display);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+	.tk-check {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.6rem;
+		font-size: 0.875rem;
+		min-height: 2.75rem;
+		cursor: pointer;
+	}
+	.tk-check input {
+		width: 1.25rem;
+		height: 1.25rem;
+		flex: none;
+		margin-top: 0.1rem;
+	}
+	.tk-tag {
+		display: inline-block;
+		padding: 0.1rem 0.45rem;
+		border: 1.5px solid var(--ink);
+		background: var(--bg);
+		color: var(--ink);
+		font: 600 0.72rem/1.3 var(--font-body, inherit);
+		white-space: normal;
+	}
+	.tk-tag-key,
+	.tk-tag-results,
+	.tk-tag-order_win,
+	.tk-tag-fundraise,
+	.tk-tag-pledge,
+	.tk-tag-management,
+	.tk-tag-mna,
+	.tk-tag-regulatory {
+		background: var(--accent);
+		color: var(--accent-ink);
+	}
+	.tk-tag-routine {
+		border-style: dashed;
+		color: var(--muted);
+	}
+	.tk-filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.tk-tagbtn {
+		min-height: 2.5rem;
+		padding: 0.2rem 0.7rem;
+		font-size: 0.8rem;
+		cursor: pointer;
+	}
+	.tk-tagbtn-on {
+		background: var(--ink);
+		color: var(--bg);
+		box-shadow: var(--shadow-sm);
+	}
+	.tk-cal {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.4rem;
+	}
+	.tk-cal-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.1rem 0.6rem;
+		align-items: center;
+		border-top: 1px solid var(--ink);
+		padding-top: 0.4rem;
+	}
+	.tk-cal-date {
+		grid-column: 1 / -1;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--muted);
+	}
+	.tk-cal-co {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+	@media (min-width: 640px) {
+		.tk-cal-row {
+			grid-template-columns: 9.5rem minmax(0, 1fr) auto;
+		}
+		.tk-cal-date {
+			grid-column: auto;
+		}
 	}
 	.tk-subject {
 		font-weight: 700;

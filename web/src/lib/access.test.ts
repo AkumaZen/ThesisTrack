@@ -41,6 +41,9 @@ describe('decideAccess: signed out', () => {
 		expect(d('/api/auth/login', 'POST')).toBe('allow');
 		expect(d('/api/health')).toBe('allow');
 		expect(d('/api/cron/alerts')).toBe('allow');
+		expect(d('/api/telegram/webhook', 'POST')).toBe('allow'); // checks its own secret header
+		expect(d('/api/telegram/other', 'POST')).toBe('login');
+		expect(d('/api/valuation/push/telegram', 'POST')).toBe('login'); // linking needs a session
 		expect(d('/api/healthz')).toBe('login');
 	});
 
