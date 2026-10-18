@@ -14,6 +14,12 @@
 	top: var(--space-2);
 }
 
+/* The header is sticky: anything scrolled into view (focus, anchors, scrollIntoView) must stop below it,
+   not behind it. On phones the header is 155px tall, so the scanner's preset chips were hidden. */
+html {
+	scroll-padding-top: calc(var(--shell-h) + var(--space-2));
+}
+
 .shell {
 	position: sticky;
 	top: 0;
