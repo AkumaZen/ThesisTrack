@@ -16,7 +16,7 @@ import {
 import type { ParsedAnnouncement } from '../announcements';
 import type { ParsedAction } from '../corporateActions';
 import { INSIDER_PAGE_SIZE, txnTypesFor, type InsiderFilters, type ParsedInsiderTrade, type ParsedSast } from '../insiderTrades';
-import { FEED_PAGE_SIZE, likeContains, pickTrending, type FeedFilters, type WordCount } from '../announcementScans';
+import { FEED_PAGE_SIZE, STOPWORD_LIST, likeContains, pickTrending, type FeedFilters, type WordCount } from '../announcementScans';
 import { DEFAULT_HOLDING_SETTINGS, type HoldingAlertSettings, type NewPriceAlert } from '../alertRules';
 import { classifyAnnouncement } from '../announcementTags';
 import type { Flag } from '../watchlistSections';
@@ -145,6 +145,7 @@ export async function feedCoverage(): Promise<{ total: number; earliest: string 
 export async function trendingWords(now: Date, limit = 20) {
 	const weekAgo = new Date(now.getTime() - 7 * DAY_MS).toISOString();
 	const twoWeeksAgo = new Date(now.getTime() - 14 * DAY_MS).toISOString();
+	const stopwords = sql.join(STOPWORD_LIST.map((w) => sql`${w}`), sql`, `);
 	const rows = await db.execute(sql`
 		select word,
 		       (count(*) filter (where announced_at >= ${weekAgo}::timestamptz))::int as current,
@@ -154,11 +155,11 @@ export async function trendingWords(now: Date, limit = 20) {
 			from valuation.announcements
 			where announced_at >= ${twoWeeksAgo}::timestamptz
 		) w
-		where length(word) >= 4
+		where length(word) >= 4 and word ~ '^[a-z][a-z-]*$' and word not in (${stopwords})
 		group by word
 		having count(*) filter (where announced_at >= ${weekAgo}::timestamptz) >= 3
 		order by current desc
-		limit 200`);
+		limit 400`);
 	return pickTrending([...rows] as unknown as WordCount[], limit);
 }
 

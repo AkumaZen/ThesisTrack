@@ -54,6 +54,7 @@ export interface MarketIntelDeps {
 	fetchSymbolActions: (symbol: string, from: string, to: string) => Promise<ParsedAction[]>;
 	fetchSymbolInsider: (symbol: string, from: string, to: string) => Promise<ParsedInsiderTrade[]>;
 	fetchSymbolSast: (symbol: string, from: string, to: string) => Promise<ParsedSast[]>;
+	prune: (now: Date) => Promise<number>;
 	now: () => Date;
 }
 
@@ -65,6 +66,7 @@ export const defaultMarketDeps: MarketIntelDeps = {
 	fetchSymbolActions,
 	fetchSymbolInsider,
 	fetchSymbolSast,
+	prune: (now) => pruneFeed(now),
 	now: () => new Date()
 };
 
@@ -151,7 +153,7 @@ export async function runMarketIntel(overrides: Partial<MarketIntelDeps> = {}, b
 	}
 
 	if ((await claimDueSymbols('feed-prune', ['*'], now, PRUNE_INTERVAL_MS, 1)).length) {
-		summary.pruned = await pruneFeed(now).catch((err) => {
+		summary.pruned = await deps.prune(now).catch((err) => {
 			summary.errors.push(`prune: ${message(err)}`);
 			return 0;
 		});

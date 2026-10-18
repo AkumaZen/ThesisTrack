@@ -46,6 +46,8 @@ function deps(over: Partial<JobDeps> = {}): Partial<JobDeps> {
 		pushOn: () => true,
 		telegramOn: () => false,
 		now: () => NOW,
+		// Personal price alerts are not under test here: no prices, so nothing fires.
+		alerts: { liveQuotes: async () => new Map(), storedCloses: async () => new Map(), marketOpen: () => false },
 		intel: { fetchMeetings: async () => [], fetchDeals: async () => [], fetchShareholding: async () => null },
 		...over
 	};

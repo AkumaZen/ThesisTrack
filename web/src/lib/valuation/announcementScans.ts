@@ -98,11 +98,10 @@ export function feedQuery(f: Partial<FeedFilters>, page = f.page ?? 1): string {
 export const feedTags: readonly AnnouncementTag[] = ANNOUNCEMENT_TAGS;
 
 // Words that say nothing about what happened. Short words and numbers are dropped separately.
-const STOPWORDS = new Set(
-	(
+export const STOPWORD_LIST: string[] = (
 		'about above after again against also another because been before being below between both company could does during each from further have having here into more most other over regulation regulations said same securities shares share should than that their them then there these they this those through under until upon very what when where which while will with within would your limited ltd has informed exchange pursuant disclosure disclosures requirements listing obligations sebi lodr board directors meeting held intimation attached attachment copy dated date please find enclosed regarding reg per cent lakh crore rupees india indian'
-	).split(' ')
-);
+	).split(' ');
+const STOPWORDS = new Set(STOPWORD_LIST);
 
 export interface WordCount {
 	word: string;

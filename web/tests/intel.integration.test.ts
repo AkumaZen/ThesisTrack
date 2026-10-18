@@ -71,6 +71,8 @@ function deps(over: Partial<JobDeps> = {}): Partial<JobDeps> {
 		pushOn: () => true,
 		telegramOn: () => false,
 		now: () => NOW,
+		// Personal price alerts are not under test here: no prices, so nothing fires.
+		alerts: { liveQuotes: async () => new Map(), storedCloses: async () => new Map(), marketOpen: () => false },
 		intel: {
 			fetchDeals: async () => [],
 			// Only this test's company gets a (fixture) pattern. Other companies tracked in a shared
@@ -224,6 +226,16 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 			...over
 		});
 		let dealFetches = 0;
+		// Other companies tracked in a shared database must not use up the per-run shareholding cap.
+		const others = (await db.selectDistinct({ symbol: trackedCompanies.nseSymbol }).from(trackedCompanies))
+			.map((r) => r.symbol)
+			.filter((s) => s !== SYMBOL);
+		if (others.length) {
+			await db
+				.insert(symbolRefresh)
+				.values(others.map((symbol) => ({ kind: 'shareholding', symbol, refreshedAt: later, ok: true })))
+				.onConflictDoUpdate({ target: [symbolRefresh.kind, symbolRefresh.symbol], set: { refreshedAt: later, ok: true } });
+		}
 		const run = () =>
 			runAnnouncementCheck(
 				deps({
