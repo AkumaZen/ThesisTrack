@@ -7,6 +7,8 @@
  * unchanged by both the scan engine (server) and any client-side display logic.
  */
 
+import { computePresetMetrics, type PresetMetrics } from './presetScans';
+
 export interface Candle {
 	date: string;
 	open: number;
@@ -66,6 +68,8 @@ export interface StructuralResult {
 	dataPoints: number;
 	/** scanParamsKey() of the thresholds this was computed with (absent on older cache rows). */
 	paramsKey?: string;
+	/** Numbers the preset scans read (absent on cache rows from before they existed). */
+	presets?: PresetMetrics | null;
 }
 
 export interface LiveQuote {
@@ -506,7 +510,8 @@ export function computeStructuralResult(
 		mansfieldRSTrend,
 		stage,
 		dataPoints: n,
-		paramsKey: scanParamsKey(params)
+		paramsKey: scanParamsKey(params),
+		presets: computePresetMetrics(candles, indexCloses)
 	};
 }
 

@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getCompanyData } from '$lib/valuation/server/companyCache';
 import { listAllBaskets, listAllMajorSectors } from '$lib/valuation/server/sectorStore';
+import { scanMatchFor } from '$lib/valuation/server/presetStore';
 import { startingTemplateFor } from '$lib/valuation/server/templatesStore';
 import { db } from '$lib/server/db';
 import { companies } from '$lib/server/db/schema';
@@ -42,13 +43,15 @@ async function sectorsFor(symbol: string) {
 export const load: PageServerLoad = async ({ params, locals }) => {
 	try {
 		const { data } = await getCompanyData(params.symbol);
-		const [sectors, startingTemplate, thesisId] = await Promise.all([
+		const [sectors, startingTemplate, thesisId, scanMatch] = await Promise.all([
 			sectorsFor(data.symbol),
 			startingTemplateFor(data.symbol, locals.user!.id),
-			thesisFor(data.symbol)
+			thesisFor(data.symbol),
+			// Scan Match is a bonus: a failure here must never break the page.
+			scanMatchFor(data.symbol).catch(() => null)
 		]);
 		// startingTemplate: what a valuation not yet on the watchlist starts from (or null).
-		return { company: data, sectors, startingTemplate, thesisId };
+		return { company: data, sectors, startingTemplate, thesisId, scanMatch };
 	} catch (e) {
 		const message = e instanceof Error ? e.message : 'Unknown scrape error';
 		if (message.startsWith('NOT_FOUND')) {

@@ -3,6 +3,8 @@
 	import { untrack } from 'svelte';
 	import { tabWatchlistPrefs } from '$lib/valuation/tabPrefs';
 	import { trackView } from '$lib/viewMemory.svelte';
+	import PresetBadges from '$lib/valuation/components/PresetBadges.svelte';
+	import type { PresetId } from '$lib/valuation/presetScans';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -112,6 +114,25 @@
 	// new reference via map/filter/spread — nothing ever mutates a row's fields in place — so
 	// there's no need to pay for Svelte's deep reactive proxy on every row object.
 	let watchRows = $state.raw<WatchRow[]>([]);
+
+	// Scan Match badges: the preset scans each watchlist company passes now, from stored scan results.
+	// A failure just leaves the badges off; the watchlist does not depend on them.
+	let presetMatches = $state.raw<Record<string, PresetId[]>>({});
+	let presetKey = '';
+	$effect(() => {
+		const symbols = watchRows.map((r) => r.symbol).sort().slice(0, 300);
+		const key = symbols.join(',');
+		if (!key || key === presetKey) return;
+		presetKey = key;
+		void (async () => {
+			try {
+				const res = await fetch(`/api/valuation/presets?symbols=${encodeURIComponent(key)}`);
+				if (res.ok) presetMatches = ((await res.json()) as { matches: Record<string, PresetId[]> }).matches;
+			} catch {
+				// badges are optional
+			}
+		})();
+	});
 
 	function readScenario(
 		method: MethodId,
@@ -1189,6 +1210,7 @@
 													>{r.methodLabel.split(' — ')[0]} · FY+2E</span
 												>{/if}
 										</span>
+									<PresetBadges ids={presetMatches[r.symbol] ?? []} />
 									</td>
 									{#if r.error}
 										<td colspan={columns.length} class="wl-error">
