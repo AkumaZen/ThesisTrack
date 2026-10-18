@@ -7,6 +7,7 @@ import {
 	trackedCompanies
 } from '$lib/server/db/valuationSchema';
 import { MAX_SUMMARY_ATTEMPTS, type ParsedAnnouncement } from '../announcements';
+import { classifyAnnouncement } from '../announcementTags';
 import type { PushOutcome, PushTarget } from '$lib/server/webPush';
 
 export type AnnouncementRow = typeof announcements.$inferSelect;
@@ -66,7 +67,8 @@ export async function saveAnnouncements(rows: ParsedAnnouncement[]): Promise<num
 				subject: r.subject,
 				details: r.details,
 				announcedAt: r.announcedAt,
-				pdfUrl: r.pdfUrl
+				pdfUrl: r.pdfUrl,
+				tag: classifyAnnouncement(r.subject, r.details)
 			}))
 		)
 		.onConflictDoNothing({ target: announcements.dedupeKey })

@@ -45,6 +45,7 @@ function deps(over: Partial<JobDeps> = {}): Partial<JobDeps> {
 		summariesOn: () => false,
 		pushOn: () => true,
 		now: () => NOW,
+		calendar: { fetchMeetings: async () => [] },
 		...over
 	};
 }

@@ -408,6 +408,7 @@ export const announcements = pgTable('announcements', {
 	summary: text('summary'),
 	summarisedAt: timestamp('summarised_at', { withTimezone: true }),
 	summaryAttempts: integer('summary_attempts').notNull().default(0),
+	tag: text('tag'),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
@@ -436,4 +437,36 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	lastSuccessAt: timestamp('last_success_at', { withTimezone: true }),
 	lastFailureAt: timestamp('last_failure_at', { withTimezone: true })
+});
+
+// Results calendar, tags, notification settings (drizzle/0022_results_calendar_and_tags.sql).
+export const symbolRefresh = pgTable(
+	'symbol_refresh',
+	{
+		kind: text('kind').notNull(),
+		symbol: text('symbol').notNull(),
+		refreshedAt: timestamp('refreshed_at', { withTimezone: true }).notNull().defaultNow(),
+		ok: boolean('ok').notNull().default(true)
+	},
+	(t) => [primaryKey({ columns: [t.kind, t.symbol] })]
+);
+
+export const boardMeetings = pgTable('board_meetings', {
+	id: serial('id').primaryKey(),
+	dedupeKey: text('dedupe_key').notNull().unique(),
+	nseSymbol: text('nse_symbol').notNull(),
+	companyName: text('company_name').notNull(),
+	meetingDate: date('meeting_date', { mode: 'string' }).notNull(),
+	purpose: text('purpose').notNull(),
+	isResults: boolean('is_results').notNull().default(false),
+	source: text('source').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const userNotificationSettings = pgTable('user_notification_settings', {
+	userId: integer('user_id')
+		.primaryKey()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	onlyImportant: boolean('only_important').notNull().default(false),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });

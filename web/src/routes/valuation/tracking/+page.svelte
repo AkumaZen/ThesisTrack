@@ -3,6 +3,8 @@
 	import CompanyPicker from '$lib/components/CompanyPicker.svelte';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { sectorApi } from '$lib/valuation/sectorClient';
+	import { ANNOUNCEMENT_TAGS, TAG_LABELS, isAnnouncementTag, type AnnouncementTag } from '$lib/valuation/announcementTags';
+	import { formatMeetingDay } from '$lib/valuation/boardMeetings';
 	import type { SymbolHit } from '$lib/valuation/symbolSearch';
 	import type { PageData } from './$types';
 
@@ -15,6 +17,7 @@
 		summary: string | null;
 		pdfUrl: string | null;
 		announcedAt: string;
+		tag: string | null;
 	}
 
 	// Which company's announcements are open; the page's own pick until the person chooses one.
@@ -26,6 +29,14 @@
 	let loadingItems = $state(false);
 	let stale = $state(false);
 	let shown = $state(15);
+	let tagFilter = $state<AnnouncementTag | null>(null);
+	// null until the person flips the box; then their choice, else what the server says.
+	let onlyImportantPick = $state<boolean | null>(null);
+	const onlyImportant = $derived(onlyImportantPick ?? data.onlyImportant);
+	const tagOf = (i: Item): AnnouncementTag => (isAnnouncementTag(i.tag) ? i.tag : 'other');
+	const visible = $derived(tagFilter ? items.filter((i) => tagOf(i) === tagFilter) : items);
+	// Only tags that exist in the open list get a filter chip, in the fixed order of ANNOUNCEMENT_TAGS.
+	const presentTags = $derived(ANNOUNCEMENT_TAGS.filter((t) => items.some((i) => tagOf(i) === t)));
 	let status = $state<{ kind: 'ok' | 'error'; text: string } | null>(null);
 	let busy = $state(false);
 	let permission = $state<NotificationPermission | 'unsupported'>('unsupported');
@@ -43,6 +54,7 @@
 		}
 		const token = ++loadToken;
 		shown = 15;
+		tagFilter = null;
 		loadingItems = true;
 		fetch(`/api/valuation/tracking/${encodeURIComponent(symbol)}`)
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
@@ -109,6 +121,15 @@
 			: { kind: 'error', text: res.message };
 	}
 
+	async function saveOnlyImportant(next: boolean) {
+		onlyImportantPick = next;
+		const res = await sectorApi('PUT', '/api/valuation/push/settings', { onlyImportant: next });
+		if (!res.ok) {
+			onlyImportantPick = !next;
+			status = { kind: 'error', text: res.message };
+		}
+	}
+
 	const when = (iso: string) =>
 		new Date(iso).toLocaleString('en-IN', {
 			day: '2-digit',
@@ -155,7 +176,32 @@
 				Allow notifications
 			</button>
 		{/if}
+		<label class="tk-check">
+			<input type="checkbox" checked={onlyImportant} onchange={(e) => saveOnlyImportant(e.currentTarget.checked)} />
+			<span>Only notify important filings (routine paperwork such as trading window notices is still listed, but not sent)</span>
+		</label>
 	</section>
+
+	{#if data.calendar.thisWeek.length || data.calendar.later.length}
+		<section class="tk-box" aria-labelledby="tk-cal" data-testid="results-calendar">
+			<h2 id="tk-cal">Upcoming results / board meetings</h2>
+			<p class="sm-hint">Your tracked companies and the watchlist. Dates are IST.</p>
+			{#each [{ title: 'This week', rows: data.calendar.thisWeek }, { title: 'Later', rows: data.calendar.later }] as group (group.title)}
+				{#if group.rows.length}
+					<h3 class="tk-sub">{group.title}</h3>
+					<ul class="tk-cal">
+						{#each group.rows as m (m.nseSymbol + m.meetingDate + m.isResults)}
+							<li class="tk-cal-row">
+								<span class="tk-cal-date">{formatMeetingDay(m.meetingDate)}</span>
+								<span class="tk-cal-co"><strong>{m.nseSymbol}</strong> {m.companyName}</span>
+								<span class="tk-tag" class:tk-tag-key={m.isResults}>{m.isResults ? 'Results' : m.purpose}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			{/each}
+		</section>
+	{/if}
 
 	<section class="tk-box" aria-labelledby="tk-add">
 		<h2 id="tk-add">Track a company</h2>
@@ -211,10 +257,22 @@
 				{:else if items.length === 0}
 					<p class="sm-empty">No announcements in the last 90 days.</p>
 				{:else}
+					<div class="tk-filters" role="group" aria-label="Filter by type">
+						<button type="button" class="tk-tag tk-tagbtn" class:tk-tagbtn-on={tagFilter === null} aria-pressed={tagFilter === null} onclick={() => (tagFilter = null)}>All</button>
+						{#each presentTags as tag (tag)}
+							<button type="button" class="tk-tag tk-tagbtn" class:tk-tagbtn-on={tagFilter === tag} aria-pressed={tagFilter === tag} onclick={() => { tagFilter = tag; shown = 15; }}>{TAG_LABELS[tag]}</button>
+						{/each}
+					</div>
+					{#if visible.length === 0}
+						<p class="sm-empty">Nothing of this type in the last 90 days.</p>
+					{/if}
 					<ul class="tk-list" data-testid="announcement-list">
-						{#each items.slice(0, shown) as a (a.id)}
+						{#each visible.slice(0, shown) as a (a.id)}
 							<li class="tk-item">
-								<div class="tk-meta">{when(a.announcedAt)}</div>
+								<div class="tk-meta">
+									<span>{when(a.announcedAt)}</span>
+									<span class="tk-tag tk-tag-{tagOf(a)}">{TAG_LABELS[tagOf(a)]}</span>
+								</div>
 								<div class="tk-subject">{a.subject}</div>
 								{#if a.summary}
 									<p class="tk-summary">{a.summary}</p>
@@ -227,9 +285,9 @@
 							</li>
 						{/each}
 					</ul>
-					{#if items.length > shown}
+					{#if visible.length > shown}
 						<button class="sm-btn tk-more" type="button" onclick={() => (shown += 15)}>
-							Show more ({items.length - shown} older)
+							Show more ({visible.length - shown} older)
 						</button>
 					{/if}
 				{/if}
@@ -329,9 +387,107 @@
 		min-width: 0;
 	}
 	.tk-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem 0.6rem;
 		font-family: var(--font-mono);
 		font-size: 0.75rem;
 		color: var(--muted);
+	}
+	.tk-sub {
+		margin: 0.4rem 0 0;
+		font-size: 0.8rem;
+		font-family: var(--font-display);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+	.tk-check {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.6rem;
+		font-size: 0.875rem;
+		min-height: 2.75rem;
+		cursor: pointer;
+	}
+	.tk-check input {
+		width: 1.25rem;
+		height: 1.25rem;
+		flex: none;
+		margin-top: 0.1rem;
+	}
+	.tk-tag {
+		display: inline-block;
+		padding: 0.1rem 0.45rem;
+		border: 1.5px solid var(--ink);
+		background: var(--bg);
+		color: var(--ink);
+		font: 600 0.72rem/1.3 var(--font-body, inherit);
+		white-space: normal;
+	}
+	.tk-tag-key,
+	.tk-tag-results,
+	.tk-tag-order_win,
+	.tk-tag-fundraise,
+	.tk-tag-pledge,
+	.tk-tag-management,
+	.tk-tag-mna,
+	.tk-tag-regulatory {
+		background: var(--accent);
+		color: var(--accent-ink);
+	}
+	.tk-tag-routine {
+		border-style: dashed;
+		color: var(--muted);
+	}
+	.tk-filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.tk-tagbtn {
+		min-height: 2.5rem;
+		padding: 0.2rem 0.7rem;
+		font-size: 0.8rem;
+		cursor: pointer;
+	}
+	.tk-tagbtn-on {
+		background: var(--ink);
+		color: var(--bg);
+		box-shadow: var(--shadow-sm);
+	}
+	.tk-cal {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.4rem;
+	}
+	.tk-cal-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.1rem 0.6rem;
+		align-items: center;
+		border-top: 1px solid var(--ink);
+		padding-top: 0.4rem;
+	}
+	.tk-cal-date {
+		grid-column: 1 / -1;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--muted);
+	}
+	.tk-cal-co {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+	@media (min-width: 640px) {
+		.tk-cal-row {
+			grid-template-columns: 9.5rem minmax(0, 1fr) auto;
+		}
+		.tk-cal-date {
+			grid-column: auto;
+		}
 	}
 	.tk-subject {
 		font-weight: 700;

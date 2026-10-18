@@ -5,6 +5,8 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
 		environment: 'node',
+		// The DB-backed job tests run the global poller against one shared database, so files take turns.
+		fileParallelism: false,
 		include: ['tests/**/*.{test,spec}.ts', 'src/**/*.{test,spec}.ts'],
 		exclude: ['tests/e2e/**', 'tests/live/**', 'node_modules/**']
 	}

@@ -13,6 +13,16 @@ import {
 	saveSummary,
 	type AnnouncementRow
 } from './announcementStore';
+import { isRoutine } from '../announcementTags';
+import { getOnlyImportant } from './intelStore';
+import {
+	defaultCalendarDeps,
+	emptyIntelSummary,
+	refreshCalendar,
+	tagBacklog,
+	type CalendarDeps,
+	type IntelSummary
+} from './intelJob';
 import { pushConfigured, pushToTargets, sendWebPush, type PushSender } from '$lib/server/webPush';
 
 /** NSE is asked for the last few days each run; older filings only matter for the company page. */
@@ -28,6 +38,9 @@ export interface JobDeps {
 	summariesOn: () => boolean;
 	pushOn: () => boolean;
 	now: () => Date;
+	calendar: CalendarDeps;
+	/** Slow best-effort sources (calendar, ...) are skipped once a run is this far in. */
+	extrasBudgetMs: number;
 }
 
 const defaultDeps: JobDeps = {
@@ -36,7 +49,9 @@ const defaultDeps: JobDeps = {
 	send: sendWebPush,
 	summariesOn: summariesEnabled,
 	pushOn: pushConfigured,
-	now: () => new Date()
+	now: () => new Date(),
+	calendar: defaultCalendarDeps,
+	extrasBudgetMs: 30_000
 };
 
 export interface JobSummary {
@@ -48,6 +63,9 @@ export interface JobSummary {
 	pushSent: number;
 	pushFailed: number;
 	subscriptionsRemoved: number;
+	/** Pushes skipped because the person only wants important filings and this one is routine. */
+	suppressed: number;
+	intel: IntelSummary;
 	errors: string[];
 }
 
@@ -62,8 +80,12 @@ export async function runAnnouncementCheck(overrides: Partial<JobDeps> = {}): Pr
 	const now = deps.now();
 	const summary: JobSummary = {
 		symbols: 0, fetched: 0, newAnnouncements: 0, summarised: 0, notified: 0,
-		pushSent: 0, pushFailed: 0, subscriptionsRemoved: 0, errors: []
+		pushSent: 0, pushFailed: 0, subscriptionsRemoved: 0, suppressed: 0, intel: emptyIntelSummary(), errors: []
 	};
+	const startedAt = Date.now();
+
+	// Older rows get their tag before anything is pushed (a push title carries it).
+	await tagBacklog(summary.intel).catch((err) => summary.errors.push(`tags: ${err instanceof Error ? err.message : String(err)}`));
 
 	const symbols = await distinctTrackedSymbols();
 	summary.symbols = symbols.length;
@@ -99,12 +121,31 @@ export async function runAnnouncementCheck(overrides: Partial<JobDeps> = {}): Pr
 	}
 
 	// 3. Push. Without VAPID keys nothing is claimed, so the filings go out once keys exist.
-	if (!deps.pushOn()) return summary;
+	if (deps.pushOn()) await deliver(deps, now, summary, summariesOn);
+
+	// 4. Best-effort extras; they never delay or break the alerts above.
+	if (Date.now() - startedAt < deps.extrasBudgetMs) {
+		await refreshCalendar(deps.calendar, now, summary.intel).catch((err) =>
+			summary.errors.push(`calendar: ${err instanceof Error ? err.message : String(err)}`)
+		);
+		summary.errors.push(...summary.intel.errors);
+	}
+	return summary;
+}
+
+async function deliver(deps: JobDeps, now: Date, summary: JobSummary, summariesOn: boolean) {
+	const importantOnly = new Map<number, boolean>();
 	const subsByUser = new Map<number, Awaited<ReturnType<typeof listSubscriptions>>>();
 	for (const p of await listPendingDeliveries(now)) {
 		const a = p.announcement;
 		if (!shouldNotify(a.announcedAt, p.trackedSince, now) || !readyToNotify(a, summariesOn)) continue;
 		if (!(await claimDelivery(p.userId, a.id))) continue;
+		let only = importantOnly.get(p.userId);
+		if (only === undefined) importantOnly.set(p.userId, (only = await getOnlyImportant(p.userId)));
+		if (only && isRoutine(a.tag)) {
+			summary.suppressed++; // claimed, so it is not reconsidered, but nobody is interrupted
+			continue;
+		}
 		summary.notified++;
 		let targets = subsByUser.get(p.userId);
 		if (!targets) subsByUser.set(p.userId, (targets = await listSubscriptions(p.userId)));
@@ -116,5 +157,4 @@ export async function runAnnouncementCheck(overrides: Partial<JobDeps> = {}): Pr
 		summary.subscriptionsRemoved += outcome.gone.length;
 		if (outcome.gone.length) subsByUser.set(p.userId, targets.filter((t) => !outcome.gone.includes(t.id)));
 	}
-	return summary;
 }

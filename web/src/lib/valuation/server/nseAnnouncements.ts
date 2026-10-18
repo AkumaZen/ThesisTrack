@@ -2,13 +2,13 @@ import { parseNseAnnouncements, type ParsedAnnouncement } from '../announcements
 
 // Same browser-like headers the Python concall downloader uses against NSE
 // (services/concall/concall_downloader/sources/nse.py). NSE answers these without cookies from Vercel.
-const NSE_HEADERS = {
+export const NSE_HEADERS = {
 	'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/118.0',
 	Accept: '*/*',
 	'Accept-Language': 'en-US,en;q=0.5',
 	Referer: 'https://www.nseindia.com/get-quotes/equity?symbol=HDFCBANK'
 };
-const TIMEOUT_MS = 8000;
+export const TIMEOUT_MS = 8000;
 const DAY_MS = 86_400_000;
 
 const ddmmyyyy = (d: Date) => {
@@ -37,4 +37,14 @@ export async function fetchSymbolAnnouncements(
 	});
 	if (!res.ok) throw new Error(`NSE announcements for ${symbol} failed (HTTP ${res.status})`);
 	return parseNseAnnouncements(await res.json());
+}
+
+/** GET a JSON document from nseindia.com/api with the same headers and timeout as the announcements. */
+export async function fetchNseJson(path: string, fetcher: typeof fetch = fetch): Promise<unknown> {
+	const res = await fetcher(`https://www.nseindia.com/api/${path}`, {
+		headers: NSE_HEADERS,
+		signal: AbortSignal.timeout(TIMEOUT_MS)
+	});
+	if (!res.ok) throw new Error(`NSE ${path.split('?')[0]} failed (HTTP ${res.status})`);
+	return res.json();
 }
