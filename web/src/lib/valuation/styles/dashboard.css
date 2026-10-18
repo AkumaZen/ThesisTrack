@@ -5229,3 +5229,21 @@
 .vd .se-table tbody th {
 	background: transparent;
 }
+
+/* Phones: tighter cells and wrapping headers so all six columns fit 390px without sideways scroll. */
+@media (max-width: 480px) {
+	.vd .se-table {
+		font-size: 11px;
+	}
+
+	.vd .se-table th,
+	.vd .se-table td {
+		padding: 6px 4px;
+	}
+
+	.vd .se-table thead th {
+		white-space: normal;
+		line-height: 1.2;
+		vertical-align: bottom;
+	}
+}
