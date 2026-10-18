@@ -5028,3 +5028,146 @@
 	font-family: var(--font-sans);
 	font-size: 12px;
 }
+
+/* Chart grid: mini price chart tiles for scanner results and the watchlist */
+.vd .view-toggle {
+	display: inline-flex;
+}
+
+.vd .view-toggle button {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	font-weight: 600;
+	padding: 5px 12px;
+	color: var(--ink);
+	background: var(--zebra);
+	border: var(--border-w) solid var(--ink);
+	cursor: pointer;
+}
+
+.vd .view-toggle button + button {
+	margin-left: -2px;
+}
+
+.vd .view-toggle button[aria-pressed='true'] {
+	color: var(--accent-ink);
+	background: var(--blue);
+	border-color: var(--blue);
+}
+
+.vd .view-toggle button:focus-visible {
+	outline: 2px solid var(--blue);
+	outline-offset: 1px;
+	position: relative;
+}
+
+.vd .chart-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 12px;
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+@media (min-width: 600px) {
+	.vd .chart-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 900px) {
+	.vd .chart-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 1200px) {
+	.vd .chart-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+.vd .cg-tile {
+	min-width: 0;
+}
+
+.vd .cg-link {
+	display: grid;
+	gap: 4px;
+	padding: 10px 12px;
+	color: var(--ink);
+	text-decoration: none;
+	background: var(--bg);
+	border: var(--border-w) solid var(--ink);
+}
+
+.vd .cg-link:hover {
+	background: var(--blue-bg);
+}
+
+.vd .cg-link:focus-visible {
+	outline: 2px solid var(--blue);
+	outline-offset: 2px;
+}
+
+.vd .cg-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.vd .cg-symbol {
+	font-weight: 700;
+	font-size: 14px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.vd .cg-change,
+.vd .cg-price {
+	font-family: var(--font-mono);
+	font-size: 12.5px;
+	white-space: nowrap;
+}
+
+.vd .cg-name {
+	font-family: var(--font-sans);
+	font-size: 11px;
+	color: var(--muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.vd .cg-chart {
+	display: block;
+	width: 100%;
+	height: 56px;
+}
+
+.vd .cg-chart polyline {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	vector-effect: non-scaling-stroke;
+}
+
+.vd .cg-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-sans);
+	font-size: 11px;
+	color: var(--muted);
+	background: var(--zebra);
+}
+
+.vd .cg-up {
+	color: var(--green);
+}
+
+.vd .cg-down {
+	color: var(--red);
+}

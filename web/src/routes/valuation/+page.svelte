@@ -3,6 +3,9 @@
 	import { untrack } from 'svelte';
 	import { tabWatchlistPrefs } from '$lib/valuation/tabPrefs';
 	import { trackView } from '$lib/viewMemory.svelte';
+	import ChartGrid from '$lib/valuation/components/ChartGrid.svelte';
+	import ViewToggle from '$lib/valuation/components/ViewToggle.svelte';
+	import { lastChangePct, type GridItem } from '$lib/valuation/chartGrid';
 	import PresetBadges from '$lib/valuation/components/PresetBadges.svelte';
 	import type { PresetId } from '$lib/valuation/presetScans';
 	import { beforeNavigate, goto } from '$app/navigation';
@@ -618,6 +621,18 @@
 		return n == null ? '' : `${Math.round(n)}%`;
 	}
 
+	// List or chart grid. The grid shows the same rows in the same order; its change is the last stored session.
+	let layout = $state<'list' | 'grid'>('list');
+	const gridItems = $derived<GridItem[]>(
+		sortedRows.map((r) => ({
+			symbol: r.symbol,
+			name: r.name,
+			price: r.cmp,
+			changePct: lastChangePct(r.sparkline),
+			closes: r.sparkline
+		}))
+	);
+
 	// A 60x20 SVG polyline of the last ~90 daily closes, normalized to the row's own min/max —
 	// each sparkline is scaled to its own range, so it shows shape (the trend), not magnitude.
 	function sparklinePoints(closes: number[] | null): string | null {
@@ -1042,6 +1057,7 @@
 				</div>
 				<div class="wl-tools">
 					<ColumnChooser {columns} onChange={setColumns} />
+					<ViewToggle bind:value={layout} />
 					<button
 						class="wl-strip-btn"
 						type="button"
@@ -1141,6 +1157,9 @@
 					{/if}
 				</p>
 			{:else}
+				{#if layout === 'grid'}
+					<ChartGrid items={gridItems} />
+				{:else}
 				<!-- Scrollable regions must be keyboard-focusable (WCAG 2.1.1). -->
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 				<div class="table-scroll" tabindex="0" role="region" aria-label="Watchlist table">
@@ -1252,6 +1271,7 @@
 						</tbody>
 					</table>
 				</div>
+				{/if}
 			{/if}
 		</div>
 	{:else if savedLoaded}

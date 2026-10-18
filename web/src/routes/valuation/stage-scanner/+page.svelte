@@ -17,6 +17,9 @@
 		type ScanEntry,
 		type ScanFilters
 	} from '$lib/valuation/scannerFilters';
+	import ChartGrid from '$lib/valuation/components/ChartGrid.svelte';
+	import ViewToggle from '$lib/valuation/components/ViewToggle.svelte';
+	import { changeVsPrev, type GridItem } from '$lib/valuation/chartGrid';
 	import PresetBadges from '$lib/valuation/components/PresetBadges.svelte';
 	import {
 		PRESETS,
@@ -260,6 +263,9 @@
 	const usesUniverseRank = $derived(loaded.some((x) => rsBasis(x.r.presets) === 'universe'));
 	const activePreset = $derived(PRESETS.find((p) => p.id === presetFilter) ?? null);
 
+	// List or chart grid for the results.
+	let layout = $state<'list' | 'grid'>('list');
+
 	const rows = $derived.by(() => {
 		const out = inScope.filter(
 			(x) => presetFilter === 'all' || matches.get(x.symbol)?.includes(presetFilter)
@@ -292,6 +298,15 @@
 		untrack(() => (visible = ROWS_STEP));
 	});
 	const shown = $derived(rows.slice(0, visible));
+
+	const gridItems = $derived<GridItem[]>(
+		rows.map(({ symbol, r }) => ({
+			symbol,
+			name: nameOf(symbol),
+			price: r.effectivePrice,
+			changePct: changeVsPrev(r.effectivePrice, r.presets?.prevClose)
+		}))
+	);
 
 	// Companies on the list that Angel One cannot price: listed apart, never fetched.
 	const noPriceRows = $derived(
@@ -488,6 +503,7 @@
 				{#each SIGNALS as sg (sg.key)}<option value={sg.key}>{sg.label}</option>{/each}
 			</select>
 		</label>
+		<ViewToggle bind:value={layout} />
 		<button
 			class="wl-strip-btn"
 			type="button"
@@ -520,6 +536,9 @@
 		<LoadHistoryPanel missing={missingHistory} onFinished={historyLoaded} />
 	{/if}
 
+	{#if layout === 'grid'}
+		<ChartGrid items={gridItems} fetchCloses />
+	{:else}
 	<div class="table-scroll">
 		<table class="scan-table" data-testid="scan-table">
 			<thead>
@@ -598,6 +617,8 @@
 			>
 			<span class="hint">{shown.length} of {rows.length} shown</span>
 		</p>
+	{/if}
+
 	{/if}
 
 	{#if noPriceRows.length > 0}
