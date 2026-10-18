@@ -5417,24 +5417,6 @@
 .vd .pc-st-down { stroke: var(--red); stroke-width: 1.8; }
 .vd .pc-rsi { stroke: var(--accent); stroke-width: 1.5; }
 .vd .pc-rsi-level { stroke-dasharray: 3 3; }
-
-.vd .rdcf-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	gap: 10px 14px;
-	margin: 10px 0;
-}
-
-.vd .rdcf-grid label {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	font-size: 12px;
-	font-weight: 600;
-	min-width: 0;
-}
-
-.vd .rdcf-grid input {
 	width: 100
 .vd .rdcf-grid {
 	display: grid;
