@@ -27,6 +27,8 @@
 	import { analyzePeg } from '$lib/valuation/pegAnalysis';
 	import type { StageAnalysisResult } from '$lib/valuation/stageAnalysis';
 	import PriceChart from '$lib/valuation/components/PriceChart.svelte';
+	import ReverseDcfPanel from '$lib/valuation/components/ReverseDcfPanel.svelte';
+	import SegmentsPanel from '$lib/valuation/components/SegmentsPanel.svelte';
 	import type { PricePoint } from '$lib/valuation/priceChart';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
@@ -1014,6 +1016,15 @@
 			<PriceChart points={chartPoints} bind:range={chartRange} />
 		{/if}
 	</div>
+
+	<ReverseDcfPanel
+		marketCap={company.marketCap}
+		baseEarnings={company.years.length ? (company.years[company.years.length - 1].netProfit ?? null) : null}
+		baseLabel={company.years.length ? company.years[company.years.length - 1].label : null}
+		profitHistory={company.history.map((h) => h.netProfit)}
+	/>
+
+	<SegmentsPanel symbol={company.symbol} initial={data.segments} canLoad={data.user?.role !== 'read_only'} />
 
 	<div class="sv-company">
 		<StrengthPanel
