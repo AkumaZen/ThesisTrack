@@ -47,7 +47,7 @@ from master `175abd5`; updated 2026-10-17.
   Checked live for HFCL with the BSE API forced to 403: Screener gave Q1 FY27, Q4 and Q3 FY26 transcripts and decks.
 
 ## Decisions
-- 2026-10-18: announcement alerts on branch `feat/announcement-alerts` (LOCAL, unpushed): personal tracked companies at `/valuation/tracking`, NSE per-symbol polling (all-equities feed returns only 20 rows), OpenAI summary, Web Push (Android Chrome). Poller `/api/cron/announcements` (CRON_SECRET bearer) is called every minute by cron-job.org, not vercel.json. Migration `0021_announcement_alerts.sql` must be applied to production BEFORE merging. Vercel env needed: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (CRON_SECRET, OPEN_AI_KEY already). Code: `lib/valuation/announcements.ts`, `server/announcementJob.ts`, `lib/server/webPush.ts`, `static/sw.js`.
+- 2026-10-18: announcement alerts LIVE in production since 2026-10-18 (migration 0021 applied, VAPID env set on Vercel; cron-job.org job still to be created by the user): personal tracked companies at `/valuation/tracking`, NSE per-symbol polling (all-equities feed returns only 20 rows), OpenAI summary, Web Push (Android Chrome). Poller `/api/cron/announcements` (CRON_SECRET bearer) is called every minute by cron-job.org, not vercel.json. Vercel env: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, CRON_SECRET, OPEN_AI_KEY. Code: `lib/valuation/announcements.ts`, `server/announcementJob.ts`, `lib/server/webPush.ts`, `static/sw.js`.
 - 2026-10-17: stay on Vercel only; EC2 abandoned because BSE's API returns 403 from AWS too (branch tips in STATE.md).
 
 ## Current Focus
