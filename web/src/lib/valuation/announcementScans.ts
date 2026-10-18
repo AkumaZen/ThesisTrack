@@ -99,7 +99,7 @@ export const feedTags: readonly AnnouncementTag[] = ANNOUNCEMENT_TAGS;
 
 // Words that say nothing about what happened. Short words and numbers are dropped separately.
 export const STOPWORD_LIST: string[] = (
-		'about above after again against also another because been before being below between both company could does during each from further have having here into more most other over regulation regulations said same securities shares share should than that their them then there these they this those through under until upon very what when where which while will with within would your limited ltd has informed exchange pursuant disclosure disclosures requirements listing obligations sebi lodr board directors meeting held intimation attached attachment copy dated date please find enclosed regarding reg per cent lakh crore rupees india indian certificate updates participants depositories ended investor general quarter call financial institutional analysts meet results outcome newspaper publication press release january february march april june july august september october november december analyst presentation conference transcript audio recording schedule intimation trading window closure unaudited audited standalone consolidated half year'
+		'about above after again against also another because been before being below between both company could does during each from further have having here into more most other over regulation regulations said same securities shares share should than that their them then there these they this those through under until upon very what when where which while will with within would your limited ltd has informed exchange pursuant disclosure disclosures requirements listing obligations sebi lodr board directors meeting held intimation attached attachment copy dated date please find enclosed regarding reg per cent lakh crore rupees india indian certificate updates participants depositories ended investor general quarter call financial institutional analysts meet results outcome newspaper publication press release january february march april june july august september october november december analyst presentation conference transcript audio recording schedule intimation trading window closure unaudited audited standalone consolidated half year submitted submission titled inform information period response notice director shareholders shareholder investors management services technologies industries finance equity bank enterprises private public requirement requested provided details related regards respect letter compliance clause announcement announcements filed filing submit following hereby made kindly sir madam relevant ensure observed safeguarded written significant latest place change report market subsidiary subsidiaries stage reference basis ensure ensuring taken pursuance accordance provisions provision statement statements record records'
 	).split(' ');
 const STOPWORDS = new Set(STOPWORD_LIST);
 
@@ -114,11 +114,18 @@ export interface TrendingWord extends WordCount {
 	change: number;
 }
 
+/** A word in more than this share of the week's filings is boilerplate, not news. */
+const BOILERPLATE_SHARE = 0.04;
+/** Below this many filings a share means nothing (a quiet week or a new install), so no word is dropped for it. */
+const BOILERPLATE_MIN_SAMPLE = 500;
+
 /** Most frequent meaningful words of the last week with how they moved against the week before.
- *  Input comes from SQL (one row per word); stopwords, digits and rare words are dropped. */
-export function pickTrending(rows: WordCount[], limit = 20): TrendingWord[] {
+ *  Input comes from SQL (one row per word); stopwords, digits and rare words are dropped, and so is
+ *  any word used by more than 4% of the week's filings once `weekTotal` (the week's filing count) is 500 or more. */
+export function pickTrending(rows: WordCount[], limit = 20, weekTotal = 0): TrendingWord[] {
 	return rows
 		.filter((r) => r.word.length >= 4 && /^[a-z][a-z-]*$/.test(r.word) && !STOPWORDS.has(r.word) && r.current >= 3)
+		.filter((r) => weekTotal < BOILERPLATE_MIN_SAMPLE || r.current <= weekTotal * BOILERPLATE_SHARE)
 		.map((r) => ({ ...r, change: r.current - r.previous }))
 		.sort((a, b) => b.current - a.current || b.change - a.change || a.word.localeCompare(b.word))
 		.slice(0, limit);

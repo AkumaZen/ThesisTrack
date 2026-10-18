@@ -57,4 +57,12 @@ describe('pickTrending', () => {
 		expect(out[0].change).toBe(-30);
 		expect(out[1].change).toBe(30);
 	});
+	it('drops words used by over 4% of a busy week of filings', () => {
+		const rows = [
+			{ word: 'dividend', current: 90, previous: 120 },
+			{ word: 'buyback', current: 40, previous: 10 }
+		];
+		expect(pickTrending(rows, 20, 1000).map((w) => w.word)).toEqual(['buyback']);
+		expect(pickTrending(rows, 20, 0).map((w) => w.word)).toEqual(['dividend', 'buyback']);
+	});
 });

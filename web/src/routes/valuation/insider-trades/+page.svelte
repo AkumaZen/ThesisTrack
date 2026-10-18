@@ -11,6 +11,9 @@
 	const href = (page = 1, tab: 'sast' | null = tabKey) => `/valuation/insider-trades${insiderQuery(f, page, tab)}`;
 	const tabHref = (tab: 'sast' | null) => `/valuation/insider-trades${insiderQuery({ ...f, page: 1 }, 1, tab)}`;
 
+	/** Any filter applied (as opposed to an empty store). */
+	const filtered = $derived(insiderQuery({ ...f, page: 1 }, 1, null) !== '');
+
 	const pit = $derived(data.tab === 'pit' ? (data.items as InsiderRow[]) : []);
 	const sast = $derived(data.tab === 'sast' ? (data.items as SastRow[]) : []);
 
@@ -84,7 +87,15 @@
 	</form>
 
 	{#if data.items.length === 0}
-		<p class="sm-empty" data-testid="insider-empty">Nothing matches these filters.</p>
+		<p class="sm-empty" data-testid="insider-empty">
+			{#if filtered}
+				Nothing matches these filters.
+			{:else if data.tab === 'pit'}
+				No insider trades are stored. NSE's insider-trade (PIT) feed has published no recent filings, so this list stays empty until it does; the Substantial acquisitions (SAST) tab has current disclosures.
+			{:else}
+				No substantial acquisition disclosures are stored yet.
+			{/if}
+		</p>
 	{:else if data.tab === 'pit'}
 		<ul class="mi-list" data-testid="insider-list">
 			{#each pit as t (t.id)}

@@ -65,10 +65,10 @@
 			match: starts('/valuation/stage-scanner')
 		},
 		{ href: '/valuation/compare', label: 'Compare', match: starts('/valuation/compare') },
-		{ href: '/valuation/results', label: 'Quarterly results', match: starts('/valuation/results'), newUntil: NEW_UNTIL },
+		{ href: '/valuation/results', label: 'Results', match: starts('/valuation/results'), newUntil: NEW_UNTIL },
 		{ href: '/valuation/scans', label: 'Saved scans', match: starts('/valuation/scans'), newUntil: NEW_UNTIL },
 		{ href: '/valuation/returns', label: 'Returns', match: starts('/valuation/returns'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/breadth', label: 'Market breadth', match: starts('/valuation/breadth'), newUntil: NEW_UNTIL },
+		{ href: '/valuation/breadth', label: 'Breadth', match: starts('/valuation/breadth'), newUntil: NEW_UNTIL },
 		{
 			href: '/valuation/announcements',
 			label: 'Announcements',
@@ -76,7 +76,7 @@
 			newUntil: NEW_UNTIL
 		},
 		{ href: '/valuation/insider-trades', label: 'Insider trades', match: starts('/valuation/insider-trades'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/corporate-actions', label: 'Corporate actions', match: starts('/valuation/corporate-actions'), newUntil: NEW_UNTIL }
+		{ href: '/valuation/corporate-actions', label: 'Ex-dates', match: starts('/valuation/corporate-actions'), newUntil: NEW_UNTIL }
 	];
 	const TOOLS: Record<ModuleKey, Tool[]> = { thesis: THESIS, valuation: VALUATION, sector: SECTOR, analysis: ANALYSIS };
 

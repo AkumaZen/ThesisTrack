@@ -151,16 +151,19 @@ export async function trendingWords(now: Date, limit = 20) {
 		       (count(*) filter (where announced_at >= ${weekAgo}::timestamptz))::int as current,
 		       (count(*) filter (where announced_at < ${weekAgo}::timestamptz))::int as previous
 		from (
-			select distinct id, announced_at, unnest(regexp_split_to_array(lower(subject || ' ' || details), '[^a-z-]+')) as word
+			select distinct id, announced_at, company_name, unnest(regexp_split_to_array(lower(subject || ' ' || details), '[^a-z-]+')) as word
 			from valuation.announcements
 			where announced_at >= ${twoWeeksAgo}::timestamptz
 		) w
+		-- A company's own name words ("Technologies", "Bank") are not news.
 		where length(word) >= 4 and word ~ '^[a-z][a-z-]*$' and word not in (${stopwords})
+		  and position(word in lower(coalesce(company_name, ''))) = 0
 		group by word
 		having count(*) filter (where announced_at >= ${weekAgo}::timestamptz) >= 3
 		order by current desc
 		limit 400`);
-	return pickTrending([...rows] as unknown as WordCount[], limit);
+	const [{ n }] = await db.execute(sql`select count(*)::int as n from valuation.announcements where announced_at >= ${weekAgo}::timestamptz`) as unknown as { n: number }[];
+	return pickTrending([...rows] as unknown as WordCount[], limit, n);
 }
 
 // ---- saved keywords ----
