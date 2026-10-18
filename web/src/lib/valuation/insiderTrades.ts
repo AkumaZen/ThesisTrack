@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { parseNseTime } from './nseTime';
 import { validDay } from './announcementScans';
 
@@ -28,7 +27,24 @@ export function parseNseDay(raw: unknown): string | null {
 	return m && month ? `${m[3]}-${month}-${m[1].padStart(2, '0')}` : null;
 }
 
-const hash = (...parts: unknown[]) => 'h:' + createHash('sha1').update(parts.map((p) => String(p ?? '')).join('|')).digest('hex').slice(0, 24);
+// cyrb53 with two seeds (about 106 bits): a stable dedupe key that also runs in the browser bundle,
+// because the pages import constants from this module.
+function cyrb53(str: string, seed: number): string {
+	let h1 = 0xdeadbeef ^ seed;
+	let h2 = 0x41c6ce57 ^ seed;
+	for (let i = 0; i < str.length; i++) {
+		const ch = str.charCodeAt(i);
+		h1 = Math.imul(h1 ^ ch, 2654435761);
+		h2 = Math.imul(h2 ^ ch, 1597334677);
+	}
+	h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+	h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+	return ((h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0'));
+}
+const hash = (...parts: unknown[]) => {
+	const text = parts.map((p) => String(p ?? '')).join('|');
+	return 'h:' + cyrb53(text, 0) + cyrb53(text, 1);
+};
 
 const rowsOf = (payload: unknown): Record<string, unknown>[] => {
 	const data = Array.isArray(payload) ? payload : (payload as { data?: unknown } | null)?.data;
