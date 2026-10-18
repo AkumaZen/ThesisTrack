@@ -18,7 +18,12 @@ describe('moduleOf', () => {
 		['/valuation/sector-rotation/auto/tyres', 'sector'],
 		['/valuation/sectors', 'sector'],
 		['/valuation/stage-scanner', 'analysis'],
-		['/valuation/compare', 'analysis']
+		['/valuation/compare', 'analysis'],
+		['/valuation/results', 'analysis'],
+		['/valuation/returns', 'analysis'],
+		['/valuation/breadth', 'analysis'],
+		['/valuation/scans', 'analysis'],
+		['/valuation/scans/shared/3f2b8c1e-9d4a-4e7b-8a1c-0123456789ab', 'analysis']
 	] as const)('%s is %s', (path, expected) => expect(moduleOf(path)).toBe(expected));
 
 	it('does not confuse similar prefixes', () => {

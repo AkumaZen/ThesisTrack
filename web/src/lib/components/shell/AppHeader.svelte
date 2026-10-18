@@ -15,7 +15,14 @@
 		/** Paths that also count as this tool (detail pages). */
 		match: (path: string) => boolean;
 		adminOnly?: boolean;
+		/** Shows a "New" badge until this date (YYYY-MM-DD, inclusive). */
+		newUntil?: string;
 	}
+
+	// The analytics pages carry a "New" badge for a few weeks after launch.
+	const NEW_UNTIL = '2026-12-15';
+	const today = new Date().toISOString().slice(0, 10);
+	const isNew = (t: Tool) => t.newUntil != null && today <= t.newUntil;
 
 	const starts = (prefix: string) => (p: string) => p === prefix || p.startsWith(prefix + '/');
 
@@ -55,7 +62,11 @@
 			label: 'Breakout scanner',
 			match: starts('/valuation/stage-scanner')
 		},
-		{ href: '/valuation/compare', label: 'Compare', match: starts('/valuation/compare') }
+		{ href: '/valuation/compare', label: 'Compare', match: starts('/valuation/compare') },
+		{ href: '/valuation/results', label: 'Quarterly results', match: starts('/valuation/results'), newUntil: NEW_UNTIL },
+		{ href: '/valuation/scans', label: 'Saved scans', match: starts('/valuation/scans'), newUntil: NEW_UNTIL },
+		{ href: '/valuation/returns', label: 'Returns', match: starts('/valuation/returns'), newUntil: NEW_UNTIL },
+		{ href: '/valuation/breadth', label: 'Market breadth', match: starts('/valuation/breadth'), newUntil: NEW_UNTIL }
 	];
 	const TOOLS: Record<ModuleKey, Tool[]> = { thesis: THESIS, valuation: VALUATION, sector: SECTOR, analysis: ANALYSIS };
 
@@ -169,7 +180,9 @@
 	<nav class="tools" aria-label="{MODULES.find((m) => m.key === current)?.label} tools">
 		<div class="shell-inner tools-inner">
 			{#each tools as t (t.href)}
-				<a href={t.href} class="tool" aria-current={t.match(path) ? 'page' : undefined}>{t.label}</a>
+				<a href={t.href} class="tool" aria-current={t.match(path) ? 'page' : undefined}
+					>{t.label}{#if isNew(t)}<span class="new-badge" data-testid="new-badge">New</span>{/if}</a
+				>
 			{/each}
 		</div>
 	</nav>
@@ -199,7 +212,7 @@
 				<div class="eyebrow">{group.name}</div>
 				{#each group.list as t (t.href)}
 					<a href={t.href} class="drawer-link" aria-current={t.match(path) ? 'page' : undefined}
-						>{t.label}</a
+						>{t.label}{#if isNew(t)}<span class="new-badge" data-testid="new-badge">New</span>{/if}</a
 					>
 				{/each}
 			</div>
