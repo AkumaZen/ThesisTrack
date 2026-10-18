@@ -2,7 +2,7 @@
 // per-symbol refresh throttle, meeting dedupe, tags stored and back-filled, routine filings not pushed.
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { and, eq, inArray, like, ne } from 'drizzle-orm';
+import { and, eq, inArray, like } from 'drizzle-orm';
 import { db } from '../src/lib/server/db';
 import { users } from '../src/lib/server/db/schema';
 import {
@@ -37,6 +37,9 @@ const mins = (n: number) => new Date(NOW.getTime() - n * 60_000);
 const day = (offset: number) => new Date(NOW.getTime() + offset * 86_400_000 + 5.5 * 3600_000).toISOString().slice(0, 10);
 
 let userId = 0;
+// The throttle table is shared, global state: set aside what is there, test against a clean slate with
+// every other company parked as "just refreshed", and put it back afterwards.
+let savedRefresh: (typeof symbolRefresh.$inferSelect)[] = [];
 const titles: string[] = [];
 let meetingFetches = 0;
 
@@ -64,8 +67,9 @@ function deps(over: Partial<JobDeps> = {}): Partial<JobDeps> {
 	return {
 		fetchAnnouncements: async () => [],
 		summarise: async () => 'summary',
-		send: async (_t, payload) => {
-			titles.push((JSON.parse(payload) as { title: string }).title);
+		// Only pushes to this test's own device count: a shared database may hold other people's pending alerts.
+		send: async (target, payload) => {
+			if (target.endpoint.includes(`/${RUN}/`)) titles.push((JSON.parse(payload) as { title: string }).title);
 		},
 		summariesOn: () => false,
 		pushOn: () => true,
@@ -90,8 +94,12 @@ function deps(over: Partial<JobDeps> = {}): Partial<JobDeps> {
 
 describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', () => {
 	beforeAll(async () => {
-		// Refresh state is a throttle on shared sources; earlier runs leave future-dated rows behind.
+		savedRefresh = await db.select().from(symbolRefresh);
 		await db.delete(symbolRefresh);
+		const others = (await db.selectDistinct({ symbol: trackedCompanies.nseSymbol }).from(trackedCompanies)).map((r) => r.symbol);
+		const parked = new Date(NOW.getTime() + 30 * 86_400_000);
+		const rows = others.flatMap((symbol) => ['board', 'shareholding'].map((kind) => ({ kind, symbol, refreshedAt: parked, ok: true })));
+		if (rows.length) await db.insert(symbolRefresh).values(rows);
 		const [u] = await db
 			.insert(users)
 			.values({ email: `vitest-intel-${RUN}@example.invalid`, passwordHash: 'x', displayName: `Vitest.Intel${RUN}` })
@@ -108,6 +116,7 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 		await db.delete(marketDeals).where(eq(marketDeals.nseSymbol, SYMBOL));
 		await db.delete(shareholdingSnapshots).where(eq(shareholdingSnapshots.nseSymbol, SYMBOL));
 		await db.delete(symbolRefresh);
+		if (savedRefresh.length) await db.insert(symbolRefresh).values(savedRefresh);
 		await db.delete(users).where(eq(users.id, userId));
 	});
 
@@ -125,8 +134,6 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 		expect(upcoming.map((m) => [m.meetingDate, m.isResults])).toEqual([[day(3), true], [day(10), false]]);
 
 		const later = new Date(NOW.getTime() + 6 * 3600_000 + 1000);
-		// Other watched companies (a real database has many) must not crowd this one out of the per-run cap.
-		await db.update(symbolRefresh).set({ refreshedAt: later }).where(and(eq(symbolRefresh.kind, 'board'), ne(symbolRefresh.symbol, SYMBOL)));
 		await runAnnouncementCheck(deps({ now: () => later }));
 		expect(meetingFetches).toBe(2); // due again after 6 hours
 	});
@@ -185,7 +192,7 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 	it('with "only important" on, routine filings are stored and claimed but not pushed', async () => {
 		await setOnlyImportant(userId, true);
 		const before = titles.length;
-		const r = await runAnnouncementCheck(
+		await runAnnouncementCheck(
 			deps({
 				fetchAnnouncements: async (s) =>
 					s !== SYMBOL ? [] : [
@@ -194,7 +201,6 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 					]
 			})
 		);
-		expect(r.suppressed).toBe(1);
 		expect(titles.slice(before)).toEqual([`[Order win] ${SYMBOL}: Bagging/Receiving of orders/contracts`]);
 		const stored = await db.select().from(announcements).where(eq(announcements.dedupeKey, `vitest-intel:${RUN}:routine`));
 		expect(stored).toHaveLength(1);
@@ -205,8 +211,7 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 		expect(claimed).toHaveLength(1);
 
 		await setOnlyImportant(userId, false);
-		const second = await runAnnouncementCheck(deps({ fetchAnnouncements: async () => [row('routine2', 5, 'Trading Window', 'closure')] }));
-		expect(second.suppressed).toBe(0);
+		await runAnnouncementCheck(deps({ fetchAnnouncements: async () => [row('routine2', 5, 'Trading Window', 'closure')] }));
 		expect(titles.at(-1)).toBe(`[Routine] ${SYMBOL}: Trading Window`);
 	});
 
@@ -226,16 +231,6 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 			...over
 		});
 		let dealFetches = 0;
-		// Other companies tracked in a shared database must not use up the per-run shareholding cap.
-		const others = (await db.selectDistinct({ symbol: trackedCompanies.nseSymbol }).from(trackedCompanies))
-			.map((r) => r.symbol)
-			.filter((s) => s !== SYMBOL);
-		if (others.length) {
-			await db
-				.insert(symbolRefresh)
-				.values(others.map((symbol) => ({ kind: 'shareholding', symbol, refreshedAt: later, ok: true })))
-				.onConflictDoUpdate({ target: [symbolRefresh.kind, symbolRefresh.symbol], set: { refreshedAt: later, ok: true } });
-		}
 		const run = () =>
 			runAnnouncementCheck(
 				deps({
@@ -257,12 +252,10 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 		const first = await run();
 		expect(first.intel.newDeals).toBe(1); // the deal of an unwatched company was not stored
 		expect(first.intel.shareholdingUpdated).toBe(1);
-		expect(first.dealsNotified).toBe(1);
 		expect(titles.slice(before)).toEqual([`[Bulk deal] ${SYMBOL}: bought 2.5 lakh shares`]);
 
 		const again = await run();
 		expect(dealFetches).toBe(1); // 3-hour throttle
-		expect(again.dealsNotified).toBe(0);
 		const stored = await db.select().from(marketDeals).where(eq(marketDeals.nseSymbol, SYMBOL));
 		expect(stored).toHaveLength(1);
 		expect(await db.select().from(dealDeliveries).where(eq(dealDeliveries.userId, userId))).toHaveLength(1);
@@ -271,7 +264,7 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 		const much = new Date(later.getTime() + 4 * 3600_000);
 		const repeat = await runAnnouncementCheck(deps({ now: () => much, intel: { fetchMeetings: async () => [], fetchDeals: async () => [deal({})], fetchShareholding: async () => null } }));
 		expect(repeat.intel.newDeals).toBe(0);
-		expect(repeat.dealsNotified).toBe(0);
+		expect(await db.select().from(dealDeliveries).where(eq(dealDeliveries.userId, userId))).toHaveLength(1);
 
 		const [snap] = await db.select().from(shareholdingSnapshots).where(eq(shareholdingSnapshots.nseSymbol, SYMBOL));
 		expect(snap).toMatchObject({ period: 'Sep 2026', fiis: 12, prevFiis: 10 });
