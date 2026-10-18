@@ -1,5 +1,6 @@
 // DB-backed run of the results calendar, tags and the "only important" setting with a fake NSE and push:
 // per-symbol refresh throttle, meeting dedupe, tags stored and back-filled, routine filings not pushed.
+import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq, inArray, like, ne } from 'drizzle-orm';
 import { db } from '../src/lib/server/db';
@@ -20,7 +21,13 @@ import { claimDueSymbols, listUpcomingMeetings, setOnlyImportant } from '../src/
 import type { ParsedAnnouncement } from '../src/lib/valuation/announcements';
 import type { ParsedMeeting } from '../src/lib/valuation/boardMeetings';
 import type { ParsedDeal } from '../src/lib/valuation/deals';
+import { fetchShareholding } from '../src/lib/valuation/server/shareholding';
 import { dbReachable } from './dbReachable';
+
+// Saved Screener page (tests/fixtures/screener-shareholding.html): the suite never calls Screener.
+// Set LIVE_SCREENER=1 to also run the one live check at the bottom.
+const SCREENER_HTML = readFileSync(new URL('./fixtures/screener-shareholding.html', import.meta.url), 'utf8');
+const fixtureFetch: typeof fetch = async () => new Response(SCREENER_HTML, { status: 200 });
 
 const dbUp = await dbReachable();
 const RUN = Date.now();
@@ -66,7 +73,9 @@ function deps(over: Partial<JobDeps> = {}): Partial<JobDeps> {
 		now: () => NOW,
 		intel: {
 			fetchDeals: async () => [],
-			fetchShareholding: async () => null,
+			// Only this test's company gets a (fixture) pattern. Other companies tracked in a shared
+			// database are not this test's concern, so their "no table" results are ignored below.
+			fetchShareholding: async (symbol) => (symbol === SYMBOL ? fetchShareholding(symbol, fixtureFetch) : null),
 			fetchMeetings: async (symbol) => {
 				if (symbol !== SYMBOL) return [];
 				meetingFetches++;
@@ -106,7 +115,7 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 		expect(meetingFetches).toBe(1);
 		const again = await runAnnouncementCheck(deps());
 		expect(meetingFetches).toBe(1); // throttled: not due for another 6 hours
-		expect(again.errors).toEqual([]);
+		expect(again.errors.filter((e) => e.includes(SYMBOL))).toEqual([]);
 
 		const stored = await db.select().from(boardMeetings).where(eq(boardMeetings.nseSymbol, SYMBOL));
 		expect(stored).toHaveLength(2); // the same two meetings were never stored twice
@@ -271,5 +280,21 @@ describe.skipIf(!dbUp)('results calendar, tags and important-only (database)', (
 			})
 		);
 		expect(r.errors.join('; ')).toContain('NSE blocked');
+	});
+});
+
+// Opt-in: hits the real Screener site, so it only runs when asked for (LIVE_SCREENER=1).
+describe.skipIf(!process.env.LIVE_SCREENER)('Screener shareholding (live)', () => {
+	it('reads the pattern table of a large company', async () => {
+		const parsed = await fetchShareholding('RELIANCE');
+		expect(parsed?.promoters).toBeGreaterThan(0);
+	});
+});
+
+describe('Screener shareholding (saved page)', () => {
+	it('parses the fixture through the real fetch path', async () => {
+		expect(await fetchShareholding('ANY', fixtureFetch)).toMatchObject({
+			period: 'Sep 2026', promoters: 49, prevPromoters: 50.1, fiis: 12, prevFiis: 11, pledgedPct: 12.5
+		});
 	});
 });
