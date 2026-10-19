@@ -15,6 +15,8 @@
 	let data = $state<PanelData | null>(null);
 	let loading = $state(true);
 	let failure = $state('');
+	/** The company is not in the Master Tracker: there is nothing to show, so the panel hides itself. */
+	let untracked = $state(false);
 	let busy = $state(false);
 	let status = $state<{ ok: boolean; text: string } | null>(null);
 	let token = 0;
@@ -22,8 +24,10 @@
 	async function load() {
 		const mine = ++token;
 		failure = '';
+		untracked = false;
 		try {
 			const response = await fetch(`/api/valuation/concalls/company/${encodeURIComponent(symbol)}`);
+			if (response.status === 404) { if (mine === token) untracked = true; return; }
 			if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message ?? `HTTP ${response.status}`);
 			const body = (await response.json()) as PanelData;
 			if (mine === token) data = body;
@@ -60,6 +64,7 @@
 	const SOURCE: Record<string, string> = { screener: 'Screener, just now', stored: 'the last Screener snapshot (Screener did not respond)', research: 'the Master Tracker research (Screener did not respond)' };
 </script>
 
+{#if !untracked}
 <section class="cp" aria-labelledby="cp-h-{symbol}" data-testid="concall-panel">
 	<header class="cp-head">
 		<div>
@@ -209,6 +214,7 @@
 		{/if}
 	{/if}
 </section>
+{/if}
 
 <style>
 	.cp {
