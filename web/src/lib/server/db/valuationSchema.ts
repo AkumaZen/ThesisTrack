@@ -590,3 +590,54 @@ export const marketBreadth = pgTable('market_breadth', {
 	lows52w: integer('lows_52w').notNull(),
 	computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow()
 });
+
+// Concall analysis, guidance tracking and red flags (drizzle/0032_concall_guidance.sql).
+export const concallCompanyScan = pgTable('concall_company_scan', {
+	symbol: text('symbol').primaryKey().references(() => masterTrackerCompanies.symbol, { onDelete: 'cascade' }),
+	scannedAt: timestamp('scanned_at', { withTimezone: true }).notNull().defaultNow(),
+	finSource: text('fin_source').notNull(),
+	financials: jsonb('financials'),
+	financialsAt: timestamp('financials_at', { withTimezone: true }),
+	quality: jsonb('quality').notNull().default([]),
+	flags: jsonb('flags'),
+	transcripts: jsonb('transcripts').notNull().default([])
+});
+
+export const concallAnalyses = pgTable(
+	'concall_analyses',
+	{
+		id: serial('id').primaryKey(),
+		transcriptHash: text('transcript_hash').notNull(),
+		promptVersion: integer('prompt_version').notNull(),
+		symbol: text('symbol').notNull().references(() => masterTrackerCompanies.symbol, { onDelete: 'cascade' }),
+		quarter: date('quarter', { mode: 'string' }).notNull(),
+		sourceTitle: text('source_title').notNull(),
+		model: text('model').notNull(),
+		result: jsonb('result').notNull(),
+		inputTokens: integer('input_tokens').notNull().default(0),
+		outputTokens: integer('output_tokens').notNull().default(0),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [uniqueIndex('concall_analyses_hash_version_uq').on(t.transcriptHash, t.promptVersion)]
+);
+
+export const concallGuidance = pgTable('concall_guidance', {
+	id: serial('id').primaryKey(),
+	analysisId: integer('analysis_id').notNull().references(() => concallAnalyses.id, { onDelete: 'cascade' }),
+	symbol: text('symbol').notNull().references(() => masterTrackerCompanies.symbol, { onDelete: 'cascade' }),
+	quarter: date('quarter', { mode: 'string' }).notNull(),
+	metric: text('metric').notNull(),
+	label: text('label').notNull(),
+	basis: text('basis').notNull(),
+	comparator: text('comparator').notNull(),
+	target: numeric('target', { mode: 'number' }),
+	targetHigh: numeric('target_high', { mode: 'number' }),
+	period: text('period').notNull(),
+	quote: text('quote').notNull(),
+	page: integer('page'),
+	status: text('status').notNull().default('pending'),
+	actual: numeric('actual', { mode: 'number' }),
+	actualText: text('actual_text').notNull().default(''),
+	statusReason: text('status_reason').notNull().default(''),
+	evaluatedAt: timestamp('evaluated_at', { withTimezone: true })
+});
