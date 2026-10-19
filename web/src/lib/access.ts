@@ -13,7 +13,11 @@ const PUBLIC_PATHS = ['/login', '/logout', '/api/auth/login', '/api/health', '/a
 const ADMIN_PAGE_PREFIXES = ['/admin', '/valuation/sectors'];
 
 /** API areas whose WRITES are admin-only (reads stay open to every signed-in user). */
-const ADMIN_WRITE_API_PREFIXES = ['/api/valuation/sectors', '/api/valuation/sector-rotation-import'];
+const ADMIN_WRITE_API_PREFIXES = [
+	'/api/valuation/sectors',
+	'/api/valuation/sector-rotation-import',
+	'/api/valuation/breadth/backfill'
+];
 
 /** API areas that are admin-only entirely, reads included. */
 const ADMIN_API_PREFIXES = ['/api/admin'];
