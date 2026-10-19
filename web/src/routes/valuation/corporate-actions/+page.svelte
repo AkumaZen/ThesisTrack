@@ -42,10 +42,10 @@
 </div>
 
 <div class="wrap mi">
-	<ul class="mi-chips" aria-label="Type of action">
-		<li><a class="mi-chip" href={href(null)} aria-current={data.kind === null ? 'true' : undefined}>All</a></li>
+	<ul class="tag-list" aria-label="Type of action">
+		<li><a class="tag" href={href(null)} aria-current={data.kind === null ? 'true' : undefined}>All</a></li>
 		{#each kinds as k (k)}
-			<li><a class="mi-chip" href={href(k)} aria-current={data.kind === k ? 'true' : undefined}>{ACTION_LABELS[k]}</a></li>
+			<li><a class="tag" href={href(k)} aria-current={data.kind === k ? 'true' : undefined}>{ACTION_LABELS[k]}</a></li>
 		{/each}
 	</ul>
 
@@ -60,7 +60,7 @@
 						{#each g.rows as a (a.id)}
 							<li class="mi-item">
 								<div class="mi-meta">
-									<span class="mi-tag" class:mi-tag-hi={a.kind !== 'other'}>{ACTION_LABELS[a.kind as ActionKind] ?? a.kind}</span>
+									<span class="tag {a.kind !== 'other' ? 'tag-info' : ''}">{ACTION_LABELS[a.kind as ActionKind] ?? a.kind}</span>
 									{#if a.recordDate}<span>Record date {a.recordDate}</span>{/if}
 								</div>
 								<div class="mi-title">

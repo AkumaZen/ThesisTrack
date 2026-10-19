@@ -73,7 +73,7 @@
 			<div class="facet-group-label">Industry</div>
 			<div class="flex flex-wrap gap-1.5">
 				{#each taxonomy as industry (industry.name)}
-					<label class="facet-chip">
+					<label class="tag">
 						<input
 							type="checkbox"
 							checked={broadIndustry.includes(industry.name)}
@@ -89,7 +89,7 @@
 				<div class="facet-group-label">Niche</div>
 				<div class="flex flex-wrap gap-1.5">
 					{#each niches as n (n)}
-						<label class="facet-chip">
+						<label class="tag">
 							<input type="checkbox" checked={niche.includes(n)} onchange={() => (niche = toggle(niche, n))} />
 							<span>{n}</span>
 						</label>
@@ -101,7 +101,7 @@
 			<div class="facet-group-label">Operating Model</div>
 			<div class="flex flex-wrap gap-1.5">
 				{#each OPERATING_MODELS as m (m)}
-					<label class="facet-chip">
+					<label class="tag">
 						<input
 							type="checkbox"
 							checked={operatingModel.includes(m)}
@@ -117,7 +117,7 @@
 			<div class="flex flex-wrap gap-1.5">
 				{#each STATUSES as s (s)}
 					{@const style = STATUS_STYLES[s]}
-					<label class="facet-chip">
+					<label class="tag">
 						<input type="checkbox" checked={status.includes(s)} onchange={() => (status = toggle(status, s))} />
 						<span class="inline-block h-1.5 w-1.5 rounded-full {style.dot}"></span>
 						<span>{style.label}</span>

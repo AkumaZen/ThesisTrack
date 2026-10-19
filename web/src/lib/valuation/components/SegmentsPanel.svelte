@@ -70,7 +70,7 @@
 	{:else if table}
 		<div class="preset-chips" role="group" aria-label="Segment measure">
 			{#each lines as l (l)}
-				<button type="button" class="al-chip" class:al-chip-on={line === l} aria-pressed={line === l} onclick={() => (line = l)}>{l}</button>
+				<button type="button" class="tag" class:tag-on={line === l} aria-pressed={line === l} onclick={() => (line = l)}>{l}</button>
 			{/each}
 		</div>
 		<div class="table-scroll">

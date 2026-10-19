@@ -286,7 +286,7 @@
 							<p class="text-xs text-muted-fg mt-0.5">{sector.description}</p>
 						{/if}
 					</div>
-					<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-muted-fg shrink-0"
+					<span class="tag shrink-0"
 						>{sector.operating_model ? (OPERATING_MODEL_LABELS[sector.operating_model] ?? sector.operating_model) : 'Mixed'}</span
 					>
 				</div>

@@ -193,7 +193,7 @@
 		<div class="shell-inner tools-inner">
 			{#each tools as t (t.href)}
 				<a href={t.href} class="tool" aria-current={t.match(path) ? 'page' : undefined}
-					>{t.label}{#if isNew(t)}<span class="new-badge" data-testid="new-badge">New</span>{/if}</a
+					>{t.label}{#if isNew(t)}<span class="tag tag-accent new-badge" data-testid="new-badge">New</span>{/if}</a
 				>
 			{/each}
 		</div>
@@ -224,7 +224,7 @@
 				<div class="eyebrow">{group.name}</div>
 				{#each group.list as t (t.href)}
 					<a href={t.href} class="drawer-link" aria-current={t.match(path) ? 'page' : undefined}
-						>{t.label}{#if isNew(t)}<span class="new-badge" data-testid="new-badge">New</span>{/if}</a
+						>{t.label}{#if isNew(t)}<span class="tag tag-accent new-badge" data-testid="new-badge">New</span>{/if}</a
 					>
 				{/each}
 			</div>

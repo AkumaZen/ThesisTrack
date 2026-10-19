@@ -80,58 +80,11 @@
 	}
 }
 
-.vd .mi-chips {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.4rem;
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
 
-.vd .mi-chip {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.35rem;
-	min-height: 2.5rem;
-	padding: 0.2rem 0.7rem;
-	border: var(--border-w) solid var(--ink);
-	background: var(--bg);
-	color: var(--ink);
-	font: 600 0.8rem/1.2 var(--font-body, inherit);
-	text-decoration: none;
-	cursor: pointer;
-	max-width: 100%;
-	overflow-wrap: anywhere;
-}
 
-.vd .mi-chip:hover {
-	box-shadow: var(--shadow-sm);
-}
 
-.vd .mi-chip[aria-current='true'],
-.vd .mi-chip-on {
-	background: var(--ink);
-	color: var(--bg);
-	box-shadow: var(--shadow-sm);
-}
 
-.vd .mi-chip small {
-	font-family: var(--font-mono);
-	font-weight: 500;
-	font-size: 0.7rem;
-}
 
-.vd .mi-chip-x {
-	min-height: 2.5rem;
-	min-width: 2.5rem;
-	padding: 0;
-	border: var(--border-w) solid var(--ink);
-	background: var(--bg);
-	color: var(--ink);
-	font: inherit;
-	cursor: pointer;
-}
 
 .vd .mi-list {
 	list-style: none;
@@ -187,24 +140,8 @@
 	font-weight: 600;
 }
 
-.vd .mi-tag {
-	display: inline-block;
-	padding: 0.1rem 0.45rem;
-	border: 1.5px solid var(--ink);
-	background: var(--bg);
-	color: var(--ink);
-	font: 600 0.72rem/1.3 var(--font-body, inherit);
-}
 
-.vd .mi-tag-hi {
-	background: var(--accent);
-	color: var(--accent-ink);
-}
 
-.vd .mi-tag-dash {
-	border-style: dashed;
-	color: var(--muted);
-}
 
 /* Facts of a filing: label over value, wrapping, never wider than the card. */
 .vd .mi-facts {
@@ -283,7 +220,7 @@
 
 .vd .mi-tabs {
 	display: flex;
-	gap: 0.4rem;
+	gap: 8px;
 	flex-wrap: wrap;
 }
 

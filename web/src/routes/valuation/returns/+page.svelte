@@ -86,8 +86,8 @@
 			{#each PERIODS as p (p)}
 				<button
 					type="button"
-					class="al-chip"
-					class:al-chip-on={period === p}
+					class="tag"
+					class:tag-on={period === p}
 					aria-pressed={period === p}
 					onclick={() => go({ p })}
 					data-testid="ret-period">{p}</button
@@ -100,8 +100,8 @@
 		{#each data.indices as idx (idx.key)}
 			<button
 				type="button"
-				class="al-chip"
-				class:al-chip-on={data.indexKeys.includes(idx.key)}
+				class="tag"
+				class:tag-on={data.indexKeys.includes(idx.key)}
 				aria-pressed={data.indexKeys.includes(idx.key)}
 				onclick={() => toggleIndex(idx.key)}>{idx.label}</button
 			>

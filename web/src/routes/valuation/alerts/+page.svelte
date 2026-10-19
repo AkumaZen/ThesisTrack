@@ -244,19 +244,19 @@
 	<div class="al-toolbar">
 		<div class="al-filters" role="group" aria-label="Filter alerts by type">
 			<button
-				class="al-chip"
-				class:al-chip-on={typeFilter === 'all'}
+				class="tag"
+				class:tag-on={typeFilter === 'all'}
 				type="button"
 				aria-pressed={typeFilter === 'all'}
-				onclick={() => (typeFilter = 'all')}>All <span>{countFor('all')}</span></button
+				onclick={() => (typeFilter = 'all')}>All <span class="tag-sub">{countFor('all')}</span></button
 			>
 			{#each ALERT_TYPES as t (t)}
 				<button
-					class="al-chip"
-					class:al-chip-on={typeFilter === t}
+					class="tag"
+					class:tag-on={typeFilter === t}
 					type="button"
 					aria-pressed={typeFilter === t}
-					onclick={() => (typeFilter = t)}>{ALERT_TYPE_LABELS[t]} <span>{countFor(t)}</span></button
+					onclick={() => (typeFilter = t)}>{ALERT_TYPE_LABELS[t]} <span class="tag-sub">{countFor(t)}</span></button
 				>
 			{/each}
 		</div>
@@ -493,13 +493,13 @@
 				{#if data.settings.muted.length === 0}
 					<p class="sm-hint">Nothing muted. Use "Mute" on an alert to silence a stock or sector.</p>
 				{:else}
-					<ul class="sm-chips">
+					<ul class="tag-list sm-chips">
 						{#each data.settings.muted as key (key)}
-							<li class="sm-chip">
-								<span class="sm-chip-name">{mutedLabel(key)}</span>
-								<span class="sm-chip-ticker">{key.split(':')[0]}</span>
+							<li class="tag tag-wrap">
+								<span>{mutedLabel(key)}</span>
+								<span class="sm-ticker">{key.split(':')[0]}</span>
 								<button
-									class="sm-chip-x"
+									class="tag-x"
 									type="button"
 									aria-label="Unmute {mutedLabel(key)}"
 									title="Unmute"

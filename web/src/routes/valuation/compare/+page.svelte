@@ -372,12 +372,13 @@
 			Companies to compare (up to {data.maxSymbols})
 		</label>
 		{#if chosen.length}
-			<ul class="cmp-chips" aria-label="Companies chosen">
+			<ul class="tag-list cmp-chips" aria-label="Companies chosen">
 				{#each chosen as c (c.symbol)}
-					<li class="cmp-chip">
-						{nameOf(c.symbol, c.name)} <span class="cmp-chip-ticker">{c.symbol}</span>
+					<li class="tag tag-wrap">
+						{nameOf(c.symbol, c.name)} <span class="tag-sub">{c.symbol}</span>
 						<button
 							type="button"
+							class="tag-x"
 							aria-label="Remove {nameOf(c.symbol, c.name)}"
 							onclick={() => removeCompany(c.symbol)}>×</button
 						>
@@ -1347,8 +1348,6 @@
 			min-width: 40px;
 			min-height: 40px;
 		}
-		.cmp-chip button {
-			min-width: 40px;
-		}
+
 	}
 </style>

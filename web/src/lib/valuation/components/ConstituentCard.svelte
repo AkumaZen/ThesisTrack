@@ -60,7 +60,7 @@
 	<div class="sector-card-head">
 		<div class="sector-card-title">
 			<span class="sector-card-label">{name}</span>
-			<span class="sector-basket-tag">{symbol}</span>
+			<span class="tag">{symbol}</span>
 		</div>
 		<a
 			class="sector-constituent-open"

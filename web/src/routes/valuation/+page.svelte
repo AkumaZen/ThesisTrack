@@ -42,7 +42,7 @@
 		type SortKey,
 		type WatchlistView
 	} from '$lib/valuation/prefs';
-	import { REVIEW_STATUS_LABELS, type ReviewStatus } from '$lib/valuation/team';
+	import { REVIEW_STATUS_LABELS, REVIEW_STATUS_TONE, type ReviewStatus } from '$lib/valuation/team';
 	import type { NamedWatchlist } from '$lib/valuation/watchlists';
 	import { timeAgo } from '$lib/valuation/activity';
 	import ActivityFeed from '$lib/valuation/components/ActivityFeed.svelte';
@@ -1294,12 +1294,11 @@
 			{:else if sc.cagrPct == null}
 				—
 			{:else}
-				<span class="wl-scenario-stack">
-					<span class={trendClass(sc.cagrPct)}>{trendArrow(sc.cagrPct)} {fmtPct(sc.cagrPct)}</span>
-					{#if sc.pctAchieved != null}<span class="wl-badge wl-achieved"
-							>{fmtAchieved(sc.pctAchieved)}</span
-						>{/if}
-				</span>
+				<span
+					class={trendClass(sc.cagrPct)}
+					title={sc.pctAchieved != null ? `${fmtAchieved(sc.pctAchieved)} of target achieved` : undefined}
+					>{trendArrow(sc.cagrPct)} {fmtPct(sc.cagrPct)}</span
+				>
 			{/if}
 		</td>
 	{/snippet}
@@ -1315,7 +1314,7 @@
 					…
 				{:else}
 					{#if reachedFairValue(r)}<span
-							class="wl-badge wl-fv-reached"
+							class="tag tag-good wl-fv-reached"
 							title="CMP is at or above fair value">Reached</span
 						>{/if}{fmtPrice(fairValueFromTarget(targetOf(r), fairValuePct))}
 				{/if}
@@ -1378,7 +1377,7 @@
 		{:else if col === 'status'}
 			<td data-col="status">
 				{#if r.status}
-					<span class="status-chip status-{r.status}">{REVIEW_STATUS_LABELS[r.status]}</span>
+					<span class="tag {REVIEW_STATUS_TONE[r.status]}">{REVIEW_STATUS_LABELS[r.status]}</span>
 					{#if r.statusStale}<span class="wl-by" title="The valuation changed after it was approved"
 							>changed since</span
 						>{/if}

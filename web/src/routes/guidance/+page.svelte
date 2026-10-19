@@ -59,9 +59,9 @@
 	// actually read as different at a glance, so this one feature breaks that
 	// convention on purpose with real green/red rather than the neutral tokens.
 	const OUTCOME_STYLES: Record<string, string> = {
-		achieved: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-		missed: 'bg-red-500/10 text-red-700 dark:text-red-400',
-		pending: 'bg-surface-3 text-muted-fg'
+		achieved: 'tag-good',
+		missed: 'tag-danger',
+		pending: ''
 	};
 	const OUTCOME_CARD_STYLES: Record<string, string> = {
 		achieved: 'border-emerald-500/30 bg-emerald-500/5',
@@ -255,7 +255,7 @@
 			<div class="rounded-lg border border-border bg-surface p-4">
 				<div class="flex items-center gap-2 mb-3">
 					<a href="/company/{group.company_id}" class="font-medium hover:text-accent">{group.company_name}</a>
-					<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-muted-fg"
+					<span class="tag"
 						>{group.items.length} note{group.items.length === 1 ? '' : 's'}</span
 					>
 				</div>
@@ -266,25 +266,23 @@
 							<div class="flex items-start justify-between gap-3">
 								<div>
 									<div class="flex items-center gap-2 flex-wrap">
-										<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-muted-fg">{blockLabel(item.block_key)}</span>
+										<span class="tag">{blockLabel(item.block_key)}</span>
 										{#if target}
-											<span class="text-xs px-2 py-0.5 rounded-full bg-surface-3 text-fg font-medium">{target}</span>
+											<span class="tag tag-info">{target}</span>
 										{/if}
 										{#if item.target_metric}
-											<span class="text-xs px-2 py-0.5 rounded-full font-medium {OUTCOME_STYLES[item.outcome]}"
+											<span class="tag {OUTCOME_STYLES[item.outcome]}"
 												>{item.outcome}</span
 											>
 											{#if isResultsDue(item)}
 												<span
-													class="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400"
+													class="tag tag-warn"
 													>Results due - check it</span
 												>
 											{/if}
 										{:else}
 											<span
-												class="text-xs px-2 py-0.5 rounded-full {item.status === 'open'
-													? 'bg-warn/10 text-warn'
-													: 'bg-good/10 text-good'}">{item.status}</span
+												class="tag {item.status === 'open' ? 'tag-warn' : 'tag-good'}">{item.status}</span
 											>
 										{/if}
 									</div>

@@ -83,24 +83,24 @@
 	<div class="flex items-center justify-between gap-2">
 		<div class="flex items-center gap-2 min-w-0">
 			<span class="inline-block h-2 w-2 rounded-full {style.dot} shrink-0"></span>
-			<span class="text-xs font-medium {style.pill} px-2 py-0.5 rounded-full ring-1 shrink-0">{style.label}</span>
+			<span class="tag {style.pill} shrink-0">{style.label}</span>
 		</div>
 		<div class="flex items-center gap-1.5 shrink-0">
 			{#if active?.stale}
 				<span
-					class="text-[10px] font-semibold uppercase tracking-wide text-warn bg-warn/10 px-2 py-0.5 rounded-full ring-1 ring-warn/30"
+					class="tag tag-warn"
 					title={(active.stale_reasons ?? []).join('. ')}>Review due</span
 				>
 			{/if}
 			{#if active?.has_active_override}
 				<span
-					class="text-[10px] font-semibold uppercase tracking-wide text-danger bg-danger/10 px-2 py-0.5 rounded-full ring-1 ring-danger/20"
+					class="tag tag-danger"
 					>Override</span
 				>
 			{/if}
 			{#if scenarios.length > 1}
 				<span
-					class="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-2 ring-1 ring-border text-muted-fg max-w-[9rem] truncate"
+					class="tag max-w-[9rem] truncate"
 					title={isMine ? 'Your thesis' : `${active?.owner}'s thesis - read only`}>{isMine ? 'You' : active?.owner}</span
 				>
 				<button

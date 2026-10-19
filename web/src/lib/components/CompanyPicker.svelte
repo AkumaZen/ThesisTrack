@@ -149,8 +149,8 @@
 							<span class="cp-name">{hit.name}</span>
 							<span class="cp-meta">
 								<span class="cp-ticker">{hit.symbol}</span>
-								{#if hit.tracked}<span class="cp-tag">Tracked</span>{/if}
-								{#if hit.priceable === false}<span class="cp-tag cp-tag-warn">No price chart</span>{/if}
+								{#if hit.tracked}<span class="tag tag-info">Tracked</span>{/if}
+								{#if hit.priceable === false}<span class="tag tag-warn">No price chart</span>{/if}
 							</span>
 						</li>
 					{/each}
@@ -236,16 +236,8 @@
 		font-size: 12px;
 		color: var(--muted);
 	}
-	.cp-tag {
-		font-size: 11px;
-		padding: 1px 6px;
-		border: 1px solid var(--ink);
-		color: var(--ink);
-	}
-	.cp-tag-warn {
-		border-color: var(--warn);
-		color: var(--warn);
-	}
+
+
 	.cp-note {
 		margin: 0;
 		padding: 10px;

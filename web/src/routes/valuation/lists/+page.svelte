@@ -143,9 +143,9 @@
 			{#if quick.length}
 				<div class="mi-field">
 					From your tracked companies
-					<ul class="mi-chips">
+					<ul class="tag-list">
 						{#each quick as t (t.nseSymbol)}
-							<li><button class="mi-chip" type="button" disabled={busy} onclick={() => addCompany(s.id, t.nseSymbol, t.companyName)} aria-label="Add {t.companyName} to {s.name}">+ {t.nseSymbol}</button></li>
+							<li><button class="tag" type="button" disabled={busy} onclick={() => addCompany(s.id, t.nseSymbol, t.companyName)} aria-label="Add {t.companyName} to {s.name}">+ {t.nseSymbol}</button></li>
 						{/each}
 					</ul>
 				</div>
@@ -156,7 +156,7 @@
 				<ul class="mi-list" data-testid="section-calendar">
 					{#each s.calendar as m (m.nseSymbol + m.meetingDate + m.isResults)}
 						<li class="mi-item">
-							<div class="mi-meta"><span>{formatMeetingDay(m.meetingDate)}</span><span class="mi-tag" class:mi-tag-hi={m.isResults}>{m.isResults ? 'Results' : m.purpose}</span></div>
+							<div class="mi-meta"><span>{formatMeetingDay(m.meetingDate)}</span><span class="tag {m.isResults ? 'tag-info' : ''}">{m.isResults ? 'Results' : m.purpose}</span></div>
 							<div class="mi-title">{m.nseSymbol} <span class="mi-muted">{m.companyName}</span></div>
 						</li>
 					{/each}

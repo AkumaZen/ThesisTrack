@@ -3,7 +3,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { sectorApi } from '$lib/valuation/sectorClient';
 	import { feedQuery, feedTags, presetScan, PRESET_SCANS } from '$lib/valuation/announcementScans';
-	import { TAG_LABELS, isAnnouncementTag, isRoutine, type AnnouncementTag } from '$lib/valuation/announcementTags';
+	import { TAG_LABELS, TAG_TONE, isAnnouncementTag, type AnnouncementTag } from '$lib/valuation/announcementTags';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -64,10 +64,10 @@
 <div class="wrap mi">
 	<section class="mi-box" aria-labelledby="mi-scans">
 		<h2 id="mi-scans">Preset scans</h2>
-		<ul class="mi-chips" aria-label="Preset scans">
-			<li><a class="mi-chip" href={href({ scan: null })} aria-current={!f.scan ? 'true' : undefined}>All</a></li>
+		<ul class="tag-list" aria-label="Preset scans">
+			<li><a class="tag" href={href({ scan: null })} aria-current={!f.scan ? 'true' : undefined}>All</a></li>
 			{#each PRESET_SCANS as s (s.key)}
-				<li><a class="mi-chip" href={href({ scan: s })} aria-current={f.scan === s.key ? 'true' : undefined}>{s.label}</a></li>
+				<li><a class="tag" href={href({ scan: s })} aria-current={f.scan === s.key ? 'true' : undefined}>{s.label}</a></li>
 			{/each}
 		</ul>
 		{#if scan}
@@ -105,11 +105,11 @@
 	<section class="mi-box" aria-labelledby="mi-kw">
 		<h2 id="mi-kw">Your keywords</h2>
 		{#if data.keywords.length}
-			<ul class="mi-chips" aria-label="Saved keywords">
+			<ul class="tag-list" aria-label="Saved keywords">
 				{#each data.keywords as k (k.id)}
 					<li class="mi-row">
-						<a class="mi-chip" href={href({ keyword: k.keyword, company: '', tag: null, scan: null })} aria-current={f.keyword?.toLowerCase() === k.keyword.toLowerCase() ? 'true' : undefined}>{k.keyword}</a>
-						<button class="mi-chip-x" type="button" aria-label="Remove keyword {k.keyword}" onclick={() => removeKeyword(k.id, k.keyword)}>x</button>
+						<a class="tag" href={href({ keyword: k.keyword, company: '', tag: null, scan: null })} aria-current={f.keyword?.toLowerCase() === k.keyword.toLowerCase() ? 'true' : undefined}>{k.keyword}</a>
+						<button class="tag" type="button" aria-label="Remove keyword {k.keyword}" onclick={() => removeKeyword(k.id, k.keyword)}>x</button>
 					</li>
 				{/each}
 			</ul>
@@ -135,10 +135,10 @@
 	<section class="mi-box" aria-labelledby="mi-trend" data-testid="trending">
 		<h2 id="mi-trend">Trending words, last 7 days</h2>
 		{#if data.trending.length}
-			<ul class="mi-chips" aria-label="Trending words">
+			<ul class="tag-list" aria-label="Trending words">
 				{#each data.trending as w (w.word)}
 					<li>
-						<a class="mi-chip" href={href({ keyword: w.word, company: '', tag: null, scan: null })}>
+						<a class="tag" href={href({ keyword: w.word, company: '', tag: null, scan: null })}>
 							{w.word}
 							<small>{w.current}{w.change > 0 ? ` +${w.change}` : w.change < 0 ? ` ${w.change}` : ''}</small>
 						</a>
@@ -164,7 +164,7 @@
 				<li class="mi-item">
 					<div class="mi-meta">
 						<span>{when(a.announcedAt)}</span>
-						<span class="mi-tag" class:mi-tag-dash={isRoutine(a.tag)} class:mi-tag-hi={!isRoutine(a.tag) && tagOf(a.tag) !== 'other'}>{TAG_LABELS[tagOf(a.tag)]}</span>
+						<span class="tag {TAG_TONE[tagOf(a.tag)]}">{TAG_LABELS[tagOf(a.tag)]}</span>
 					</div>
 					<div class="mi-title">
 						<a href="/valuation/company/{encodeURIComponent(a.nseSymbol)}">{a.nseSymbol}</a>
