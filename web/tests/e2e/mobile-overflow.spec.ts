@@ -73,7 +73,7 @@ test.describe('phone width', () => {
 			'/valuation/sector-rotation/conventional_energy/transformers_manufacturing', '/valuation/alerts', '/valuation/settings', '/valuation/tracking',
 			'/valuation/results', '/valuation/scans', '/valuation/returns', '/valuation/returns?s=HDFCBANK,TCS&p=1Y', '/valuation/breadth',
 			'/valuation/announcements', '/valuation/insider-trades', '/valuation/corporate-actions', '/valuation/lists', '/valuation/price-alerts',
-			'/valuation/filings/HDFCBANK'
+			'/valuation/filings/HDFCBANK', '/valuation/concalls', '/valuation/concalls/PICCADIL', '/valuation/red-flags'
 		];
 		for (const route of routes) test(`${route} has no sideways page scroll`, async ({ page }) => visit(page, route));
 
