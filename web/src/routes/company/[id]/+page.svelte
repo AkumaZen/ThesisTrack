@@ -269,10 +269,10 @@ Type the company name to confirm:`
 			<!-- Phones: its own row under the name. -->
 			<div class="contents max-sm:flex max-sm:order-4 max-sm:w-full max-sm:flex-wrap max-sm:items-center max-sm:gap-x-2 max-sm:gap-y-1">
 			<span class="inline-block h-2 w-2 rounded-full {style.dot} shrink-0"></span>
-			<span class="text-xs font-medium {style.pill} px-2 py-0.5 rounded-full ring-1 shrink-0">{style.label}</span>
+			<span class="tag {style.pill} shrink-0">{style.label}</span>
 			{#if detail.has_active_override}
 				<span
-					class="text-[10px] font-semibold uppercase text-danger bg-danger/10 px-2 py-0.5 rounded-full ring-1 ring-danger/20 shrink-0"
+					class="tag tag-danger shrink-0"
 					title="A sell/exit rule fired here, but you chose to keep holding anyway"
 					>Warning Overridden</span
 				>
@@ -468,7 +468,7 @@ Type the company name to confirm:`
 				{@const rstyle = STATUS_STYLES[aiResult.proposed_status] ?? STATUS_STYLES.on_track}
 				<div class="mt-3 rounded-md bg-surface-2 p-3">
 					<div class="flex items-center gap-2">
-						<span class="text-xs font-medium {rstyle.pill} px-2 py-0.5 rounded-full ring-1">Proposed: {rstyle.label}</span>
+						<span class="tag {rstyle.pill}">Proposed: {rstyle.label}</span>
 						<span class="text-xs text-muted-fg">filed as a status recommendation - visible in Quarterly Review</span>
 					</div>
 					{#if aiResult.evidence?.reasoning_chain?.length}
@@ -498,7 +498,7 @@ Type the company name to confirm:`
 						<button
 							type="button"
 							onclick={() => viewScenario(s.owner)}
-							class="text-xs px-2 py-0.5 rounded-full {sstyle.pill} ring-1 hover:brightness-90 cursor-pointer">{s.owner} &middot; {sstyle.label}</button
+							class="tag {sstyle.pill}">{s.owner} &middot; {sstyle.label}</button
 						>
 					{/each}
 				</div>
@@ -541,9 +541,8 @@ Type the company name to confirm:`
 								type="button"
 								onclick={() => viewScenario(s.owner)}
 								disabled={isActive}
-								class="text-xs px-2 py-0.5 rounded-full {sstyle.pill} ring-1 {isActive
-									? 'ring-2 ring-offset-1 ring-offset-bg-ink'
-									: 'hover:brightness-90 cursor-pointer'}">{s.owner} &middot; {sstyle.label}</button
+								class="tag {sstyle.pill}"
+								class:tag-on={isActive}>{s.owner} &middot; {sstyle.label}</button
 							>
 						{/each}
 					</div>
@@ -706,10 +705,7 @@ Type the company name to confirm:`
 									<div class="flex items-center justify-between">
 										<span class="text-sm" class:text-danger={trig.latest_fired} class:font-medium={trig.latest_fired}>{trig.label}</span>
 										<span
-											class="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded-full ring-1 {trig.severity ===
-											'kill'
-												? 'bg-danger/10 text-danger ring-danger/20'
-												: 'bg-warn/10 text-warn ring-warn/20'}"
+											class="tag {trig.severity === 'kill' ? 'tag-danger' : 'tag-warn'}"
 										>
 											{trig.severity}
 										</span>

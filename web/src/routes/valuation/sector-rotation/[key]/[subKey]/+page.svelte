@@ -183,7 +183,7 @@
 			<div class="sub">
 				Basket 1M {fmtPct(summary.return1m)} · 3M {fmtPct(summary.return3m)} ·
 				{#if summaryBadge}
-					<span class="wl-badge {ROTATION_TONE_CLASS[summaryBadge.tone]}" title={summaryBadge.title}
+					<span class="{ROTATION_TONE_CLASS[summaryBadge.tone]}" title={summaryBadge.title}
 						>{summaryBadge.text}</span
 					>
 				{/if}

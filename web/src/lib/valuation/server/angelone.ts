@@ -232,6 +232,7 @@ export interface ScripEntry {
 }
 
 let scripIndex: Map<string, ScripEntry> | null = null;
+let scripEntries: ScripEntry[] | null = null;
 let scripIndexFetchedAt = 0;
 const SCRIP_INDEX_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -278,8 +279,22 @@ async function getScripIndex(): Promise<Map<string, ScripEntry>> {
 	const index = buildScripIndex(entries);
 
 	scripIndex = index;
+	scripEntries = entries;
 	scripIndexFetchedAt = Date.now();
 	return index;
+}
+
+/** Every row of Angel One's instrument list (cached a day), for jobs that need the whole NSE
+ *  universe rather than one ticker. */
+export async function getScripEntries(): Promise<ScripEntry[]> {
+	await getScripIndex();
+	return scripEntries ?? [];
+}
+
+/** Daily candles between two dates for one instrument, through the shared candles limiter
+ *  (the whole-market breadth backfill reads about 3,000 of these). */
+export function fetchScripCandles(exchange: string, token: string, from: Date, to: Date): Promise<Candle[]> {
+	return fetchCandlesByToken(exchange, token, formatDateForAngel(from), formatDateForAngel(to));
 }
 
 /** Whether Angel One's scrip master has a live NSE listing for `symbol` (i.e. whether charts and

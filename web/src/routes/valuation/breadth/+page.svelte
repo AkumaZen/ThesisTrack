@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { advanceDeclineRatio, breadthRead, pct } from '$lib/valuation/breadth';
+	import DmaBreadthChart from '$lib/valuation/components/DmaBreadthChart.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
+	const isAdmin = $derived(data.user?.role === 'admin');
 	const canRefresh = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
 	const latest = $derived(data.rows.length ? data.rows[data.rows.length - 1] : null);
 	const history = $derived([...data.rows].reverse());
@@ -27,6 +29,42 @@
 			busy = false;
 		}
 	}
+
+	// Admin: loads the daily closes of every NSE equity in resumable slices (each call stays inside the
+	// function limit and saves its progress), repeating until the server says it is finished.
+	let backfilling = $state(false);
+	let backfillMessage = $state<string | null>(null);
+	async function backfill(options: { retryFailed?: boolean; rebuild?: boolean } = {}) {
+		backfilling = true;
+		backfillMessage = null;
+		try {
+			let slice = 0;
+			for (;;) {
+				slice++;
+				backfillMessage = `Loading history, slice ${slice}...`;
+				const res = await fetch('/api/valuation/breadth/backfill', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify(slice === 1 ? options : { retryFailed: options.retryFailed })
+				});
+				const body = await res.json().catch(() => null);
+				if (!res.ok) throw new Error(body?.message ?? `HTTP ${res.status}`);
+				backfillMessage = `Slice ${slice}: ${body.remaining} of ${body.universe} stocks left (${body.failed} failed this slice).`;
+				if (body.aborted) throw new Error(body.aborted);
+				if (body.finished) {
+					backfillMessage = `History loaded for ${body.universe} stocks; ${body.aggregate?.rows ?? 0} days computed.`;
+					break;
+				}
+				if (body.processed === 0) throw new Error('No progress; try again later.');
+			}
+			await invalidateAll();
+		} catch (e) {
+			backfillMessage = e instanceof Error ? e.message : 'Could not load the history.';
+		} finally {
+			backfilling = false;
+		}
+	}
+	const st = $derived(data.market.status);
 
 	const f = (n: number | null, d = 0) => (n == null ? '-' : n.toFixed(d));
 
@@ -55,14 +93,35 @@
 	<div class="band-inner">
 		<h1>Market breadth</h1>
 		<div class="sub">
-			How many scanner stocks advance or decline, sit above their 50 and 200 day averages, and make 52-week
-			highs or lows. Computed from stored daily prices; no live data. The last {data.rows.length || 30} sessions are
-			kept.
+			The share of all NSE stocks below their 50 day average, plus how many scanner stocks advance or decline and
+			make 52-week highs or lows. Computed from stored daily prices; no live data.
 		</div>
 	</div>
 </div>
 
 <div class="wrap wrap-wide an-page">
+	{#if data.market.points.length > 0}
+		<DmaBreadthChart points={data.market.points} computedAt={data.market.status.computedAt} />
+		<p class="hint">
+			Universe: NSE equities in the EQ and BE series ({st.done} with stored closes{st.empty ? `, ${st.empty} with no prices` : ''}{st.failed ? `, ${st.failed} failed` : ''}{st.stale ? `, ${st.stale} to refetch` : ''}); ETFs, funds, SME, debt and indices are left out. Today's stocks only, so past days leave out stocks that have since delisted.
+		</p>
+	{:else}
+		<p class="scan-note" data-testid="dma-empty">
+			The whole-market chart has no data yet.{isAdmin ? ' Load the history below.' : ' An admin has to load the price history first.'}
+		</p>
+	{/if}
+	{#if isAdmin}
+		<div class="an-actions no-print">
+			<button type="button" class="wl-strip-btn" onclick={() => backfill()} disabled={backfilling} data-testid="breadth-backfill">
+				{backfilling ? 'Loading...' : data.market.points.length === 0 ? 'Load market history' : 'Update market history'}
+			</button>
+			{#if st.failed > 0}
+				<button type="button" class="wl-strip-btn" onclick={() => backfill({ retryFailed: true })} disabled={backfilling}>Retry failed</button>
+			{/if}
+			{#if backfillMessage}<span class="hint" role="status">{backfillMessage}</span>{/if}
+		</div>
+	{/if}
+
 	{#if canRefresh}
 		<div class="an-actions no-print">
 			<button type="button" class="wl-strip-btn" onclick={refresh} disabled={busy} data-testid="breadth-refresh">
@@ -77,7 +136,7 @@
 			No breadth stored yet.{canRefresh ? ' Press "Refresh breadth" to compute it from the stored prices.' : ' An editor can compute it.'}
 		</p>
 	{:else}
-		<p class="hint">As of {latest.asOf}, {latest.total} stocks measured. Overall read: <strong>{read}</strong>.</p>
+		<p class="hint">Scanner universe, as of {latest.asOf}, {latest.total} stocks measured. Overall read: <strong>{read}</strong>.</p>
 		<ul class="an-cards" data-testid="breadth-cards">
 			<li class="an-card">
 				<span class="an-label">Advance / decline</span>
@@ -116,7 +175,7 @@
 				</svg>
 				<figcaption class="hint">
 					<span class="an-key an-key-a"></span> % above 50 DMA
-					<span class="an-key an-key-b"></span> % above 200 DMA (scale 0 to 100%)
+					<span class="an-key an-key-b"></span> % above 200 DMA (scanner universe, last {data.rows.length} sessions, scale 0 to 100%)
 				</figcaption>
 			</figure>
 		{/if}

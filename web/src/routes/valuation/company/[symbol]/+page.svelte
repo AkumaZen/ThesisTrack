@@ -46,6 +46,7 @@
 	import type { NamedWatchlist } from '$lib/valuation/watchlists';
 	import {
 		REVIEW_STATUS_LABELS,
+		REVIEW_STATUS_TONE,
 		statusIsStale,
 		type CoverageInfo,
 		type StatusInfo
@@ -658,7 +659,7 @@
 		{#if exportError}<p class="export-error" role="alert">{exportError}</p>{/if}
 		<h1>
 			{company.name}
-			<span class="quality-badge quality-{quality.rating.toLowerCase()}">{quality.rating}</span>
+			<span class="tag {quality.rating === 'Strong' ? 'tag-good' : quality.rating === 'Watch' ? 'tag-warn' : 'tag-danger'}">{quality.rating}</span>
 		</h1>
 		<div class="sub">
 			{company.symbol} · Bear / base / bull valuation ·
@@ -698,7 +699,7 @@
 			{#if hydratedFor !== company.symbol}
 				<span class="wl-strip-note">Checking the watchlist…</span>
 			{:else if inWatchlist}
-				<span class="wl-strip-badge" data-testid="watchlist-status">On the watchlist</span>
+				<span class="tag tag-good" data-testid="watchlist-status">On the watchlist</span>
 				<ListMenu
 					symbol={company.symbol}
 					name={company.name}
@@ -730,7 +731,7 @@
 				</span>
 			{/if}
 			{#if teamStatus}
-				<span class="status-chip status-{teamStatus.status}" data-testid="header-status"
+				<span class="tag {REVIEW_STATUS_TONE[teamStatus.status]}" data-testid="header-status"
 					>{REVIEW_STATUS_LABELS[teamStatus.status]}{statusIsStale(teamStatus, baseVersion)
 						? ' (changed since)'
 						: ''}</span

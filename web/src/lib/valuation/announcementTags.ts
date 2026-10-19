@@ -34,6 +34,22 @@ export const TAG_LABELS: Record<AnnouncementTag, string> = {
 	other: 'Other'
 };
 
+/** Announcement type as a .tag tone: risks read danger or warn, wins read good, other corporate events read info, paperwork stays muted. */
+export const TAG_TONE: Record<AnnouncementTag, string> = {
+	results: "tag-info",
+	order_win: "tag-good",
+	fundraise: "tag-info",
+	pledge: "tag-danger",
+	management: "tag-warn",
+	rating: "tag-info",
+	mna: "tag-info",
+	corporate_action: "tag-info",
+	board_meeting: "",
+	regulatory: "tag-warn",
+	routine: "tag-muted",
+	other: ""
+};
+
 export const isAnnouncementTag = (v: unknown): v is AnnouncementTag =>
 	typeof v === 'string' && (ANNOUNCEMENT_TAGS as readonly string[]).includes(v);
 

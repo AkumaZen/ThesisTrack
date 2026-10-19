@@ -72,7 +72,7 @@
 		<section class="rounded-xl border border-border bg-surface p-5">
 			<h3 class="font-semibold mb-3 flex flex-wrap items-center gap-2"><a class="hover:underline" href="/company/{encodeURIComponent(group.id)}#cp-sec-trackables">{group.name}</a>
 				{#if group.stale}
-					<span class="text-[10px] font-semibold uppercase tracking-wide text-warn bg-warn/10 px-2 py-0.5 rounded-full ring-1 ring-warn/30" title={group.reasons.join('. ')}>Review due</span>
+					<span class="tag tag-warn" title={group.reasons.join('. ')}>Review due</span>
 				{/if}</h3>
 			<Trackables items={group.items} />
 		</section>

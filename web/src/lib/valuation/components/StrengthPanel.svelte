@@ -302,8 +302,8 @@
 		</button>
 
 		{#if active}
-			<ul class="sv-chips" aria-label="Active filters">
-				{#each chips as c (c)}<li class="sv-chip">{c}</li>{/each}
+			<ul class="tag-list" aria-label="Active filters">
+				{#each chips as c (c)}<li class="tag">{c}</li>{/each}
 			</ul>
 			<span class="sv-count" role="status">
 				{#if view.error}

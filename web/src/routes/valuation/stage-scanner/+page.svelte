@@ -119,13 +119,13 @@
 
 	type StageKey = Exclude<(typeof SCANNER_STAGE_KEYS)[number], 'all'>;
 	const STAGES: { id: Stage; key: StageKey; short: string; tone: string }[] = [
-		{ id: 'Confirmed Stage 2 Breakout', key: 'breakout', short: 'Breakout', tone: 'good' },
-		{ id: 'Near Stage 2 Breakout', key: 'near', short: 'Near breakout', tone: 'watch' },
-		{ id: 'Stage 2 Advancing', key: 'stage2', short: 'Stage 2', tone: 'good-soft' },
-		{ id: 'Stage 1 Base', key: 'stage1', short: 'Stage 1 base', tone: 'neutral' },
-		{ id: 'Stage 3', key: 'stage3', short: 'Stage 3', tone: 'warn' },
-		{ id: 'Stage 4', key: 'stage4', short: 'Stage 4', tone: 'bad' },
-		{ id: 'Not classified / insufficient data', key: 'unclassified', short: 'Unclassified', tone: 'neutral' }
+		{ id: 'Confirmed Stage 2 Breakout', key: 'breakout', short: 'Breakout', tone: 'tag-good' },
+		{ id: 'Near Stage 2 Breakout', key: 'near', short: 'Near breakout', tone: 'tag-info' },
+		{ id: 'Stage 2 Advancing', key: 'stage2', short: 'Stage 2', tone: 'tag-good' },
+		{ id: 'Stage 1 Base', key: 'stage1', short: 'Stage 1 base', tone: '' },
+		{ id: 'Stage 3', key: 'stage3', short: 'Stage 3', tone: 'tag-warn' },
+		{ id: 'Stage 4', key: 'stage4', short: 'Stage 4', tone: 'tag-danger' },
+		{ id: 'Not classified / insufficient data', key: 'unclassified', short: 'Unclassified', tone: 'tag-muted' }
 	];
 	const stageInfo = (s: Stage) => STAGES.find((x) => x.id === s)!;
 	const stageOf = (key: StageKey | 'all'): Stage | 'all' =>
@@ -472,19 +472,19 @@
 	<div class="scan-chips no-print" role="group" aria-label="Filter by stage">
 		<button
 			type="button"
-			class="al-chip"
-			class:al-chip-on={stageFilter === 'all'}
+			class="tag"
+			class:tag-on={stageFilter === 'all'}
 			aria-pressed={stageFilter === 'all'}
-			onclick={() => (stageFilter = 'all')}>All <span>{scoped.length}</span></button
+			onclick={() => (stageFilter = 'all')}>All <span class="tag-sub">{scoped.length}</span></button
 		>
 		{#each STAGES as s (s.id)}
 			<button
 				type="button"
-				class="al-chip"
-				class:al-chip-on={stageFilter === s.id}
+				class="tag"
+				class:tag-on={stageFilter === s.id}
 				aria-pressed={stageFilter === s.id}
 				data-testid="stage-chip"
-				onclick={() => (stageFilter = s.id)}>{s.short} <span>{counts[s.id]}</span></button
+				onclick={() => (stageFilter = s.id)}>{s.short} <span class="tag-sub">{counts[s.id]}</span></button
 			>
 		{/each}
 	</div>
@@ -493,8 +493,8 @@
 		<span class="preset-chips-label">Preset scan</span>
 		<button
 			type="button"
-			class="al-chip"
-			class:al-chip-on={presetFilter === 'all'}
+			class="tag"
+			class:tag-on={presetFilter === 'all'}
 			aria-pressed={presetFilter === 'all'}
 			onclick={() => pickPreset('all')}>None</button
 		>
@@ -505,12 +505,12 @@
 			{#each PRESETS.filter((p) => p.group === g.key) as p (p.id)}
 				<button
 					type="button"
-					class="al-chip"
-					class:al-chip-on={presetFilter === p.id}
+					class="tag"
+					class:tag-on={presetFilter === p.id}
 					aria-pressed={presetFilter === p.id}
 					title={p.description}
 					data-testid="preset-chip"
-					onclick={() => pickPreset(p.id)}>{p.label} <span>{presetCounts[p.id]}</span></button
+					onclick={() => pickPreset(p.id)}>{p.label} <span class="tag-sub">{presetCounts[p.id]}</span></button
 				>
 			{/each}
 		</div>
@@ -683,14 +683,12 @@
 					{@const r = entry.r}
 					<tr data-testid="scan-row">
 						<td>
-							<a href={resolve('/valuation/company/[symbol]', { symbol })}>{nameOf(symbol)}</a>
-							<span class="scan-sub">{symbol} · {data.basketsBySymbol[symbol]?.[0] ?? 'Unclassified'}</span>
+							<a class="wl-name" href={resolve('/valuation/company/[symbol]', { symbol })}>{nameOf(symbol)}</a>
+							<span class="scan-sub scan-sym">{symbol} · {data.basketsBySymbol[symbol]?.[0] ?? 'Unclassified'}</span>
 							<PresetBadges ids={matches.get(symbol) ?? []} />
 						</td>
 						<td>
-							<span class="scan-stage scan-{stageInfo(r.stage).tone}"
-								>{stageInfo(r.stage).short}</span
-							>
+							<span class="tag {stageInfo(r.stage).tone}">{stageInfo(r.stage).short}</span>
 							{#if r.intradayAboveResistance && r.stage !== 'Confirmed Stage 2 Breakout'}
 								<span class="scan-sub">Above resistance today, awaiting close</span>
 							{/if}

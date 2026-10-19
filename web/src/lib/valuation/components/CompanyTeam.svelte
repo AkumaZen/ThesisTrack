@@ -3,6 +3,7 @@
 	import {
 		REVIEW_STATUSES,
 		REVIEW_STATUS_LABELS,
+		REVIEW_STATUS_TONE,
 		noteProblem,
 		statusIsStale,
 		type CompanyNote,
@@ -409,7 +410,7 @@
 			<h3>Review status</h3>
 			{#if status}
 				<p>
-					<span class="status-chip status-{status.status}" data-testid="status-chip"
+					<span class="tag {REVIEW_STATUS_TONE[status.status]}" data-testid="status-chip"
 						>{REVIEW_STATUS_LABELS[status.status]}</span
 					>
 					set by {status.setBy} ·
@@ -486,7 +487,7 @@
 								<span class="muted" title={fullDate(entry.savedAt)}>· {timeAgo(entry.savedAt)}</span
 								>
 								{#if i === 0 && entry.action !== 'delete' && inWatchlist}
-									<span class="current-tag">current</span>
+									<span class="tag tag-accent current-tag">current</span>
 								{/if}
 							</div>
 							{#if entry.changes.length}

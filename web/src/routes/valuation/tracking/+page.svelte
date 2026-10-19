@@ -3,7 +3,7 @@
 	import CompanyPicker from '$lib/components/CompanyPicker.svelte';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { sectorApi } from '$lib/valuation/sectorClient';
-	import { ANNOUNCEMENT_TAGS, TAG_LABELS, isAnnouncementTag, type AnnouncementTag } from '$lib/valuation/announcementTags';
+	import { ANNOUNCEMENT_TAGS, TAG_LABELS, TAG_TONE, isAnnouncementTag, type AnnouncementTag } from '$lib/valuation/announcementTags';
 	import { formatMeetingDay } from '$lib/valuation/boardMeetings';
 	import { formatQty } from '$lib/valuation/dealFormat';
 	import type { SymbolHit } from '$lib/valuation/symbolSearch';
@@ -258,7 +258,7 @@
 							<li class="tk-cal-row">
 								<span class="tk-cal-date">{formatMeetingDay(m.meetingDate)}</span>
 								<span class="tk-cal-co"><strong>{m.nseSymbol}</strong> {m.companyName}</span>
-								<span class="tk-tag" class:tk-tag-key={m.isResults}>{m.isResults ? 'Results' : m.purpose}</span>
+								<span class="tag {m.isResults ? 'tag-info' : ''}">{m.isResults ? 'Results' : m.purpose}</span>
 							</li>
 						{/each}
 					</ul>
@@ -288,18 +288,17 @@
 			You are not tracking any company yet. Search above to add one.
 		</p>
 	{:else}
-		<ul class="tk-chips" aria-label="Tracked companies">
+		<ul class="tag-list" aria-label="Tracked companies">
 			{#each data.tracked as t (t.nseSymbol)}
 				<li>
 					<button
 						type="button"
-						class="tk-chip"
-						class:tk-chip-on={selected === t.nseSymbol}
+						class="tag tag-wrap"
 						aria-pressed={selected === t.nseSymbol}
 						onclick={() => (chosen = t.nseSymbol)}
 					>
 						<strong>{t.nseSymbol}</strong>
-						<span>{t.companyName}</span>
+						<span class="tag-sub">{t.companyName}</span>
 					</button>
 				</li>
 			{/each}
@@ -361,9 +360,9 @@
 					<p class="sm-empty">No announcements in the last 90 days.</p>
 				{:else}
 					<div class="tk-filters" role="group" aria-label="Filter by type">
-						<button type="button" class="tk-tag tk-tagbtn" class:tk-tagbtn-on={tagFilter === null} aria-pressed={tagFilter === null} onclick={() => (tagFilter = null)}>All</button>
+						<button type="button" class="tag" aria-pressed={tagFilter === null} onclick={() => (tagFilter = null)}>All</button>
 						{#each presentTags as tag (tag)}
-							<button type="button" class="tk-tag tk-tagbtn" class:tk-tagbtn-on={tagFilter === tag} aria-pressed={tagFilter === tag} onclick={() => { tagFilter = tag; shown = 15; }}>{TAG_LABELS[tag]}</button>
+							<button type="button" class="tag" aria-pressed={tagFilter === tag} onclick={() => { tagFilter = tag; shown = 15; }}>{TAG_LABELS[tag]}</button>
 						{/each}
 					</div>
 					{#if visible.length === 0}
@@ -374,7 +373,7 @@
 							<li class="tk-item">
 								<div class="tk-meta">
 									<span>{when(a.announcedAt)}</span>
-									<span class="tk-tag tk-tag-{tagOf(a)}">{TAG_LABELS[tagOf(a)]}</span>
+									<span class="tag {TAG_TONE[tagOf(a)]}">{TAG_LABELS[tagOf(a)]}</span>
 								</div>
 								<div class="tk-subject">{a.subject}</div>
 								{#if a.summary}
@@ -429,41 +428,11 @@
 	.tk-box button {
 		justify-self: start;
 	}
-	.tk-chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	.tk-chip {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		text-align: left;
-		max-width: 100%;
-		min-height: 2.75rem;
-		padding: 0.4rem 0.7rem;
-		border: var(--border-w) solid var(--ink);
-		background: var(--bg);
-		color: var(--ink);
-		font: inherit;
-		cursor: pointer;
-	}
-	.tk-chip span {
-		font-size: 0.75rem;
-		color: var(--muted);
-		overflow-wrap: anywhere;
-	}
-	.tk-chip-on {
-		background: var(--accent);
-		color: var(--accent-ink);
-		box-shadow: var(--shadow-sm);
-	}
-	.tk-chip-on span {
-		color: var(--accent-ink);
-	}
+
+
+
+
+
 	.tk-feed {
 		display: grid;
 		gap: 0.6rem;
@@ -585,46 +554,16 @@
 		flex: none;
 		margin-top: 0.1rem;
 	}
-	.tk-tag {
-		display: inline-block;
-		padding: 0.1rem 0.45rem;
-		border: 1.5px solid var(--ink);
-		background: var(--bg);
-		color: var(--ink);
-		font: 600 0.72rem/1.3 var(--font-body, inherit);
-		white-space: normal;
-	}
-	.tk-tag-key,
-	.tk-tag-results,
-	.tk-tag-order_win,
-	.tk-tag-fundraise,
-	.tk-tag-pledge,
-	.tk-tag-management,
-	.tk-tag-mna,
-	.tk-tag-regulatory {
-		background: var(--accent);
-		color: var(--accent-ink);
-	}
-	.tk-tag-routine {
-		border-style: dashed;
-		color: var(--muted);
-	}
+
+
+
 	.tk-filters {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
+		gap: 8px;
 	}
-	.tk-tagbtn {
-		min-height: 2.5rem;
-		padding: 0.2rem 0.7rem;
-		font-size: 0.8rem;
-		cursor: pointer;
-	}
-	.tk-tagbtn-on {
-		background: var(--ink);
-		color: var(--bg);
-		box-shadow: var(--shadow-sm);
-	}
+
+
 	.tk-cal {
 		list-style: none;
 		margin: 0;

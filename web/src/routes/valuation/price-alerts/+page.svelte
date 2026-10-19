@@ -144,7 +144,7 @@
 				{#each data.rules as r (r.id)}
 					<li class="mi-item">
 						<div class="mi-meta">
-							<span class="mi-tag" class:mi-tag-hi={r.active} class:mi-tag-dash={!r.active}>{r.active ? 'Watching' : 'Fired'}</span>
+							<span class="tag {r.active ? 'tag-info' : 'tag-muted'}">{r.active ? 'Watching' : 'Fired'}</span>
 							{#if r.triggeredAt}<span>{when(r.triggeredAt)} at {inr(r.triggeredPrice)}</span>{/if}
 						</div>
 						<div class="mi-title">

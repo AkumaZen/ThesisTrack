@@ -17,9 +17,9 @@ export function operatingModelLabel(name: string): string {
 }
 
 export const STATUS_STYLES: Record<string, { label: string; dot: string; pill: string }> = {
-	on_track: { label: 'On Track', dot: 'bg-good', pill: 'bg-good/10 text-good ring-good/20' },
-	watch_closely: { label: 'Watch Closely', dot: 'bg-warn', pill: 'bg-warn/10 text-warn ring-warn/20' },
-	broken: { label: 'Broken', dot: 'bg-danger', pill: 'bg-danger/10 text-danger ring-danger/20' }
+	on_track: { label: 'On Track', dot: 'bg-good', pill: 'tag-good' },
+	watch_closely: { label: 'Watch Closely', dot: 'bg-warn', pill: 'tag-warn' },
+	broken: { label: 'Broken', dot: 'bg-danger', pill: 'tag-danger' }
 };
 
 export function formatMetricValue(value: number | null | undefined, unit: string, decimals = 1): string {

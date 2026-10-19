@@ -591,6 +591,26 @@ export const marketBreadth = pgTable('market_breadth', {
 	computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow()
 });
 
+// Whole-market % below 50 DMA (drizzle/0033_breadth_dma.sql): per-symbol close arrays and the daily aggregate.
+export const breadthCloses = pgTable('breadth_closes', {
+	symbol: text('symbol').primaryKey(),
+	status: text('status').notNull(),
+	error: text('error'),
+	days: integer('days').array().notNull().default([]),
+	closes: doublePrecision('closes').array().notNull().default([]),
+	lastDay: integer('last_day'),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const marketBreadthDma = pgTable('market_breadth_dma', {
+	asOf: date('as_of', { mode: 'string' }).primaryKey(),
+	eligible50: integer('eligible50').notNull(),
+	below50: integer('below50').notNull(),
+	eligible200: integer('eligible200').notNull(),
+	below200: integer('below200').notNull(),
+	computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow()
+});
+
 // Concall analysis, guidance tracking and red flags (drizzle/0032_concall_guidance.sql).
 export const concallCompanyScan = pgTable('concall_company_scan', {
 	symbol: text('symbol').primaryKey().references(() => masterTrackerCompanies.symbol, { onDelete: 'cascade' }),

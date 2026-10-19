@@ -80,8 +80,8 @@
 		/>
 		{#if symbol}
 			<span class="sm-chosen">
-				{symbolName} <span class="sm-chip-ticker">{symbol}</span>
-				<button type="button" class="sm-chip-x" aria-label="Choose another company" disabled={busy}
+				{symbolName} <span class="sm-ticker">{symbol}</span>
+				<button type="button" class="tag-x" aria-label="Choose another company" disabled={busy}
 					onclick={() => ((symbol = ''), (symbolName = ''))}>×</button
 				>
 			</span>
@@ -111,7 +111,7 @@
 			<span class="sm-hint">Did you mean:</span>
 			{#each suggestions as s (s.symbol)}
 				<button class="sm-suggest-btn" type="button" onclick={() => create(s.symbol)}>
-					{s.name} <span class="sm-chip-ticker">{s.symbol}</span>
+					{s.name} <span class="sm-ticker">{s.symbol}</span>
 				</button>
 			{/each}
 		</div>

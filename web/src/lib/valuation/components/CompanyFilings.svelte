@@ -96,7 +96,7 @@
 				<ul class="mi-list">
 					{#each upcoming as a (a.id)}
 						<li class="mi-item">
-							<div class="mi-meta"><span class="mi-tag mi-tag-hi">{ACTION_LABELS[a.kind as ActionKind] ?? a.kind}</span><span>Ex-date {a.exDate}</span>{#if a.recordDate}<span>Record {a.recordDate}</span>{/if}</div>
+							<div class="mi-meta"><span class="tag tag-info">{ACTION_LABELS[a.kind as ActionKind] ?? a.kind}</span><span>Ex-date {a.exDate}</span>{#if a.recordDate}<span>Record {a.recordDate}</span>{/if}</div>
 							<p class="mi-text">{actionSummary(a)}</p>
 						</li>
 					{/each}
@@ -107,7 +107,7 @@
 				<ul class="mi-list">
 					{#each past as a (a.id)}
 						<li class="mi-item">
-							<div class="mi-meta"><span class="mi-tag">{ACTION_LABELS[a.kind as ActionKind] ?? a.kind}</span><span>Ex-date {a.exDate}</span>{#if a.recordDate}<span>Record {a.recordDate}</span>{/if}</div>
+							<div class="mi-meta"><span class="tag">{ACTION_LABELS[a.kind as ActionKind] ?? a.kind}</span><span>Ex-date {a.exDate}</span>{#if a.recordDate}<span>Record {a.recordDate}</span>{/if}</div>
 							<p class="mi-text">{actionSummary(a)}</p>
 						</li>
 					{/each}
@@ -126,8 +126,8 @@
 						<li class="mi-item">
 							<div class="mi-meta">
 								<span>{day(e.at)}</span>
-								<span class="mi-tag">{e.source}</span>
-								<span class="mi-tag" class:mi-tag-hi={e.category === 'Promoters'}>{e.category}</span>
+								<span class="tag">{e.source}</span>
+								<span class="tag {e.category === 'Promoters' ? 'tag-info' : ''}">{e.category}</span>
 							</div>
 							<div class="mi-title">{e.person}</div>
 							<p class="mi-text">

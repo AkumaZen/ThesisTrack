@@ -46,8 +46,8 @@
 
 <div class="wrap mi">
 	<div class="mi-tabs" role="group" aria-label="Disclosure type">
-		<a class="mi-chip" href={tabHref(null)} aria-current={data.tab === 'pit' ? 'true' : undefined}>Insider trades</a>
-		<a class="mi-chip" href={tabHref('sast')} aria-current={data.tab === 'sast' ? 'true' : undefined}>Substantial acquisitions (SAST)</a>
+		<a class="tag" href={tabHref(null)} aria-current={data.tab === 'pit' ? 'true' : undefined}>Insider trades</a>
+		<a class="tag" href={tabHref('sast')} aria-current={data.tab === 'sast' ? 'true' : undefined}>Substantial acquisitions (SAST)</a>
 	</div>
 
 	<form class="mi-box" method="get" action="/valuation/insider-trades" aria-labelledby="mi-filter">
@@ -103,7 +103,7 @@
 				<li class="mi-item">
 					<div class="mi-meta">
 						<span>{when(t.broadcastAt)}</span>
-						<span class="mi-tag">{t.personCategory}</span>
+						<span class="tag">{t.personCategory}</span>
 						<span class={side === 'buy' ? 'mi-side-buy' : side === 'sell' ? 'mi-side-sell' : ''}>{t.txnType}</span>
 					</div>
 					<div class="mi-title">
@@ -128,7 +128,7 @@
 				<li class="mi-item">
 					<div class="mi-meta">
 						<span>{when(s.disclosedAt)}</span>
-						<span class="mi-tag" class:mi-tag-hi={s.isPromoter}>{s.isPromoter ? 'Promoter' : 'Acquirer'}</span>
+						<span class="tag {s.isPromoter ? 'tag-info' : ''}">{s.isPromoter ? 'Promoter' : 'Acquirer'}</span>
 						<span class={s.action.toLowerCase().startsWith('acq') ? 'mi-side-buy' : 'mi-side-sell'}>{s.action}</span>
 					</div>
 					<div class="mi-title">

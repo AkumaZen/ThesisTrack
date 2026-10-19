@@ -75,11 +75,11 @@
 	<div class="sector-card-head">
 		<div class="sector-card-title">
 			<span class="sector-card-label">{label}</span>
-			<span class="sector-basket-tag">{tag}</span>
+			<span class="tag">{tag}</span>
 		</div>
 		{#if row && row !== 'error' && row !== 'loading'}
 			{@const badge = rotationBadge(row)}
-			<span class="wl-badge {ROTATION_TONE_CLASS[badge.tone]}" title={badge.title}>{badge.text}</span>
+			<span class="{ROTATION_TONE_CLASS[badge.tone]}" title={badge.title}>{badge.text}</span>
 		{/if}
 	</div>
 

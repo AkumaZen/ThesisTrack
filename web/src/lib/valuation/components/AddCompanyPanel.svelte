@@ -152,8 +152,8 @@
 				{#if chosen}
 					<div class="ac-chosen">
 						<span><strong>{chosen.name}</strong> <span class="ac-ticker">{chosen.symbol}</span></span>
-						{#if chosen.tracked}<span class="cp-tag-static">Already tracked</span>{/if}
-						{#if chosen.priceable === false}<span class="cp-tag-static warn">No price chart</span>{/if}
+						{#if chosen.tracked}<span class="tag tag-info">Already tracked</span>{/if}
+						{#if chosen.priceable === false}<span class="tag tag-warn">No price chart</span>{/if}
 						<button type="button" class="link-btn" disabled={busy} onclick={reset}>Change</button>
 					</div>
 				{:else}
@@ -256,15 +256,8 @@
 		font-size: 12px;
 		color: var(--muted);
 	}
-	.cp-tag-static {
-		font-size: 11px;
-		padding: 1px 6px;
-		border: 1px solid var(--ink);
-	}
-	.cp-tag-static.warn {
-		border-color: var(--warn);
-		color: var(--warn);
-	}
+
+
 	.ac-actions {
 		display: flex;
 		flex-wrap: wrap;

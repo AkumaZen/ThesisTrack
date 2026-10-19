@@ -78,11 +78,11 @@ export function rotationBadge(row: Pick<SectorReturn, 'signal' | 'rs1m' | 'rs3m'
 }
 
 export const ROTATION_TONE_CLASS = {
-	in: 'wl-pos-badge',
-	out: 'wl-neg-badge',
-	up: 'wl-soft-pos',
-	down: 'wl-soft-neg',
-	flat: ''
+	in: 'tag tag-good',
+	out: 'tag tag-danger',
+	up: 'tag tag-info',
+	down: 'tag tag-warn',
+	flat: 'tag tag-muted'
 } as const;
 
 /** Trading-day lookback windows — 1D is the last close against the previous trading day's; the

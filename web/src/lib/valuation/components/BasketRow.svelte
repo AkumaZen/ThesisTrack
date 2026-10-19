@@ -247,13 +247,13 @@
 		</div>
 	{/if}
 
-	<ul class="sm-chips">
+	<ul class="tag-list sm-chips">
 		{#each basket.symbols as symbol (symbol)}
-			<li class="sm-chip">
-				<span class="sm-chip-name">{nameOf(symbol)}</span>
-				<span class="sm-chip-ticker">{symbol}</span>
+			<li class="tag tag-wrap">
+				<span>{nameOf(symbol)}</span>
+				<span class="sm-ticker">{symbol}</span>
 				<button
-					class="sm-chip-x"
+					class="tag-x"
 					type="button"
 					aria-label="Remove {nameOf(symbol)} from {basket.label}"
 					title="Remove"
@@ -283,7 +283,7 @@
 			<span class="sm-hint">Did you mean:</span>
 			{#each suggestions as s (s.symbol)}
 				<button class="sm-suggest-btn" type="button" onclick={() => addSymbol(s.symbol)}>
-					{s.name} <span class="sm-chip-ticker">{s.symbol}</span>
+					{s.name} <span class="sm-ticker">{s.symbol}</span>
 				</button>
 			{/each}
 		</div>

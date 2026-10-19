@@ -117,6 +117,11 @@ describe('decideAccess: analyst', () => {
 		expect(d('/api/valuation/sectors/verify', 'POST', member)).toBe('forbidden');
 	});
 
+	it('cannot run the market breadth backfill', () => {
+		expect(d('/api/valuation/breadth/backfill', 'POST', member)).toBe('forbidden');
+		expect(d('/api/valuation/breadth/refresh', 'POST', member)).toBe('allow');
+	});
+
 	it('must change a temporary password before anything else', () => {
 		expect(d('/', 'GET', fresh)).toBe('change-password');
 		expect(d('/api/valuation/valuations', 'GET', fresh)).toBe('change-password');

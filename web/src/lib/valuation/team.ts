@@ -11,6 +11,13 @@ export const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
 	approved: 'Approved'
 };
 
+/** Review status as a .tag tone: approved reads good, review needed reads warn, draft stays plain. */
+export const REVIEW_STATUS_TONE: Record<ReviewStatus, string> = {
+	draft: "",
+	review_needed: "tag-warn",
+	approved: "tag-good"
+};
+
 export const NOTE_MAX_LENGTH = 20000;
 
 export interface CompanyNote {
