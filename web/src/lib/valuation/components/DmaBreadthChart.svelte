@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Whole-market "% below 50 DMA" (or 200 DMA) breadth: a dark line chart with a red zone above 50%
+	// Whole-market "% below 50 DMA" (or 200 DMA) breadth: a light neo-brutalist line chart with a red zone above 50%
 	// (most stocks weak), a green zone below it, the area under the line, a dashed 50% reference and
 	// a hover/keyboard readout. Plain SVG measured to its container, like the app's other charts.
 	import { isoToDay, pctOf } from '../breadthDma';
@@ -257,8 +257,8 @@
 	.dma {
 		margin: 0 0 16px;
 		padding: 12px 14px 10px;
-		background: #1f2023;
-		color: #e6e6e6;
+		background: var(--bg);
+		color: var(--ink);
 		border: var(--border-w, 2px) solid var(--ink);
 		box-shadow: var(--shadow);
 		min-width: 0;
@@ -278,7 +278,7 @@
 		font-family: var(--font-display);
 		font-size: 15px;
 		font-weight: 700;
-		color: #fff;
+		color: var(--ink);
 	}
 	.dma-legend {
 		margin: 6px 0 0;
@@ -286,23 +286,23 @@
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		color: #cfcfcf;
+		color: var(--muted);
 	}
 	.dma-legend strong {
 		font-family: var(--font-mono);
-		color: #fff;
+		color: var(--ink);
 	}
 	.dma-swatch {
-		width: 10px;
-		height: 10px;
-		background: #7ea6f5;
+		width: 18px;
+		height: 0;
+		border-top: 3px solid var(--accent);
 		display: inline-block;
 	}
 	.dma-stamp {
 		margin: 2px 0 0;
 		font-family: var(--font-mono);
 		font-size: 10px;
-		color: #8f8f8f;
+		color: var(--muted);
 		text-align: right;
 	}
 	.dma-controls {
@@ -312,29 +312,33 @@
 	}
 	.dma-group {
 		display: inline-flex;
-		border: 1.5px solid #8f8f8f;
+		border: var(--border-w, 2px) solid var(--ink);
+		background: var(--bg);
 	}
 	.dma-group button {
 		appearance: none;
 		background: transparent;
-		color: #cfcfcf;
+		color: var(--ink);
 		border: 0;
-		border-right: 1.5px solid #8f8f8f;
+		border-right: var(--border-w, 2px) solid var(--ink);
 		padding: 5px 10px;
-		min-height: 30px;
+		min-height: 32px;
 		font: 600 11px/1 var(--font-mono);
 		cursor: pointer;
 	}
 	.dma-group button:last-child {
 		border-right: 0;
 	}
+	.dma-group button:hover:not([aria-pressed='true']) {
+		background: var(--surface);
+	}
 	.dma-group button[aria-pressed='true'] {
-		background: #f2b134;
-		color: #111;
+		background: var(--ink);
+		color: var(--bg);
 	}
 	.dma-group button:focus-visible,
 	.dma-plot:focus-visible {
-		outline: 2px solid #f2b134;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 	.dma-plot {
@@ -348,73 +352,73 @@
 		display: block;
 	}
 	.zone-red {
-		fill: rgba(205, 85, 85, 0.42);
+		fill: var(--danger-soft);
 	}
 	.zone-green {
-		fill: rgba(70, 150, 80, 0.45);
+		fill: var(--good-soft);
 	}
 	.area {
-		fill: rgba(126, 166, 245, 0.42);
+		fill: var(--accent-soft);
 	}
 	.line {
 		fill: none;
-		stroke: #7ea6f5;
-		stroke-width: 1.8;
+		stroke: var(--accent);
+		stroke-width: 2.5;
 		stroke-linejoin: round;
 	}
 	.ref {
-		stroke: #f2b134;
-		stroke-width: 1.4;
+		stroke: var(--ink);
+		stroke-width: 1.5;
 		stroke-dasharray: 5 4;
 	}
 	.ref-label {
-		fill: #f2b134;
+		fill: var(--ink);
 		font: 700 11px var(--font-mono);
 	}
 	.tick {
-		fill: #b5b5b5;
+		fill: var(--muted);
 		font: 10px var(--font-mono);
 	}
 	.cross {
-		stroke: #ffffff;
-		stroke-opacity: 0.55;
+		stroke: var(--ink);
 		stroke-width: 1;
 	}
 	.dot {
-		fill: #7ea6f5;
-		stroke: #fff;
+		fill: var(--accent);
+		stroke: var(--ink);
 		stroke-width: 2;
 	}
 	.dma-tip {
 		position: absolute;
 		pointer-events: none;
-		background: #111;
-		border: 1.5px solid #f2b134;
+		background: var(--bg);
+		border: var(--border-w, 2px) solid var(--ink);
+		box-shadow: var(--shadow-sm);
 		padding: 6px 8px;
 		font-size: 11px;
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
-		color: #eee;
+		color: var(--ink);
 	}
 	.dma-tip b {
 		font-family: var(--font-mono);
-		color: #fff;
+		color: var(--ink);
 	}
 	.dma-tip-n {
-		color: #9a9a9a;
+		color: var(--muted);
 	}
 	.dma-empty {
 		margin: 0;
 		padding: 40px 0;
 		text-align: center;
-		color: #9a9a9a;
+		color: var(--muted);
 		font-size: 12px;
 	}
 	.dma-note {
 		margin: 6px 0 0;
 		font-size: 11px;
 		line-height: 1.45;
-		color: #9a9a9a;
+		color: var(--muted);
 	}
 </style>
