@@ -8,6 +8,7 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from '../src/lib/server/db';
 import { companies, sectorCompanies, sectors, thesisScenarios, thesisVersions } from '../src/lib/server/db/schema';
 import { dbReachable } from './dbReachable';
+import { ensureTaxonomy } from './taxonomyFixture';
 
 const dbUp = await dbReachable();
 import {
@@ -30,12 +31,12 @@ const COMPANY_C = `VITEST_SEC_C_${RUN_ID}`;
 const sectorIdsToClean: number[] = [];
 
 async function makeCompanyWithStatus(companyId: string, name: string, status: 'on_track' | 'watch_closely' | 'broken') {
-	const niche = await db.query.specificNiches.findFirst({ where: (t, { eq }) => eq(t.broadIndustryId, 1) });
+	const tax = await ensureTaxonomy();
 	await db.insert(companies).values({
 		companyId,
 		name,
-		broadIndustryId: 1,
-		specificNicheId: niche!.id,
+		broadIndustryId: tax.broadIndustryId,
+		specificNicheId: tax.specificNicheId,
 		operatingModel: 'factory',
 		currency: 'INR'
 	});

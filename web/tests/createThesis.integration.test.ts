@@ -4,10 +4,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '../src/lib/server/db';
-import { broadIndustries, companies, specificNiches, thesisScenarios, thesisVersions } from '../src/lib/server/db/schema';
+import { companies, thesisScenarios, thesisVersions } from '../src/lib/server/db/schema';
 import { thesisCreate } from '../src/lib/server/schemas/thesis';
 import { AlreadyExistsError, createCompany } from '../src/lib/server/services/versioning';
 import { dbReachable } from './dbReachable';
+import { ensureTaxonomy } from './taxonomyFixture';
 
 const dbUp = await dbReachable();
 
@@ -24,20 +25,15 @@ const payload = (companyId: string) =>
 
 beforeAll(async () => {
 	if (!dbUp) return;
-	const [row] = await db
-		.select({ industry: broadIndustries.name, niche: specificNiches.name, industryId: broadIndustries.id })
-		.from(specificNiches)
-		.innerJoin(broadIndustries, eq(broadIndustries.id, specificNiches.broadIndustryId))
-		.limit(1);
-	classification = { broad_industry: row.industry, specific_niche: row.niche, operating_model: 'factory' };
+	const tax = await ensureTaxonomy();
+	classification = { broad_industry: tax.broadIndustry, specific_niche: tax.specificNiche, operating_model: 'factory' };
 
 	// What a create that failed part-way used to leave: a scenario whose only version is empty.
-	const niche = await db.query.specificNiches.findFirst({ where: (t, { eq }) => eq(t.name, row.niche) });
 	await db.insert(companies).values({
 		companyId: PLACEHOLDER,
 		name: 'Vitest placeholder',
-		broadIndustryId: row.industryId,
-		specificNicheId: niche!.id,
+		broadIndustryId: tax.broadIndustryId,
+		specificNicheId: tax.specificNicheId,
 		operatingModel: 'factory',
 		currency: 'INR'
 	});

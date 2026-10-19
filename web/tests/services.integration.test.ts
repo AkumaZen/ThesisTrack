@@ -17,6 +17,7 @@ import { createGuidance, resolveGuidance } from '../src/lib/server/services/guid
 import { proposeNiche } from '../src/lib/server/services/taxonomy';
 import { NotFoundError } from '../src/lib/server/services/scenarios';
 import { dbReachable } from './dbReachable';
+import { ensureTaxonomy } from './taxonomyFixture';
 
 const dbUp = await dbReachable();
 
@@ -27,11 +28,12 @@ let scenarioId: number;
 
 beforeAll(async () => {
 	if (!dbUp) return;
+	const tax = await ensureTaxonomy();
 	await db.insert(companies).values({
 		companyId: COMPANY_ID,
 		name: 'Vitest Co',
-		broadIndustryId: 1,
-		specificNicheId: (await db.query.specificNiches.findFirst({ where: (t, { eq }) => eq(t.broadIndustryId, 1) }))!.id,
+		broadIndustryId: tax.broadIndustryId,
+		specificNicheId: tax.specificNicheId,
 		operatingModel: 'factory',
 		currency: 'INR'
 	});
@@ -214,8 +216,9 @@ describe.skipIf(!dbUp)('guidance (ports app/routers/guidance.py)', () => {
 describe.skipIf(!dbUp)('taxonomy (ports app/services/taxonomy.py propose_niche)', () => {
 	it('creates a new niche under an existing industry, idempotently', async () => {
 		const name = `Vitest Niche ${Date.now()}`;
-		const first = await proposeNiche('Auto & Mobility', name);
-		const second = await proposeNiche('Auto & Mobility', name);
+		const { broadIndustry } = await ensureTaxonomy();
+		const first = await proposeNiche(broadIndustry, name);
+		const second = await proposeNiche(broadIndustry, name);
 		expect(second.id).toBe(first.id);
 		// This niche isn't tied to the throwaway company, so afterAll's cascade
 		// delete never reaches it - clean it up here or it pollutes the real
