@@ -237,8 +237,12 @@
 	let presetFilter = $state<PresetId | 'all'>(
 		PRESETS.some((p) => p.id === presetFromUrl) ? (presetFromUrl as PresetId) : 'all'
 	);
+	// A preset's matches span every stage, so applying one leaves the remembered stage tab (by default
+	// "Near breakout") and shows the All tab; an explicit ?stage= in the address is kept.
+	if (PRESETS.some((p) => p.id === presetFromUrl) && !page.url.searchParams.has('stage')) stageFilter = 'all';
 	function pickPreset(next: PresetId | 'all') {
 		presetFilter = next;
+		if (next !== 'all') stageFilter = 'all';
 		const url = new URL(page.url);
 		if (next === 'all') url.searchParams.delete('preset');
 		else url.searchParams.set('preset', next);
