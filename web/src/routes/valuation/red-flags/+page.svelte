@@ -210,7 +210,7 @@
 	}
 	.rf-bar {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
 		gap: 0.6rem;
 		border: var(--border-w) solid var(--ink);
 		padding: 0.7rem;

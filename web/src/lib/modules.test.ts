@@ -28,9 +28,9 @@ describe('moduleOf', () => {
 		['/valuation/filings/TCS', 'analysis'],
 		['/valuation/insider-trades', 'analysis'],
 		['/valuation/corporate-actions', 'analysis'],
-		['/valuation/concalls', 'analysis'],
-		['/valuation/concalls/HFCL', 'analysis'],
-		['/valuation/red-flags', 'analysis'],
+		['/valuation/concalls', 'valuation'],
+		['/valuation/concalls/HFCL', 'valuation'],
+		['/valuation/red-flags', 'valuation'],
 		['/valuation/lists', 'valuation'],
 		['/valuation/price-alerts', 'valuation']
 	] as const)('%s is %s', (path, expected) => expect(moduleOf(path)).toBe(expected));

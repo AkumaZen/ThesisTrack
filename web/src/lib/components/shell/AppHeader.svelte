@@ -39,6 +39,8 @@
 			match: (p) => p === '/valuation' || starts('/valuation/company')(p)
 		},
 		{ href: '/valuation/master-tracker', label: 'Master Tracker', match: starts('/valuation/master-tracker') },
+		{ href: '/valuation/concalls', label: 'Concalls', match: starts('/valuation/concalls'), newUntil: NEW_UNTIL },
+		{ href: '/valuation/red-flags', label: 'Red flags', match: starts('/valuation/red-flags'), newUntil: NEW_UNTIL },
 		{ href: '/valuation/alerts', label: 'Alerts', match: starts('/valuation/alerts') },
 		{ href: '/valuation/tracking', label: 'Tracked companies', match: starts('/valuation/tracking') },
 		{ href: '/valuation/lists', label: 'Lists', match: starts('/valuation/lists'), newUntil: NEW_UNTIL },
@@ -76,9 +78,7 @@
 			newUntil: NEW_UNTIL
 		},
 		{ href: '/valuation/insider-trades', label: 'Insider trades', match: starts('/valuation/insider-trades'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/corporate-actions', label: 'Ex-dates', match: starts('/valuation/corporate-actions'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/concalls', label: 'Concalls', match: starts('/valuation/concalls'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/red-flags', label: 'Red flags', match: starts('/valuation/red-flags'), newUntil: NEW_UNTIL }
+		{ href: '/valuation/corporate-actions', label: 'Ex-dates', match: starts('/valuation/corporate-actions'), newUntil: NEW_UNTIL }
 	];
 	const TOOLS: Record<ModuleKey, Tool[]> = { thesis: THESIS, valuation: VALUATION, sector: SECTOR, analysis: ANALYSIS };
 
