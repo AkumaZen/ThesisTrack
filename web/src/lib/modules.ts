@@ -23,6 +23,8 @@ const PREFIXES: [string, ModuleKey][] = [
 	['/valuation/filings', 'analysis'],
 	['/valuation/insider-trades', 'analysis'],
 	['/valuation/corporate-actions', 'analysis'],
+	['/valuation/concalls', 'analysis'],
+	['/valuation/red-flags', 'analysis'],
 	['/valuation', 'valuation']
 ];
 

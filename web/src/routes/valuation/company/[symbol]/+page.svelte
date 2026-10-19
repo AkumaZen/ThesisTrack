@@ -29,6 +29,8 @@
 	import PriceChart from '$lib/valuation/components/PriceChart.svelte';
 	import ReverseDcfPanel from '$lib/valuation/components/ReverseDcfPanel.svelte';
 	import SegmentsPanel from '$lib/valuation/components/SegmentsPanel.svelte';
+	import ConcallPanel from '$lib/valuation/components/ConcallPanel.svelte';
+	import { canWrite } from '$lib/auth';
 	import CompanyFilings from '$lib/valuation/components/CompanyFilings.svelte';
 	import type { PricePoint } from '$lib/valuation/priceChart';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
@@ -1036,6 +1038,8 @@
 			<p class="sm-hint"><a href={resolve(`/valuation/filings/${encodeURIComponent(company.symbol)}`)}>Open the full filings page</a></p>
 		{/if}
 	</details>
+
+	<ConcallPanel symbol={company.symbol} writable={canWrite(data.user?.role)} />
 
 	<div class="sv-company">
 		<StrengthPanel
