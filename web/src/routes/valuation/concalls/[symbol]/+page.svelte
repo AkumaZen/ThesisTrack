@@ -22,7 +22,7 @@
 
 <div class="wrap pg">
 	<nav class="pg-links" aria-label="Related pages">
-		<a class="back-link" href={resolve('/valuation/concalls')}>All concalls</a>
+		<a href={resolve('/valuation/concalls')}>All concalls</a>
 		<a href={resolve('/valuation/red-flags')}>Red flags</a>
 		<a href={resolve('/valuation/master-tracker')}>Master Tracker</a>
 	</nav>
