@@ -1,0 +1,51 @@
+I want claude to implement these after all the phases are done automatically and dont stop 
+
+Use postgresql 18 via docker as in produciton I have that only
+
+YOu have all the permissions dont ask me just notify on success ,retry on failure
+Store all the code in Github directly by Making this as repo name "ThesisTrack"
+
+2. Create user login also for now create two users which has only write & read permissions and 
+rohit.negi@rdc.in
+siddhesh.dige@rdc.in
+
+3. Give proper option to fill data for all the sections and application 
+
+4. I want a simple userfriendly view, easy to navigate by users so that they can understand 
+
+create one more user as shishir.bhat@rdc.in with a password (read write both permissions) in local and production and give all three users credentials forlogin into production 
+
+Store all the production creds in the creds.md 
+
+make sure you have pushed all the code to the production and git is upto date 
+
+=== StockScans-inspired round (live in production 2026-10-19) ===
+Migrations 0022 to 0032 are applied on Neon, and the code is deployed from master.
+Features and where to find them:
+1. Results calendar and quarterly results at /valuation/results, with a "Load missing financials" button.
+2. Announcements feed with tags, "only important" push setting and filings per company at /valuation/announcements and /valuation/filings/[symbol].
+3. Insider trades and SAST filings at /valuation/insider-trades.
+4. Corporate actions and ex-dates at /valuation/corporate-actions.
+5. Bulk and block deals alerts and shareholding view for tracked companies at /valuation/tracking.
+6. Optional Telegram backup alerts, linked from /valuation/settings.
+7. Preset scans, Scan Match badges and the List/Grid chart view on /valuation/stage-scanner.
+8. Earnings trend table on the sector basket pages.
+9. Named watchlist lists and sections at /valuation/lists.
+10. Price and holding alert rules at /valuation/price-alerts.
+11. Saved scans with daily new-match alerts and shareable links at /valuation/scans and /valuation/scans/shared/[id].
+12. Returns comparison at /valuation/returns.
+13. Market breadth at /valuation/breadth.
+14. Concall analysis, guidance credibility and result quality at /valuation/concalls and /valuation/concalls/[symbol], plus the panel on each company page.
+15. Red flag checks at /valuation/red-flags.
+Also on the company page: filings panel, reverse DCF and segment financials.
+Scanner fixes: weekend-dated price candles are ignored when appending, and 5-year-high and fundamental presets use stored data.
+Concall guidance now understands margin change targets (for example "EBITDA margin expansion of 3-4%") and judges them against the change in actuals.
+Limits and things to do:
+- Segment financials need a Screener premium account.
+- Concall analysis costs about $0.04 per transcript (assumed pricing) and runs only when someone presses Analyse.
+- Press "Load missing financials" on /valuation/results and "Load 5-year highs" on the scanner in production, because production has no stored data for them yet.
+- The market feeds, deals and alert checks piggyback on the existing /api/cron/announcements call from cron-job.org, so that job must keep running every minute.
+- Telegram needs the optional env vars TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME and TELEGRAM_WEBHOOK_SECRET plus a one-time setWebhook to /api/telegram/webhook.
+- The first scanner load after deploy rescans about 1,500 symbols.
+- 518 of 521 rows in valuation.company_growth_series_cache contain a weekend-dated candle.
+- Cleaning up those weekend candles is pending the user's approval, nothing has been deleted.
