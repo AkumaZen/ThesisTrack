@@ -39,21 +39,21 @@ from master `175abd5`; updated 2026-10-17.
 - Master Tracker shipped (2026-10-10, `d9a41bb`); its tables (0015/0016) exist in production.
 - Mobile fit, header split into Thesis/Valuation/Sector/Analysis, batched price refresh (2026-10-17).
 - Multi-agent setup: `.claude/agents/` master + executor-medium + executor-low (2026-10-17).
-- Branch `merge-valuation` (LOCAL, unpushed; master `175abd5` + setup + merges) now also holds `scorecard` and
-  `scanner-universe` (clean merges), the HFCL document fix, and the compareStatements test flake fix. svelte-check
-  0 errors; full vitest 655 passed / 28 skipped (twice); Python `test_server` + `test_hints` 14 pass.
+- merge-valuation, scorecard, scanner-universe and the HFCL document fix are all in master and deployed.
 - HFCL fix (not deployed): `services/concall` accepts `nseSymbol`/`isin`/`documentLinks`; order Screener links, NSE,
   then BSE; short error reasons (`failed_sources`); web wording "could not be retrieved (BSE returned HTTP 403)".
   Checked live for HFCL with the BSE API forced to 403: Screener gave Q1 FY27, Q4 and Q3 FY26 transcripts and decks.
 
 ## Decisions
-- 2026-10-18: announcement alerts LIVE in production since 2026-10-18 (migration 0021 applied, VAPID env set on Vercel; cron-job.org job still to be created by the user): personal tracked companies at `/valuation/tracking`, NSE per-symbol polling (all-equities feed returns only 20 rows), OpenAI summary, Web Push (Android Chrome). Poller `/api/cron/announcements` (CRON_SECRET bearer) is called every minute by cron-job.org, not vercel.json. Vercel env: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, CRON_SECRET, OPEN_AI_KEY. Code: `lib/valuation/announcements.ts`, `server/announcementJob.ts`, `lib/server/webPush.ts`, `static/sw.js`.
-- 2026-10-18: branch `feat/stockscans-features` (LOCAL, unpushed; merges `feat/announcement-intel` + `feat/scanner-presets`; worktrees `../ThesisTrack-wt-intel`, `../ThesisTrack-wt-scanner` kept). Features: results calendar, announcement tags and an "only important" push setting, NSE bulk/block deals, Screener shareholding, Telegram alerts (intel); preset scans + "Scan Match" badges, List/Grid chart grid, sector-basket earnings trend (scanner, no migration). Before merging to master apply migrations 0022 and 0023 to production (Neon). New env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET` plus a one-time Telegram `setWebhook` to `/api/telegram/webhook`. The NSE large-deal snapshot is market-wide, latest day only (not history); shareholding comes from Screener. The first scanner load after deploy rescans about 1,500 symbols. `vitest.config.ts` uses `fileParallelism: false` (DB tests share one DB). Checked: svelte-check 0 errors; vitest 856/856; mobile-overflow 21/21 signed in.
-- 2026-10-17: stay on Vercel only; EC2 abandoned because BSE's API returns 403 from AWS too (branch tips in STATE.md).
+- 2026-10-18: announcement alerts LIVE (personal tracked companies `/valuation/tracking`, NSE per-symbol polling, OpenAI summary, Web Push). Poller `/api/cron/announcements` (CRON_SECRET bearer, maxDuration 60) is called every minute by cron-job.org; it also tops up the market feeds within a time budget (local run 0.2 to 21 s). Code: `lib/valuation/announcements.ts`, `server/announcementJob.ts`, `lib/server/webPush.ts`.
+- 2026-10-19: StockScans round LIVE on production (master `f77b37f` plus a TO DO commit). Migrations 0022-0032 applied to Neon (no 0029 exists). Features: results, announcements+tags, insider/SAST, corporate actions, deals, shareholding, Telegram (optional env `TELEGRAM_BOT_TOKEN`, `_BOT_USERNAME`, `_WEBHOOK_SECRET` + setWebhook), scanner presets, lists, price/holding alert rules, saved scans, returns, breadth, concalls (`lib/valuation/concall/`, migration 0032), red flags. Nav: Concalls and Red flags sit in the Valuation group; the Analysis row is at the 1280px limit. Scan alerts use the shared `server/notify.ts`.
+- Concall guidance bases: growth_pct, level, margin_pct, margin_change_pp (a change in margin points vs the year-ago period; contraction is negative); PROMPT_VERSION 2. `ConcallPanel` hides itself for companies outside the Master Tracker.
+- Production still needs, by the user: "Load missing financials" and "Load 5-year highs" in the UI; segments need Screener premium; concall analysis about $0.04 per transcript (assumed). Weekend candles: 518 of 521 production `company_growth_series_cache` rows hold one; cleanup NOT approved.
+- Local: DB-backed vitest needs taxonomy rows (broad_industries, specific_niches) copied into a fresh DB; fresh DB 0000-0032 + taxonomy gave 1066 passed / 5 skipped. mobile-overflow signed in 70/70 (+8 for concall routes).
+- 2026-10-17: stay on Vercel only; EC2 abandoned (BSE 403 from AWS too).
 
 ## Current Focus
-- Finishing rollout. Production (c342a6b) is deployed and healthy; 0018, 0019, 0020 are applied and the mcap universe
-  (1,496 rows) is imported. The entry-price backfill is applied (STLTECH 897.4, BALUFORGE 480.7; 0 left). Pending for the USER: the scanner "Load missing history".
+- Production is on the StockScans round. Next: user runs the "Load" buttons, tests, sets the Telegram env if wanted, decides on the weekend-candle cleanup.
 
 ## Known Issues / Unresolved Decisions
 - Master Tracker: BSE's API returns 403 to all cloud servers (probe 2026-10-10). Worked around, see Completed Work.
@@ -63,7 +63,7 @@ from master `175abd5`; updated 2026-10-17.
 - Production has 35 companies but only 2 thesis_scenarios (both siddhesh.dige); confirm expected.
 
 ## Next Steps
-1. User: scanner "Load missing history" (admin). Browser-check the thesis page and the scanner.
+1. User: scanner "Load missing history" (admin), "Load missing financials", "Load 5-year highs". Browser-check the new pages.
 2. Verify the HFCL fix on Vercel (Master Tracker, Jun 2026): documents from Screener/NSE, BSE 403 shown as a short warning.
 3. Not merged: `feat/guidance-tables-import-redesign`.
 4. Open: Retry/Upload for failed document fetches; rotate the leaked Vercel bypass secret; stale `.production.env`.
