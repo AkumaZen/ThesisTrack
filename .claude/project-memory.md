@@ -1,76 +1,105 @@
 # Project Memory
 
-Compact continuity file. Detailed todo and history: `harness/memory/STATE.md`; ADRs in
-`harness/memory/decisions.md`; gotchas in `harness/memory/gotchas.md`. Initialised 2026-10-17
-from master `175abd5`; updated 2026-10-17.
+Updated 2026-10-19. Single continuity record; one designated Sonnet owner updates it, Opus reviews
+significant changes. Historical references, loaded only as relevant: `harness/memory/STATE.md`,
+`harness/memory/decisions.md`, `harness/memory/gotchas.md`. Do not treat old records as current task queues.
 
-## Project Overview
-- Thesis Tracker: a team web app for Indian equity research. Thesis module at `/` (7-pillar
-  theses, append-only versions, kill triggers, review queue, buy/sell decisions) and valuation
-  tools at `/valuation/*` (watchlist, company valuation, Compare, Sector rotation, Sector baskets,
-  Breakout/stage scanner, alerts, Master Tracker). Users: rohit.negi, siddhesh.dige, shishir.bhat.
+## Architecture and constraints
+- Thesis Tracker: team Indian-equity research app. Thesis `/`: 7-pillar theses, append-only
+  versions, kill triggers, reviews and decisions. Valuation tools under `/valuation/*`.
+- Single SvelteKit/Svelte 5 runes/TypeScript app in `web/`; Drizzle migrations `web/drizzle/`;
+  APIs `web/src/routes/api/`; valuation logic `web/src/lib/valuation/`.
+- Neon Postgres: thesis tables `public`, valuation tables `valuation`; pooled connections disable
+  prepared statements. Vercel `thesis-track`, Singapore; push to GitHub master deploys production.
+  Vercel only; EC2 abandoned. Auth uses `tt_session`, admin/read_write/read_only roles.
+- Page views read stored prices; Angel One refresh jobs batch 50. Master Tracker research uses
+  `services/concall/` Python function, Screener financials and OpenAI `gpt-5.6-luna`.
+- Neo-brutalist CSS: `web/src/routes/layout.css`, `web/src/lib/styles/shell.css`; valuation styles
+  scoped `.vd`; fit 390px phones. No em dashes; no unnecessary abstractions or dependencies.
+- `thesis_versions`/`position_decisions` append-only. Never edit applied migrations. Apply required
+  production migrations before deploying dependent code. Explicit approval for destructive work,
+  deployment, irreversible migrations and production writes. Preserve unrelated changes and secrets.
+  `.production.env` is stale Aiven configuration. Commit trailer:
+  `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
-## Architecture Decisions
-- One SvelteKit app in `web/` (Svelte 5 runes, TypeScript, Drizzle ORM). APIs under
-  `web/src/routes/api/`; valuation code in `web/src/lib/valuation/`.
-- Postgres: thesis tables in `public`, valuation tables in schema `valuation`. Production is Neon
-  (project holy-leaf-50072157, Singapore); Vercel uses the pooled URL, so prepared statements are off.
-- Hosting: Vercel project `thesis-track` (function region sin1). A push to GitHub `master`
-  deploys production. Crons in `web/vercel.json` (Hobby plan: once a day each).
-- Auth: email + password, cookie `tt_session`, roles admin / read_write / read_only.
-- Prices: page views read stored prices only (Angel One fetched by refresh jobs, batched 50 per call).
-- Master Tracker: concall/annual-report research via a Python function (`services/concall/`)
-  packaged into the same deployment, OpenAI `gpt-5.6-luna` for drafts, financials from Screener.
-- Design: neo-brutalist system (`web/src/routes/layout.css`, `web/src/lib/styles/shell.css`);
-  valuation CSS scoped under `.vd`. Pages must fit 390px phones.
+## Completed and established behavior
+- Thesis/valuation unified; Master Tracker shipped; mobile fit and batched prices implemented.
+  merge-valuation, scorecard, scanner-universe and HFCL document fix merged/deployed.
+- HFCL downloader accepts nseSymbol/isin/documentLinks; sources Screener, NSE, then BSE; reports
+  short failed-source reasons. Forced-BSE-403 live test retrieved HFCL transcripts/decks via Screener.
+  Production browser verification remains pending.
+- Announcement alerts live: personal `/valuation/tracking`, NSE polling, AI summaries, Web Push.
+  `/api/cron/announcements` bearer CRON_SECRET called every minute by cron-job.org; also tops up
+  market feeds within budget. Core: announcements.ts, server/announcementJob.ts, server/webPush.ts.
+- StockScans round live (master f77b37f plus TO DO commit): results/tags, insider/SAST, corporate
+  actions/deals/shareholding, presets/lists/alert rules/saved scans, returns/breadth, concalls/red flags.
+  Neon migrations 0022-0032 applied; 0029 absent. Scan alerts share server/notify.ts.
+- Concall guidance bases: growth_pct, level, margin_pct, margin_change_pp; contraction negative;
+  PROMPT_VERSION 2. ConcallPanel hidden outside Master Tracker. Analysis nav near 1280px limit.
+- DB-backed Vitest seeds taxonomyFixture.ts; fresh local migrations 0000-0032 previously yielded
+  1066 passed/5 skipped. Signed-in mobile overflow previously 70/70 plus 8 concall routes.
+  Stage scanner preset selection switches to All stage tab. These are historical, not current checks.
+- market-story-post deck spec locked (~/.claude skill): palette #FFFFFF/#0A0A0A/#F4F4F5 + only accent #2563EB,
+  3 fonts, hard 4-6px shadows, no gradients/tints/radius; enforced by `story.py check` (run by png/build).
 
-## Important Constraints
-- `thesis_versions` and `position_decisions` are append-only (DB triggers; deletes need
-  `set_config('app.allow_thesis_delete','on',true)`).
-- Never edit an applied migration; add a new numbered file in `web/drizzle/`.
-- Production migrations must be applied BEFORE merging code that uses them.
-- No em dashes in any writing. Commit trailer: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
-- Push/deploy, production DB writes and destructive actions need fresh explicit user approval.
-  Default: land locally, let the user test, then push.
-- Never commit secrets or .env files; `.production.env` is stale (old Aiven DB).
+## Active product work and unresolved decisions
+- `feat/breadth-50dma` NOT merged/deployed: `/valuation/breadth` 50/200 DMA percentage-below chart,
+  6M/1Y/All, DmaBreadthChart.svelte. Migration 0033 adds breadth_closes arrays/status and
+  market_breadth_dma aggregates. Angel NSE EQ universe (BE fallback), funds excluded;
+  history 2024-03-01, display 2025-04-01; denominator uses sufficient closes per stock/day.
+- Breadth backfill: server/breadthDmaStore.ts runBreadthBackfill, resumable 240s slices at 2/s;
+  admin POST /api/valuation/breadth/backfill, /api/cron/breadth-backfill,
+  `node scripts/breadth-backfill.mjs`. Daily append in /api/cron/sector-rotation skips weekends,
+  marks missed symbols stale. Historical local run: 2678 symbols, 0 failures, 22.6min, 12MB,
+  latest 76.3 on Oct19. Production needs approved migration0033 BEFORE merge, then one backfill
+  (~6 slices or CLI --base using secret safely). Current-listing survivorship; missed day needs --rebuild.
+- User still needs scanner Load missing history, Load missing financials, Load 5-year highs and
+  browser checks. Segments require Screener premium. Optional Telegram needs TELEGRAM_BOT_TOKEN,
+  TELEGRAM_BOT_USERNAME, TELEGRAM_WEBHOOK_SECRET and setWebhook. Never record secret values.
+- Weekend candles in 518/521 production company_growth_series_cache rows; cleanup NOT approved.
+- Verify HFCL on Vercel Master Tracker June2026: Screener/NSE documents, concise BSE403 warning.
+  Retry/Upload for failed downloads remains open. BSE API403 is a known cloud limitation.
+- `feat/guidance-tables-import-redesign` remains unmerged. Rotate leaked Vercel bypass secret.
+  Confirm whether 35 production companies with only 2 thesis_scenarios (siddhesh.dige) is expected.
 
-## Completed Work
-- Valuation dashboard merged into one app; production on Neon + Vercel.
-- Master Tracker shipped (2026-10-10, `d9a41bb`); its tables (0015/0016) exist in production.
-- Mobile fit, header split into Thesis/Valuation/Sector/Analysis, batched price refresh (2026-10-17).
-- Multi-agent setup: `.claude/agents/` master + executor-medium + executor-low (2026-10-17).
-- merge-valuation, scorecard, scanner-universe and the HFCL document fix are all in master and deployed.
-- HFCL fix (not deployed): `services/concall` accepts `nseSymbol`/`isin`/`documentLinks`; order Screener links, NSE,
-  then BSE; short error reasons (`failed_sources`); web wording "could not be retrieved (BSE returned HTTP 403)".
-  Checked live for HFCL with the BSE API forced to 403: Screener gave Q1 FY27, Q4 and Q3 FY26 transcripts and decks.
+## Verification workflow
+- Read `harness/skills/master-tracker-testing.md` before Master Tracker browser work. Live AI tests
+  use gpt-5.6-luna only unless user changes instruction. Distinguish mocks from provider coverage.
+- From web/: npm run check; npx vitest run <relevant files>; npm run test:tracker (mock desktop/mobile);
+  tests/e2e/mobile-overflow.spec.ts. DB tests need local Docker and skip without it. Apply local
+  migrations with docker exec -i thesistrack-postgres-1 psql -U thesis -d thesis;
+  _prod_migrate.mjs refuses non-production hosts.
+- Python: services/concall/.venv/Scripts/python.exe -m unittest test_server test_hints -v from
+  services/concall. Windows adapter-vercel EPERM is known; do not call a failing build verified.
 
-## Decisions
-- 2026-10-18: announcement alerts LIVE (personal tracked companies `/valuation/tracking`, NSE per-symbol polling, OpenAI summary, Web Push). Poller `/api/cron/announcements` (CRON_SECRET bearer, maxDuration 60) is called every minute by cron-job.org; it also tops up the market feeds within a time budget (local run 0.2 to 21 s). Code: `lib/valuation/announcements.ts`, `server/announcementJob.ts`, `lib/server/webPush.ts`.
-- 2026-10-19: StockScans round LIVE on production (master `f77b37f` plus a TO DO commit). Migrations 0022-0032 applied to Neon (no 0029 exists). Features: results, announcements+tags, insider/SAST, corporate actions, deals, shareholding, Telegram (optional env `TELEGRAM_BOT_TOKEN`, `_BOT_USERNAME`, `_WEBHOOK_SECRET` + setWebhook), scanner presets, lists, price/holding alert rules, saved scans, returns, breadth, concalls (`lib/valuation/concall/`, migration 0032), red flags. Nav: Concalls and Red flags sit in the Valuation group; the Analysis row is at the 1280px limit. Scan alerts use the shared `server/notify.ts`.
-- Concall guidance bases: growth_pct, level, margin_pct, margin_change_pp (a change in margin points vs the year-ago period; contraction is negative); PROMPT_VERSION 2. `ConcallPanel` hides itself for companies outside the Master Tracker.
-- Production still needs, by the user: "Load missing financials" and "Load 5-year highs" in the UI; segments need Screener premium; concall analysis about $0.04 per transcript (assumed). Weekend candles: 518 of 521 production `company_growth_series_cache` rows hold one; cleanup NOT approved.
-- Local: DB-backed vitest seeds its own taxonomy row (`web/tests/taxonomyFixture.ts`); fresh DB 0000-0032 gave 1066 passed / 5 skipped. mobile-overflow signed in 70/70 (+8 for concall routes). Stage scanner: applying a preset (URL or chip) switches to the All stage tab.
-- 2026-10-19 (branch `feat/breadth-50dma`, NOT merged/deployed): whole-market "% below 50 DMA" chart on `/valuation/breadth` (`DmaBreadthChart.svelte`, 50/200 DMA toggle, 6M/1Y/All). Data: migration 0033 (`valuation.breadth_closes` per-symbol int/float arrays + status, `market_breadth_dma` daily aggregate). Universe = Angel One scrip master NSE `-EQ` (BE only if no EQ), funds/ETFs removed by name (`breadthDma.ts` `isFundName`), about 2,680 symbols; history from 2024-03-01 (200 DMA warmup), chart from 2025-04-01. A day counts only stocks with 50 (200) closes to date. Backfill `runBreadthBackfill` (`server/breadthDmaStore.ts`): resumable by per-symbol status, 240 s slices (about 480 symbols each at the 2/s candle limit), admin button (`POST /api/valuation/breadth/backfill`, admin only), cron route `/api/cron/breadth-backfill`, CLI `node scripts/breadth-backfill.mjs`. Daily: `appendDailyBreadth` runs in `/api/cron/sector-rotation` (quotes, weekend skipped, missed-session symbols marked stale). Local run: 2,678 symbols, 0 failures, 22.6 min, 12 MB, latest 76.3 (19 Oct). PRODUCTION NEEDS: apply 0033 to Neon BEFORE the merge, then run the backfill once (admin button, about 6 slices, or CLI with `--base` and the prod CRON_SECRET). Limits: survivorship (today's listings only); a missed cron day needs `--rebuild`.
-- 2026-10-17: stay on Vercel only; EC2 abandoned (BSE 403 from AWS too).
-
-## Current Focus
-- Production is on the StockScans round. Next: user runs the "Load" buttons, tests, sets the Telegram env if wanted, decides on the weekend-candle cleanup.
-
-## Known Issues / Unresolved Decisions
-- Master Tracker: BSE's API returns 403 to all cloud servers (probe 2026-10-10). Worked around, see Completed Work.
-- A Vercel deployment-protection bypass secret leaked into a session log; rotate it.
-- DB-backed tests pass with the local docker DB up (683/683, 0 skipped); they skip when Docker is down. Apply new
-  migrations locally with `docker exec -i thesistrack-postgres-1 psql -U thesis -d thesis` (`_prod_migrate.mjs` refuses non-prod hosts).
-- Production has 35 companies but only 2 thesis_scenarios (both siddhesh.dige); confirm expected.
-
-## Next Steps
-1. User: scanner "Load missing history" (admin), "Load missing financials", "Load 5-year highs". Browser-check the new pages.
-2. Verify the HFCL fix on Vercel (Master Tracker, Jun 2026): documents from Screener/NSE, BSE 403 shown as a short warning.
-3. Not merged: `feat/guidance-tables-import-redesign`.
-4. Open: Retry/Upload for failed document fetches; rotate the leaked Vercel bypass secret; stale `.production.env`.
-
-## Verification
-- From `web/`: `npm run check`; `npx vitest run <files>` (full suite: `npx vitest run`);
-  `npm run test:tracker` (mock Master Tracker, desktop + mobile); `tests/e2e/mobile-overflow.spec.ts`.
-- Python downloader: `services/concall/.venv/Scripts/python.exe -m unittest test_server test_hints -v` (from `services/concall`).
-- Local Windows build fails at the adapter-vercel step (EPERM); the Vercel build log is the real check.
+## Active adaptive harness contract
+- Opus5.5 Medium only: architecture, requirements, coordination, actual code/evidence review;
+  NEVER application implementation. Sonnet5.5 Medium default, Low simple work; Haiku5.5 Low bounded
+  exploration/mechanical tasks. Models explicit. Only lead spawns; workers reuse context.
+- One cheap subagent for small tasks; native shared tasks/messaging teams for independent ongoing
+  collaboration, 2 when useful, 3 default maximum; more requires concrete throughput benefit.
+  Separate ownership/interfaces before parallel work; integrate and validate. Shut down idle workers.
+- Requirements/acceptance supplied once, redirect affected tasks on changes. One Sonnet memory
+  owner; recover here after compaction. After two failed repairs Opus re-diagnoses. No false passes.
+- In-process teams; compaction tokens Opus300000, Sonnet600000, Haiku100000 (debug effectiveWindow
+  280k/580k/80k, native reserve; no threshold-filling compaction test run).
+- Task tools root cause: VS Code extension 2.1.301 panel runs the CLI over stream-json SDK protocol
+  and hard-codes CLAUDE_CODE_ENABLE_TASKS=0 (extension.js c5). Fix: project settings env
+  CLAUDE_CODE_ENABLE_TASKS=1 (settings env overrides inherited env). Verified 2026-10-19: live panel
+  session gained TaskCreate/TaskGet/TaskList/TaskUpdate without restart; terminal CLI 2.1.303 with
+  inherited 0 also got them.
+- Panel is an SDK-protocol session: docs say teammates are not spawned there; use the terminal CLI
+  (`claude` in a terminal, or claudeCode.useTerminal) for native teams. Panel subagents work.
+- CLAUDE_CODE_SUBAGENT_MODEL=claude-sonnet-5-5 is a fallback only (definition model wins; _FORCE
+  unset). Transcripts: unnamed executor-haiku subagent ran haiku-5-5 low; executor-medium ran
+  sonnet-5-5 medium; lead opus-5-5 medium.
+- Terminal team smoke (session 51ede6af, CLI 2.1.303): in-process teammates executor-haiku ->
+  haiku-5-5 low, executor-low -> sonnet-5-5 low; shared tasks created/owned/completed,
+  teammate-to-teammate SendMessage, worker reuse, both shutdown approvals. Limitation: the lead
+  idled after shutdown approvals (they did not wake it); nudge the lead or do not block on shutdown
+  confirmation. Harness: scratchpad pywinpty driver (not in repo).
+- Original permissions auto-allows for push/prod scripts changed to ask. No app code changed, no
+  deploy/push/prod writes. Initial multiworker -p smoke reported $0.602752135 list-equivalent
+  usage (not an invoice or performance benchmark).
+- Existing MCP settings preserved; smoke disabled MCP for isolation, so live MCP connectivity is
+  not verified. No unrelated app features requested.

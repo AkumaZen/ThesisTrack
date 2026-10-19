@@ -1,11 +1,23 @@
 {
   "agent": "master",
+  "model": "claude-opus-5-5",
+  "effortLevel": "medium",
+  "teammateMode": "in-process",
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1",
+    "CLAUDE_CODE_ENABLE_TASKS": "1",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5"
+  },
   "modelSettings": {
     "claude-opus-5-5": {
       "autoCompactWindow": 300000
     },
     "claude-sonnet-5-5": {
       "autoCompactWindow": 600000
+    },
+    "claude-haiku-5-5": {
+      "autoCompactWindow": 100000
     }
   }
 }

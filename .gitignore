@@ -14,6 +14,7 @@ production-creds.md
 !.claude/agents/
 .claude/agents/*
 !.claude/agents/product-review.md
+!.claude/agents/executor-haiku.md
 node_modules/
 web/.svelte-kit/
 .neon
