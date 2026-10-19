@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseTable, periodDate, shiftMonths, statementsFrom } from './financials';
 import { allResultQuality, resultQuality } from './resultQuality';
 import { cfoVsPat, otherIncomeShare, promoterPledge, receivableDays, redFlagReport } from './redFlags';
-import { credibility, evaluateGuidance, periodQuarters, type GuidanceStatement } from './guidance';
+import { credibility, describeTarget, evaluateGuidance, periodQuarters, type GuidanceStatement } from './guidance';
 import { countCongratulations, findTranscripts, quarterFromTitle } from './transcripts';
 import { buildConcallRows, quarterLabel } from './rows';
 
@@ -159,6 +159,28 @@ describe('guidance matching', () => {
 		expect(evaluateGuidance(g({ basis: 'level', target: 100, comparator: 'at_most' }), q).status).toBe('missed');
 		expect(evaluateGuidance(g({ metric: 'pat', basis: 'level', target: 23, period: 'H1 FY26' }), q).status).toBe('kept'); // 11 + 12.1 = 23.1
 		expect(evaluateGuidance(g({ metric: 'pat', basis: 'level', target: 30, period: 'H1 FY26' }), q).status).toBe('missed');
+	});
+	it('judges margin change targets against the change in actuals, not as a margin level (HFCL)', () => {
+		// Q1 FY26 margin 16.0%, Q1 FY27 margin 19.6%: an expansion of 3.6 points.
+		const margins = [20, 20, 20, 20, 16, 20, 20, 20, 19.6];
+		const qm = statementsFrom({ get_quarterly_results: quarterly({ 'Operating Profit': sales.map((s, i) => (s * margins[i]) / 100) }) }).quarterly;
+		const expand = (over: Partial<GuidanceStatement>) => g({ metric: 'ebitda_margin', basis: 'margin_change_pp', comparator: 'between', target: 3, targetHigh: 4, ...over });
+		expect(evaluateGuidance(expand({}), qm)).toMatchObject({ status: 'kept', actualText: '+3.6 pts margin change' });
+		expect(evaluateGuidance(expand({ target: 5, targetHigh: 6 }), qm).status).toBe('missed');
+		expect(evaluateGuidance(expand({ comparator: 'at_least', target: 3, targetHigh: null }), qm).status).toBe('kept');
+		// Contraction is a negative target: the margin rose, so a 3 to 4 point contraction is missed.
+		expect(evaluateGuidance(expand({ target: -4, targetHigh: -3 }), qm).status).toBe('missed');
+		expect(evaluateGuidance(expand({ target: 2, targetHigh: 3 }), q).status).toBe('missed'); // flat 20% margin: no expansion
+		expect(evaluateGuidance(expand({ comparator: 'approx', target: 0, targetHigh: null }), q)).toMatchObject({ status: 'kept', actualText: '+0.0 pts margin change' });
+		expect(evaluateGuidance(expand({ period: 'Q1 FY24' }), qm).status).toBe('unverified');
+		expect(evaluateGuidance(expand({ metric: 'revenue' }), qm).status).toBe('unverified'); // change basis needs the margin metric
+		expect(evaluateGuidance(expand({ period: 'FY27' }), qm).status).toBe('pending');
+	});
+	it('grows by a percentage against the year-ago period', () => {
+		expect(evaluateGuidance(g({ metric: 'ebitda', comparator: 'between', target: 8, targetHigh: 12 }), q)).toMatchObject({ status: 'kept', actualText: '10.0% growth' });
+	});
+	it('describes a margin change target', () => {
+		expect(describeTarget({ basis: 'margin_change_pp', comparator: 'between', target: 3, targetHigh: 4, period: 'FY27' })).toBe('between 3 and 4 pts margin change in FY27');
 	});
 	it('is pending for periods not yet reported and unverified when it cannot be measured', () => {
 		expect(evaluateGuidance(g({ period: 'FY27' }), q)).toMatchObject({ status: 'pending' });
