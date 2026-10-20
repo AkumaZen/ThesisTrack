@@ -4,7 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inArray } from 'drizzle-orm';
 import { db } from '../src/lib/server/db';
 import { breadthCloses } from '../src/lib/server/db/valuationSchema';
-import { applyDailyPlan } from '../src/lib/valuation/server/breadthDmaStore';
+import { applyDailyPlan, readDmaRows } from '../src/lib/valuation/server/breadthDmaStore';
+import { CHART_FROM, isoToDay } from '../src/lib/valuation/breadthDma';
 import { dbReachable } from './dbReachable';
 
 const dbUp = await dbReachable();
@@ -38,5 +39,32 @@ describe.skipIf(!dbUp)('applyDailyPlan', () => {
 
 	it('does nothing for an empty plan', async () => {
 		await applyDailyPlan({ append: [], replace: [], stale: [] });
+	});
+});
+
+describe.skipIf(!dbUp)('readDmaRows (universe filter)', () => {
+	const U1 = `VTU1${Date.now()}`;
+	const U2 = `VTU2${Date.now()}`;
+	const OUT = `VTO${Date.now()}`;
+	const since = isoToDay(CHART_FROM);
+	// 60 sessions after CHART_FROM, flat at 10 and then a drop to 5 on the last one: below its 50 DMA.
+	const days = Array.from({ length: 60 }, (_, i) => since + i);
+	const closes = days.map((_, i) => (i === 59 ? 5 : 10));
+
+	beforeAll(async () => {
+		await db.insert(breadthCloses).values(
+			[U1, U2, OUT].map((symbol) => ({ symbol, status: 'done', days, closes, lastDay: days[59] }))
+		);
+	});
+	afterAll(async () => {
+		await db.delete(breadthCloses).where(inArray(breadthCloses.symbol, [U1, U2, OUT]));
+	});
+
+	it('counts only the given universe even though breadth_closes holds another done symbol', async () => {
+		const rows = await readDmaRows([U1, U2]);
+		expect(rows.get(days[59])).toMatchObject({ eligible50: 2, below50: 2 });
+		const withExtra = await readDmaRows([U1, U2, OUT]);
+		expect(withExtra.get(days[59])).toMatchObject({ eligible50: 3, below50: 3 });
+		expect((await readDmaRows([])).size).toBe(0);
 	});
 });

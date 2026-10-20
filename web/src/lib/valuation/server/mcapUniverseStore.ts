@@ -1,6 +1,12 @@
 import { eq, sql } from 'drizzle-orm';
+import { buildBreadthUniverse, type UniverseScrip } from '../breadthDma';
+import { SCANNER_MAX_MCAP_CR } from '../mcapUniverse.js';
 import { db } from '$lib/server/db';
 import { companyGrowthSeriesCache, mcapUniverse } from '$lib/server/db/valuationSchema';
+
+/** The scanner works on the band below the cap: the table holds every company above Rs 500 Cr (the breadth
+ *  universe), so every scanner read keeps the upper bound in this one predicate. */
+const inScannerBand = sql`${mcapUniverse.marketCapCr} < ${SCANNER_MAX_MCAP_CR}`;
 
 /** One company of the scanner's market cap universe, as the scanner page needs it. */
 export interface UniverseCompany {
@@ -14,7 +20,7 @@ export interface UniverseCompany {
 	noPriceSource: boolean;
 }
 
-/** Every active company of the list (loaded by scripts/import-mcap-universe.mjs). */
+/** Every active company of the scanner band, Rs 500 Cr up to Rs 20,000 Cr (loaded by scripts/import-mcap-universe.mjs). */
 export async function listActiveUniverse(): Promise<UniverseCompany[]> {
 	const rows = await db
 		.select({
@@ -25,7 +31,7 @@ export async function listActiveUniverse(): Promise<UniverseCompany[]> {
 			status: mcapUniverse.priceSourceStatus
 		})
 		.from(mcapUniverse)
-		.where(eq(mcapUniverse.active, true));
+		.where(sql`${mcapUniverse.active} and ${inScannerBand}`);
 	return rows.map((r) => ({
 		symbol: r.symbol,
 		name: r.name,
@@ -35,12 +41,12 @@ export async function listActiveUniverse(): Promise<UniverseCompany[]> {
 	}));
 }
 
-/** Tickers of the active companies Angel One can price. */
+/** Tickers of the active scanner band companies Angel One can price. */
 export async function listUniverseSymbols(): Promise<string[]> {
 	const rows = await db
 		.select({ symbol: mcapUniverse.symbol })
 		.from(mcapUniverse)
-		.where(sql`${mcapUniverse.active} and ${mcapUniverse.symbol} is not null`);
+		.where(sql`${mcapUniverse.active} and ${mcapUniverse.symbol} is not null and ${inScannerBand}`);
 	return rows.map((r) => r.symbol as string);
 }
 
@@ -50,10 +56,26 @@ export async function listUniverseSymbolsWithoutSeries(): Promise<string[]> {
 		.select({ symbol: mcapUniverse.symbol })
 		.from(mcapUniverse)
 		.where(
-			sql`${mcapUniverse.active} and ${mcapUniverse.symbol} is not null and not exists (
+			sql`${mcapUniverse.active} and ${mcapUniverse.symbol} is not null and ${inScannerBand} and not exists (
 				select 1 from ${companyGrowthSeriesCache} where ${companyGrowthSeriesCache.symbol} = ${mcapUniverse.symbol})`
 		);
 	return rows.map((r) => r.symbol as string).sort();
+}
+
+/** The whole-market breadth universe: every active company of the list, whatever its size, that has a price
+ *  source (see buildBreadthUniverse). Deliberately not limited to the scanner band. */
+export async function listBreadthUniverse(): Promise<UniverseScrip[]> {
+	const rows = await db
+		.select({
+			isin: mcapUniverse.isin,
+			symbol: mcapUniverse.symbol,
+			priceExchange: mcapUniverse.priceExchange,
+			angelNseToken: mcapUniverse.angelNseToken,
+			angelBseToken: mcapUniverse.angelBseToken
+		})
+		.from(mcapUniverse)
+		.where(eq(mcapUniverse.active, true));
+	return buildBreadthUniverse(rows);
 }
 
 /** The subset of `symbols` that has any stored series (one query). */

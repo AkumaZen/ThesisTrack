@@ -103,7 +103,7 @@
 	{#if data.market.points.length > 0}
 		<DmaBreadthChart points={data.market.points} computedAt={data.market.status.computedAt} />
 		<p class="hint">
-			Universe: NSE equities in the EQ and BE series ({st.done} with stored closes{st.empty ? `, ${st.empty} with no prices` : ''}{st.failed ? `, ${st.failed} failed` : ''}{st.stale ? `, ${st.stale} to refetch` : ''}); ETFs, funds, SME, debt and indices are left out. Today's stocks only, so past days leave out stocks that have since delisted.
+			Universe: every company listed on NSE or BSE with a six-month average market cap above Rs 500 Cr (AMFI list, one row per company, no upper limit; {st.done} with stored closes{st.empty ? `, ${st.empty} with no prices` : ''}{st.failed ? `, ${st.failed} failed` : ''}{st.stale ? `, ${st.stale} to refetch` : ''}). Prices come from NSE, or BSE for BSE-only names. Funds, ETFs, debt and indices are not in the list. The list is today's: past days use today's members, so companies that have since delisted or shrunk below Rs 500 Cr are missing, and companies that have since grown past it count for days before they qualified.
 		</p>
 	{:else}
 		<p class="scan-note" data-testid="dma-empty">

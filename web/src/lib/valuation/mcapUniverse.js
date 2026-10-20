@@ -1,5 +1,7 @@
 // @ts-nocheck - plain JS shared with the import script (node cannot run .ts); typed by its tests.
-// The breakout scanner's wider universe (valuation.mcap_universe): reading the AMFI-derived CSV,
+// The market cap list (valuation.mcap_universe): every NSE/BSE company above Rs 500 Cr, which feeds the
+// whole-market breadth chart in full and the breakout scanner for the band below SCANNER_MAX_MCAP_CR.
+// Reading the AMFI-derived CSV,
 // choosing each company's app symbol, working out what an import changes, and bucketing market
 // caps. Plain JavaScript with no imports so scripts/import-mcap-universe.mjs, the server and the
 // scanner page all share one copy (same pattern as lib/entryPrice.js).
@@ -23,6 +25,9 @@ export const CSV_COLUMNS = [
 	'price_source_status',
 	'match_method'
 ];
+
+/** The breakout scanner stops here (Rs crore, exclusive); the list itself has no upper bound. */
+export const SCANNER_MAX_MCAP_CR = 20000;
 
 export const NO_PRICE_SOURCE = 'No price source';
 const ISIN_RE = /^IN[A-Z0-9]{10}$/;

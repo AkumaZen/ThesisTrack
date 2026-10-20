@@ -3,7 +3,6 @@ import { db } from '$lib/server/db';
 import { breadthCloses, marketBreadthDma } from '$lib/server/db/valuationSchema';
 import {
 	addSymbolDma,
-	buildBreadthUniverse,
 	candlesToSeries,
 	CHART_FROM,
 	dayToIso,
@@ -18,7 +17,8 @@ import {
 	type StoredTip,
 	type UniverseScrip
 } from '../breadthDma';
-import { fetchDayQuotes, fetchScripCandles, getScripEntries, type Candle } from './angelone';
+import { fetchDayQuotes, fetchScripCandles, type Candle } from './angelone';
+import { listBreadthUniverse } from './mcapUniverseStore';
 
 /** Symbols fetched at once. The candles limiter (2 a second) is the real pace; a few in flight hide latency. */
 const CONCURRENCY = 3;
@@ -73,7 +73,7 @@ interface BackfillDeps {
 const AUTH_ERROR = /^ANGEL_(AUTH_FAILED|CREDENTIALS_MISSING|TOTP_INVALID)/;
 
 const realBackfillDeps: BackfillDeps = {
-	listUniverse: async () => buildBreadthUniverse(await getScripEntries()),
+	listUniverse: listBreadthUniverse,
 	async readStatuses() {
 		const rows = await db.select({ symbol: breadthCloses.symbol, status: breadthCloses.status }).from(breadthCloses);
 		return new Map(rows.map((r) => [r.symbol, r.status as ClosesStatus]));
@@ -106,7 +106,7 @@ const realBackfillDeps: BackfillDeps = {
 				});
 		}
 	},
-	recompute: recomputeBreadthDma,
+	recompute: () => recomputeBreadthDma(),
 	now: () => Date.now()
 };
 
@@ -170,7 +170,7 @@ export async function runBreadthBackfill(
 	// A symbol that failed this run is recorded as failed; it is only pending again on a retry run.
 	const remaining = Math.max(0, pending.length - processed);
 	const finished = remaining === 0 && !aborted;
-	const aggregate = finished && processed > 0 ? await deps.recompute() : null;
+	const aggregate = finished ? await deps.recompute() : null;
 	return { universe: universe.length, remaining, processed, ...counts, finished, aborted, ms: deps.now() - started, aggregate };
 }
 
@@ -179,22 +179,35 @@ export async function markAllStale(): Promise<void> {
 	await db.update(breadthCloses).set({ status: 'stale' });
 }
 
-/** Recomputes the whole stored aggregate (CHART_FROM on) from the stored closes. Reads only stored
- *  data: no Angel One call. */
-export async function recomputeBreadthDma(): Promise<{ rows: number; latest: string | null }> {
+/** Only symbols of the current universe count, even when breadth_closes still holds older ones (the
+ *  previous Angel NSE universe, or companies that fell off the list). */
+const inUniverse = (symbols: string[]) => sql`${breadthCloses.symbol} = ANY(${pgArray(symbols, 'text')})`;
+
+/** Per-day readings (CHART_FROM on) of the stored closes of exactly these symbols, before the
+ *  thin-day cut. Anything else in breadth_closes is ignored. */
+export async function readDmaRows(symbols: string[]): Promise<Map<number, DmaRow>> {
 	const rows = new Map<number, DmaRow>();
 	const since = isoToDay(CHART_FROM);
 	for (let offset = 0; ; offset += READ_CHUNK) {
 		const part = await db
 			.select({ days: breadthCloses.days, closes: breadthCloses.closes })
 			.from(breadthCloses)
-			.where(sql`${breadthCloses.status} = 'done'`)
+			.where(sql`${breadthCloses.status} = 'done' and ${inUniverse(symbols)}`)
 			.orderBy(asc(breadthCloses.symbol))
 			.limit(READ_CHUNK)
 			.offset(offset);
 		for (const s of part) addSymbolDma(rows, s.days, s.closes, since);
 		if (part.length < READ_CHUNK) break;
 	}
+	return rows;
+}
+
+/** Recomputes the whole stored aggregate (CHART_FROM on) from the stored closes of the current universe.
+ *  Reads only stored data: no Angel One call. */
+export async function recomputeBreadthDma(
+	universe: () => Promise<UniverseScrip[]> = listBreadthUniverse
+): Promise<{ rows: number; latest: string | null }> {
+	const rows = await readDmaRows((await universe()).map((u) => u.symbol));
 	const out = publishableRows(rows);
 	for (let i = 0; i < out.length; i += 100) {
 		const values = out.slice(i, i + 100).map((r) => ({
@@ -279,12 +292,12 @@ const realAppendDeps: AppendDeps = {
 		const rows = await db
 			.select({ symbol: breadthCloses.symbol, lastDay: breadthCloses.lastDay })
 			.from(breadthCloses)
-			.where(sql`${breadthCloses.status} = 'done'`);
+			.where(sql`${breadthCloses.status} = 'done' and ${inUniverse((await listBreadthUniverse()).map((u) => u.symbol))}`);
 		return rows.filter((r) => r.lastDay != null).map((r) => ({ symbol: r.symbol, lastDay: r.lastDay as number }));
 	},
 	fetchQuotes: fetchDayQuotes,
 	apply: applyDailyPlan,
-	recompute: recomputeBreadthDma
+	recompute: () => recomputeBreadthDma()
 };
 
 /** The daily step: one batched quote request per 50 stored symbols, then the newest close appended
@@ -338,9 +351,14 @@ export interface BackfillStatus {
 
 /** The stored aggregate, oldest first, and the backfill's progress. Page views read only this. */
 export async function readDmaBreadth(): Promise<{ points: BreadthDmaPoint[]; status: BackfillStatus }> {
+	const symbols = (await listBreadthUniverse()).map((u) => u.symbol);
 	const [rows, statusRows, [latest]] = await Promise.all([
 		db.select().from(marketBreadthDma).orderBy(asc(marketBreadthDma.asOf)),
-		db.select({ status: breadthCloses.status, n: count() }).from(breadthCloses).groupBy(breadthCloses.status),
+		db
+			.select({ status: breadthCloses.status, n: count() })
+			.from(breadthCloses)
+			.where(inUniverse(symbols))
+			.groupBy(breadthCloses.status),
 		db
 			.select({ at: sql<string | null>`max(${marketBreadthDma.computedAt})` })
 			.from(marketBreadthDma)

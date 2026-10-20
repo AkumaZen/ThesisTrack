@@ -44,14 +44,16 @@ describe('runBreadthBackfill', () => {
 		expect(t.recompute).toHaveBeenCalledOnce();
 	});
 
-	it('resumes: skips symbols already stored and does nothing when all are', async () => {
+	it('resumes: skips symbols already stored; with all stored it fetches nothing but still recomputes the aggregate', async () => {
 		const t = backfillSetup({ statuses: { A: 'done', B: 'done', C: 'empty' } });
 		await runBreadthBackfill({ budgetMs: 60_000 }, t.deps);
 		expect(t.fetched.sort()).toEqual(['D', 'E', 'F']);
 		const all = backfillSetup({ statuses: Object.fromEntries(universe.map((u) => [u.symbol, 'done'])) });
 		const r = await runBreadthBackfill({ budgetMs: 60_000 }, all.deps);
 		expect(r).toMatchObject({ processed: 0, remaining: 0, finished: true });
-		expect(all.recompute).not.toHaveBeenCalled();
+		expect(all.fetched).toEqual([]);
+		expect(all.recompute).toHaveBeenCalledOnce();
+		expect(r.aggregate).toEqual({ rows: 3, latest: '2026-10-19' });
 	});
 
 	it('stops at the time budget with the rest remaining, and a later slice finishes the job', async () => {
