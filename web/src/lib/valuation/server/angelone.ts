@@ -48,6 +48,15 @@ function sleep(ms: number): Promise<void> {
 	return new Promise((r) => setTimeout(r, ms));
 }
 
+async function isInvalidTokenBody(res: Response): Promise<boolean> {
+	try {
+		const body = (await res.clone().json()) as { status?: boolean; message?: string; errorcode?: string };
+		return !body.status && (/invalid token/i.test(body.message ?? '') || /^AG800[12]$/.test(body.errorcode ?? ''));
+	} catch {
+		return false;
+	}
+}
+
 /**
  * Runs a request that needs a bearer token, retrying on failure — but 401 and 403 mean
  * different things and must not be handled the same way. A 401 means the token itself is
@@ -65,6 +74,14 @@ async function requestWithAuthRetry(
 ): Promise<Response> {
 	let token = await getAccessToken();
 	let res = await makeRequest(token);
+
+	// Angel answers an expired or replaced session with HTTP 200 and "Invalid Token" in the body (no 401),
+	// which left the cached session dead for its whole 6h TTL. Treat it like a 401: log in again, retry once.
+	if (res.ok && (await isInvalidTokenBody(res))) {
+		cachedToken = null;
+		token = await getAccessToken();
+		return makeRequest(token);
+	}
 
 	if (res.status === 401) {
 		cachedToken = null;
