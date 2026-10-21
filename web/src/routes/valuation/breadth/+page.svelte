@@ -137,7 +137,7 @@
 			<li class="an-card">
 				<span class="an-label">Advance / decline</span>
 				<strong class="an-value">{latest.advances} / {latest.declines}</strong>
-				<span class="an-sub">of {latest.total.toLocaleString('en-IN')} stocks � {latest.unchanged} unchanged{advanceDeclineRatio(latest) != null ? ` · ratio ${f(advanceDeclineRatio(latest), 2)}` : ''}</span>
+				<span class="an-sub">of {latest.total.toLocaleString('en-IN')} stocks &middot; {latest.unchanged} unchanged{advanceDeclineRatio(latest) != null ? ` · ratio ${f(advanceDeclineRatio(latest), 2)}` : ''}</span>
 			</li>
 			<li class="an-card">
 				<span class="an-label">Above 50 DMA</span>
@@ -187,7 +187,7 @@
 				<tbody>
 					{#each history as r (r.asOf)}
 						<tr>
-							<td class="text">{r.asOf}{#if headline.partialDates.has(r.asOf)} <span class="hint" data-testid="breadth-partial-row">partial ({r.total.toLocaleString('en-IN')})</span>{/if}</td>
+							<td class="text">{r.asOf}{#if headline.partialDates.has(r.asOf)}<span class="hint" style="margin-left: 0.75em" data-testid="breadth-partial-row">partial ({r.total.toLocaleString('en-IN')})</span>{/if}</td>
 							<td class="num res-up">{r.advances}</td>
 							<td class="num res-down">{r.declines}</td>
 							<td class="num">{f(advanceDeclineRatio(r), 2)}</td>
