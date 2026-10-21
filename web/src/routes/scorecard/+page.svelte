@@ -41,6 +41,7 @@
 	});
 	const closedRows = $derived(visible.filter((r) => r.closed));
 	const openRows = $derived(visible.filter((r) => !r.closed));
+	const openTotal = $derived(sc.rows.filter((r) => !r.closed).length);
 
 	function sortBy(key: SortKey) {
 		if (sortKey === key) sortDir = sortDir === 1 ? -1 : 1;
@@ -66,213 +67,268 @@
 
 <h1 class="page-title mb-1">Scorecard</h1>
 <p class="text-sm text-muted-fg mb-1">How the team's calls have worked out.</p>
-<details class="calm-disclosure mb-5">
+<details class="calm-disclosure sc-how">
 	<summary>How this works</summary>
-	<div class="calm-disclosure-body">Headline numbers use <strong>closed</strong> theses only; open theses are shown separately at the latest stored price.</div>
+	<div class="calm-disclosure-body">
+		<ul class="sc-notes">
+			<li>Headline numbers use <strong>closed</strong> theses only. Open theses are shown separately at the latest stored close.</li>
+			<li><strong>Hit rate</strong> is the share of closed theses whose return from entry price to exit price is above zero. A flat 0.0% does not count as a win.</li>
+			<li><strong>vs Nifty</strong> is the average of thesis return minus Nifty 50 return over each thesis's own holding window, in percentage points. Theses older than the stored Nifty history are left out of this figure.</li>
+			<li><strong>Kill triggers</strong> are an estimate: for closed theses where a kill trigger fired or the thesis was invalidated, the return at exit versus the return had it been held to the latest stored price. It is based on stored closes and is not a result.</li>
+			<li>Theses without an entry price are excluded from every return figure.</li>
+		</ul>
+	</div>
 </details>
 
 {#snippet signed(v: number | null)}
 	<span class={tone(v)}>{arrow(v)}{pct(v)}</span>{#if v != null}<span class="sr-only">{v > 0 ? ' gain' : v < 0 ? ' loss' : ' no change'}</span>{/if}
 {/snippet}
 
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" aria-label="Headline numbers" data-testid="headline">
-	<div class="min-w-0 border-t border-border pt-3">
-		<div class="text-xs text-muted-fg" title="Share of closed theses whose return from entry price to exit price is above zero. A flat 0.0% does not count as a win.">Hit rate <span aria-hidden="true">(?)</span></div>
-		<div class="text-2xl font-bold mt-1" data-testid="hit-rate">{hit(sc.headline)}</div>
-		<div class="text-xs text-muted-fg mt-1">closed theses with a positive return</div>
+<section class="sc-tiles" aria-label="Headline numbers" data-testid="headline">
+	<div class="sc-tile">
+		<div class="sc-tile-label">Hit rate</div>
+		<div class="sc-tile-value" data-testid="hit-rate">{hit(sc.headline)}</div>
+		<div class="sc-tile-sub">closed, positive return</div>
 	</div>
-	<div class="min-w-0 border-t border-border pt-3">
-		<div class="text-xs text-muted-fg">Average return</div>
-		<div class="text-2xl font-bold mt-1">{@render signed(sc.headline.avgReturn)}</div>
-		<div class="text-xs text-muted-fg mt-1">entry to exit, closed theses</div>
+	<div class="sc-tile">
+		<div class="sc-tile-label">Average return</div>
+		<div class="sc-tile-value">{@render signed(sc.headline.avgReturn)}</div>
+		<div class="sc-tile-sub">entry to exit</div>
 	</div>
-	<div class="min-w-0 border-t border-border pt-3">
-		<div class="text-xs text-muted-fg" title="Average of (thesis return minus Nifty 50 return) over each thesis's own holding window, in percentage points. Theses older than the stored Nifty history are left out of this figure.">Average vs Nifty 50 <span aria-hidden="true">(?)</span></div>
-		<div class="text-2xl font-bold mt-1">{@render signed(sc.headline.avgVsNifty)}</div>
-		<div class="text-xs text-muted-fg mt-1">percentage points, same holding window</div>
+	<div class="sc-tile">
+		<div class="sc-tile-label">Average vs Nifty 50</div>
+		<div class="sc-tile-value">{@render signed(sc.headline.avgVsNifty)}</div>
+		<div class="sc-tile-sub">percentage points</div>
 	</div>
-	<div class="min-w-0 border-t border-border pt-3">
-		<div class="text-xs text-muted-fg">Average holding time</div>
-		<div class="text-2xl font-bold mt-1">{days(sc.headline.avgHoldDays)}</div>
-		<div class="text-xs text-muted-fg mt-1">closed theses</div>
+	<div class="sc-tile">
+		<div class="sc-tile-label">Average holding time</div>
+		<div class="sc-tile-value">{days(sc.headline.avgHoldDays)}</div>
+		<div class="sc-tile-sub">closed theses</div>
 	</div>
 </section>
 
-{#if sc.withoutEntryPrice.length}
-	<details class="mb-5 text-sm" data-testid="unpriced-note">
-		<summary class="cursor-pointer"><strong>{sc.withoutEntryPrice.length}</strong> {sc.withoutEntryPrice.length === 1 ? 'thesis' : 'theses'} without an entry price (left out of every return figure)</summary>
-		<ul class="mt-2 space-y-1">
-			{#each sc.withoutEntryPrice as w (w.id)}
-				<li>
-					<a class="underline" href={companyHref(w.companyId, w.owner)}>{w.companyName}</a>
-					<span class="text-muted-fg">&middot; {w.owner} &middot; {REASON[w.reason]}</span>
-				</li>
-			{/each}
-		</ul>
-	</details>
-{/if}
-
-<section class="mb-5" aria-labelledby="by-analyst">
-	<h2 id="by-analyst" class="font-semibold mb-2">By analyst (closed theses)</h2>
-	<div class="relative overflow-x-auto">
-		<table class="w-full text-sm min-w-[32rem]">
-			<thead>
-				<tr class="text-left text-xs text-muted-fg border-b border-border">
-					<th class="p-2 font-medium">Analyst</th><th class="p-2 font-medium">Closed</th><th class="p-2 font-medium">Hit rate</th>
-					<th class="p-2 font-medium">Avg return</th><th class="p-2 font-medium">Avg vs Nifty</th><th class="p-2 font-medium">Open</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each sc.byAnalyst as a (a.owner)}
-					<tr class="border-b border-border last:border-0">
-						<td class="p-2 font-medium">{a.owner}</td>
-						<td class="p-2">{a.closed.count}</td>
-						<td class="p-2">{hit(a.closed)}</td>
-						<td class="p-2">{@render signed(a.closed.avgReturn)}</td>
-						<td class="p-2">{@render signed(a.closed.avgVsNifty)}</td>
-						<td class="p-2">{a.openCount}</td>
-					</tr>
-				{:else}
-					<tr><td class="p-3 text-muted-fg" colspan="6">No theses yet.</td></tr>
+<div class="calm-meta sc-meta">
+	<span>{openTotal} open {openTotal === 1 ? 'thesis' : 'theses'}</span>
+	{#if sc.withoutEntryPrice.length}
+		<span aria-hidden="true">&middot;</span>
+		<details class="sc-inline" data-testid="unpriced-note">
+			<summary>{sc.withoutEntryPrice.length} without an entry price</summary>
+			<ul>
+				{#each sc.withoutEntryPrice as w (w.id)}
+					<li>
+						<a class="underline" href={companyHref(w.companyId, w.owner)}>{w.companyName}</a>
+						<span>&middot; {w.owner} &middot; {REASON[w.reason]}</span>
+					</li>
 				{/each}
-			</tbody>
-		</table>
-	</div>
-</section>
+			</ul>
+		</details>
+	{/if}
+</div>
 
 {#snippet sortTh(k: SortKey, label: string)}
-	<th class="p-2 font-medium" aria-sort={ariaSort(k)}>
+	<th aria-sort={ariaSort(k)}>
 		<button type="button" class="font-medium hover:underline" onclick={() => sortBy(k)}>{label}{mark(k)}</button>
 	</th>
 {/snippet}
 
-{#snippet thesisTable(rows: ScorecardRow[], title: string, endLabel: string, testid: string)}
-	<h3 class="text-sm font-medium text-muted-fg mb-1">{title} ({rows.length})</h3>
-	<div class="relative overflow-x-auto mb-4" data-testid={testid}>
-		<table class="w-full text-sm min-w-[56rem]">
-			<thead>
-				<tr class="text-left text-xs text-muted-fg border-b border-border">
-					{@render sortTh('company', 'Company')}
-					{@render sortTh('owner', 'Analyst')}
-					{@render sortTh('conviction', 'Conviction')}
-					{@render sortTh('entryDate', 'Entry')}
-					<th class="p-2 font-medium">{endLabel}</th>
-					{@render sortTh('returnPct', 'Return')}
-					{@render sortTh('vsNifty', 'vs Nifty')}
-					{@render sortTh('result', 'Result')}
-				</tr>
-			</thead>
-			<tbody>
-				{#each rows as r (r.id)}
-					<tr class="border-b border-border last:border-0 align-top">
-						<td class="p-2"><a class="font-medium hover:underline" href={companyHref(r.companyId, r.owner)}>{r.companyName}</a></td>
-						<td class="p-2">{r.owner}</td>
-						<td class="p-2">{r.conviction ?? '-'}</td>
-						<td class="p-2">{r.entryDate ?? '-'}<br /><span class="text-muted-fg">{num(r.entryPrice)}</span></td>
-						<td class="p-2">
-							{#if r.endPrice != null}
-								{r.endDate}<br /><span class="text-muted-fg">{num(r.endPrice)}{r.endSource === 'stored_close' ? ' (stored close)' : ''}</span>
-							{:else}-{/if}
-						</td>
-						<td class="p-2 font-semibold">{@render signed(r.returnPct)}</td>
-						<td class="p-2">{@render signed(r.vsNifty)}</td>
-						<td class="p-2">{RESULT_LABEL[r.outcome] ?? r.outcome}</td>
-					</tr>
-				{:else}
-					<tr><td class="p-3 text-muted-fg" colspan="8">None.</td></tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+{#snippet dateCell(date: string | null, price: number | null, note: string)}
+	{#if date == null && price == null}-{:else}{date ?? '-'}<br /><span class="text-muted-fg">{num(price)}{note}</span>{/if}
 {/snippet}
 
-<section class="mb-5" aria-labelledby="all-theses">
-	<div class="flex flex-wrap items-end justify-between gap-3 mb-2">
-		<h2 id="all-theses" class="font-semibold">All theses</h2>
-		<label class="text-sm">Analyst
-			<select bind:value={analyst} class="ml-2 rounded-md border border-border px-2 py-1.5 text-sm" data-testid="analyst-filter">
-				<option value="all">All analysts</option>
-				{#each analysts as a (a)}<option value={a}>{a}</option>{/each}
-			</select>
-		</label>
+{#snippet thesisTable(rows: ScorecardRow[], title: string, endLabel: string, testid: string, empty: string)}
+	<div class="sc-subhead">
+		<h3 class="sc-h3">{title} ({rows.length})</h3>
+		{#if testid === 'open-table' && sc.open.count}
+			<span class="calm-meta sc-subhead-meta">
+				{sc.open.count} priced &middot; hit rate {hit(sc.open)} &middot; average return {pct(sc.open.avgReturn)}{#if sc.withoutEndPrice} &middot; {sc.withoutEndPrice} without a current price{/if}
+			</span>
+		{/if}
 	</div>
-	{@render thesisTable(closedRows, 'Closed', 'Exit', 'closed-table')}
-	{@render thesisTable(openRows, 'Open (paper return at the latest stored close)', 'Current', 'open-table')}
-	<p class="text-xs text-muted-fg">
-		Open theses: {sc.open.count} priced, hit rate {hit(sc.open)}, average return {pct(sc.open.avgReturn)}.
-		{#if sc.withoutEndPrice}{sc.withoutEndPrice} priced thesis{sc.withoutEndPrice === 1 ? '' : 'es'} lack an exit or current price and show "-".{/if}
-	</p>
-</section>
-
-{#snippet groupTable(title: string, groups: { key: string; stats: Stats }[])}
-	<div class="min-w-0 border-t border-border pt-3">
-		<h2 class="font-semibold mb-2">{title}</h2>
-		<div class="relative overflow-x-auto">
-			<table class="w-full text-sm min-w-[18rem]">
-				<thead><tr class="text-left text-xs text-muted-fg"><th class="py-1 pr-2 font-medium">Group</th><th class="py-1 pr-2 font-medium">Closed</th><th class="py-1 pr-2 font-medium">Hit rate</th><th class="py-1 font-medium">Avg return</th></tr></thead>
+	<div class="sc-wrap" data-testid={testid}>
+		{#if rows.length}
+			<table class="sc-table" style="min-width: 52rem">
+				<thead>
+					<tr>
+						{@render sortTh('company', 'Company')}
+						{@render sortTh('owner', 'Analyst')}
+						{@render sortTh('conviction', 'Conviction')}
+						{@render sortTh('entryDate', 'Entry')}
+						<th>{endLabel}</th>
+						{@render sortTh('returnPct', 'Return')}
+						{@render sortTh('vsNifty', 'vs Nifty')}
+						{@render sortTh('result', 'Result')}
+					</tr>
+				</thead>
 				<tbody>
-					{#each groups as g (g.key)}
-						<tr class="border-t border-border"><td class="py-1 pr-2">{g.key}</td><td class="py-1 pr-2">{g.stats.count}</td><td class="py-1 pr-2">{hit(g.stats)}</td><td class="py-1">{@render signed(g.stats.avgReturn)}</td></tr>
-					{:else}
-						<tr><td class="py-2 text-muted-fg" colspan="4">No closed theses yet.</td></tr>
+					{#each rows as r (r.id)}
+						<tr class="align-top">
+							<td><a class="font-medium hover:underline" href={companyHref(r.companyId, r.owner)}>{r.companyName}</a></td>
+							<td>{r.owner}</td>
+							<td>{r.conviction ?? '-'}</td>
+							<td>{@render dateCell(r.entryDate, r.entryPrice, '')}</td>
+							<td>{@render dateCell(r.endPrice != null ? r.endDate : null, r.endPrice, r.endSource === 'stored_close' ? ' (stored close)' : '')}</td>
+							<td class="font-semibold">{@render signed(r.returnPct)}</td>
+							<td>{@render signed(r.vsNifty)}</td>
+							<td>{RESULT_LABEL[r.outcome] ?? r.outcome}</td>
+						</tr>
 					{/each}
 				</tbody>
 			</table>
-		</div>
+		{:else}
+			<p class="sc-empty">{empty}</p>
+		{/if}
 	</div>
 {/snippet}
 
-{#snippet callList(title: string, rows: ScorecardRow[])}
-	<h3 class="text-xs text-muted-fg">{title}</h3>
-	{#each rows as r (r.id)}
-		<div class="border-t border-border py-1 text-sm flex justify-between gap-2">
-			<span><a class="hover:underline" href={companyHref(r.companyId, r.owner)}>{r.companyName}</a> <span class="text-muted-fg">&middot; {r.owner}</span></span>
-			<span class="font-semibold shrink-0">{@render signed(r.returnPct)}</span>
+<section class="sc-section" aria-labelledby="all-theses">
+	<div class="calm-toolbar sc-head">
+		<h2 id="all-theses" class="sc-h2">Theses</h2>
+		<div class="calm-end">
+			<label class="sc-filter">Analyst
+				<select bind:value={analyst} data-testid="analyst-filter">
+					<option value="all">All analysts</option>
+					{#each analysts as a (a)}<option value={a}>{a}</option>{/each}
+				</select>
+			</label>
 		</div>
-	{:else}
-		<p class="text-sm text-muted-fg border-t border-border py-1">None yet.</p>
-	{/each}
+	</div>
+	{@render thesisTable(closedRows, 'Closed', 'Exit', 'closed-table', 'No closed theses yet.')}
+	{@render thesisTable(openRows, 'Open', 'Current', 'open-table', 'No open theses.')}
+</section>
+
+{#snippet groupTable(title: string, first: string, groups: { key: string; stats: Stats }[])}
+	<div class="sc-subhead"><h3 class="sc-h3">{title}</h3></div>
+	<div class="sc-wrap">
+		{#if groups.length}
+			<table class="sc-table" style="min-width: 28rem">
+				<thead><tr><th>{first}</th><th>Closed</th><th>Hit rate</th><th>Avg return</th></tr></thead>
+				<tbody>
+					{#each groups as g (g.key)}
+						<tr><td class="font-medium">{g.key}</td><td>{g.stats.count}</td><td>{hit(g.stats)}</td><td>{@render signed(g.stats.avgReturn)}</td></tr>
+					{/each}
+				</tbody>
+			</table>
+		{:else}
+			<p class="sc-empty">No closed theses yet.</p>
+		{/if}
+	</div>
 {/snippet}
 
-<section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5" aria-label="Insights">
-	{@render groupTable('Return by conviction', sc.byConviction)}
-	{@render groupTable('Return by sector', sc.bySector)}
+<section class="sc-section" aria-labelledby="breakdown">
+	<h2 id="breakdown" class="sc-h2">Breakdown</h2>
+	<p class="sc-sub">Closed theses only.</p>
 
-	<div class="min-w-0 border-t border-border pt-3" data-testid="kill-triggers">
-		<h2 class="font-semibold">Kill triggers (estimate)</h2>
-		<p class="text-xs text-muted-fg mb-2">Closed theses where a kill trigger fired or the thesis was invalidated: return at exit versus the return had it been held to the latest stored price. An estimate from stored closes, not a result.</p>
+	<div class="sc-subhead"><h3 class="sc-h3">By analyst</h3></div>
+	<div class="sc-wrap">
+		{#if sc.byAnalyst.length}
+			<table class="sc-table" style="min-width: 32rem">
+				<thead>
+					<tr><th>Analyst</th><th>Closed</th><th>Hit rate</th><th>Avg return</th><th>Avg vs Nifty</th><th>Open</th></tr>
+				</thead>
+				<tbody>
+					{#each sc.byAnalyst as a (a.owner)}
+						<tr>
+							<td class="font-medium">{a.owner}</td>
+							<td>{a.closed.count}</td>
+							<td>{hit(a.closed)}</td>
+							<td>{@render signed(a.closed.avgReturn)}</td>
+							<td>{@render signed(a.closed.avgVsNifty)}</td>
+							<td>{a.openCount}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{:else}
+			<p class="sc-empty">No theses yet.</p>
+		{/if}
+	</div>
+
+	{@render groupTable('By conviction', 'Conviction', sc.byConviction)}
+	{@render groupTable('By sector', 'Sector', sc.bySector)}
+</section>
+
+{#snippet callList(title: string, rows: ScorecardRow[])}
+	<div class="min-w-0">
+		<div class="sc-subhead"><h3 class="sc-h3">{title}</h3></div>
+		{#each rows as r (r.id)}
+			<div class="sc-row">
+				<span><a class="hover:underline" href={companyHref(r.companyId, r.owner)}>{r.companyName}</a> <span class="text-muted-fg">&middot; {r.owner}</span></span>
+				<span class="font-semibold shrink-0">{@render signed(r.returnPct)}</span>
+			</div>
+		{:else}
+			<p class="sc-empty">None yet.</p>
+		{/each}
+	</div>
+{/snippet}
+
+<section class="sc-section" aria-labelledby="calls">
+	<h2 id="calls" class="sc-h2">Calls</h2>
+	<p class="sc-sub">Closed theses ranked by return, and exits on a kill trigger.</p>
+	<div class="sc-two" data-testid="best-worst">
+		{@render callList('Best 3', sc.best)}
+		{@render callList('Worst 3', sc.worst)}
+	</div>
+
+	<div data-testid="kill-triggers">
+		<div class="sc-subhead"><h3 class="sc-h3">Kill triggers (estimate)</h3></div>
 		{#each sc.killTriggers as k (k.row.id)}
-			<div class="border-t border-border py-2 text-sm">
+			<div class="sc-row sc-row-block">
 				<a class="font-medium hover:underline" href={companyHref(k.row.companyId, k.row.owner)}>{k.row.companyName}</a>
 				<span class="text-muted-fg">&middot; {k.row.owner}</span><br />
 				At exit {@render signed(k.atExit)}, if held {@render signed(k.ifHeld)}:
 				{#if k.difference > 0}exiting saved about {Math.abs(Math.round(k.difference * 10) / 10)} points{:else if k.difference < 0}exiting cost about {Math.abs(Math.round(k.difference * 10) / 10)} points{:else}no difference{/if}.
 			</div>
 		{:else}
-			<p class="text-sm text-muted-fg border-t border-border pt-2">No closed thesis has exited on a kill trigger yet.</p>
-		{/each}
-	</div>
-
-	<div class="min-w-0 border-t border-border pt-3" data-testid="best-worst">
-		<h2 class="font-semibold mb-2">Best and worst calls (closed)</h2>
-		{@render callList('Best 3', sc.best)}
-		<div class="mt-2"></div>
-		{@render callList('Worst 3', sc.worst)}
-	</div>
-</section>
-
-<section class="mb-8" aria-labelledby="playbook" data-testid="playbook">
-	<h2 id="playbook" class="font-semibold mb-2">Lessons learned (team playbook)</h2>
-	<div class="min-w-0 border-t border-border pt-3">
-		{#each sc.lessons as l (l.id)}
-			<div class="border-t border-border first:border-0 py-2 text-sm">
-				<p>{l.lesson}</p>
-				<p class="text-xs text-muted-fg mt-0.5">
-					<a class="hover:underline" href={companyHref(l.companyId, l.owner)}>{l.companyName}</a> &middot; {l.owner} &middot; {l.date ?? 'date not recorded'}
-				</p>
-			</div>
-		{:else}
-			<p class="text-sm text-muted-fg">No lessons yet. Add one in "Close Out Thesis" on a company page when you exit.</p>
+			<p class="sc-empty">No closed thesis has exited on a kill trigger yet.</p>
 		{/each}
 	</div>
 </section>
+
+<section class="sc-section" aria-labelledby="playbook" data-testid="playbook">
+	<h2 id="playbook" class="sc-h2">Lessons learned</h2>
+	<p class="sc-sub">The team playbook, from closed theses.</p>
+	{#each sc.lessons as l (l.id)}
+		<div class="sc-row sc-row-block">
+			<p>{l.lesson}</p>
+			<p class="text-xs text-muted-fg mt-0.5">
+				<a class="hover:underline" href={companyHref(l.companyId, l.owner)}>{l.companyName}</a> &middot; {l.owner} &middot; {l.date ?? 'date not recorded'}
+			</p>
+		</div>
+	{:else}
+		<p class="sc-empty">No lessons yet. Add one in "Close Out Thesis" on a company page when you exit.</p>
+	{/each}
+</section>
+
+<style>
+	.sc-how { margin-bottom: 1.25rem; }
+	.sc-notes { margin: 0; padding-left: 1.1rem; list-style: disc; display: grid; gap: 0.35rem; }
+	.sc-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem 1.5rem; }
+	@media (min-width: 1024px) { .sc-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+	.sc-tile { min-width: 0; border-top: 1px solid var(--rule); padding-top: 0.75rem; }
+	.sc-tile-label { font-size: 0.75rem; color: var(--muted); }
+	.sc-tile-value { font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem; line-height: 1.2; }
+	.sc-tile-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+	.sc-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; margin-bottom: 2rem; }
+	.sc-inline > summary { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+	.sc-inline ul { list-style: none; padding: 0; margin: 0.5rem 0 0; font-size: 0.8125rem; }
+	.sc-section { margin-bottom: 2.5rem; }
+	.sc-h2 { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.25rem; }
+	.sc-head { margin-bottom: 0.5rem; }
+	.sc-head .sc-h2 { margin: 0; }
+	.sc-filter { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--muted); }
+	.sc-filter select { min-height: 2.25rem; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); font: inherit; font-size: 0.875rem; padding: 0.25rem 0.5rem; }
+	.sc-sub { font-size: 0.8125rem; color: var(--muted); margin: 0 0 0.5rem; }
+	.sc-h3 { font-size: 0.875rem; font-weight: 600; margin: 0; }
+	.sc-subhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; margin: 1.25rem 0 0.25rem; }
+	.sc-subhead-meta { margin: 0; }
+	.sc-wrap { overflow-x: auto; position: relative; }
+	.sc-table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }
+	.sc-table th { text-align: left; font-size: 0.75rem; font-weight: 500; color: var(--muted); padding: 0.375rem 0.75rem 0.375rem 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+	.sc-table td { padding: 0.5rem 0.75rem 0.5rem 0; }
+	.sc-table tbody tr + tr td { border-top: 1px solid var(--rule); }
+	.sc-empty { font-size: 0.875rem; color: var(--muted); margin: 0.25rem 0 0; }
+	.sc-two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 2rem; }
+	@media (min-width: 1024px) { .sc-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	.sc-row { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.4rem 0; font-size: 0.875rem; border-top: 1px solid var(--rule); }
+	.sc-row-block { display: block; padding: 0.6rem 0; }
+</style>
