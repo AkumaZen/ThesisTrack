@@ -6,7 +6,9 @@ import {
 	lastSessionDates,
 	newBreadthRows,
 	pct,
-	emptyBreadthRow
+	emptyBreadthRow,
+	headlineBreadth,
+	typicalTotal
 } from './breadth';
 import type { Candle } from './stageScan';
 
@@ -90,5 +92,40 @@ describe('helpers', () => {
 		expect(breadthRead(row(50, 100))).toBe('mixed');
 		expect(breadthRead(row(30, 100))).toBe('weak');
 		expect(breadthRead(row(0, 0))).toBe('no data');
+	});
+});
+
+describe('headlineBreadth', () => {
+	const r = (asOf: string, total: number) => ({ ...emptyBreadthRow(asOf), total });
+
+	it('uses the newest session when it is fully covered', () => {
+		const h = headlineBreadth([r('a', 1800), r('b', 1825), r('c', 1825)]);
+		expect(h.row?.asOf).toBe('c');
+		expect(h.partial).toBeNull();
+		expect(h.typical).toBe(1825);
+	});
+
+	it('skips a partial newest session and reports it', () => {
+		const h = headlineBreadth([r('14', 1825), r('15', 1825), r('16', 1825), r('19', 433), r('21', 433)]);
+		expect(h.row?.asOf).toBe('16');
+		expect(h.partial?.asOf).toBe('21');
+		expect([...h.partialDates]).toEqual(['19', '21']);
+	});
+
+	it('marks a thin middle row partial without flagging the newest', () => {
+		const h = headlineBreadth([r('a', 1825), r('b', 900), r('c', 1825)]);
+		expect(h.row?.asOf).toBe('c');
+		expect(h.partial).toBeNull();
+		expect(h.partialDates.has('b')).toBe(true);
+	});
+
+	it('accepts exactly 90% coverage', () => {
+		const h = headlineBreadth([r('a', 1000), r('b', 1000), r('c', 900)]);
+		expect(h.row?.asOf).toBe('c');
+	});
+
+	it('handles no rows and the median of an even count', () => {
+		expect(headlineBreadth([]).row).toBeNull();
+		expect(typicalTotal([r('a', 10), r('b', 20)])).toBe(15);
 	});
 });

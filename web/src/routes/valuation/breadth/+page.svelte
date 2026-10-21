@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { advanceDeclineRatio, breadthRead, pct } from '$lib/valuation/breadth';
+	import { advanceDeclineRatio, breadthRead, headlineBreadth, pct } from '$lib/valuation/breadth';
 	import DmaBreadthChart from '$lib/valuation/components/DmaBreadthChart.svelte';
 	import type { PageData } from './$types';
 
@@ -8,7 +8,10 @@
 
 	const isAdmin = $derived(data.user?.role === 'admin');
 	const canRefresh = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
-	const latest = $derived(data.rows.length ? data.rows[data.rows.length - 1] : null);
+	const headline = $derived(headlineBreadth(data.rows));
+	// The headline tiles only ever show a session that nearly the whole universe has reported.
+	const latest = $derived(headline.row);
+	const fmtDay = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 	const history = $derived([...data.rows].reverse());
 	const read = $derived(latest ? breadthRead(latest) : 'no data');
 
@@ -114,17 +117,27 @@
 			The whole-market chart has no data yet.{isAdmin ? ' Load the history below.' : ' An admin has to load the price history first.'}
 		</p>
 	{/if}
-	{#if !latest}
+	{#if data.rows.length === 0}
 		<p class="scan-note" data-testid="breadth-empty">
 			No breadth stored yet.{canRefresh ? ' Press "Refresh breadth" to compute it from the stored prices.' : ' An editor can compute it.'}
 		</p>
 	{:else}
-		<p class="hint">Scanner universe, as of {latest.asOf}, {latest.total} stocks measured. Overall read: <strong>{read}</strong>.</p>
+		{#if !latest}
+			<p class="scan-note" data-testid="breadth-incomplete">
+				No stored session has reported for at least 90% of the {headline.typical.toLocaleString('en-IN')} stocks yet. Recompute breadth once prices have refreshed.
+			</p>
+		{:else}
+			<p class="hint">Scanner universe, as of {latest.asOf}, {latest.total.toLocaleString('en-IN')} stocks measured. Overall read: <strong>{read}</strong>.</p>
+			{#if headline.partial}
+				<p class="hint" data-testid="breadth-partial-note">
+					{fmtDay(headline.partial.asOf)} is still loading: {headline.partial.total.toLocaleString('en-IN')} of {headline.typical.toLocaleString('en-IN')} stocks have reported. Showing {fmtDay(latest.asOf)}.
+				</p>
+			{/if}
 		<ul class="an-cards" data-testid="breadth-cards">
 			<li class="an-card">
 				<span class="an-label">Advance / decline</span>
 				<strong class="an-value">{latest.advances} / {latest.declines}</strong>
-				<span class="an-sub">{latest.unchanged} unchanged{advanceDeclineRatio(latest) != null ? ` · ratio ${f(advanceDeclineRatio(latest), 2)}` : ''}</span>
+				<span class="an-sub">of {latest.total.toLocaleString('en-IN')} stocks � {latest.unchanged} unchanged{advanceDeclineRatio(latest) != null ? ` · ratio ${f(advanceDeclineRatio(latest), 2)}` : ''}</span>
 			</li>
 			<li class="an-card">
 				<span class="an-label">Above 50 DMA</span>
@@ -142,6 +155,7 @@
 				<span class="an-sub">stocks at the extreme today</span>
 			</li>
 		</ul>
+		{/if}
 
 		{#if line50 || line200}
 			<figure class="an-figure">
@@ -173,7 +187,7 @@
 				<tbody>
 					{#each history as r (r.asOf)}
 						<tr>
-							<td class="text">{r.asOf}</td>
+							<td class="text">{r.asOf}{#if headline.partialDates.has(r.asOf)} <span class="hint" data-testid="breadth-partial-row">partial ({r.total.toLocaleString('en-IN')})</span>{/if}</td>
 							<td class="num res-up">{r.advances}</td>
 							<td class="num res-down">{r.declines}</td>
 							<td class="num">{f(advanceDeclineRatio(r), 2)}</td>
