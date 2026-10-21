@@ -22,7 +22,6 @@
 	// being used at.
 	let {
 		label,
-		tag,
 		row,
 		href,
 		linkText,
@@ -33,7 +32,6 @@
 		refreshing = null
 	}: {
 		label: string;
-		tag: string;
 		row: SectorReturn | 'error' | 'loading' | undefined;
 		href: string;
 		linkText: string;
@@ -75,7 +73,6 @@
 	<div class="sector-card-head">
 		<div class="sector-card-title">
 			<span class="sector-card-label">{label}</span>
-			<span class="tag">{tag}</span>
 		</div>
 		{#if row && row !== 'error' && row !== 'loading'}
 			{@const badge = rotationBadge(row)}

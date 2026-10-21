@@ -268,7 +268,6 @@
 						metrics={cardMetrics}
 						evaluation={strength.active ? strength.byKey[s.key] : undefined}
 						label={s.label}
-						tag={`basket · ${s.constituentCount}`}
 						row={sectorData[s.key]}
 						onLoad={() => loadSector(s.key)}
 						onRefresh={() => refreshSectorCard(s.key)}

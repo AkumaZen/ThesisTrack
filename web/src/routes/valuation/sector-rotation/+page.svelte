@@ -444,7 +444,6 @@
 						metrics={cardMetrics}
 						evaluation={strength.active ? strength.byKey[m.key] : undefined}
 						label={m.label}
-						tag={`sector · ${m.subsectorCount}`}
 						row={majorData[m.key]}
 						onLoad={() => loadMajor(m.key)}
 						onRefresh={() => refreshMajor(m.key)}
