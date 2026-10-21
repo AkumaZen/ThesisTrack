@@ -29,7 +29,7 @@ export function supremePowerSample(company: TrackerCompany): Analysis {
 			guidance.push({ id, threadId, quarter, metric: item.metric, commitment, targetPeriod: item.target,
 				status: latest ? item.status : 'Pending', actual: latest ? item.actual : '',
 				explanation: 'Fictional mock trigger for interface testing. Compare the original commitment with the next-quarter update; this is not real company guidance.',
-				sources: [{ id: source.id, title: `${source.title} — fictional sample`, url: source.url, page: 4 + guidance.length, excerpt }],
+				sources: [{ id: source.id, title: `${source.title} - fictional sample`, url: source.url, page: 4 + guidance.length, excerpt }],
 				origin: 'AI', manual: false, previousId, recordedAt: Date.now() });
 			previousId = id;
 		}

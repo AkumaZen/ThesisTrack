@@ -9,7 +9,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		// "last known depth" to serve when it's closed, so this skips the live call entirely
 		// rather than hitting Angel One for data that would just come back empty/stale.
 		if (!isMarketOpenIST()) {
-			error(409, 'Market is closed (NSE hours: 09:15–15:30 IST, Mon–Fri) — no live order book.');
+			error(409, 'Market is closed (NSE hours: 09:15–15:30 IST, Mon–Fri) - no live order book.');
 		}
 		const depth = await fetchMarketDepth(params.symbol);
 		if (!depth) {

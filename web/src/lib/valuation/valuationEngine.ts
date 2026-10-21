@@ -12,7 +12,7 @@ export interface YearAssumptions {
 	depreciation: number;
 	taxPct: number;
 	dividendPayoutPct: number;
-	netDebt: number; // for EV/EBITDA — carried/editable per year
+	netDebt: number; // for EV/EBITDA - carried/editable per year
 	targetMultiple: number; // meaning depends on active method (PE / P/B / EV-EBITDA / Mkt Cap-Sales)
 }
 
@@ -201,8 +201,8 @@ export function cagr(target: number, base: number, years: number): number {
 }
 
 export const METHOD_LABELS: Record<MethodId, string> = {
-	pe: 'P/E — EPS Based',
-	pb: 'P/B — Book Value Based',
+	pe: 'P/E - EPS Based',
+	pb: 'P/B - Book Value Based',
 	ev_ebitda: 'EV/EBITDA Based',
 	mcap_sales: 'Mkt Cap / Sales Based'
 };

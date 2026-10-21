@@ -303,7 +303,7 @@ export function valueAt(company: CompareStatements, key: string, year: string): 
  * 1,000. Anything that rounds to zero shows as "0", never "-0".
  */
 export function formatValue(n: number | null, unit: Unit): string {
-	if (n == null) return '—';
+	if (n == null) return '-';
 	const precise = unit === 'pct' || unit === 'rs' || unit === 'x';
 	const digits = Math.abs(n) < (precise ? 1000 : 100) ? 2 : 0;
 	const rounded = Math.round(n * 10 ** digits) / 10 ** digits || 0;

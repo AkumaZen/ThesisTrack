@@ -48,7 +48,7 @@ export function analyzePeg(input: PegInput): PegResult {
 			patCagrPct,
 			label: null,
 			detail:
-				'Profit CAGR over the available history is flat or negative — PEG is not meaningful here.'
+				'Profit CAGR over the available history is flat or negative - PEG is not meaningful here.'
 		};
 	}
 
@@ -68,6 +68,6 @@ export function analyzePeg(input: PegInput): PegResult {
 		peg,
 		patCagrPct,
 		label,
-		detail: `P/E of ${input.stockPE} ÷ ${patCagrPct.toFixed(1)}% profit CAGR (${years.length}yr history) = PEG ${peg.toFixed(2)} — ${readOut}.`
+		detail: `P/E of ${input.stockPE} ÷ ${patCagrPct.toFixed(1)}% profit CAGR (${years.length}yr history) = PEG ${peg.toFixed(2)} - ${readOut}.`
 	};
 }

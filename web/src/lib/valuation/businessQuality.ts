@@ -53,14 +53,14 @@ export function assessBusinessQuality(input: QualityInput): QualityAssessment {
 	if (leverage != null && leverage > 0.5) {
 		flags.push({
 			tone: 'bad',
-			text: `Borrowings are ${(leverage * 100).toFixed(0)}% of total assets — highly leveraged balance sheet.`
+			text: `Borrowings are ${(leverage * 100).toFixed(0)}% of total assets - highly leveraged balance sheet.`
 		});
 	}
 
 	if (input.cashConversionCycle != null && input.cashConversionCycle > 180) {
 		flags.push({
 			tone: 'bad',
-			text: `Cash conversion cycle is ${input.cashConversionCycle} days — cash is tied up in working capital for a long stretch.`
+			text: `Cash conversion cycle is ${input.cashConversionCycle} days - cash is tied up in working capital for a long stretch.`
 		});
 	}
 

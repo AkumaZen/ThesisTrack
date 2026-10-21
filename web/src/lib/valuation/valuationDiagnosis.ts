@@ -35,7 +35,7 @@ export function diagnoseValuationMethod(input: DiagnosisInput): Diagnosis {
 			method: 'pb',
 			label: 'P/B',
 			reasons: [
-				`Industry classification is "${input.industry}" — a balance-sheet-heavy financial business.`,
+				`Industry classification is "${input.industry}" - a balance-sheet-heavy financial business.`,
 				'Book value and RoE matter more than earnings multiples for banks/NBFCs/insurers.'
 			],
 			lowConfidence: false
@@ -48,7 +48,7 @@ export function diagnoseValuationMethod(input: DiagnosisInput): Diagnosis {
 		return {
 			method: 'pe',
 			label: 'P/E',
-			reasons: ['Not enough historical years scraped to diagnose reliably — defaulting to P/E.'],
+			reasons: ['Not enough historical years scraped to diagnose reliably - defaulting to P/E.'],
 			lowConfidence: true
 		};
 	}
@@ -101,7 +101,7 @@ export function diagnoseValuationMethod(input: DiagnosisInput): Diagnosis {
 			reasons: [
 				'Net profit was negative or near-zero in at least one of the last ' +
 					`${years.length} years, but sales still grew ${salesCagr.toFixed(1)}% CAGR over that period.`,
-				'PAT is not yet a stable base to multiply — sales-based valuation is more defensible.'
+				'PAT is not yet a stable base to multiply - sales-based valuation is more defensible.'
 			],
 			lowConfidence: false
 		};
@@ -125,7 +125,7 @@ export function diagnoseValuationMethod(input: DiagnosisInput): Diagnosis {
 			method: 'ev_ebitda',
 			label: 'EV/EBITDA',
 			reasons: [
-				`Borrowings are ${leverage != null ? (leverage * 100).toFixed(0) : '?'}% of total assets — ` +
+				`Borrowings are ${leverage != null ? (leverage * 100).toFixed(0) : '?'}% of total assets - ` +
 					'an asset-heavy, capex-driven balance sheet where capacity utilization drives the story.',
 				'EV/EBITDA is more standard than PE for leveraged, asset-intensive businesses.'
 			],
@@ -138,7 +138,7 @@ export function diagnoseValuationMethod(input: DiagnosisInput): Diagnosis {
 			method: 'ev_ebitda',
 			label: 'EV/EBITDA',
 			reasons: [
-				`Cash conversion cycle is ${input.cashConversionCycle} days — working-capital-heavy, ` +
+				`Cash conversion cycle is ${input.cashConversionCycle} days - working-capital-heavy, ` +
 					'so reported PAT can overstate actual cash generation.',
 				'Preferring EV/EBITDA over pure PE for this reason; treat PAT-based multiples with caution.'
 			],
