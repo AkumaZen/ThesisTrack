@@ -181,9 +181,9 @@
 {/snippet}
 
 <section class="sc-section" aria-labelledby="all-theses">
-	<div class="calm-toolbar sc-head">
+	<div class="sc-head">
 		<h2 id="all-theses" class="sc-h2">Theses</h2>
-		<div class="calm-end">
+		<div>
 			<label class="sc-filter">Analyst
 				<select bind:value={analyst} data-testid="analyst-filter">
 					<option value="all">All analysts</option>
@@ -308,15 +308,15 @@
 	.sc-tile-label { font-size: 0.75rem; color: var(--muted); }
 	.sc-tile-value { font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem; line-height: 1.2; }
 	.sc-tile-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
-	.sc-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; margin-bottom: 2rem; }
+	.sc-meta { margin-top: 1.25rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; margin-bottom: 2rem; }
 	.sc-inline > summary { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 	.sc-inline ul { list-style: none; padding: 0; margin: 0.5rem 0 0; font-size: 0.8125rem; }
 	.sc-section { margin-bottom: 2.5rem; }
 	.sc-h2 { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.25rem; }
-	.sc-head { margin-bottom: 0.5rem; }
+	.sc-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
 	.sc-head .sc-h2 { margin: 0; }
 	.sc-filter { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--muted); }
-	.sc-filter select { min-height: 2.25rem; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); font: inherit; font-size: 0.875rem; padding: 0.25rem 0.5rem; }
+	.sc-filter select { width: auto; max-width: 12rem; min-height: 2.25rem; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); font: inherit; font-size: 0.875rem; padding: 0.25rem 0.5rem; }
 	.sc-sub { font-size: 0.8125rem; color: var(--muted); margin: 0 0 0.5rem; }
 	.sc-h3 { font-size: 0.875rem; font-weight: 600; margin: 0; }
 	.sc-subhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; margin: 1.25rem 0 0.25rem; }
