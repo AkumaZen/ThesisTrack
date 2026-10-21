@@ -3,6 +3,7 @@ import { getBenchmarkCandles } from './benchmarkSeries';
 import type { CustomSector, MajorSector } from './customSectors';
 import { findAnyCustomSector } from './sectorStore';
 import { getAnalysisSettings } from './analysisSettingsStore';
+import { oldestLastDay } from '../priceAge';
 import {
 	computeSectorReturns,
 	buildEqualWeightedIndex,
@@ -42,7 +43,7 @@ export async function getSectorReturn(sector: CustomSector): Promise<SectorRetur
 		...row,
 		constituents: sector.symbols,
 		series: candles.map((c) => ({ date: c.date, value: c.close })),
-		asOf: have.length ? Math.min(...have.map((s) => s.fetchedAt)) : null,
+		dataThrough: oldestLastDay(have.map((s) => s.dates)),
 		missing: sector.symbols.length - have.length
 	};
 }
@@ -89,12 +90,12 @@ export async function getMajorSectorReturn(major: MajorSector): Promise<SectorRe
 		settings.rotation
 	);
 
-	const dated = subsectorRows.map((r) => r.asOf).filter((t): t is number => t != null);
+	const dated = subsectorRows.map((r) => r.dataThrough).filter((d): d is string => d != null);
 	return {
 		...row,
 		constituents: major.subsectorKeys,
 		series: candles.map((c) => ({ date: c.date, value: c.close })),
-		asOf: dated.length ? Math.min(...dated) : null,
+		dataThrough: dated.length ? dated.reduce((a, b) => (a < b ? a : b)) : null,
 		missing: subsectorRows.reduce((sum, r) => sum + (r.missing ?? 0), 0)
 	};
 }

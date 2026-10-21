@@ -4,7 +4,7 @@
 	import type { StrengthEvaluation } from '$lib/valuation/strength';
 	import { rotationBadge, ROTATION_TONE_CLASS, type SectorReturn } from '$lib/valuation/sectorRotation';
 	import { windowWithAverage } from '$lib/valuation/movingAverage';
-	import { formatAsOf } from '$lib/valuation/priceAge';
+	import { formatDataThrough } from '$lib/valuation/priceAge';
 	import { whenVisible } from '$lib/valuation/whenVisible';
 	import {
 		DEFAULT_SECTOR_CARD_METRICS,
@@ -116,8 +116,8 @@
 			<span class="sector-card-asof">
 				{#if refreshing}
 					{refreshing}
-				{:else if row.asOf}
-					Prices as of {formatAsOf(row.asOf)}{row.missing ? ` · ${row.missing} without prices` : ''}
+				{:else if row.dataThrough}
+					Prices to {formatDataThrough(row.dataThrough)}{row.missing ? ` · ${row.missing} without prices` : ''}
 				{:else}
 					No stored prices
 				{/if}
