@@ -286,6 +286,16 @@ describe('breakout scanner', () => {
 		expect(loadView('scanner', 1, '', new URLSearchParams('stage=bogus'), s).stage).toBe('stage4');
 	});
 
+	it('takes the preset scan from the address and keeps it for the tab', () => {
+		const s = fresh();
+		expect(loadView('scanner', 1, '', new URLSearchParams('preset=near-high'), s).preset).toBe('near-high');
+		expect(loadView('scanner', 1, '', undefined, s).preset).toBe('');
+		saveView('scanner', 1, '', { preset: 'near-high' }, s);
+		expect(loadView('scanner', 1, '', undefined, s).preset).toBe('near-high');
+		s.session.map.clear();
+		expect(loadView('scanner', 1, '', undefined, s).preset).toBe('');
+	});
+
 	it('drops search text that is too long or holds control characters', () => {
 		const s = fresh();
 		s.session.setItem('tt:v1:1:scanner::s', JSON.stringify({ v: 1, s: { query: 'a'.repeat(81) } }));
