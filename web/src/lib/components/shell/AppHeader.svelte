@@ -14,78 +14,59 @@
 		label: string;
 		/** Paths that also count as this tool (detail pages). */
 		match: (path: string) => boolean;
-		adminOnly?: boolean;
-		/** Shows a "New" badge until this date (YYYY-MM-DD, inclusive). */
-		newUntil?: string;
 	}
 
-	// The analytics and market intel pages carry a "New" badge for a few weeks after launch.
-	const NEW_UNTIL = '2026-12-15';
-	const today = new Date().toISOString().slice(0, 10);
-	const isNew = (t: Tool) => t.newUntil != null && today <= t.newUntil;
-
 	const starts = (prefix: string) => (p: string) => p === prefix || p.startsWith(prefix + '/');
+	const tool = (href: string, label: string, match = starts(href)): Tool => ({ href, label, match });
 
-	// The thesis module is the app's home; the valuation tools live under /valuation.
-	const THESIS: Tool[] = [
-		{ href: '/', label: 'Companies', match: (p) => p === '/' || starts('/company')(p) },
-		{ href: '/review', label: 'Review queue', match: starts('/review') },
-		{ href: '/scorecard', label: 'Scorecard', match: starts('/scorecard') }
-	];
-	const VALUATION: Tool[] = [
-		{
-			href: '/valuation',
-			label: 'Watchlist',
-			match: (p) => p === '/valuation' || starts('/valuation/company')(p)
-		},
-		{ href: '/valuation/master-tracker', label: 'Master Tracker', match: starts('/valuation/master-tracker') },
-		{ href: '/valuation/concalls', label: 'Concalls', match: starts('/valuation/concalls'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/red-flags', label: 'Red flags', match: starts('/valuation/red-flags'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/alerts', label: 'Alerts', match: starts('/valuation/alerts') },
-		{ href: '/valuation/tracking', label: 'Tracked companies', match: starts('/valuation/tracking') },
-		{ href: '/valuation/lists', label: 'Lists', match: starts('/valuation/lists'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/price-alerts', label: 'Price alerts', match: starts('/valuation/price-alerts'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/settings', label: 'Settings', match: starts('/valuation/settings') }
-	];
-	const SECTOR: Tool[] = [
-		{
-			href: '/valuation/sector-rotation',
-			label: 'Sector rotation',
-			match: starts('/valuation/sector-rotation')
-		},
-		{
-			href: '/valuation/sectors',
-			label: 'Sector baskets',
-			match: starts('/valuation/sectors'),
-			adminOnly: true
-		}
-	];
-	const ANALYSIS: Tool[] = [
-		{
-			href: '/valuation/stage-scanner',
-			label: 'Breakout scanner',
-			match: starts('/valuation/stage-scanner')
-		},
-		{ href: '/valuation/compare', label: 'Compare', match: starts('/valuation/compare') },
-		{ href: '/valuation/results', label: 'Results', match: starts('/valuation/results'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/scans', label: 'Saved scans', match: starts('/valuation/scans'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/returns', label: 'Returns', match: starts('/valuation/returns'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/breadth', label: 'Breadth', match: starts('/valuation/breadth'), newUntil: NEW_UNTIL },
-		{
-			href: '/valuation/announcements',
-			label: 'Announcements',
-			match: (p) => starts('/valuation/announcements')(p) || starts('/valuation/filings')(p),
-			newUntil: NEW_UNTIL
-		},
-		{ href: '/valuation/insider-trades', label: 'Insider trades', match: starts('/valuation/insider-trades'), newUntil: NEW_UNTIL },
-		{ href: '/valuation/corporate-actions', label: 'Ex-dates', match: starts('/valuation/corporate-actions'), newUntil: NEW_UNTIL }
-	];
-	const TOOLS: Record<ModuleKey, Tool[]> = { thesis: THESIS, valuation: VALUATION, sector: SECTOR, analysis: ANALYSIS };
+	// The thesis module is the app's home; the other modules group the tools under /valuation.
+	const TOOLS: Record<ModuleKey, Tool[]> = {
+		thesis: [
+			tool('/', 'Companies', (p) => p === '/' || starts('/company')(p)),
+			tool('/review', 'Review queue'),
+			tool('/scorecard', 'Scorecard')
+		],
+		valuation: [
+			tool(
+				'/valuation',
+				'Watchlist',
+				(p) => p === '/valuation' || starts('/valuation/company')(p) || starts('/valuation/lists')(p)
+			),
+			tool('/valuation/master-tracker', 'Master Tracker'),
+			tool('/valuation/concalls', 'Concalls'),
+			tool('/valuation/red-flags', 'Red flags'),
+			tool('/valuation/compare', 'Compare')
+		],
+		markets: [
+			tool('/valuation/sector-rotation', 'Sector rotation'),
+			tool('/valuation/breadth', 'Breadth'),
+			tool('/valuation/returns', 'Returns'),
+			tool(
+				'/valuation/stage-scanner',
+				'Breakout scanner',
+				(p) => starts('/valuation/stage-scanner')(p) || starts('/valuation/scans')(p)
+			),
+			tool('/valuation/results', 'Results')
+		],
+		filings: [
+			tool(
+				'/valuation/announcements',
+				'Announcements',
+				(p) => starts('/valuation/announcements')(p) || starts('/valuation/filings')(p)
+			),
+			tool('/valuation/insider-trades', 'Insider trades'),
+			tool('/valuation/corporate-actions', 'Ex-dates')
+		],
+		alerts: [
+			tool('/valuation/alerts', 'Inbox'),
+			tool('/valuation/tracking', 'Tracked companies'),
+			tool('/valuation/price-alerts', 'Price alerts')
+		]
+	};
 
 	const path = $derived(page.url.pathname);
 	const current = $derived(moduleOf(path));
-	const visible = (tools: Tool[]) => tools.filter((t) => !t.adminOnly || user.role === 'admin');
-	const tools = $derived(visible(TOOLS[current]));
+		const tools = $derived(TOOLS[current]);
 	const onAccountPage = $derived(starts('/account')(path) || starts('/admin')(path));
 
 	let drawerOpen = $state(false);
@@ -160,6 +141,10 @@
 							<span class="account-email">{user.email}</span>
 							<span class="tag">{ROLE_LABELS[user.role]}</span>
 						</div>
+						<a href="/valuation/settings">Settings</a>
+						{#if user.role === 'admin'}
+							<a href="/valuation/sectors">Sector baskets</a>
+						{/if}
 						<a href="/account/password">Change password</a>
 						{#if user.role === 'admin'}
 							<a href="/admin/users">Team and access</a>
@@ -193,7 +178,7 @@
 		<div class="shell-inner tools-inner">
 			{#each tools as t (t.href)}
 				<a href={t.href} class="tool" aria-current={t.match(path) ? 'page' : undefined}
-					>{t.label}{#if isNew(t)}<span class="tag tag-accent new-badge" data-testid="new-badge">New</span>{/if}</a
+					>{t.label}</a
 				>
 			{/each}
 		</div>
@@ -219,18 +204,20 @@
 		</div>
 		<div class="drawer-search"><GlobalSearch compact /></div>
 		{#each MODULES as m (m.key)}
-			{@const group = { name: m.label, list: visible(TOOLS[m.key]) }}
+			{@const group = { name: m.label, list: TOOLS[m.key] }}
 			<div class="drawer-group">
 				<div class="eyebrow">{group.name}</div>
 				{#each group.list as t (t.href)}
 					<a href={t.href} class="drawer-link" aria-current={t.match(path) ? 'page' : undefined}
-						>{t.label}{#if isNew(t)}<span class="tag tag-accent new-badge" data-testid="new-badge">New</span>{/if}</a
+						>{t.label}</a
 					>
 				{/each}
 			</div>
 		{/each}
 		<div class="drawer-group">
 			<div class="eyebrow">{user.username} · {ROLE_LABELS[user.role]}</div>
+			<a href="/valuation/settings" class="drawer-link">Settings</a>
+			{#if user.role === 'admin'}<a href="/valuation/sectors" class="drawer-link">Sector baskets</a>{/if}
 			<a href="/account/password" class="drawer-link">Change password</a>
 			{#if user.role === 'admin'}<a href="/admin/users" class="drawer-link">Team and access</a>{/if}
 			<form method="POST" action="/logout" onsubmit={() => endSession()}>

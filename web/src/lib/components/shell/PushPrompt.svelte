@@ -1,10 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { moduleOf } from '$lib/modules';
 	import { enablePush, pushConfig, pushSupported, syncSubscription } from '$lib/push';
 
 	let { userId }: { userId: number } = $props();
 
 	const dismissKey = $derived(`tt_push_prompt_dismissed_${userId}`);
+	// The offer only appears on the Alerts pages, where it is relevant.
+	const onAlerts = $derived(moduleOf(page.url.pathname) === 'alerts');
 	let show = $state(false);
 	let busy = $state(false);
 	let message = $state('');
@@ -33,7 +37,7 @@
 	}
 </script>
 
-{#if show}
+{#if show && onAlerts}
 	<div class="push-prompt" role="region" aria-label="Notifications" data-testid="push-prompt">
 		<p>
 			<strong>Get alerts on this device for companies you track.</strong>

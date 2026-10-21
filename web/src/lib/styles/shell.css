@@ -635,8 +635,3 @@ kbd {
 		background: linear-gradient(to right, transparent, var(--bg));
 	}
 }
-
-/* Marks a page added recently: a .tag-accent; only its spacing from the link text lives here. */
-.new-badge {
-	margin-left: 6px;
-}
