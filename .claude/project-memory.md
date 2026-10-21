@@ -42,6 +42,22 @@ significant changes. Historical references, loaded only as relevant: `harness/me
 - market-story-post deck spec locked (~/.claude skill): palette #FFFFFF/#0A0A0A/#F4F4F5 + only accent #2563EB,
   3 fonts, hard 4-6px shadows, no gradients/tints/radius; enforced by `story.py check` (run by png/build).
 
+## Nav and declutter round (2026-10-20, uncommitted on feat/breadth-50dma)
+- Nav is 5 modules in `web/src/lib/modules.ts` (Thesis, Valuation, Markets, Filings, Alerts); URLs
+  unchanged. Lists/scans/settings are not tabs; Settings and admin Sector baskets live in the account menu.
+  "New" badges removed; PushPrompt shows only on Alerts pages. `/export` and its API/exporter removed.
+- Lists merged into watchlist sections by migration 0034 (`0034_merge_team_lists_into_sections.sql`):
+  production must apply 0034 BEFORE deploying the dependent code.
+- Declutter conventions: one-sentence subtitle, long help in a `calm-disclosure` "How this works";
+  one-row filters, extras under "More filters"; maintenance actions under a "Data" disclosure or quiet
+  `calm-btn` at toolbar end; row actions text-style; fewer borders. Shared classes (calm.css removed) all in
+  `web/src/routes/layout.css`: `calm-btn`, `calm-disclosure` (+`-body`), `calm-toolbar`/`calm-end`,
+  `calm-field`, `calm-more`, `calm-data`, `calm-meta`, `calm-flat`. Thesis `+page.ts` loads pass their
+  own `fetch` to `$lib/api` (optional last arg), avoiding SvelteKit window.fetch warnings.
+- Master Tracker: quarters without guidance are a checkbox strip, quarters with guidance stack,
+  superseded versions under "Earlier versions"; e2e spec updated accordingly. Run Playwright e2e
+  exclusively (port 5179 and web/test-results collide across workers).
+
 ## Active product work and unresolved decisions
 - `feat/breadth-50dma` NOT merged/deployed: `/valuation/breadth` 50/200 DMA percentage-below chart,
   6M/1Y/All, DmaBreadthChart.svelte. Migration 0033 adds breadth_closes arrays/status and
