@@ -28,10 +28,10 @@ export type Guidance = {
 };
 export type Company = { company_id: string; name: string };
 
-export const load: PageLoad = async () => {
+export const load: PageLoad = async ({ fetch }) => {
 	const [items, companiesResp] = await Promise.all([
-		api.listGuidance({ status: 'open' }) as Promise<Guidance[]>,
-		api.listCompanies({ page_size: 200 }) as Promise<{ items: Company[] }>
+		api.listGuidance({ status: 'open' }, fetch) as Promise<Guidance[]>,
+		api.listCompanies({ page_size: 200 }, fetch) as Promise<{ items: Company[] }>
 	]);
 	return { items, companies: companiesResp.items };
 };

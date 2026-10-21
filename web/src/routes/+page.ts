@@ -48,10 +48,10 @@ export type Company = {
 };
 export type MetricDef = { metric_key: string; label: string; unit: string; decimals?: number };
 
-export const load: PageLoad = async () => {
+export const load: PageLoad = async ({ fetch }) => {
 	const [metrics, resp] = await Promise.all([
-		api.getMetrics() as Promise<MetricDef[]>,
-		api.listCompanies({ sort: 'name', page_size: 200 }) as Promise<{ items: Company[] }>
+		api.getMetrics(undefined, fetch) as Promise<MetricDef[]>,
+		api.listCompanies({ sort: 'name', page_size: 200 }, fetch) as Promise<{ items: Company[] }>
 	]);
 	return {
 		companies: resp.items,

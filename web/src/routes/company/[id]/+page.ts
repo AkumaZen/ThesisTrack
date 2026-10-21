@@ -80,8 +80,8 @@ export type CompanyDetail = {
 	pending_proposals?: import('$lib/components/ProposalReview.svelte').Proposal[];
 };
 
-export const load: PageLoad = async ({ params, url }) => {
+export const load: PageLoad = async ({ params, url, fetch }) => {
 	const owner = url.searchParams.get('owner');
-	const detail = (await api.getCompany(params.id, owner)) as CompanyDetail;
+	const detail = (await api.getCompany(params.id, owner, fetch)) as CompanyDetail;
 	return { detail };
 };
