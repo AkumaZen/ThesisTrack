@@ -1,17 +1,17 @@
 import type { PageServerLoad } from './$types';
 import { listAllBaskets } from '$lib/valuation/server/sectorStore';
-import { listWatchlists } from '$lib/valuation/server/watchlistsStore';
+import { listSections } from '$lib/valuation/server/marketIntelStore';
 import { listSavedValuationRows } from '$lib/valuation/server/savedValuationsStore';
 import { readStoredFinancials, symbolsMissingFinancials } from '$lib/valuation/server/fundamentalStore';
 import { buildResultsRow, type ResultsRow } from '$lib/valuation/quarterlyResults';
 
 // Reads stored Screener results only: nothing here fetches. Companies nobody has opened have no stored
 // record until "Load missing financials" (admin/read-write) brings the scanner universe in.
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const [stored, baskets, lists, saved, missing] = await Promise.all([
 		readStoredFinancials(),
 		listAllBaskets(),
-		listWatchlists().catch(() => []),
+		listSections(locals.user!.id).catch(() => []),
 		listSavedValuationRows().catch(() => []),
 		symbolsMissingFinancials().catch((): string[] => [])
 	]);
@@ -33,7 +33,7 @@ export const load: PageServerLoad = async () => {
 		baskets: basketLabels,
 		lists: [
 			{ key: 'main', name: 'Main watchlist', symbols: saved.map((s) => s.symbol) },
-			...lists.map((l) => ({ key: `list:${l.id}`, name: l.name, symbols: l.symbols }))
+			...lists.map((l) => ({ key: `list:${l.id}`, name: l.name, symbols: l.items.map((i) => i.nseSymbol) }))
 		],
 		missing: missing.length
 	};
