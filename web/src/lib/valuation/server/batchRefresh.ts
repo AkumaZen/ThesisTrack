@@ -1,9 +1,13 @@
-import { inArray, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
+import { benchmarkSeriesCache, companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
 import { fetchDayQuotes, QUOTE_MAX_TOKENS, type Candle, type DayQuote } from './angelone';
 import { refreshCompanySeries } from './companyGrowthSeries';
-import { mergeQuote } from './refreshMerge';
+import { mergeQuote, type SessionCalendar } from './refreshMerge';
+
+/** Full history refetches in flight at once inside one batch. candlesLimiter still enforces the
+ *  Angel One caps per process; this only hides the network latency between calls. */
+export const FULL_REFRESH_CONCURRENCY = 3;
 
 /** One request's worth: matches the quote endpoint's 50-token limit. */
 export const BATCH_SIZE = QUOTE_MAX_TOKENS;
@@ -29,6 +33,8 @@ interface Deps {
 	fetchQuotes: (symbols: string[]) => Promise<{ quotes: Map<string, DayQuote>; unlisted: string[]; missing: string[] }>;
 	writeSeries: (rows: { symbol: string; candles: Candle[] }[], fetchedAt: number) => Promise<void>;
 	fullRefresh: (symbol: string) => Promise<unknown | null>;
+	/** Trading sessions from the stored Nifty 50, or null when unavailable. */
+	readCalendar: () => Promise<SessionCalendar | null>;
 	now: () => Date;
 }
 
@@ -52,6 +58,18 @@ const realDeps: Deps = {
 			});
 	},
 	fullRefresh: refreshCompanySeries,
+	async readCalendar() {
+		try {
+			const [row] = await db
+				.select({ dates: sql<string[]>`jsonb_path_query_array(${benchmarkSeriesCache.candles}, '$[*].date')` })
+				.from(benchmarkSeriesCache)
+				.where(eq(benchmarkSeriesCache.id, 'nifty50'));
+			if (!row?.dates?.length) return null;
+			return row.dates.map((d) => d.slice(0, 10)).sort();
+		} catch {
+			return null;
+		}
+	},
 	now: () => new Date()
 };
 
@@ -67,6 +85,8 @@ export async function refreshBatch(symbols: string[], overrides: Partial<Deps> =
 	let quoteCalls = 0;
 
 	const stored = await deps.readSeries(wanted);
+	// One read per batch; a failure just means the weekday rule applies.
+	const calendar = await deps.readCalendar().catch(() => null);
 	const withSeries = wanted.filter((s) => (stored.get(s)?.length ?? 0) > 0);
 	for (const s of wanted) if (!withSeries.includes(s)) needFull.set(s, 'no stored series');
 
@@ -92,7 +112,7 @@ export async function refreshBatch(symbols: string[], overrides: Partial<Deps> =
 					needFull.set(s, 'no quote');
 					continue;
 				}
-				const merged = mergeQuote(stored.get(s)!, q, deps.now());
+				const merged = mergeQuote(stored.get(s)!, q, deps.now(), calendar);
 				if (merged.kind === 'unchanged') outcomes.set(s, { symbol: s, outcome: 'unchanged' });
 				else if (merged.kind === 'full') needFull.set(s, merged.reason);
 				else {
@@ -109,16 +129,20 @@ export async function refreshBatch(symbols: string[], overrides: Partial<Deps> =
 		}
 	}
 
-	let fullFetches = 0;
-	for (const [symbol, why] of needFull) {
-		try {
-			fullFetches++;
-			const fresh = await deps.fullRefresh(symbol);
-			outcomes.set(symbol, fresh ? { symbol, outcome: 'full', reason: why } : { symbol, outcome: 'unlisted' });
-		} catch (e) {
-			outcomes.set(symbol, { symbol, outcome: 'failed', reason: e instanceof Error ? e.message : 'Unknown error' });
+	const queue = [...needFull];
+	const fullFetches = queue.length;
+	const worker = async () => {
+		for (let next = queue.shift(); next; next = queue.shift()) {
+			const [symbol, why] = next;
+			try {
+				const fresh = await deps.fullRefresh(symbol);
+				outcomes.set(symbol, fresh ? { symbol, outcome: 'full', reason: why } : { symbol, outcome: 'unlisted' });
+			} catch (e) {
+				outcomes.set(symbol, { symbol, outcome: 'failed', reason: e instanceof Error ? e.message : 'Unknown error' });
+			}
 		}
-	}
+	};
+	await Promise.all(Array.from({ length: Math.min(FULL_REFRESH_CONCURRENCY, queue.length) }, worker));
 
 	return { results: wanted.map((s) => outcomes.get(s)!), quoteCalls, fullFetches };
 }
