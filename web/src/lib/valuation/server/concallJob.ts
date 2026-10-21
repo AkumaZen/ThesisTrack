@@ -8,6 +8,7 @@ import { AnalysisError, MAX_TRANSCRIPT_CHARS, PROMPT_VERSION, callModel, parseAn
 import { findTranscripts, transcriptHash, transcriptText, type StoredSource } from '../concall/transcripts';
 import { fetchScreenerPage, screenerTable } from './trackerFinancials';
 import * as store from './concallStore';
+import { AI_OFF_MESSAGE, aiEnabled } from './aiSwitch';
 
 /** Most transcripts one run may send to the model. Each is one call of up to MAX_TRANSCRIPT_CHARS characters. */
 export const MAX_ANALYSES_PER_RUN = 5;
@@ -121,6 +122,7 @@ export async function pendingTranscripts(symbols?: string[]) {
  * second run continues where the first stopped and never pays twice for the same text.
  */
 export async function analyseBatch(limit: number, symbols?: string[], fetchImpl?: typeof fetch): Promise<AnalyseOutcome> {
+	if (!aiEnabled()) throw new AnalysisError(AI_OFF_MESSAGE + '.');
 	const { key, model } = modelConfig();
 	if (!key) throw new AnalysisError('OPEN_AI_KEY is not configured.');
 	const queue = await pendingTranscripts(symbols);

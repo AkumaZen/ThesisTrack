@@ -1,6 +1,7 @@
 import { env } from '$env/dynamic/private';
+import { AI_OFF_MESSAGE, aiEnabled } from './aiSwitch';
 
-export const summariesEnabled = () => Boolean(env.OPEN_AI_KEY || env.OPENAI_API_KEY);
+export const summariesEnabled = () => aiEnabled() && Boolean(env.OPEN_AI_KEY || env.OPENAI_API_KEY);
 
 const INSTRUCTIONS =
 	'You summarise Indian stock exchange announcements for an equity investor. In 2 to 3 plain-language ' +
@@ -13,6 +14,7 @@ export async function summariseAnnouncement(
 	a: { nseSymbol: string; companyName: string; subject: string; details: string },
 	fetcher: typeof fetch = fetch
 ): Promise<string> {
+	if (!aiEnabled()) throw new Error(AI_OFF_MESSAGE);
 	const key = env.OPEN_AI_KEY || env.OPENAI_API_KEY;
 	if (!key) throw new Error('No OpenAI key configured');
 	const res = await fetcher('https://api.openai.com/v1/responses', {

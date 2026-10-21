@@ -1,6 +1,7 @@
 import { istDay } from '$lib/valuation/boardMeetings';
 import { PROMPT_VERSION } from '$lib/valuation/concall/analysis';
 import { buildConcallRows } from '$lib/valuation/concall/rows';
+import { aiEnabled } from '$lib/valuation/server/aiSwitch';
 import * as store from '$lib/valuation/server/concallStore';
 import type { PageServerLoad } from './$types';
 
@@ -12,6 +13,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const { rows, unscanned } = buildConcallRows(companies, scans, current, upcoming);
 	const analysed = new Set(current.map((a) => a.transcriptHash));
 	return {
+		aiEnabled: aiEnabled(),
 		rows,
 		unscanned,
 		companyCount: companies.length,

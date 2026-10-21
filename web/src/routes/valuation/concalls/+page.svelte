@@ -103,9 +103,10 @@
 					<button type="button" class="sm-btn" disabled={busy} onclick={() => run('refresh')}>
 						Refresh checks{data.unscanned.length ? ` (${data.unscanned.length} not scanned)` : ''}
 					</button>
-					<button type="button" class="sm-btn" disabled={busy || data.pending === 0} onclick={() => run('analyse')}>
+					<button type="button" class="sm-btn" disabled={busy || data.pending === 0 || !data.aiEnabled} onclick={() => run('analyse')}>
 						Analyse {data.pending} new {data.pending === 1 ? 'transcript' : 'transcripts'}
 					</button>
+					{#if !data.aiEnabled}<span class="sm-hint">AI is turned off</span>{/if}
 					<span class="sm-hint">
 						Refresh reads Screener and applies the rules, with no model. Analyse sends each new transcript to the model once, 3 at a time,
 						and never repeats a saved one. Result quality comes from stored financials; sentiment and key points from one saved model read of each transcript.

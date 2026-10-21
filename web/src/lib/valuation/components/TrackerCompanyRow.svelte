@@ -7,9 +7,9 @@
 	import TrackerValuation from './TrackerValuation.svelte';
 	import TrackerProgress from './TrackerProgress.svelte';
 	import type { TrackerStep } from '../trackerProgress';
-	let { company, writable, busy, selected, expanded, onSelect, onExpand, onPeriods, onAnalyse, onEdit, onIdentity, onModelEdit, progress }: {
+	let { company, writable, aiOff = false, busy, selected, expanded, onSelect, onExpand, onPeriods, onAnalyse, onEdit, onIdentity, onModelEdit, progress }: {
 		progress?: { step: TrackerStep; status: 'running' | 'ready' | 'error' };
-		company: TrackerCompany; writable: boolean; busy: boolean; selected: string[]; expanded: boolean;
+		company: TrackerCompany; writable: boolean; aiOff?: boolean; busy: boolean; selected: string[]; expanded: boolean;
 		onSelect: (values:string[])=>void; onExpand: ()=>void; onPeriods: ()=>void;
 		onAnalyse: (valuation:boolean,method:string,refresh:boolean)=>void; onEdit: (g:Guidance,changes:{commitment:string;status:Guidance['status'];actual:string;explanation:string})=>void;
 		onIdentity:(code:string)=>void;
@@ -69,7 +69,7 @@
 			</div>
 		{:else}<p class="muted">Load available quarters to start tracking this company.</p>{/if}
 		{#if writable}<div class="controls"><button class={company.quarters.length ? 'quiet' : ''} disabled={busy} onclick={onPeriods}>{company.quarters.length ? 'Refresh available quarters' : 'Load available quarters'}</button>
-			{#if company.quarters.length}<label>Valuation method<select aria-label={`Valuation method for ${company.symbol}`} bind:value={method}><option value="auto">Recommend best fit</option><option value="pe">P/E</option><option value="ev_ebitda">EV/EBITDA</option><option value="mcap_sales">P/S</option><option value="pb">P/B</option></select></label><label class="check"><input type="checkbox" bind:checked={includeValuation}/>Include valuation</label><label class="check"><input type="checkbox" bind:checked={refresh}/>Refresh research</label><button class="primary" disabled={busy||!selected.length} onclick={()=>onAnalyse(includeValuation,method,refresh)}>{busy ? 'Working…' : 'Analyse selected quarters'}</button><button disabled={busy||!selected.length} onclick={()=>onAnalyse(true,method,refresh)}>Create valuation</button>{/if}</div>
+			{#if company.quarters.length}<label>Valuation method<select aria-label={`Valuation method for ${company.symbol}`} bind:value={method}><option value="auto">Recommend best fit</option><option value="pe">P/E</option><option value="ev_ebitda">EV/EBITDA</option><option value="mcap_sales">P/S</option><option value="pb">P/B</option></select></label><label class="check"><input type="checkbox" bind:checked={includeValuation}/>Include valuation</label><label class="check"><input type="checkbox" bind:checked={refresh}/>Refresh research</label><button class="primary" disabled={busy||aiOff||!selected.length} onclick={()=>onAnalyse(includeValuation,method,refresh)}>{busy ? 'Working…' : 'Analyse selected quarters'}</button><button disabled={busy||aiOff||!selected.length} onclick={()=>onAnalyse(true,method,refresh)}>Create valuation</button>{#if aiOff}<span class="muted">AI is turned off</span>{/if}{/if}</div>
 			{#if progress}<TrackerProgress step={progress.step} status={progress.status}/>{/if}
 			<details class="identity"><summary>Company document identifier</summary><form onsubmit={(e)=>{e.preventDefault();onIdentity(bse);}}><label>Verified BSE code<input aria-label={`BSE code for ${company.symbol}`} bind:value={bse} pattern={'[0-9]{6}'} required maxlength="6"/></label><button disabled={busy||bse===company.bseCode}>Save BSE code</button><p class="muted">Required by the document downloader. Financials use the selected Screener symbol.</p></form></details>
 		{/if}
