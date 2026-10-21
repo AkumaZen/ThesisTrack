@@ -38,11 +38,6 @@
 	}
 	let deals = $state<Deal[]>([]);
 	let holding = $state<Holding | null>(null);
-	// Open by default on a wide screen, collapsed on a phone (the person can open it).
-	let wide = $state(false);
-	$effect(() => {
-		wide = window.matchMedia('(min-width: 640px)').matches;
-	});
 	const signed = (n: number | null) => (n == null ? 'n/a' : n > 0 ? `+${n.toFixed(2)}` : n.toFixed(2));
 
 	// Which company's announcements are open; the page's own pick until the person chooses one.
@@ -53,7 +48,7 @@
 	let items = $state<Item[]>([]);
 	let loadingItems = $state(false);
 	let stale = $state(false);
-	let shown = $state(15);
+	let shown = $state(6);
 	let tagFilter = $state<AnnouncementTag | null>(null);
 	// null until the person flips the box; then their choice, else what the server says.
 	let onlyImportantPick = $state<boolean | null>(null);
@@ -70,6 +65,18 @@
 		permission = pushSupported() ? Notification.permission : 'unsupported';
 	});
 
+	const permissionLabel = $derived(
+		!data.pushConfigured
+			? 'not set up'
+			: permission === 'granted'
+				? 'on'
+				: permission === 'denied'
+					? 'blocked'
+					: permission === 'unsupported'
+						? 'unsupported'
+						: 'off'
+	);
+
 	let loadToken = 0;
 	$effect(() => {
 		const symbol = selected;
@@ -78,7 +85,7 @@
 			return;
 		}
 		const token = ++loadToken;
-		shown = 15;
+		shown = 6;
 		tagFilter = null;
 		deals = [];
 		holding = null;
@@ -195,16 +202,25 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Tracked companies</h1>
-		<div class="sub">
-			Pick the NSE companies that matter to you. Every new exchange announcement is summarised in plain
-			language and pushed to your phone. The list and the alerts are yours alone.
-		</div>
+		<div class="sub">Get exchange announcements pushed for the companies you follow.</div>
 	</div>
 </div>
 
 <div class="wrap tk">
-	<section class="tk-box" aria-labelledby="tk-notif">
-		<h2 id="tk-notif">Notifications on this device</h2>
+	<section class="tk-flat" aria-labelledby="tk-add">
+		<h2 id="tk-add">Track a company</h2>
+		<CompanyPicker
+			id="tkSearch"
+			label="Search a company to track"
+			placeholder="Type a name or ticker, e.g. HFCL"
+			disabled={busy}
+			onPick={add}
+		/>
+	</section>
+
+	<details class="calm-disclosure tk-notif" data-testid="notifications-box">
+		<summary>Notifications on this device: {permissionLabel}</summary>
+		<div class="calm-disclosure-body tk-notif-body">
 		{#if !data.pushConfigured}
 			<p class="sm-hint">Push notifications are not set up on the server yet.</p>
 		{:else if permission === 'unsupported'}
@@ -244,12 +260,12 @@
 			<input type="checkbox" checked={onlyImportant} onchange={(e) => saveOnlyImportant(e.currentTarget.checked)} />
 			<span>Only notify important filings (routine paperwork such as trading window notices is still listed, but not sent)</span>
 		</label>
-	</section>
+		</div>
+	</details>
 
 	{#if data.calendar.thisWeek.length || data.calendar.later.length}
-		<section class="tk-box" aria-labelledby="tk-cal" data-testid="results-calendar">
-			<h2 id="tk-cal">Upcoming results / board meetings</h2>
-			<p class="sm-hint">Your tracked companies and the watchlist. Dates are IST.</p>
+		<section class="tk-flat" aria-labelledby="tk-cal" data-testid="results-calendar">
+			<h2 id="tk-cal">Upcoming results and board meetings</h2>
 			{#each [{ title: 'This week', rows: data.calendar.thisWeek }, { title: 'Later', rows: data.calendar.later }] as group (group.title)}
 				{#if group.rows.length}
 					<h3 class="tk-sub">{group.title}</h3>
@@ -267,18 +283,6 @@
 		</section>
 	{/if}
 
-	<section class="tk-box" aria-labelledby="tk-add">
-		<h2 id="tk-add">Track a company</h2>
-		<label for="tkSearch" class="tk-label">Search by name or NSE ticker</label>
-		<CompanyPicker
-			id="tkSearch"
-			label="Search a company to track"
-			placeholder="Type a name or ticker, e.g. HFCL"
-			disabled={busy}
-			onPick={add}
-		/>
-	</section>
-
 	{#if status}
 		<p class="sm-msg sm-msg-{status.kind}" role="status">{status.text}</p>
 	{/if}
@@ -288,34 +292,31 @@
 			You are not tracking any company yet. Search above to add one.
 		</p>
 	{:else}
-		<ul class="tag-list" aria-label="Tracked companies">
-			{#each data.tracked as t (t.nseSymbol)}
-				<li>
-					<button
-						type="button"
-						class="tag tag-wrap"
-						aria-pressed={selected === t.nseSymbol}
-						onclick={() => (chosen = t.nseSymbol)}
-					>
-						<strong>{t.nseSymbol}</strong>
-						<span class="tag-sub">{t.companyName}</span>
-					</button>
-				</li>
-			{/each}
-		</ul>
+		<label class="tk-pick">
+			<span>Tracked company ({data.tracked.length})</span>
+			<select
+				value={selected}
+				aria-label="Tracked companies"
+				onchange={(e) => (chosen = e.currentTarget.value)}
+			>
+				{#each data.tracked as t (t.nseSymbol)}
+					<option value={t.nseSymbol}>{t.nseSymbol} - {t.companyName}</option>
+				{/each}
+			</select>
+		</label>
 
 		{#each data.tracked.filter((t) => t.nseSymbol === selected) as t (t.nseSymbol)}
 			<section class="tk-feed" aria-label="Announcements for {t.companyName}">
 				<div class="tk-feed-head">
 					<h2>{t.companyName}</h2>
-					<button class="sm-btn" type="button" onclick={() => remove(t.nseSymbol, t.companyName)}>
+					<button class="calm-btn is-danger" type="button" onclick={() => remove(t.nseSymbol, t.companyName)}>
 						Stop tracking
 					</button>
 				</div>
 				{#if stale}
 					<p class="sm-hint">NSE did not respond, so this may not include the latest announcements.</p>
 				{/if}
-				<details class="tk-hold" open={wide} data-testid="holdings">
+				<details class="tk-hold" data-testid="holdings">
 					<summary>Shareholding and deals (last 30 days)</summary>
 					{#if holding}
 						<table class="tk-table">
@@ -359,12 +360,21 @@
 				{:else if items.length === 0}
 					<p class="sm-empty">No announcements in the last 90 days.</p>
 				{:else}
-					<div class="tk-filters" role="group" aria-label="Filter by type">
-						<button type="button" class="tag" aria-pressed={tagFilter === null} onclick={() => (tagFilter = null)}>All</button>
+					<select
+						class="tk-filter"
+						aria-label="Filter by type"
+						value={tagFilter ?? ''}
+						onchange={(e) => {
+							const v = e.currentTarget.value;
+							tagFilter = v ? (v as AnnouncementTag) : null;
+							shown = 6;
+						}}
+					>
+						<option value="">All types</option>
 						{#each presentTags as tag (tag)}
-							<button type="button" class="tag" aria-pressed={tagFilter === tag} onclick={() => { tagFilter = tag; shown = 15; }}>{TAG_LABELS[tag]}</button>
+							<option value={tag}>{TAG_LABELS[tag]}</option>
 						{/each}
-					</div>
+					</select>
 					{#if visible.length === 0}
 						<p class="sm-empty">Nothing of this type in the last 90 days.</p>
 					{/if}
@@ -388,7 +398,7 @@
 						{/each}
 					</ul>
 					{#if visible.length > shown}
-						<button class="sm-btn tk-more" type="button" onclick={() => (shown += 15)}>
+						<button class="calm-btn tk-more" type="button" onclick={() => (shown += 10)}>
 							Show more ({visible.length - shown} older)
 						</button>
 					{/if}
@@ -401,18 +411,27 @@
 <style>
 	.tk {
 		display: grid;
-		gap: 1rem;
+		gap: 1.5rem;
+		margin-top: 1rem;
 	}
-	.tk-box {
-		border: var(--border-w) solid var(--ink);
-		background: var(--bg);
-		padding: 0.9rem 1rem;
+	.tk-flat {
 		display: grid;
 		gap: 0.5rem;
-		justify-items: stretch;
 		min-width: 0;
 	}
-	.tk-box h2,
+	.tk-notif-body {
+		display: grid;
+		gap: 0.5rem;
+		justify-items: start;
+	}
+	.tk-notif-body p {
+		margin: 0;
+	}
+	.tk-filter {
+		justify-self: start;
+		min-width: 12rem;
+	}
+	.tk-flat h2,
 	.tk-feed h2 {
 		margin: 0;
 		font-size: 1rem;
@@ -421,12 +440,6 @@
 	.tk-label {
 		font-size: 0.8rem;
 		font-weight: 600;
-	}
-	.tk-box p {
-		margin: 0;
-	}
-	.tk-box button {
-		justify-self: start;
 	}
 
 
@@ -452,8 +465,8 @@
 		gap: 0.6rem;
 	}
 	.tk-item {
-		border: var(--border-w) solid var(--ink);
-		padding: 0.7rem 0.9rem;
+		border-bottom: 1px solid var(--rule);
+		padding: 0.7rem 0;
 		display: grid;
 		gap: 0.3rem;
 		min-width: 0;
@@ -467,16 +480,28 @@
 		font-size: 0.75rem;
 		color: var(--muted);
 	}
+	.tk-pick {
+		display: grid;
+		gap: 0.25rem;
+		max-width: 28rem;
+		font-size: 0.75rem;
+		color: var(--muted);
+	}
+	.tk-pick select {
+		width: 100%;
+		font-size: 0.875rem;
+	}
 	.tk-hold {
-		border: var(--border-w) solid var(--ink);
-		padding: 0.6rem 0.9rem;
+		padding: 0.2rem 0;
 		display: grid;
 		gap: 0.5rem;
 		min-width: 0;
 	}
 	.tk-hold summary {
 		cursor: pointer;
-		font-weight: 700;
+		font-weight: 600;
+		color: var(--muted);
+		font-size: 0.875rem;
 		min-height: 2.5rem;
 		display: flex;
 		align-items: center;
@@ -496,7 +521,8 @@
 	.tk-table td {
 		text-align: left;
 		padding: 0.25rem 0.4rem;
-		border-top: 1px solid var(--ink);
+		border: 0;
+		border-top: 1px solid var(--rule);
 		font-weight: 500;
 	}
 	.tk-table thead th {
@@ -517,14 +543,14 @@
 		display: grid;
 		gap: 0.1rem;
 		overflow-wrap: anywhere;
-		border-top: 1px solid var(--ink);
+		border-top: 1px solid var(--rule);
 		padding-top: 0.4rem;
 	}
 	.tk-tg {
 		display: grid;
 		gap: 0.4rem;
 		justify-items: start;
-		border-top: 1px solid var(--ink);
+		border-top: 1px solid var(--rule);
 		padding-top: 0.6rem;
 	}
 	.tk-link {
@@ -576,7 +602,7 @@
 		grid-template-columns: minmax(0, 1fr) auto;
 		gap: 0.1rem 0.6rem;
 		align-items: center;
-		border-top: 1px solid var(--ink);
+		border-top: 1px solid var(--rule);
 		padding-top: 0.4rem;
 	}
 	.tk-cal-date {

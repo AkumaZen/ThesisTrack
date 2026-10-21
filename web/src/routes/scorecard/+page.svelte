@@ -65,31 +65,33 @@
 <svelte:head><title>Scorecard - ThesisTrack</title></svelte:head>
 
 <h1 class="page-title mb-1">Scorecard</h1>
-<p class="text-sm text-muted-fg mb-5">
-	How the team's calls have worked out. Headline numbers use <strong>closed</strong> theses only; open theses are shown separately at the latest stored price.
-</p>
+<p class="text-sm text-muted-fg mb-1">How the team's calls have worked out.</p>
+<details class="calm-disclosure mb-5">
+	<summary>How this works</summary>
+	<div class="calm-disclosure-body">Headline numbers use <strong>closed</strong> theses only; open theses are shown separately at the latest stored price.</div>
+</details>
 
 {#snippet signed(v: number | null)}
 	<span class={tone(v)}>{arrow(v)}{pct(v)}</span>{#if v != null}<span class="sr-only">{v > 0 ? ' gain' : v < 0 ? ' loss' : ' no change'}</span>{/if}
 {/snippet}
 
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5" aria-label="Headline numbers" data-testid="headline">
-	<div class="min-w-0 rounded-xl border border-border bg-surface p-4">
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" aria-label="Headline numbers" data-testid="headline">
+	<div class="min-w-0 border-t border-border pt-3">
 		<div class="text-xs text-muted-fg" title="Share of closed theses whose return from entry price to exit price is above zero. A flat 0.0% does not count as a win.">Hit rate <span aria-hidden="true">(?)</span></div>
 		<div class="text-2xl font-bold mt-1" data-testid="hit-rate">{hit(sc.headline)}</div>
 		<div class="text-xs text-muted-fg mt-1">closed theses with a positive return</div>
 	</div>
-	<div class="min-w-0 rounded-xl border border-border bg-surface p-4">
+	<div class="min-w-0 border-t border-border pt-3">
 		<div class="text-xs text-muted-fg">Average return</div>
 		<div class="text-2xl font-bold mt-1">{@render signed(sc.headline.avgReturn)}</div>
 		<div class="text-xs text-muted-fg mt-1">entry to exit, closed theses</div>
 	</div>
-	<div class="min-w-0 rounded-xl border border-border bg-surface p-4">
+	<div class="min-w-0 border-t border-border pt-3">
 		<div class="text-xs text-muted-fg" title="Average of (thesis return minus Nifty 50 return) over each thesis's own holding window, in percentage points. Theses older than the stored Nifty history are left out of this figure.">Average vs Nifty 50 <span aria-hidden="true">(?)</span></div>
 		<div class="text-2xl font-bold mt-1">{@render signed(sc.headline.avgVsNifty)}</div>
 		<div class="text-xs text-muted-fg mt-1">percentage points, same holding window</div>
 	</div>
-	<div class="min-w-0 rounded-xl border border-border bg-surface p-4">
+	<div class="min-w-0 border-t border-border pt-3">
 		<div class="text-xs text-muted-fg">Average holding time</div>
 		<div class="text-2xl font-bold mt-1">{days(sc.headline.avgHoldDays)}</div>
 		<div class="text-xs text-muted-fg mt-1">closed theses</div>
@@ -97,7 +99,7 @@
 </section>
 
 {#if sc.withoutEntryPrice.length}
-	<details class="rounded-xl border border-dashed border-border p-3 mb-5 text-sm" data-testid="unpriced-note">
+	<details class="mb-5 text-sm" data-testid="unpriced-note">
 		<summary class="cursor-pointer"><strong>{sc.withoutEntryPrice.length}</strong> {sc.withoutEntryPrice.length === 1 ? 'thesis' : 'theses'} without an entry price (left out of every return figure)</summary>
 		<ul class="mt-2 space-y-1">
 			{#each sc.withoutEntryPrice as w (w.id)}
@@ -112,7 +114,7 @@
 
 <section class="mb-5" aria-labelledby="by-analyst">
 	<h2 id="by-analyst" class="font-semibold mb-2">By analyst (closed theses)</h2>
-	<div class="rounded-lg border border-border bg-surface relative overflow-x-auto">
+	<div class="relative overflow-x-auto">
 		<table class="w-full text-sm min-w-[32rem]">
 			<thead>
 				<tr class="text-left text-xs text-muted-fg border-b border-border">
@@ -146,7 +148,7 @@
 
 {#snippet thesisTable(rows: ScorecardRow[], title: string, endLabel: string, testid: string)}
 	<h3 class="text-sm font-medium text-muted-fg mb-1">{title} ({rows.length})</h3>
-	<div class="rounded-lg border border-border bg-surface relative overflow-x-auto mb-4" data-testid={testid}>
+	<div class="relative overflow-x-auto mb-4" data-testid={testid}>
 		<table class="w-full text-sm min-w-[56rem]">
 			<thead>
 				<tr class="text-left text-xs text-muted-fg border-b border-border">
@@ -203,7 +205,7 @@
 </section>
 
 {#snippet groupTable(title: string, groups: { key: string; stats: Stats }[])}
-	<div class="min-w-0 rounded-xl border border-border bg-surface p-4">
+	<div class="min-w-0 border-t border-border pt-3">
 		<h2 class="font-semibold mb-2">{title}</h2>
 		<div class="relative overflow-x-auto">
 			<table class="w-full text-sm min-w-[18rem]">
@@ -236,7 +238,7 @@
 	{@render groupTable('Return by conviction', sc.byConviction)}
 	{@render groupTable('Return by sector', sc.bySector)}
 
-	<div class="min-w-0 rounded-xl border border-border bg-surface p-4" data-testid="kill-triggers">
+	<div class="min-w-0 border-t border-border pt-3" data-testid="kill-triggers">
 		<h2 class="font-semibold">Kill triggers (estimate)</h2>
 		<p class="text-xs text-muted-fg mb-2">Closed theses where a kill trigger fired or the thesis was invalidated: return at exit versus the return had it been held to the latest stored price. An estimate from stored closes, not a result.</p>
 		{#each sc.killTriggers as k (k.row.id)}
@@ -251,7 +253,7 @@
 		{/each}
 	</div>
 
-	<div class="min-w-0 rounded-xl border border-border bg-surface p-4" data-testid="best-worst">
+	<div class="min-w-0 border-t border-border pt-3" data-testid="best-worst">
 		<h2 class="font-semibold mb-2">Best and worst calls (closed)</h2>
 		{@render callList('Best 3', sc.best)}
 		<div class="mt-2"></div>
@@ -261,7 +263,7 @@
 
 <section class="mb-8" aria-labelledby="playbook" data-testid="playbook">
 	<h2 id="playbook" class="font-semibold mb-2">Lessons learned (team playbook)</h2>
-	<div class="min-w-0 rounded-xl border border-border bg-surface p-4">
+	<div class="min-w-0 border-t border-border pt-3">
 		{#each sc.lessons as l (l.id)}
 			<div class="border-t border-border first:border-0 py-2 text-sm">
 				<p>{l.lesson}</p>

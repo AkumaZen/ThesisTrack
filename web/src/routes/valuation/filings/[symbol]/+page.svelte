@@ -13,7 +13,7 @@
 	<div class="band-inner">
 		<h1>{data.symbol}: corporate actions and holding changes</h1>
 		<div class="sub">
-			Dividends, splits, bonus, rights and buybacks, with insider trades and substantial acquisitions, from NSE.
+			Corporate actions and holding changes, from NSE.
 			<a href="/valuation/company/{encodeURIComponent(data.symbol)}">Back to the company</a>
 		</div>
 	</div>

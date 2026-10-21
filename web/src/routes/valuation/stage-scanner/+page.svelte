@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { invalidateAll, replaceState } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import type { Stage, StageScanResult } from '$lib/valuation/stageScan';
 	import { downloadWorkbook, FORMATS, todayStamp } from '$lib/valuation/exportXlsx';
@@ -160,6 +160,7 @@
 			basket: basketFilter,
 			mcap: bandFilter,
 			signal: signalFilter,
+			preset: presetFilter === 'all' ? '' : presetFilter,
 			query
 		}),
 		apply: (s) => {
@@ -168,6 +169,7 @@
 			basketFilter = knownBasket(s.basket);
 			bandFilter = s.mcap;
 			signalFilter = s.signal;
+			presetFilter = presetOf(s.preset);
 			query = s.query;
 		}
 	});
@@ -232,21 +234,16 @@
 		}
 	}
 
-	// Preset scans. The choice is kept in the address (?preset=near-high) so a scan can be shared.
-	const presetFromUrl = page.url.searchParams.get('preset');
-	let presetFilter = $state<PresetId | 'all'>(
-		PRESETS.some((p) => p.id === presetFromUrl) ? (presetFromUrl as PresetId) : 'all'
-	);
+	// Preset scans. The choice is part of the remembered view, which writes it to the address
+	// (?preset=near-high) so a scan can be shared and a reload restores it.
+	const presetOf = (id: string): PresetId | 'all' => (PRESETS.some((p) => p.id === id) ? (id as PresetId) : 'all');
+	let presetFilter = $state<PresetId | 'all'>(presetOf(memory.initial.preset));
 	// A preset's matches span every stage, so applying one leaves the remembered stage tab (by default
 	// "Near breakout") and shows the All tab; an explicit ?stage= in the address is kept.
-	if (PRESETS.some((p) => p.id === presetFromUrl) && !page.url.searchParams.has('stage')) stageFilter = 'all';
+	if (presetOf(memory.initial.preset) !== 'all' && !page.url.searchParams.has('stage')) stageFilter = 'all';
 	function pickPreset(next: PresetId | 'all') {
 		presetFilter = next;
 		if (next !== 'all') stageFilter = 'all';
-		const url = new URL(page.url);
-		if (next === 'all') url.searchParams.delete('preset');
-		else url.searchParams.set('preset', next);
-		replaceState(url, page.state);
 	}
 	// A saved scan opened with ?scan=<id> replaces the remembered filters with its own.
 	untrack(() => {
@@ -459,12 +456,22 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Stage 2 breakout scanner</h1>
-		<div class="sub">
-			Every stock in the sector baskets and the Rs 500 to 20,000 Cr market cap list, classified by
-			Weinstein stage from daily closes. A breakout
-			only counts once a day closes above the base on heavy volume; live prices never confirm one on
-			their own. Thresholds are on the <a href={resolve('/valuation/settings')}>Settings</a> page.
-		</div>
+		<div class="sub">Every stock in the sector baskets and market cap list, classified by Weinstein stage.</div>
+		<details class="calm-disclosure how no-print" data-testid="scanner-how">
+			<summary>How this works</summary>
+			<p>
+				Stages come from daily closes across the sector baskets and the Rs 500 to 20,000 Cr market cap
+				list. A breakout only counts once a day closes above the base on heavy volume; live prices never
+				confirm one on their own. Thresholds are on the
+				<a href={resolve('/valuation/settings')}>Settings</a> page.
+			</p>
+			{#if data.mcapAsOf}
+				<p data-testid="mcap-note">
+					{mcapNote}: a six-month average from AMFI, not a live market cap, so companies near a band edge
+					may sit on the other side today.
+				</p>
+			{/if}
+		</details>
 	</div>
 </div>
 
@@ -489,32 +496,59 @@
 		{/each}
 	</div>
 
-	<div class="preset-chips no-print" role="group" aria-label="Preset scans" data-testid="preset-chips">
-		<span class="preset-chips-label">Preset scan</span>
-		<button
-			type="button"
-			class="tag"
-			class:tag-on={presetFilter === 'all'}
-			aria-pressed={presetFilter === 'all'}
-			onclick={() => pickPreset('all')}>None</button
-		>
+	<div class="scan-toolbar no-print">
+		<label>
+			<span class="sr-only">Search companies</span>
+			<input
+				class="sm-input"
+				type="search"
+				placeholder="Search company or ticker"
+				bind:value={query}
+			/>
+		</label>
+		<label>
+			<span class="sr-only">Preset scan</span>
+			<select
+				class="sm-input"
+				value={presetFilter}
+				onchange={(e) => pickPreset(e.currentTarget.value as PresetId | 'all')}
+				data-testid="preset-select"
+			>
+				<option value="all">No preset scan</option>
+				{#each PRESET_GROUPS as g (g.key)}
+					<optgroup label={g.label}>
+						{#each PRESETS.filter((p) => p.group === g.key) as p (p.id)}
+							<option value={p.id} title={p.description}>{p.label} ({presetCounts[p.id]})</option>
+						{/each}
+					</optgroup>
+				{/each}
+			</select>
+		</label>
+		<label>
+			<span class="sr-only">Sector</span>
+			<select class="sm-input" bind:value={basketFilter} data-testid="sector-filter">
+				<option value="">All sectors</option>
+				{#each sectors as b (b)}<option value={b}>{b}</option>{/each}
+			</select>
+		</label>
+		<label>
+			<span class="sr-only">Market cap, {mcapNote}</span>
+			<select class="sm-input" bind:value={bandFilter} data-testid="mcap-filter">
+				<option value="all">All market caps</option>
+				{#each MCAP_BANDS as b (b.key)}<option value={b.key}>{b.label}</option>{/each}
+			</select>
+		</label>
+		<details class="calm-disclosure more-filters">
+			<summary>More filters{signalFilter !== 'all' ? ' (1)' : ''}</summary>
+			<label>
+				<span class="sr-only">Breakout type</span>
+				<select class="sm-input" bind:value={signalFilter} data-testid="signal-filter">
+					{#each SIGNALS as sg (sg.key)}<option value={sg.key}>{sg.label}</option>{/each}
+				</select>
+			</label>
+		</details>
 	</div>
-	{#each PRESET_GROUPS as g (g.key)}
-		<div class="preset-chips preset-group no-print" role="group" aria-label="{g.label} presets">
-			<span class="preset-chips-label">{g.label}</span>
-			{#each PRESETS.filter((p) => p.group === g.key) as p (p.id)}
-				<button
-					type="button"
-					class="tag"
-					class:tag-on={presetFilter === p.id}
-					aria-pressed={presetFilter === p.id}
-					title={p.description}
-					data-testid="preset-chip"
-					onclick={() => pickPreset(p.id)}>{p.label} <span class="tag-sub">{presetCounts[p.id]}</span></button
-				>
-			{/each}
-		</div>
-	{/each}
+
 	{#if activePreset}
 		<p class="preset-note" data-testid="preset-note">
 			{activePreset.description}
@@ -533,46 +567,8 @@
 		</p>
 	{/if}
 
-	<div class="scan-toolbar no-print">
-		<label>
-			<span class="sr-only">Search companies</span>
-			<input
-				class="sm-input"
-				type="search"
-				placeholder="Search company or ticker"
-				bind:value={query}
-			/>
-		</label>
-		<label>
-			<span class="sr-only">Sector</span>
-			<select class="sm-input" bind:value={basketFilter} data-testid="sector-filter">
-				<option value="">All sectors</option>
-				{#each sectors as b (b)}<option value={b}>{b}</option>{/each}
-			</select>
-		</label>
-		<label>
-			<span class="sr-only">Market cap, {mcapNote}</span>
-			<select class="sm-input" bind:value={bandFilter} data-testid="mcap-filter">
-				<option value="all">All market caps</option>
-				{#each MCAP_BANDS as b (b.key)}<option value={b.key}>{b.label}</option>{/each}
-			</select>
-		</label>
-		<label>
-			<span class="sr-only">Breakout type</span>
-			<select class="sm-input" bind:value={signalFilter} data-testid="signal-filter">
-				{#each SIGNALS as sg (sg.key)}<option value={sg.key}>{sg.label}</option>{/each}
-			</select>
-		</label>
-		<ViewToggle bind:value={layout} />
-		<button
-			class="wl-strip-btn"
-			type="button"
-			data-testid="export-excel"
-			disabled={exporting || rows.length === 0}
-			onclick={exportExcel}>{exporting ? 'Exporting…' : 'Excel'}</button
-		>
-		<ViewResetButton onReset={() => memory.reset()} />
-		<span class="hint" aria-live="polite" data-testid="scan-progress">
+	<div class="scan-meta">
+		<p class="scan-status" aria-live="polite" data-testid="scan-progress">
 			{#if pending.length > 0}
 				Scanning… {data.symbols.length - pending.length} of {data.symbols.length} done
 			{:else}
@@ -582,74 +578,80 @@
 					? `; ${Object.keys(failed).length} failed (reload to retry)`
 					: ''}
 			{/if}
-		</span>
-	</div>
-
-	{#if data.mcapAsOf}
-		<p class="scan-note" data-testid="mcap-note">
-			{mcapNote}: a six-month average from AMFI, not a live market cap, so companies near a band edge
-			may sit on the other side today.
 		</p>
-	{/if}
-
+		<div class="scan-actions">
+			<ViewToggle bind:value={layout} />
+			<button
+				class="quiet-btn"
+				type="button"
+				data-testid="export-excel"
+				disabled={exporting || rows.length === 0}
+				onclick={exportExcel}>{exporting ? 'Exporting…' : 'Excel'}</button
+			>
+			<ViewResetButton onReset={() => memory.reset()} />
+			<a class="quiet-link" href={resolve('/valuation/scans')}>Saved scans</a>
+		</div>
+	</div>
 	{#if data.appliedScan}
 		<p class="scan-note" data-testid="applied-scan">
 			Showing the saved scan "{data.appliedScan.name}". <a href={resolve('/valuation/scans')}>Saved scans</a>
 		</p>
 	{/if}
-	{#if canLoadHistory}
-		<details class="scan-data no-print" data-testid="save-scan">
-			<summary>Save this scan</summary>
-			<form
-				class="scan-save"
-				onsubmit={(e) => {
-					e.preventDefault();
-					saveScan();
-				}}
-			>
-				<label>
-					<span class="sr-only">Scan name</span>
-					<input class="sm-input" type="text" maxlength="60" required placeholder="Name this scan" bind:value={saveName} data-testid="save-scan-name" />
-				</label>
-				<label class="pc-toggle">
-					<input type="checkbox" bind:checked={saveNotify} /> Alert me when it gains a match
-				</label>
-				<button type="submit" class="wl-strip-btn" disabled={saveState.kind === 'saving' || !saveName.trim()} data-testid="save-scan-submit">Save</button>
-				{#if saveState.text}
-					<span class="hint" role="status">
-						{saveState.text}{#if saveState.kind === 'saved'} <a href={resolve('/valuation/scans')}>View saved scans</a>{/if}
-					</span>
-				{/if}
-			</form>
-		</details>
-	{/if}
 
-	{#if canLoadHistory && data.mcapAsOf}
-		<LoadHistoryPanel missing={missingHistory} onFinished={historyLoaded} />
-	{/if}
 	{#if canLoadHistory}
-		<details class="scan-data no-print">
-			<summary>Data for the fundamental and 5-year-high presets</summary>
-			<BatchLoadPanel
-				label="Load missing financials"
-				noun="financial statements"
-				missingUrl="/api/valuation/financials/missing"
-				batchUrl="/api/valuation/financials/batch"
-				batchSize={FINANCIALS_BATCH_SIZE}
-				missing={data.missingFinancials}
-				testId="load-financials"
-				onFinished={() => invalidateAll()}
-			/>
-			<BatchLoadPanel
-				label="Load 5-year highs"
-				noun="5-year highs"
-				missingUrl="/api/valuation/long-range/missing"
-				batchUrl="/api/valuation/long-range/batch"
-				batchSize={LONG_RANGE_BATCH_SIZE}
-				missing={data.missingLongRange}
-				testId="load-long-range"
-				onFinished={() => invalidateAll()}
-			/>
+		<details class="calm-disclosure data-area no-print" data-testid="scan-data">
+			<summary>Data{missingHistory > 0 ? ` (${missingHistory} without history)` : ''}</summary>
+			<div class="data-body">
+				<details class="scan-data" data-testid="save-scan">
+					<summary>Save this scan</summary>
+					<form
+						class="scan-save"
+						onsubmit={(e) => {
+							e.preventDefault();
+							saveScan();
+						}}
+					>
+						<label>
+							<span class="sr-only">Scan name</span>
+							<input class="sm-input" type="text" maxlength="60" required placeholder="Name this scan" bind:value={saveName} data-testid="save-scan-name" />
+						</label>
+						<label class="pc-toggle">
+							<input type="checkbox" bind:checked={saveNotify} /> Alert me when it gains a match
+						</label>
+						<button type="submit" class="wl-strip-btn" disabled={saveState.kind === 'saving' || !saveName.trim()} data-testid="save-scan-submit">Save</button>
+						{#if saveState.text}
+							<span class="hint" role="status">
+								{saveState.text}{#if saveState.kind === 'saved'} <a href={resolve('/valuation/scans')}>View saved scans</a>{/if}
+							</span>
+						{/if}
+					</form>
+				</details>
+
+				{#if data.mcapAsOf}
+					<LoadHistoryPanel missing={missingHistory} onFinished={historyLoaded} />
+				{/if}
+				<p class="data-label">For the fundamental and 5-year-high presets</p>
+				<BatchLoadPanel
+					label="Load missing financials"
+					noun="financial statements"
+					missingUrl="/api/valuation/financials/missing"
+					batchUrl="/api/valuation/financials/batch"
+					batchSize={FINANCIALS_BATCH_SIZE}
+					missing={data.missingFinancials}
+					testId="load-financials"
+					onFinished={() => invalidateAll()}
+				/>
+				<BatchLoadPanel
+					label="Load 5-year highs"
+					noun="5-year highs"
+					missingUrl="/api/valuation/long-range/missing"
+					batchUrl="/api/valuation/long-range/batch"
+					batchSize={LONG_RANGE_BATCH_SIZE}
+					missing={data.missingLongRange}
+					testId="load-long-range"
+					onFinished={() => invalidateAll()}
+				/>
+			</div>
 		</details>
 	{/if}
 
@@ -685,7 +687,7 @@
 						<td>
 							<a class="wl-name" href={resolve('/valuation/company/[symbol]', { symbol })}>{nameOf(symbol)}</a>
 							<span class="scan-sub scan-sym">{symbol} · {data.basketsBySymbol[symbol]?.[0] ?? 'Unclassified'}</span>
-							<PresetBadges ids={matches.get(symbol) ?? []} />
+							<PresetBadges ids={matches.get(symbol) ?? []} max={2} />
 						</td>
 						<td>
 							<span class="tag {stageInfo(r.stage).tone}">{stageInfo(r.stage).short}</span>
@@ -750,3 +752,128 @@
 		</details>
 	{/if}
 </div>
+
+<style>
+	.how {
+		margin-top: var(--space-2);
+		font-size: 13px;
+		color: var(--muted);
+	}
+	.how p {
+		margin: 6px 0 0;
+		max-width: 70ch;
+	}
+	.how a {
+		color: inherit;
+		text-decoration: underline;
+	}
+	.scan-chips {
+		margin-bottom: var(--space-3);
+	}
+	.scan-toolbar {
+		gap: 10px 12px;
+		margin-bottom: var(--space-2);
+	}
+	.scan-toolbar input[type='search'] {
+		width: 220px;
+	}
+	.scan-toolbar select {
+		width: auto;
+		max-width: 220px;
+	}
+	.more-filters[open] {
+		flex-basis: 100%;
+	}
+	.more-filters label {
+		display: block;
+		margin-top: 8px;
+	}
+	.scan-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 4px 16px;
+		margin-bottom: var(--space-2);
+	}
+	.scan-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 14px;
+		margin-left: auto;
+	}
+	.scan-actions :global(.vm-reset),
+	.quiet-btn {
+		font: inherit;
+		font-size: 12px;
+		font-weight: 600;
+		min-height: 0;
+		padding: 4px 2px;
+		margin: 0;
+		border: 0;
+		background: none;
+		color: var(--muted);
+		cursor: pointer;
+		box-shadow: none;
+		transform: none;
+	}
+	.scan-actions :global(.vm-reset:hover),
+	.quiet-btn:hover:not(:disabled) {
+		color: var(--ink);
+		background: none;
+		text-decoration: underline;
+		box-shadow: none;
+		transform: none;
+	}
+	.quiet-btn:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+	.quiet-link {
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--muted);
+	}
+	.quiet-link:hover {
+		color: var(--ink);
+	}
+	.scan-status {
+		margin: 0;
+		font-size: 12px;
+		color: var(--muted);
+	}
+	.data-area {
+		margin: 0 0 var(--space-3);
+	}
+	.data-body {
+		padding-top: var(--space-3);
+	}
+	.data-label {
+		margin: var(--space-3) 0 var(--space-1);
+		font-size: 12px;
+		color: var(--muted);
+	}
+	@media (max-width: 640px) {
+		.scan-chips {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			padding-bottom: 4px;
+		}
+		.scan-chips :global(.tag) {
+			flex: 0 0 auto;
+		}
+		.scan-toolbar label {
+			flex: 1 1 140px;
+		}
+		.scan-toolbar input[type='search'],
+		.scan-toolbar select {
+			width: 100%;
+			max-width: 100%;
+		}
+		.scan-actions {
+			margin-left: 0;
+			flex-basis: 100%;
+		}
+	}
+</style>

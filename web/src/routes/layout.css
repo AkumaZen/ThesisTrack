@@ -671,6 +671,183 @@ a.border.border-border {
 
 /* Phones: form fields at 16px so iOS Safari does not zoom in on focus, and controls at least 40px
    tall to tap. Checkboxes, radios and the inline-edit cells of data tables keep their size. */
+/* Calm page chrome: the single shared set for the decluttered pages. One class per concept:
+   .calm-disclosure (+ -body): the quiet "How this works", "More filters", "Data" and "Dates" toggles.
+   .calm-btn: a text-style button or link. .calm-toolbar (+ .calm-end): one wrapping row of
+   filters with quiet actions at its end. .calm-field, .calm-more(-body), .calm-data(-body),
+   .calm-meta and .calm-flat are the small helpers the filter bars and lists use. */
+.calm-btn {
+	font: inherit;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	line-height: 1.4;
+	color: var(--muted);
+	background: none;
+	border: 0;
+	box-shadow: none;
+	padding: var(--space-1) var(--space-2);
+	cursor: pointer;
+	text-decoration: none;
+}
+.vd .calm-btn {
+	min-height: 0;
+	padding: var(--space-1) var(--space-2);
+	border: 0;
+	background: none;
+	box-shadow: none;
+	color: var(--muted);
+}
+.calm-btn:hover:not(:disabled),
+.vd .calm-btn:hover:not(:disabled) {
+	color: var(--ink);
+	background: none;
+	box-shadow: none;
+	transform: none;
+	text-decoration: underline;
+}
+.calm-btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+.calm-btn.is-danger:hover:not(:disabled) {
+	color: var(--danger);
+}
+
+.calm-disclosure {
+	min-width: 0;
+}
+.calm-disclosure > summary {
+	display: inline-block;
+	cursor: pointer;
+	font-size: 0.8125rem;
+	color: var(--muted);
+	list-style: none;
+	padding: var(--space-1) 0;
+}
+.calm-disclosure > summary::-webkit-details-marker {
+	display: none;
+}
+.calm-disclosure > summary::before {
+	content: '+';
+	display: inline-block;
+	width: 1em;
+	font-weight: 600;
+}
+.calm-disclosure[open] > summary::before {
+	content: '\2212';
+}
+.calm-disclosure > summary:hover {
+	color: var(--ink);
+}
+.calm-disclosure > p {
+	margin: 6px 0 0;
+	max-width: 70ch;
+	font-size: 0.8125rem;
+	color: var(--muted);
+}
+.calm-disclosure > p a,
+.calm-disclosure-body a {
+	color: inherit;
+	text-decoration: underline;
+}
+.calm-disclosure-body {
+	padding: var(--space-2) 0 var(--space-3);
+	font-size: 0.875rem;
+	color: var(--muted);
+	max-width: 70ch;
+}
+
+.calm-toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px 12px;
+	margin: 0 0 var(--space-3);
+}
+.calm-toolbar .calm-end {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+.vd .calm-end .vm-reset {
+	margin: 0;
+	border: 0;
+	background: none;
+	box-shadow: none;
+	padding: var(--space-1) var(--space-2);
+	font-size: 0.8125rem;
+	color: var(--muted);
+}
+.vd .calm-end .vm-reset:hover {
+	color: var(--ink);
+	background: none;
+	text-decoration: underline;
+}
+.vd .calm-field {
+	display: grid;
+	gap: 0.2rem;
+	min-width: 0;
+	flex: 1 1 11rem;
+	max-width: 16rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+.vd .calm-field select,
+.vd .calm-field input {
+	width: 100%;
+	min-height: 2.5rem;
+	box-sizing: border-box;
+	border: var(--border-w) solid var(--ink);
+	border-radius: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 400;
+	padding: 0.3rem 0.5rem;
+}
+.calm-more[open] {
+	flex-basis: 100%;
+}
+.calm-more-body {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 12px;
+	margin-top: 8px;
+}
+.calm-meta {
+	margin: var(--space-2) 0 var(--space-3);
+	font-size: 0.75rem;
+	color: var(--muted);
+}
+.calm-data {
+	margin: 0 0 var(--space-3);
+}
+.calm-data-body {
+	padding-top: var(--space-3);
+}
+/* Lists as hairline-separated rows instead of one box per item. */
+.vd .calm-flat .mi-list {
+	gap: 0;
+}
+.vd .calm-flat .mi-item,
+.vd .calm-flat .mi-box {
+	border: 0;
+	border-top: 1px solid var(--rule);
+	background: none;
+	padding: 0.9rem 0;
+}
+@media (max-width: 640px) {
+	.vd .calm-field {
+		flex: 1 1 calc(50% - 6px);
+		max-width: none;
+	}
+	.calm-toolbar .calm-end {
+		margin-left: 0;
+	}
+}
+
 @media (max-width: 640px) {
 	input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color'], [type='hidden'])),
 	select,

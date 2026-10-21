@@ -22,9 +22,7 @@
 
 <div class="wrap pg">
 	<nav class="pg-links" aria-label="Related pages">
-		<a href={resolve('/valuation/concalls')}>All concalls</a>
-		<a href={resolve('/valuation/red-flags')}>Red flags</a>
-		<a href={resolve('/valuation/master-tracker')}>Master Tracker</a>
+		<a href={resolve('/valuation/concalls')}>← All concalls</a>
 	</nav>
 	<ConcallPanel symbol={data.panel.company.symbol} writable={canWrite(data.user?.role)} initial={data.panel} />
 </div>

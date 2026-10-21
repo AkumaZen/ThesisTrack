@@ -1,4 +1,5 @@
 <script lang="ts">
+
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import BasketRow from '$lib/valuation/components/BasketRow.svelte';
@@ -146,10 +147,14 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Sector baskets</h1>
-		<div class="sub">
-			Edit the sector &rarr; basket &rarr; company taxonomy. Every company is verified against
-			Screener.in before it's added, and changes apply immediately for everyone.
-		</div>
+		<div class="sub">Edit the sector, basket and company taxonomy.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				Every company is verified against Screener.in before it's added, and changes apply immediately
+				for everyone.
+			</p>
+		</details>
 	</div>
 </div>
 

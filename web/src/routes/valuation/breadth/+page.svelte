@@ -92,45 +92,28 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Market breadth</h1>
-		<div class="sub">
-			The share of all NSE stocks below their 50 day average, plus how many scanner stocks advance or decline and
-			make 52-week highs or lows. Computed from stored daily prices; no live data.
-		</div>
+		<div class="sub">Share of stocks above their moving averages, plus advances, declines and 52-week extremes.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				The whole-market chart shows the share of all NSE stocks below their 50 day average; the cards
+				cover the scanner stocks. Everything is computed from stored daily prices; no live data.
+			</p>
+			<p>
+				Universe: every company listed on NSE or BSE with a six-month average market cap above Rs 500 Cr (AMFI list, one row per company, no upper limit; {st.done} with stored closes{st.empty ? `, ${st.empty} with no prices` : ''}{st.failed ? `, ${st.failed} failed` : ''}{st.stale ? `, ${st.stale} to refetch` : ''}). Prices come from NSE, or BSE for BSE-only names. Funds, ETFs, debt and indices are not in the list. The list is today's: past days use today's members, so companies that have since delisted or shrunk below Rs 500 Cr are missing, and companies that have since grown past it count for days before they qualified.
+			</p>
+		</details>
 	</div>
 </div>
 
 <div class="wrap wrap-wide an-page">
 	{#if data.market.points.length > 0}
 		<DmaBreadthChart points={data.market.points} computedAt={data.market.status.computedAt} />
-		<p class="hint">
-			Universe: every company listed on NSE or BSE with a six-month average market cap above Rs 500 Cr (AMFI list, one row per company, no upper limit; {st.done} with stored closes{st.empty ? `, ${st.empty} with no prices` : ''}{st.failed ? `, ${st.failed} failed` : ''}{st.stale ? `, ${st.stale} to refetch` : ''}). Prices come from NSE, or BSE for BSE-only names. Funds, ETFs, debt and indices are not in the list. The list is today's: past days use today's members, so companies that have since delisted or shrunk below Rs 500 Cr are missing, and companies that have since grown past it count for days before they qualified.
-		</p>
 	{:else}
 		<p class="scan-note" data-testid="dma-empty">
 			The whole-market chart has no data yet.{isAdmin ? ' Load the history below.' : ' An admin has to load the price history first.'}
 		</p>
 	{/if}
-	{#if isAdmin}
-		<div class="an-actions no-print">
-			<button type="button" class="wl-strip-btn" onclick={() => backfill()} disabled={backfilling} data-testid="breadth-backfill">
-				{backfilling ? 'Loading...' : data.market.points.length === 0 ? 'Load market history' : 'Update market history'}
-			</button>
-			{#if st.failed > 0}
-				<button type="button" class="wl-strip-btn" onclick={() => backfill({ retryFailed: true })} disabled={backfilling}>Retry failed</button>
-			{/if}
-			{#if backfillMessage}<span class="hint" role="status">{backfillMessage}</span>{/if}
-		</div>
-	{/if}
-
-	{#if canRefresh}
-		<div class="an-actions no-print">
-			<button type="button" class="wl-strip-btn" onclick={refresh} disabled={busy} data-testid="breadth-refresh">
-				{busy ? 'Computing...' : 'Refresh breadth'}
-			</button>
-			{#if message}<span class="hint" role="status">{message}</span>{/if}
-		</div>
-	{/if}
-
 	{#if !latest}
 		<p class="scan-note" data-testid="breadth-empty">
 			No breadth stored yet.{canRefresh ? ' Press "Refresh breadth" to compute it from the stored prices.' : ' An editor can compute it.'}
@@ -203,5 +186,33 @@
 				</tbody>
 			</table>
 		</div>
+	{/if}
+
+	{#if isAdmin || canRefresh}
+		<details class="calm-disclosure calm-data no-print" open={busy || backfilling || Boolean(message || backfillMessage)}>
+			<summary>Data</summary>
+			<div class="calm-data-body">
+				{#if isAdmin}
+					<div class="an-actions no-print">
+						<button type="button" class="wl-strip-btn" onclick={() => backfill()} disabled={backfilling} data-testid="breadth-backfill">
+							{backfilling ? 'Loading...' : data.market.points.length === 0 ? 'Load market history' : 'Update market history'}
+						</button>
+						{#if st.failed > 0}
+							<button type="button" class="wl-strip-btn" onclick={() => backfill({ retryFailed: true })} disabled={backfilling}>Retry failed</button>
+						{/if}
+						{#if backfillMessage}<span class="hint" role="status">{backfillMessage}</span>{/if}
+					</div>
+				{/if}
+			
+				{#if canRefresh}
+					<div class="an-actions no-print">
+						<button type="button" class="wl-strip-btn" onclick={refresh} disabled={busy} data-testid="breadth-refresh">
+							{busy ? 'Computing...' : 'Refresh breadth'}
+						</button>
+						{#if message}<span class="hint" role="status">{message}</span>{/if}
+					</div>
+				{/if}
+			</div>
+		</details>
 	{/if}
 </div>

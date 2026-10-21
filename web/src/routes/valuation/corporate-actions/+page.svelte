@@ -34,14 +34,18 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Upcoming ex-dates</h1>
-		<div class="sub">
-			Dividends, splits, bonus issues, rights issues and buybacks going ex from today ({formatMeetingDay(data.today)}), from NSE.
-			A company's own dividend history is on its company page.
-		</div>
+		<div class="sub">Dividends, splits, bonus, rights and buybacks going ex soon.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				From NSE, going ex from today ({formatMeetingDay(data.today)}). A company's own dividend history
+				is on its company page.
+			</p>
+		</details>
 	</div>
 </div>
 
-<div class="wrap mi">
+<div class="wrap mi calm-flat">
 	<ul class="tag-list" aria-label="Type of action">
 		<li><a class="tag" href={href(null)} aria-current={data.kind === null ? 'true' : undefined}>All</a></li>
 		{#each kinds as k (k)}
@@ -85,3 +89,13 @@
 		</nav>
 	{/if}
 </div>
+
+<style>
+	.mi-box {
+		padding: 0;
+		border-top: 0;
+	}
+	.mi-box :global(.mi-item:first-child) {
+		border-top: 0;
+	}
+</style>

@@ -4,7 +4,7 @@
 	import TrackerSources from './TrackerSources.svelte';
 	let { model }: { model: TrackerModel } = $props();
 	const labels = $derived(projectedLabels(model));
-	const fmt = (v: number | null) => v === null || !Number.isFinite(v) ? '—' : v.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+	const fmt = (v: number | null) => v === null || !Number.isFinite(v) ? '-' : v.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 	const rows = ['Sales', 'Expenses', 'Operating Profit', 'OPM %', 'Other Income', 'Interest', 'Depreciation', 'Profit before tax', 'Tax %', 'Net Profit', 'PAT attributable to owners', 'EPS', 'PAT Growth %', 'PAT Margin %', 'Shares (Cr)', 'Multiple', 'Target Price ₹', 'Return vs CMP %', 'Stock Price CAGR %'];
 	function values(s: 'bear' | 'base' | 'bull') {
 		const forecast = scenarioYears(model, s);
@@ -28,8 +28,8 @@
 				<table><thead><tr><th scope="col">Metric</th>{#each model.history as h}<th scope="col">{h.label}</th>{/each}{#each labels as l}<th scope="col">{l.label}</th>{/each}</tr></thead>
 					<tbody>{#each rows as row, i}<tr><th scope="row">{row === 'Multiple' ? METHOD_MULTIPLE_LABEL[model.method] : row}</th>{#each columns as column}<td>{fmt(column[i])}</td>{/each}</tr>{/each}
 					{#if model.scenarios[s].some((a)=>a.shares!==model.shares)}
-						<tr><th scope="row">Pre-dilution EPS</th><td>—</td><td>—</td>{#each scenarioYears(model,s,true) as y}<td>{fmt(y.eps)}</td>{/each}</tr>
-						<tr><th scope="row">Pre-dilution target ₹</th><td>—</td><td>—</td>{#each scenarioYears(model,s,true) as y}<td>{fmt(y.impliedPrice)}</td>{/each}</tr>
+						<tr><th scope="row">Pre-dilution EPS</th><td>-</td><td>-</td>{#each scenarioYears(model,s,true) as y}<td>{fmt(y.eps)}</td>{/each}</tr>
+						<tr><th scope="row">Pre-dilution target ₹</th><td>-</td><td>-</td>{#each scenarioYears(model,s,true) as y}<td>{fmt(y.impliedPrice)}</td>{/each}</tr>
 					{/if}</tbody></table>
 			</div>
 			<details><summary>{s[0].toUpperCase()+s.slice(1)} assumptions and reasoning</summary>{#each model.scenarios[s] as y, i}<p><strong>{labels[i].label}:</strong> Growth {fmt(y.revenueGrowthPct)}%; operating margin {fmt(100-y.expensePct)}%; multiple {fmt(y.targetMultiple)}×. {y.reasoning}</p><TrackerSources sources={y.sources}/>{/each}</details>

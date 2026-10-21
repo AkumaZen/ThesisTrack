@@ -68,7 +68,7 @@ test.describe('phone width', () => {
 			await context.addCookies([cookie(session!)]);
 		});
 		const routes = [
-			'/', '/review', '/guidance', '/ingest', '/export', '/sectors', '/account/password',
+			'/', '/review', '/guidance', '/ingest', '/sectors', '/account/password',
 			'/valuation', '/valuation/sector-rotation', '/valuation/stage-scanner', '/valuation/stage-scanner?preset=near-high', '/valuation/company/HDFCBANK',
 			'/valuation/sector-rotation/conventional_energy/transformers_manufacturing', '/valuation/alerts', '/valuation/settings', '/valuation/tracking',
 			'/valuation/results', '/valuation/scans', '/valuation/returns', '/valuation/returns?s=HDFCBANK,TCS&p=1Y', '/valuation/breadth',

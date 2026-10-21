@@ -34,6 +34,9 @@
 			(a) => (typeFilter === 'all' || a.type === typeFilter) && (!unreadOnly || !a.read)
 		)
 	);
+	// Long inboxes render in pages of 50 so the page stays short.
+	let shown = $state(50);
+	const page = $derived(visible.slice(0, shown));
 	const countFor = (t: AlertType | 'all') =>
 		data.alerts.filter((a) => t === 'all' || a.type === t).length;
 
@@ -231,69 +234,67 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Alerts</h1>
-		<div class="sub">
-			Price reaching fair value ({data.analysis?.valuation.fairValuePct ?? 80}% of the Base-case
-			FY+2E target), sectors flipping to Rotating In/Out, stocks entering Near Stage 2 Breakout, and anything entering a Strength &amp; Volume rule you saved.
-			Alerts are raised for the whole team; what you have read, which types you see and what you
-			mute are yours alone.
-		</div>
+		<div class="sub">Price, sector and breakout alerts for the team.</div>
+		<details class="calm-disclosure">
+			<summary>How this works</summary>
+			<div class="calm-disclosure-body">
+				Alerts fire when a price reaches fair value ({data.analysis?.valuation.fairValuePct ?? 80}% of
+				the Base-case FY+2E target), a sector flips to Rotating In/Out, a stock enters Near Stage 2
+				Breakout, or anything enters a Strength &amp; Volume rule you saved. They are raised for the
+				whole team; what you have read, which types you see and what you mute are yours alone.
+			</div>
+		</details>
 	</div>
 </div>
 
 <div class="wrap">
-	<div class="al-toolbar">
-		<div class="al-filters" role="group" aria-label="Filter alerts by type">
-			<button
-				class="tag"
-				class:tag-on={typeFilter === 'all'}
-				type="button"
-				aria-pressed={typeFilter === 'all'}
-				onclick={() => (typeFilter = 'all')}>All <span class="tag-sub">{countFor('all')}</span></button
-			>
+	<div class="calm-toolbar al-bar">
+		<select class="al-type-select" aria-label="Filter alerts by type" bind:value={typeFilter}>
+			<option value="all">All types ({countFor('all')})</option>
 			{#each ALERT_TYPES as t (t)}
-				<button
-					class="tag"
-					class:tag-on={typeFilter === t}
-					type="button"
-					aria-pressed={typeFilter === t}
-					onclick={() => (typeFilter = t)}>{ALERT_TYPE_LABELS[t]} <span class="tag-sub">{countFor(t)}</span></button
-				>
+				<option value={t}>{ALERT_TYPE_LABELS[t]} ({countFor(t)})</option>
 			{/each}
-		</div>
+		</select>
 		<label class="sm-check al-unread-toggle">
 			<input type="checkbox" bind:checked={unreadOnly} />
 			<span>Unread only</span>
 		</label>
-		<button
-			class="sm-btn"
-			type="button"
-			disabled={busy === 'read' || data.unread === 0}
-			onclick={() => setRead('all', true)}>Mark all read</button
-		>
-		<ViewResetButton onReset={() => memory.reset()} />
-	</div>
-
-	<div class="al-checks">
-		<button
-			class="sm-btn sm-btn-primary"
-			type="button"
-			disabled={busy !== null}
-			onclick={() => runCheck('price')}
-		>
-			{busy === 'price' ? 'Checking prices…' : 'Check prices now'}
-		</button>
-		<button
-			class="sm-btn"
-			type="button"
-			disabled={busy !== null}
-			onclick={() => runCheck('structural')}
-		>
-			{busy === 'structural' ? 'Checking sectors & breakouts…' : 'Check sectors & breakouts now'}
-		</button>
-		<span class="sm-hint al-checks-hint"
-			>Checks also run automatically: prices every 10 minutes in market hours, sectors and breakouts
-			after each data refresh.</span
-		>
+		<div class="calm-end">
+		<details class="calm-disclosure al-data">
+			<summary>Data</summary>
+			<div class="calm-disclosure-body al-data-body">
+				<div class="al-checks">
+					<button
+						class="sm-btn"
+						type="button"
+						disabled={busy !== null}
+						onclick={() => runCheck('price')}
+					>
+						{busy === 'price' ? 'Checking prices…' : 'Check prices now'}
+					</button>
+					<button
+						class="sm-btn"
+						type="button"
+						disabled={busy !== null}
+						onclick={() => runCheck('structural')}
+					>
+						{busy === 'structural' ? 'Checking sectors & breakouts…' : 'Check sectors & breakouts now'}
+					</button>
+				</div>
+				<p class="sm-hint">
+					Checks also run automatically: prices every 10 minutes in market hours, sectors and breakouts
+					after each data refresh.
+				</p>
+			</div>
+		</details>
+			<button
+				class="calm-btn"
+				type="button"
+				disabled={busy === 'read' || data.unread === 0}
+				onclick={() => setRead('all', true)}>Mark all read</button
+			>
+			<ViewResetButton extraClass="calm-btn" onReset={() => memory.reset()} />
+		</div>
 	</div>
 
 	{#if status}
@@ -308,7 +309,7 @@
 		</p>
 	{:else}
 		<ul class="al-list" data-testid="alert-list">
-			{#each visible as a (a.id)}
+			{#each page as a (a.id)}
 				{@const route = routeFor(a)}
 				<li class="al-item" class:al-unread={!a.read} data-alert-id={a.id} data-type={a.type}>
 					<span class="al-dot" aria-hidden="true"></span>
@@ -340,7 +341,7 @@
 					</div>
 					<div class="al-actions">
 						<button
-							class="sm-btn"
+							class="calm-btn"
 							type="button"
 							disabled={busy === 'read'}
 							onclick={() => setRead([a.id], !a.read)}
@@ -348,7 +349,7 @@
 							{a.read ? 'Mark unread' : 'Mark read'}
 						</button>
 						<button
-							class="sm-btn sm-btn-quiet-danger"
+							class="calm-btn is-danger"
 							type="button"
 							disabled={busy === 'settings' || data.settings.muted.includes(a.subjectKey)}
 							onclick={() => mute(a)}
@@ -360,15 +361,17 @@
 				</li>
 			{/each}
 		</ul>
+		{#if visible.length > shown}
+			<button class="calm-btn al-more" type="button" onclick={() => (shown += 50)}
+				>Show more ({visible.length - shown} left)</button
+			>
+		{/if}
 	{/if}
 
-	<div class="integrity-panel al-settings">
-		<button class="integrity-toggle" type="button" onclick={() => (rulesOpen = !rulesOpen)}>
-			<span>Strength &amp; Volume rules ({data.rules.length})</span>
-			<span class="integrity-caret">{rulesOpen ? '▲' : '▼'}</span>
-		</button>
+	<details class="calm-disclosure al-settings" bind:open={rulesOpen}>
+		<summary>Strength &amp; Volume rules ({data.rules.length})</summary>
 		{#if rulesOpen}
-			<div class="import-body">
+			<div class="calm-disclosure-body al-panel">
 				{#if data.rules.length === 0}
 					<p class="sm-hint">
 						No rules yet. Open the Strength &amp; Volume panel on a sector, subsector or company
@@ -414,15 +417,12 @@
 				</p>
 			</div>
 		{/if}
-	</div>
+	</details>
 
-	<div class="integrity-panel al-settings">
-		<button class="integrity-toggle" type="button" onclick={() => (settingsOpen = !settingsOpen)}>
-			<span>Alert settings</span>
-			<span class="integrity-caret">{settingsOpen ? '▲' : '▼'}</span>
-		</button>
+	<details class="calm-disclosure al-settings" bind:open={settingsOpen}>
+		<summary>Alert settings</summary>
 		{#if settingsOpen}
-			<div class="import-body">
+			<div class="calm-disclosure-body al-panel">
 				<h3 class="sm-new-title" style="margin-top:12px">Alert types (just for you)</h3>
 				{#each ALERT_TYPES as t (t)}
 					<label class="sm-check al-setting-row">
@@ -528,5 +528,78 @@
 				{/if}
 			</div>
 		{/if}
-	</div>
+	</details>
 </div>
+
+<style>
+	.al-bar {
+		margin-top: var(--space-3);
+	}
+	.al-type-select {
+		min-width: 12rem;
+	}
+	.al-settings {
+		margin-top: var(--space-2);
+	}
+	.al-data {
+		position: relative;
+	}
+	.al-data-body {
+		position: absolute;
+		right: 0;
+		top: 100%;
+		z-index: 5;
+		width: min(22rem, 90vw);
+		padding: var(--space-3);
+		background: var(--bg);
+		border: 1px solid var(--rule);
+	}
+	.al-settings:first-of-type {
+		margin-top: var(--space-4);
+	}
+	.al-checks {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+	.al-more {
+		margin-top: var(--space-2);
+	}
+	.al-panel {
+		max-width: none;
+	}
+	/* Lighter rows: hairline dividers, no box, no tinted background; unread is a dot and weight. */
+	:global(.vd) .al-list {
+		border: 0;
+		background: none;
+		margin-top: var(--space-3);
+	}
+	:global(.vd) .al-item {
+		padding: var(--space-3) var(--space-1);
+	}
+	:global(.vd) .al-unread {
+		background: none;
+	}
+	:global(.vd) .al-unread .al-subject {
+		font-weight: 700;
+	}
+	:global(.vd) .al-type {
+		border: 0;
+		background: none;
+		padding: 0;
+		color: var(--muted);
+	}
+	:global(.vd) .al-actions {
+		opacity: 0;
+		transition: opacity 120ms ease;
+	}
+	:global(.vd) .al-item:hover .al-actions,
+	:global(.vd) .al-item:focus-within .al-actions {
+		opacity: 1;
+	}
+	@media (hover: none), (max-width: 640px) {
+		:global(.vd) .al-actions {
+			opacity: 1;
+		}
+	}
+</style>

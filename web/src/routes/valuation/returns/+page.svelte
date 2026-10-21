@@ -52,7 +52,6 @@
 	const fmt = (n: number | null) => (n == null ? '-' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`);
 	const tone = (n: number | null) => (n == null || n === 0 ? '' : n > 0 ? 'res-up' : 'res-down');
 	const lastGain = (points: { close: number }[]) => points[points.length - 1].close - 100;
-	const missingWeekly = $derived(data.items.some((it) => !it.weekly));
 </script>
 
 <svelte:head>
@@ -62,11 +61,16 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Returns benchmark</h1>
-		<div class="sub">
-			Stocks and indices rebased to 100 at the start of the period, so the lines show who gained more. Built from
-			stored daily prices (up to 1Y) and stored weekly prices (3Y). Excess is the return minus the first index
-			selected.
-		</div>
+		<div class="sub">Stocks and indices rebased to 100, so the lines show who gained more.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				Built from stored daily prices (up to 1Y) and stored weekly prices (3Y). Excess is the return
+				minus the first index selected. A blank 3Y means the weekly history is not stored yet for that
+				item (an editor loads it with "Load 5-year highs" on the breakout scanner), or it did not trade
+				three years ago.
+			</p>
+		</details>
 	</div>
 </div>
 
@@ -95,7 +99,7 @@
 			{/each}
 		</div>
 	</div>
-	<div class="preset-chips no-print" role="group" aria-label="Indices">
+	<div class="preset-chips ret-indices no-print" role="group" aria-label="Indices">
 		<span class="preset-chips-label">Indices</span>
 		{#each data.indices as idx (idx.key)}
 			<button
@@ -188,11 +192,5 @@
 				</tbody>
 			</table>
 		</div>
-		{#if missingWeekly}
-			<p class="scan-note">
-				A blank 3Y means the weekly history is not stored yet for that item (an editor loads it with "Load 5-year highs"
-				on the breakout scanner), or it did not trade three years ago.
-			</p>
-		{/if}
 	{/if}
 </div>

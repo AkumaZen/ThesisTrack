@@ -44,6 +44,7 @@
 	} from '$lib/valuation/prefs';
 	import { REVIEW_STATUS_LABELS, REVIEW_STATUS_TONE, type ReviewStatus } from '$lib/valuation/team';
 	import type { NamedWatchlist } from '$lib/valuation/watchlists';
+	import { flagCss } from '$lib/valuation/watchlistSections';
 	import { timeAgo } from '$lib/valuation/activity';
 	import ActivityFeed from '$lib/valuation/components/ActivityFeed.svelte';
 	import RemovedValuations from '$lib/valuation/components/RemovedValuations.svelte';
@@ -551,7 +552,7 @@
 	}
 
 	function fmtPrice(n: number | null): string {
-		return n == null ? '—' : `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+		return n == null ? '-' : `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 	}
 
 	function sortValue(r: WatchRow, key: SortKey): string | number | null {
@@ -604,7 +605,7 @@
 	}
 
 	function fmtPct(n: number | null) {
-		return n == null ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+		return n == null ? '-' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 	}
 
 	function trendClass(n: number | null): string {
@@ -704,7 +705,7 @@
 	let listError = $state<string | null>(null);
 
 	async function refreshLists() {
-		const res = await fetch('/api/valuation/watchlists');
+		const res = await fetch('/api/valuation/watchlist-sections');
 		if (res.ok) lists = (await res.json()) as NamedWatchlist[];
 	}
 
@@ -726,7 +727,7 @@
 	async function createList() {
 		let res: Response;
 		try {
-			res = await fetch('/api/valuation/watchlists', {
+			res = await fetch('/api/valuation/watchlist-sections', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ name: newListName })
@@ -741,7 +742,7 @@
 				'Could not create the list.';
 			return;
 		}
-		const created = (await res.json()) as NamedWatchlist;
+		const created = (await res.json()) as { id: number };
 		newListName = '';
 		creatingList = false;
 		await refreshLists();
@@ -750,14 +751,14 @@
 
 	async function renameList() {
 		if (!activeList) return;
-		listError = await send('PATCH', `/api/valuation/watchlists/${activeList.id}`, { name: renameText });
+		listError = await send('PATCH', `/api/valuation/watchlist-sections/${activeList.id}`, { name: renameText });
 		if (!listError) renaming = false;
 		await refreshLists();
 	}
 
 	async function deleteList() {
 		if (!activeList) return;
-		const err = await send('DELETE', `/api/valuation/watchlists/${activeList.id}`);
+		const err = await send('DELETE', `/api/valuation/watchlist-sections/${activeList.id}`);
 		confirmDeleteList = false;
 		if (!err) setView('all');
 		listError = err;
@@ -765,9 +766,21 @@
 	}
 
 	async function setMembership(symbol: string, listId: number, member: boolean) {
-		const err = await send('PUT', `/api/valuation/watchlists/${listId}/members`, { symbol, member });
+		const base = `/api/valuation/watchlist-sections/${listId}/items`;
+		const name = watchRows.find((r) => r.symbol === symbol)?.name ?? symbol;
+		const err = member
+			? await send('POST', base, { symbol, name })
+			: await send('DELETE', `${base}/${encodeURIComponent(symbol)}`);
+		listError = err;
 		await refreshLists();
 		return err;
+	}
+
+	// The colour and label the person set on a company: from the open list, else from any list.
+	function flagFor(symbol: string): { color: string | null; label: string | null } | null {
+		const own = activeList?.flags[symbol];
+		if (own) return own;
+		return lists.map((l) => l.flags[symbol]).find((f) => f != null) ?? null;
 	}
 
 	const viewCount = (v: WatchlistView) => watchRows.filter((r) => inView(r, v)).length;
@@ -847,7 +860,7 @@
 						ok: false,
 						message:
 							res.status === 404
-								? `Not found on Screener — check the symbol is correct.`
+								? `Not found on Screener - check the symbol is correct.`
 								: (body?.message ?? `Could not verify this symbol (${res.status}).`)
 					});
 					continue;
@@ -856,7 +869,7 @@
 				outcomes.push({
 					symbol,
 					ok: false,
-					message: 'Could not reach the server to verify this symbol — try again.'
+					message: 'Could not reach the server to verify this symbol - try again.'
 				});
 				continue;
 			}
@@ -906,78 +919,14 @@
 	</div>
 </div>
 
-<AddCompanyPanel
-	canWrite={data.user?.role !== 'read_only'}
-	isAdmin={data.user?.role === 'admin'}
-	onAdded={refreshSaved}
-/>
-
 <div class="wrap wrap-wide">
-	<div class="integrity-panel no-print">
-		<button class="integrity-toggle" onclick={() => (importOpen = !importOpen)}>
-			<svg
-				class="import-icon"
-				width="15"
-				height="15"
-				viewBox="0 0 16 16"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.4"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d="M8 2v7M5.2 6.2 8 9l2.8-2.8" />
-				<path d="M2.5 10.5V13a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2.5" />
-			</svg>
-			<span>Import valuations (JSON)</span>
-			<span class="integrity-caret">{importOpen ? '▲' : '▼'}</span>
-		</button>
-		{#if importOpen}
-			<div class="import-body">
-				<p class="import-hint">
-					Paste JSON generated by Claude or any other tool, or upload a <code>.json</code> file.
-					Each entry needs a <code>symbol</code> and a <code>methods</code> object keyed by method (<code
-						>pe</code
-					>, <code>pb</code>, <code>ev_ebitda</code>,
-					<code>mcap_sales</code>) then scenario (<code>bear</code>, <code>base</code>,
-					<code>bull</code>) — any field left out falls back to this app's own defaults. Submit an
-					array to import several companies at once.
-				</p>
-				<pre class="import-example">{IMPORT_EXAMPLE}</pre>
-				<textarea
-					class="import-textarea"
-					rows="8"
-					bind:value={importText}
-					placeholder="Paste JSON here..."></textarea>
-				<div class="import-actions">
-					<input
-						class="import-file"
-						type="file"
-						accept="application/json,.json"
-						onchange={onImportFileSelected}
-					/>
-					<button
-						class="diagnosis-apply"
-						onclick={runImport}
-						disabled={importing || !importText.trim()}
-					>
-						{importing ? 'Importing…' : 'Import'}
-					</button>
-				</div>
-				{#if importResults}
-					<ul class="integrity-list">
-						{#each importResults as r, i (r.symbol + i)}
-							<li class={r.ok ? 'signal-good' : 'signal-bad'}>
-								<span class="integrity-label">{r.symbol}</span>
-								<span class="integrity-detail">{r.message}</span>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</div>
-		{/if}
+	<div class="no-print">
+		<AddCompanyPanel
+			canWrite={data.user?.role !== 'read_only'}
+			isAdmin={data.user?.role === 'admin'}
+			onAdded={refreshSaved}
+		/>
 	</div>
-
 	{#if undo || undoMessage}
 		<div class="undo-toast" role="status" data-testid="undo-toast">
 			{#if undo}
@@ -991,9 +940,6 @@
 
 	{#if saved.length > 0}
 		<div class="watchlist-section">
-			<div class="exhibit-cap">My Valuations</div>
-			<div class="exhibit-title" style="font-size:16px;margin-bottom:10px">Watchlist</div>
-
 			<div class="wl-toolbar no-print">
 				<div class="wl-views" role="group" aria-label="Watchlist views">
 					<button
@@ -1031,7 +977,7 @@
 							<input
 								aria-label="New list name"
 								bind:value={newListName}
-								maxlength="60"
+								maxlength="40"
 								placeholder="e.g. Q4 ideas"
 							/>
 							<button class="wl-strip-btn btn-primary" type="submit" disabled={!newListName.trim()}
@@ -1053,20 +999,35 @@
 							data-testid="new-list"
 							onclick={() => (creatingList = true)}>+ New list</button
 						>
+						<a class="wl-manage" href={resolve('/valuation/lists')} data-testid="manage-lists"
+							>Manage lists</a
+						>
 					{/if}
 				</div>
 				<div class="wl-tools">
 					<ColumnChooser {columns} onChange={setColumns} />
 					<ViewToggle bind:value={layout} />
+					<details class="wl-more">
+						<summary class="wl-strip-btn" data-testid="export-menu">Export ▾</summary>
+						<div class="wl-more-panel">
+							<button
+								class="wl-more-item"
+								type="button"
+								data-testid="export-excel"
+								disabled={exporting || sortedRows.length === 0}
+								onclick={exportWatchlist}>{exporting ? 'Exporting…' : 'Excel'}</button
+							>
+							<button class="wl-more-item" type="button" onclick={() => window.print()}
+								>Print / PDF</button
+							>
+						</div>
+					</details>
 					<button
-						class="wl-strip-btn"
+						class="link-btn wl-import-link"
 						type="button"
-						data-testid="export-excel"
-						disabled={exporting || sortedRows.length === 0}
-						onclick={exportWatchlist}>{exporting ? 'Exporting…' : 'Excel'}</button
-					>
-					<button class="wl-strip-btn" type="button" onclick={() => window.print()}
-						>Print / PDF</button
+						data-testid="import-toggle"
+						aria-expanded={importOpen}
+						onclick={() => (importOpen = !importOpen)}>Import JSON</button
 					>
 				</div>
 				{#if exportError}<p class="team-error" role="alert">{exportError}</p>{/if}
@@ -1076,6 +1037,7 @@
 					</p>
 				{/if}
 			</div>
+			{#if importOpen}{@render importPanel()}{/if}
 
 			{#if activeList}
 				<div class="wl-listbar no-print" data-testid="list-bar">
@@ -1087,7 +1049,7 @@
 								void renameList();
 							}}
 						>
-							<input aria-label="List name" bind:value={renameText} maxlength="60" />
+							<input aria-label="List name" bind:value={renameText} maxlength="40" />
 							<button class="wl-strip-btn btn-primary" type="submit" disabled={!renameText.trim()}
 								>Save</button
 							>
@@ -1096,9 +1058,7 @@
 							>
 						</form>
 					{:else}
-						<span
-							><strong>{activeList.name}</strong> · made by {activeList.createdBy} · shared with the team.</span
-						>
+						<span><strong>{activeList.name}</strong></span>
 						<select
 							class="wl-add-to-list"
 							aria-label="Add a company to {activeList.name}"
@@ -1124,20 +1084,18 @@
 								renameText = activeList.name;
 							}}>Rename</button
 						>
-						{#if activeList.createdBy === me || data.user?.role === 'admin'}
-							{#if confirmDeleteList}
-								<span>Delete this list? Its companies stay on the watchlist.</span>
-								<button class="link-btn danger" type="button" onclick={deleteList}
-									>Yes, delete</button
-								>
-								<button class="link-btn" type="button" onclick={() => (confirmDeleteList = false)}
-									>No</button
-								>
-							{:else}
-								<button class="link-btn" type="button" onclick={() => (confirmDeleteList = true)}
-									>Delete list</button
-								>
-							{/if}
+						{#if confirmDeleteList}
+							<span>Delete this list? Its companies stay on the watchlist.</span>
+							<button class="link-btn danger" type="button" onclick={deleteList}
+								>Yes, delete</button
+							>
+							<button class="link-btn" type="button" onclick={() => (confirmDeleteList = false)}
+								>No</button
+							>
+						{:else}
+							<button class="link-btn" type="button" onclick={() => (confirmDeleteList = true)}
+								>Delete list</button
+							>
 						{/if}
 					{/if}
 				</div>
@@ -1203,6 +1161,7 @@
 						</thead>
 						<tbody>
 							{#each sortedRows as r (r.symbol)}
+								{@const flag = flagFor(r.symbol)}
 								<tr
 									class="watch-row"
 									class:wl-changed={changedSinceVisit(r)}
@@ -1215,8 +1174,15 @@
 									}}
 								>
 									<td class="left">
-										<a class="wl-name" href={resolve('/valuation/company/[symbol]', { symbol: r.symbol })}
-											>{r.name}</a
+										<a
+											class="wl-name"
+											href={resolve('/valuation/company/[symbol]', { symbol: r.symbol })}
+											>{#if flag}<span
+													class="wl-flag"
+													data-testid="wl-flag"
+													style="--dot: {flagCss(flag.color) ?? 'transparent'}"
+													title={flag.label ?? 'Flagged'}
+												></span>{/if}{r.name}</a
 										>
 										{#if changedSinceVisit(r)}<span
 												class="wl-new"
@@ -1226,14 +1192,14 @@
 										<span class="wl-meta">
 											<span class="wl-symbol">{r.symbol}</span>
 											{#if r.methodLabel}<span class="wl-method"
-													>{r.methodLabel.split(' — ')[0]} · FY+2E</span
+													>{r.methodLabel.split(' - ')[0]} · FY+2E</span
 												>{/if}
 										</span>
-									<PresetBadges ids={presetMatches[r.symbol] ?? []} />
+									<PresetBadges ids={presetMatches[r.symbol] ?? []} max={2} />
 									</td>
 									{#if r.error}
 										<td colspan={columns.length} class="wl-error">
-											⚠ Couldn't load this company — the symbol may be wrong, delisted, or not on
+											⚠ Couldn't load this company - the symbol may be wrong, delisted, or not on
 											Screener. <a href={resolve('/valuation/company/[symbol]', { symbol: r.symbol })}
 												>Open it directly</a
 											> to see the exact error.
@@ -1278,8 +1244,14 @@
 		<p class="wl-empty" data-testid="watchlist-empty">
 			Your watchlist is empty. Use <strong>+ Add company</strong> above, or open a company and click
 			<strong>Add to watchlist</strong>, to start tracking its target, fair value and upside here - or
-			import valuations from JSON.
+			<button
+				class="link-btn"
+				type="button"
+				data-testid="import-toggle"
+				onclick={() => (importOpen = !importOpen)}>import valuations from JSON</button
+			>.
 		</p>
+		{#if importOpen}{@render importPanel()}{/if}
 	{/if}
 
 	<div class="no-print">
@@ -1287,12 +1259,61 @@
 		<ActivityFeed />
 	</div>
 
+	{#snippet importPanel()}
+		<div class="integrity-panel no-print" data-testid="import-panel">
+		{#if importOpen}
+			<div class="import-body">
+				<p class="import-hint">
+					Paste JSON generated by Claude or any other tool, or upload a <code>.json</code> file.
+					Each entry needs a <code>symbol</code> and a <code>methods</code> object keyed by method (<code
+						>pe</code
+					>, <code>pb</code>, <code>ev_ebitda</code>,
+					<code>mcap_sales</code>) then scenario (<code>bear</code>, <code>base</code>,
+					<code>bull</code>) - any field left out falls back to this app's own defaults. Submit an
+					array to import several companies at once.
+				</p>
+				<pre class="import-example">{IMPORT_EXAMPLE}</pre>
+				<textarea
+					class="import-textarea"
+					rows="8"
+					bind:value={importText}
+					placeholder="Paste JSON here..."></textarea>
+				<div class="import-actions">
+					<input
+						class="import-file"
+						type="file"
+						accept="application/json,.json"
+						onchange={onImportFileSelected}
+					/>
+					<button
+						class="diagnosis-apply"
+						onclick={runImport}
+						disabled={importing || !importText.trim()}
+					>
+						{importing ? 'Importing…' : 'Import'}
+					</button>
+				</div>
+				{#if importResults}
+					<ul class="integrity-list">
+						{#each importResults as r, i (r.symbol + i)}
+							<li class={r.ok ? 'signal-good' : 'signal-bad'}>
+								<span class="integrity-label">{r.symbol}</span>
+								<span class="integrity-detail">{r.message}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+		{/if}
+		</div>
+	{/snippet}
+
 	{#snippet scenario(sc: ScenarioRead, loading: boolean)}
 		<td class="wl-scenario">
 			{#if loading}
 				…
 			{:else if sc.cagrPct == null}
-				—
+				-
 			{:else}
 				<span
 					class={trendClass(sc.cagrPct)}
@@ -1325,7 +1346,7 @@
 					…
 				{:else}
 					{@const up = upsidePct(targetOf(r), r.cmp)}
-					{#if up == null}—{:else}<span class={trendClass(up)}>{trendArrow(up)} {fmtPct(up)}</span
+					{#if up == null}-{:else}<span class={trendClass(up)}>{trendArrow(up)} {fmtPct(up)}</span
 						>{/if}
 				{/if}
 			</td>
@@ -1340,7 +1361,7 @@
 				>{r.loading
 					? '…'
 					: r.marketCap == null
-						? '—'
+						? '-'
 						: `₹${r.marketCap.toLocaleString('en-IN')} cr`}</td
 			>
 		{:else if col === 'trend'}
@@ -1356,7 +1377,7 @@
 						<polyline points={sparklinePoints(r.sparkline)} />
 					</svg>
 				{:else if r.error}
-					<span class="trend-note">—</span>
+					<span class="trend-note">-</span>
 				{:else if r.loading || r.trend === 'loading'}
 					<span class="trend-note">…</span>
 				{:else if r.trend === 'unlisted'}
@@ -1382,11 +1403,11 @@
 							>changed since</span
 						>{/if}
 				{:else}
-					<span class="muted">—</span>
+					<span class="muted">-</span>
 				{/if}
 			</td>
 		{:else if col === 'coverage'}
-			<td data-col="coverage">{r.coveredBy ?? '—'}</td>
+			<td data-col="coverage">{r.coveredBy ?? '-'}</td>
 		{:else if col === 'updated'}
 			<td class="wl-updated" data-col="updated" title={timeAgo(r.lastUpdated)}>
 				{formatDate(r.lastUpdated)}
@@ -1397,3 +1418,94 @@
 		{/if}
 	{/snippet}
 </div>
+
+<style>
+	.wl-tools {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+	}
+	.wl-manage {
+		font-size: 12px;
+		color: var(--muted);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.wl-manage:hover {
+		color: var(--ink);
+	}
+	.wl-import-link {
+		font-size: 12px;
+		color: var(--muted);
+	}
+	.wl-more {
+		position: relative;
+	}
+	.wl-more summary {
+		list-style: none;
+		cursor: pointer;
+	}
+	.wl-more summary::-webkit-details-marker {
+		display: none;
+	}
+	.wl-more-panel {
+		position: absolute;
+		right: 0;
+		z-index: 5;
+		min-width: 140px;
+		margin-top: 4px;
+		display: flex;
+		flex-direction: column;
+		background: var(--bg);
+		border: var(--border-w) solid var(--ink);
+		box-shadow: var(--shadow-hard);
+	}
+	.wl-more-item {
+		font: inherit;
+		text-align: left;
+		padding: 8px 12px;
+		min-height: 36px;
+		background: none;
+		border: 0;
+		cursor: pointer;
+		color: var(--ink);
+	}
+	.wl-more-item:hover:not(:disabled) {
+		background: var(--zebra);
+	}
+	.wl-more-item:disabled {
+		color: var(--muted);
+		cursor: default;
+	}
+	.wl-flag {
+		display: inline-block;
+		width: 9px;
+		height: 9px;
+		margin-right: 6px;
+		border: 1px solid var(--ink);
+		background: var(--dot);
+	}
+
+	/* Desktop widths: the table fits its container instead of scrolling sideways. Headers wrap to two
+	   lines ("Base CAGR" over "(2YR)") and the cells use a little less side padding. */
+	@media (min-width: 641px) {
+		:global(.vd table.watchlist-table th) {
+			white-space: normal;
+			padding-left: 8px;
+			padding-right: 8px;
+			line-height: 1.35;
+		}
+		:global(.vd table.watchlist-table th .th-sort) {
+			white-space: normal;
+			text-align: inherit;
+		}
+		:global(.vd table.watchlist-table td) {
+			padding-left: 8px;
+			padding-right: 8px;
+		}
+		:global(.vd table.watchlist-table td.left) {
+			padding-left: 16px;
+		}
+	}
+</style>

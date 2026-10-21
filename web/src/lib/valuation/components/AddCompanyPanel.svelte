@@ -123,21 +123,26 @@
 	}
 </script>
 
-<div class="company-search">
-	<label for="companySearch" class="field-label" style="display:block;margin-bottom:6px">Find a company</label>
-	<CompanyPicker
-		id="companySearch"
-		label="Find a company by name or ticker"
-		placeholder="Type a name or ticker, e.g. Reliance, Tata Consultancy, TCS"
-		onPick={(hit) => goto(resolve('/valuation/company/[symbol]', { symbol: hit.symbol }))}
-	/>
-
-	{#if canWrite}
-		{#if !adding}
+<div class="company-search ac-bar">
+	<div class="ac-row">
+		<label for="companySearch" class="sr-only">Find a company</label>
+		<div class="ac-find">
+			<CompanyPicker
+				id="companySearch"
+				label="Find a company by name or ticker"
+				placeholder="Find a company by name or ticker"
+				onPick={(hit) => goto(resolve('/valuation/company/[symbol]', { symbol: hit.symbol }))}
+			/>
+		</div>
+		{#if canWrite && !adding}
 			<button type="button" class="wl-strip-btn ac-open" data-testid="add-company" onclick={openAdd}
 				>+ Add company</button
 			>
-		{:else}
+		{/if}
+	</div>
+
+	{#if canWrite}
+		{#if adding}
 			<section class="ac-panel" aria-labelledby="ac-title" data-testid="add-company-panel">
 				<div class="ac-head">
 					<h2 id="ac-title" class="ac-title">Add a company</h2>
@@ -207,8 +212,32 @@
 </div>
 
 <style>
+	.company-search.ac-bar {
+		max-width: none;
+		margin: 0 0 var(--space-3);
+		padding: 0;
+	}
+	.ac-row {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
+	}
+	.ac-find {
+		flex: 1 1 auto;
+		min-width: 0;
+		max-width: 520px;
+	}
+	.ac-bar :global(input) {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		min-height: 38px;
+		padding: 0 var(--space-2);
+		box-shadow: none;
+	}
 	.ac-open {
-		margin-top: var(--space-3);
+		flex: none;
+		min-height: 38px;
+		white-space: nowrap;
 	}
 	.ac-panel {
 		margin-top: var(--space-3);

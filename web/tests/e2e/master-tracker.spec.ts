@@ -133,12 +133,13 @@ test('manual revisions survive new-quarter analysis, regeneration, rejection and
 	await review.getByRole('checkbox',{name:'I reviewed the proposed changes to manually edited work.'}).check();
 	await review.getByRole('button',{name:'Save selected analysis'}).click();
 	await expect(review).toHaveCount(0);
+	await company.getByRole('region',{name:'Q4 FY26'}).getByText('earlier version',{exact:false}).first().click();
 	await expect(company.getByText('My reviewed FY27 revenue target: 30%',{exact:true})).toBeVisible();
 	await expect(company.getByText('Guidance: 1',{exact:true})).toBeVisible();
 	await company.getByRole('button',{name:'Analyse selected quarters'}).click();
 	await expect(review).toBeVisible();await review.getByRole('button',{name:'Discard draft'}).click();
 	await expect(review).toHaveCount(0);
-	await page.reload();await expect(company.getByText('My reviewed FY27 revenue target: 30%',{exact:true})).toBeVisible();
+	await page.reload();await company.getByRole('region',{name:'Q4 FY26'}).getByText('earlier version',{exact:false}).first().click();await expect(company.getByText('My reviewed FY27 revenue target: 30%',{exact:true})).toBeVisible();
 });
 
 test('filters and selected quarters are restored and reset is effective',async({page,request})=>{
@@ -266,13 +267,9 @@ test('automatic identity and the saved Supreme Power sample need no manual code 
 	const summaryBefore=(await summary.boundingBox())!,quarterBounds=(await quarters.boundingBox())!;
 	if(page.viewportSize()!.width>720)expect(summaryBefore.x+summaryBefore.width).toBeLessThanOrEqual(quarterBounds.x);
 	else expect(summaryBefore.y+summaryBefore.height).toBeLessThanOrEqual(quarterBounds.y);
-	expect(await quarters.evaluate((el)=>el.scrollWidth>el.clientWidth)).toBeTruthy();
-	await quarters.focus();await page.keyboard.press('ArrowRight');
-	await expect.poll(()=>quarters.evaluate((el)=>el.scrollLeft)).toBeGreaterThan(0);
-	await quarters.evaluate((el)=>{el.scrollLeft=el.scrollWidth;});
-	const summaryAfter=(await summary.boundingBox())!;
-	expect(summaryAfter.x).toBe(summaryBefore.x);
+	// Quarters wrap and stack rather than scrolling sideways, and never overflow their column.
+	expect(await quarters.evaluate((el)=>el.scrollWidth<=el.clientWidth)).toBeTruthy();
 	await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
-	await page.screenshot({path:testInfo.outputPath('sample-quarter-scroll.png'),fullPage:true});
+	await page.screenshot({path:testInfo.outputPath('sample-quarters.png'),fullPage:true});
 	const again=await request.post('/api/valuation/master-tracker/sample');expect((await again.json()).added).toBe(0);
 });

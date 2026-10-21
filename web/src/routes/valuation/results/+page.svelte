@@ -69,68 +69,81 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Quarterly results</h1>
-		<div class="sub">
-			The latest reported quarter of every company with stored Screener results, against the same
-			quarter a year earlier (YoY) and the quarter before (QoQ). EBITDA % is the operating margin;
-			margin changes are in percentage points. A blank means the comparison quarter is not stored or
-			its base is zero or negative.
-		</div>
+		<div class="sub">Latest reported quarter of every company, against a year earlier and the quarter before.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				Results come from stored Screener data. EBITDA % is the operating margin; margin changes are in
+				percentage points. A blank means the comparison quarter is not stored or its base is zero or
+				negative.
+			</p>
+		</details>
 	</div>
 </div>
 
 <div class="wrap wrap-wide res-page">
-	{#if canLoad}
-		<BatchLoadPanel
-			label="Load missing financials"
-			noun="financial statements"
-			missingUrl="/api/valuation/financials/missing"
-			batchUrl="/api/valuation/financials/batch"
-			batchSize={FINANCIALS_BATCH_SIZE}
-			missing={data.missing}
-			testId="load-financials"
-			onFinished={() => invalidateAll()}
-		/>
-	{:else if data.missing > 0}
-		<p class="scan-note">{data.missing} scanner companies have no stored results yet. An editor can load them.</p>
-	{/if}
-
-	<div class="scan-toolbar no-print">
-		<label>
+	<div class="calm-toolbar no-print">
+		<label class="calm-field">
 			<span class="sr-only">Search companies</span>
-			<input class="sm-input" type="search" placeholder="Search company or ticker" bind:value={query} data-testid="res-search" />
+			<input type="search" placeholder="Search company or ticker" bind:value={query} data-testid="res-search" />
 		</label>
-		<label>
-			<span class="sr-only">Industry</span>
-			<select class="sm-input" bind:value={industry} data-testid="res-industry">
-				<option value="">All industries</option>
-				{#each data.industries as i (i)}<option value={i}>{i}</option>{/each}
-			</select>
-		</label>
-		<label>
-			<span class="sr-only">Sector basket</span>
-			<select class="sm-input" bind:value={basket} data-testid="res-basket">
-				<option value="">All sector baskets</option>
-				{#each data.baskets as b (b)}<option value={b}>{b}</option>{/each}
-			</select>
-		</label>
-		<label>
-			<span class="sr-only">Watchlist</span>
-			<select class="sm-input" bind:value={list} data-testid="res-list">
-				<option value="">All companies</option>
-				{#each data.lists as l (l.key)}<option value={l.key}>{l.name} ({l.symbols.length})</option>{/each}
-			</select>
-		</label>
-		<label>
+		<label class="calm-field">
 			<span class="sr-only">Quarter</span>
-			<select class="sm-input" bind:value={quarter} data-testid="res-quarter">
+			<select bind:value={quarter} data-testid="res-quarter">
 				<option value="">Any quarter</option>
 				{#each quarters as q (q.label)}<option value={q.label}>{q.label} ({q.count})</option>{/each}
 			</select>
 		</label>
-		<span class="hint" aria-live="polite" data-testid="res-count">{rows.length} of {data.rows.length} companies</span>
+		<label class="calm-field">
+			<span class="sr-only">Industry</span>
+			<select bind:value={industry} data-testid="res-industry">
+				<option value="">All industries</option>
+				{#each data.industries as i (i)}<option value={i}>{i}</option>{/each}
+			</select>
+		</label>
+		<label class="calm-field">
+			<span class="sr-only">Watchlist</span>
+			<select bind:value={list} data-testid="res-list">
+				<option value="">All companies</option>
+				{#each data.lists as l (l.key)}<option value={l.key}>{l.name} ({l.symbols.length})</option>{/each}
+			</select>
+		</label>
+		<details class="calm-disclosure calm-more" open={basket !== ''}>
+			<summary>More filters{basket !== '' ? ' (1)' : ''}</summary>
+			<div class="calm-more-body">
+				<label class="calm-field">
+					<span class="sr-only">Sector basket</span>
+					<select bind:value={basket} data-testid="res-basket">
+						<option value="">All sector baskets</option>
+						{#each data.baskets as b (b)}<option value={b}>{b}</option>{/each}
+					</select>
+				</label>
+			</div>
+		</details>
 	</div>
 
-	<div class="table-scroll">
+	<p class="calm-meta" aria-live="polite" data-testid="res-count">{rows.length} of {data.rows.length} companies</p>
+
+	{#if canLoad}
+		<details class="calm-disclosure calm-data no-print">
+			<summary>Data{data.missing > 0 ? ` (${data.missing} without results)` : ''}</summary>
+			<div class="calm-data-body">
+				<BatchLoadPanel
+					label="Load missing financials"
+					noun="financial statements"
+					missingUrl="/api/valuation/financials/missing"
+					batchUrl="/api/valuation/financials/batch"
+					batchSize={FINANCIALS_BATCH_SIZE}
+					missing={data.missing}
+					testId="load-financials"
+					onFinished={() => invalidateAll()}
+				/>
+			</div>
+		</details>
+	{:else if data.missing > 0}
+		<p class="calm-meta">{data.missing} scanner companies have no stored results yet. An editor can load them.</p>
+	{/if}
+<div class="table-scroll">
 		<table class="res-table" data-testid="res-table">
 			<thead>
 				<tr>
