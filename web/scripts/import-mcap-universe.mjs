@@ -1,5 +1,6 @@
-// Loads the breakout scanner's wider universe (companies with a six-month average market cap of
-// Rs 500 Cr to Rs 20,000 Cr, from AMFI) into valuation.mcap_universe. Run twice a year with the new file.
+// Loads the market cap list (every NSE/BSE company with a six-month average market cap above Rs 500 Cr,
+// from AMFI, built by scripts/build-mcap-universe.mjs) into valuation.mcap_universe. Run twice a year with the new file.
+// The whole-market breadth chart uses all of it; the breakout scanner reads only the part below Rs 20,000 Cr.
 //
 //   DATABASE_URL=postgresql://... node scripts/import-mcap-universe.mjs <csv>            (dry run)
 //   DATABASE_URL=postgresql://... node scripts/import-mcap-universe.mjs <csv> --apply    (writes)

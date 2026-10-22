@@ -64,3 +64,12 @@ describe('fetchScripCandles session recovery', () => {
 		expect(candleTokens).toHaveLength(1);
 	}, 30_000);
 });
+
+describe('sessionExpiry', () => {
+	it('expires just before midnight IST for an evening login, else after 6h', async () => {
+		const { sessionExpiry } = await import('./angelone');
+		const ist = (iso: string) => Date.parse(`${iso}+05:30`);
+		expect(sessionExpiry(ist('2026-10-20T21:00:00'))).toBe(ist('2026-10-20T23:59:00'));
+		expect(sessionExpiry(ist('2026-10-20T10:00:00'))).toBe(ist('2026-10-20T16:00:00'));
+	});
+});

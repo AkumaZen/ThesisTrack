@@ -2,6 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { Config } from '@sveltejs/adapter-vercel';
 import type { RequestHandler } from './$types';
 import { BATCH_SIZE, refreshBatch } from '$lib/valuation/server/batchRefresh';
+import { noteManualRefresh } from '$lib/valuation/server/intradayPrices';
 
 // Brings up to 50 companies' stored prices up to date in one call: one Angel One quote request for
 // those that only need today's session, a full history fetch for the rest. Read-only accounts are
@@ -17,6 +18,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 	if (symbols.length > BATCH_SIZE) error(400, `At most ${BATCH_SIZE} symbols per request.`);
 	const started = Date.now();
+	// Background price passes step aside while someone refreshes by hand.
+	await noteManualRefresh().catch(() => {});
 	try {
 		const summary = await refreshBatch(symbols as string[]);
 		return json({ ...summary, ms: Date.now() - started });

@@ -11,7 +11,7 @@
 	import CardsLoading from '$lib/valuation/components/CardsLoading.svelte';
 	import { untrack } from 'svelte';
 	import { refreshSector } from '$lib/valuation/seriesRefresh';
-	import { fetchCard, peekCard } from '$lib/valuation/cardCache';
+	import { dropCardsOlderThan, fetchCard, peekCard } from '$lib/valuation/cardCache';
 	import RefreshAllPanel from '$lib/valuation/components/RefreshAllPanel.svelte';
 	import SectorSearch from '$lib/valuation/components/SectorSearch.svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
@@ -22,6 +22,19 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	// Prices were updated on the server after some cached cards were fetched: do not reuse those.
+	untrack(() => dropCardsOlderThan(data.pricesUpdatedAt));
+	/** "14:35" for today, "20 Oct 16:35" for an earlier day, in India time. */
+	function updatedLabel(at: number | null): string | null {
+		if (!at) return null;
+		const zone = { timeZone: 'Asia/Kolkata' } as const;
+		const time = new Date(at).toLocaleTimeString('en-GB', { ...zone, hour: '2-digit', minute: '2-digit' });
+		const sameDay =
+			new Date(at).toLocaleDateString('en-CA', zone) === new Date().toLocaleDateString('en-CA', zone);
+		return sameDay ? time : `${new Date(at).toLocaleDateString('en-GB', { ...zone, day: 'numeric', month: 'short' })} ${time}`;
+	}
+	const updated = $derived(updatedLabel(data.pricesUpdatedAt));
 
 	async function resetThisView() {
 		memory.reset();
@@ -117,7 +130,7 @@
 			// new card's rotation data the same way it does for every built-in major sector.
 			await invalidateAll();
 		} catch {
-			importError = 'Could not reach the server — try again.';
+			importError = 'Could not reach the server - try again.';
 		} finally {
 			importing = false;
 		}
@@ -279,110 +292,118 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Sector rotation</h1>
-		<div class="sub">
-			Major sectors, each rolled up from its own thematic sub-baskets, measured against Nifty 50.
-			Figures come from prices stored on the server (refreshed automatically after each weekday's
-			close, or press Refresh on a card). {loadedCount} of {data.majors.length} loaded.
-		</div>
+		<div class="sub">Major sectors measured against Nifty 50, rolled up from their sub-baskets.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				Figures come from prices stored on the server (refreshed automatically about every 30 minutes
+				while the market is open and after each weekday's close, or press Refresh on a card).
+			</p>
+			<p>
+				<strong>Rotating In</strong> = relative strength vs Nifty is accelerating (1M RS &gt; 3M RS
+				&gt; 6M RS, and positive), so money is flowing into the sector faster now than 3 or 6 months
+				ago. <strong>Rotating Out</strong> is the mirror case. Otherwise the label says where 1M and 3M
+				relative strength sit: <strong>Outperforming</strong> or <strong>Underperforming</strong> (same
+				side of Nifty on both), <strong>Recovering</strong> (ahead over 1M after lagging over 3M) or
+				<strong>Fading</strong> (the reverse). This is a momentum read on price, not a fundamental judgement.
+			</p>
+		</details>
 	</div>
 </div>
 
 <div class="wrap">
 	<SectorSearch entries={data.search} />
 
-	<!-- Read-only accounts can't refresh prices (the server refuses it), so they don't get the button. -->
 	{#if data.user?.role && data.user.role !== 'read_only'}
-		<RefreshAllPanel onFinished={reloadAllMajors} />
-	{/if}
+	<details class="calm-disclosure calm-data no-print" open={importOpen}>
+		<summary>Data</summary>
+		<div class="calm-data-body">
+			<!-- Read-only accounts can't refresh prices (the server refuses it), so they don't get the button. -->
+			<RefreshAllPanel onFinished={reloadAllMajors} />
 
-	<!-- Editing the shared sector taxonomy is admin-only (enforced server-side too). -->
-	{#if data.user?.role === 'admin'}
-		<a class="sm-manage-link" href={resolve('/valuation/sectors')}
-			>Manage sectors, baskets &amp; companies &rarr;</a
-		>
-		<div class="integrity-panel" style="margin-top:12px">
-			<button class="integrity-toggle" onclick={() => (importOpen = !importOpen)}>
-				<svg
-					class="import-icon"
-					width="15"
-					height="15"
-					viewBox="0 0 16 16"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.4"
-					stroke-linecap="round"
-					stroke-linejoin="round"
+			<!-- Editing the shared sector taxonomy is admin-only (enforced server-side too). -->
+			{#if data.user?.role === 'admin'}
+				<a class="sm-manage-link" href={resolve('/valuation/sectors')}
+					>Manage sectors, baskets &amp; companies &rarr;</a
 				>
-					<path d="M8 2v7M5.2 6.2 8 9l2.8-2.8" />
-					<path d="M2.5 10.5V13a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2.5" />
-				</svg>
-				<span>Import sector (JSON)</span>
-				<span class="integrity-caret">{importOpen ? '▲' : '▼'}</span>
-			</button>
-			{#if importOpen}
-				<div class="import-body">
-					<p class="import-hint">
-						Paste JSON generated by Claude or any other tool, or upload a <code>.json</code> file.
-						Needs a unique <code>key</code> and <code>label</code> for the new major sector, and a
-						<code>subsectors</code> array — each with its own unique <code>key</code>,
-						<code>label</code>, and a <code>symbols</code> list of real NSE trading symbols (as used
-						elsewhere in this app, e.g. <code>"TCS"</code>, <code>"RELIANCE"</code>). A sector or
-						subsector <code>key</code> that collides with an existing one (built-in or previously imported)
-						is rejected — pick a different one.
-					</p>
-					<pre class="import-example">{IMPORT_SECTOR_EXAMPLE}</pre>
-					<textarea
-						class="import-textarea"
-						rows="10"
-						bind:value={importText}
-						placeholder="Paste JSON here..."></textarea>
-					<div class="import-actions">
-						<input
-							class="import-file"
-							type="file"
-							accept="application/json,.json"
-							onchange={onImportFileSelected}
-						/>
-						<button
-							class="diagnosis-apply"
-							onclick={runSectorImport}
-							disabled={importing || !importText.trim()}
+				<div class="integrity-panel" style="margin-top:12px">
+					<button class="integrity-toggle" onclick={() => (importOpen = !importOpen)}>
+						<svg
+							class="import-icon"
+							width="15"
+							height="15"
+							viewBox="0 0 16 16"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.4"
+							stroke-linecap="round"
+							stroke-linejoin="round"
 						>
-							{importing ? 'Importing…' : 'Import'}
-						</button>
-					</div>
-					{#if importError}
-						<ul class="integrity-list">
-							<li class="signal-bad">
-								<span class="integrity-detail">{importError}</span>
-							</li>
-						</ul>
-					{/if}
-					{#if importSuccessLabel}
-						<ul class="integrity-list">
-							<li class="signal-good">
-								<span class="integrity-detail"
-									>Imported "{importSuccessLabel}" — it now appears in the grid below.</span
+							<path d="M8 2v7M5.2 6.2 8 9l2.8-2.8" />
+							<path d="M2.5 10.5V13a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2.5" />
+						</svg>
+						<span>Import sector (JSON)</span>
+						<span class="integrity-caret">{importOpen ? '▲' : '▼'}</span>
+					</button>
+					{#if importOpen}
+						<div class="import-body">
+							<p class="import-hint">
+								Paste JSON generated by Claude or any other tool, or upload a <code>.json</code> file.
+								Needs a unique <code>key</code> and <code>label</code> for the new major sector, and a
+								<code>subsectors</code> array - each with its own unique <code>key</code>,
+								<code>label</code>, and a <code>symbols</code> list of real NSE trading symbols (as used
+								elsewhere in this app, e.g. <code>"TCS"</code>, <code>"RELIANCE"</code>). A sector or
+								subsector <code>key</code> that collides with an existing one (built-in or previously imported)
+								is rejected - pick a different one.
+							</p>
+							<pre class="import-example">{IMPORT_SECTOR_EXAMPLE}</pre>
+							<textarea
+								class="import-textarea"
+								rows="10"
+								bind:value={importText}
+								placeholder="Paste JSON here..."></textarea>
+							<div class="import-actions">
+								<input
+									class="import-file"
+									type="file"
+									accept="application/json,.json"
+									onchange={onImportFileSelected}
+								/>
+								<button
+									class="diagnosis-apply"
+									onclick={runSectorImport}
+									disabled={importing || !importText.trim()}
 								>
-							</li>
-						</ul>
+									{importing ? 'Importing…' : 'Import'}
+								</button>
+							</div>
+							{#if importError}
+								<ul class="integrity-list">
+									<li class="signal-bad">
+										<span class="integrity-detail">{importError}</span>
+									</li>
+								</ul>
+							{/if}
+							{#if importSuccessLabel}
+								<ul class="integrity-list">
+									<li class="signal-good">
+										<span class="integrity-detail"
+											>Imported "{importSuccessLabel}" - it now appears in the grid below.</span
+										>
+									</li>
+								</ul>
+							{/if}
+						</div>
 					{/if}
 				</div>
 			{/if}
 		</div>
+	</details>
 	{/if}
 
 	{#if systemicError}
 		<div class="price-error" style="margin-top:20px">{systemicError}</div>
 	{:else}
-		<div class="depth-note" style="margin-top:20px">
-			<strong>Rotating In</strong> = relative strength vs Nifty is accelerating (1M RS &gt; 3M RS
-			&gt; 6M RS, and positive) — money is flowing into the sector faster now than 3 or 6 months
-			ago. <strong>Rotating Out</strong> is the mirror case. Otherwise the label says where 1M and 3M
-			relative strength sit: <strong>Outperforming</strong> or <strong>Underperforming</strong> (same
-			side of Nifty on both), <strong>Recovering</strong> (ahead over 1M after lagging over 3M) or
-			<strong>Fading</strong> (the reverse). This is a momentum read on price, not a fundamental judgement.
-		</div>
 
 		<StrengthPanel
 			bind:this={strengthRef}
@@ -394,6 +415,8 @@
 			bind:openState={strengthPanel}
 			bind:settled={strengthSettled}
 		/>
+
+		<p class="calm-meta" aria-live="polite">{loadedCount} of {data.majors.length} loaded{#if updated} &middot; Prices updated {updated}{/if}</p>
 
 		<div class="sector-sort-bar">
 			<span class="sector-sort-label">Sort by</span>
@@ -434,7 +457,6 @@
 						metrics={cardMetrics}
 						evaluation={strength.active ? strength.byKey[m.key] : undefined}
 						label={m.label}
-						tag={`sector · ${m.subsectorCount}`}
 						row={majorData[m.key]}
 						onLoad={() => loadMajor(m.key)}
 						onRefresh={() => refreshMajor(m.key)}

@@ -4,7 +4,7 @@ vi.mock('$lib/server/db', () => ({ db: {} }));
 vi.mock('./companyGrowthSeries', () => ({ refreshCompanySeries: vi.fn() }));
 
 import type { Candle, DayQuote } from './angelone';
-import { refreshBatch } from './batchRefresh';
+import { FULL_REFRESH_CONCURRENCY, refreshBatch } from './batchRefresh';
 
 const candle = (day: string, close: number): Candle => ({
 	date: `${day}T00:00:00+05:30`,
@@ -33,6 +33,8 @@ function setup(opts: {
 	unlisted?: string[];
 	quoteError?: boolean;
 	full?: (s: string) => Promise<unknown | null>;
+	calendar?: string[] | null;
+	now?: Date;
 }) {
 	const writes: { symbol: string; candles: Candle[] }[][] = [];
 	const fetchQuotes = vi.fn(async (symbols: string[]) => {
@@ -53,7 +55,8 @@ function setup(opts: {
 			fetchQuotes,
 			writeSeries: async (rows: { symbol: string; candles: Candle[] }[]) => void writes.push(rows),
 			fullRefresh,
-			now: () => NOW
+			readCalendar: async () => opts.calendar ?? null,
+			now: () => opts.now ?? NOW
 		}
 	};
 }
@@ -130,5 +133,74 @@ describe('refreshBatch', () => {
 			}
 		});
 		expect(r.results[0]).toMatchObject({ outcome: 'failed', reason: 'db down' });
+	});
+
+	// 2026-10-20 (Tuesday) is an exchange holiday: sessions ... 10-16, 10-19, 10-21.
+	describe('exchange holiday between the last stored session and the quote day', () => {
+		const holidayNow = new Date('2026-10-21T12:00:00Z');
+		const calendar = ['2026-10-15', '2026-10-16', '2026-10-19', '2026-10-21'];
+		const stored = { AAA: [candle('2026-10-19', 100)], BBB: [candle('2026-10-16', 100)] };
+		const quotes = { AAA: quote('AAA', '2026-10-21'), BBB: quote('BBB', '2026-10-21') };
+
+		it('appends when the benchmark calendar shows no session in between, and still refetches a real miss', async () => {
+			const t = setup({ stored, quotes, calendar, now: holidayNow });
+			const r = await refreshBatch(['AAA', 'BBB'], t.deps);
+			expect(r.results.map((x) => `${x.symbol}:${x.outcome}`)).toEqual(['AAA:appended', 'BBB:full']);
+			expect(r.fullFetches).toBe(1);
+		});
+
+		it('falls back to the weekday rule when the benchmark is missing', async () => {
+			const t = setup({ stored, quotes, calendar: null, now: holidayNow });
+			const r = await refreshBatch(['AAA'], t.deps);
+			expect(r.results[0]).toMatchObject({ outcome: 'full', reason: 'gap' });
+		});
+
+		it('falls back to the weekday rule when the benchmark is stale', async () => {
+			const t = setup({ stored, quotes, calendar: ['2026-10-15', '2026-10-16', '2026-10-19'], now: holidayNow });
+			const r = await refreshBatch(['AAA'], t.deps);
+			expect(r.results[0]).toMatchObject({ outcome: 'full', reason: 'gap' });
+		});
+
+		it('reads the calendar once per batch', async () => {
+			const t = setup({ stored, quotes, calendar, now: holidayNow });
+			const readCalendar = vi.fn(async () => calendar);
+			await refreshBatch(['AAA', 'BBB'], { ...t.deps, readCalendar });
+			expect(readCalendar).toHaveBeenCalledTimes(1);
+		});
+
+		it('survives a failing calendar read', async () => {
+			const t = setup({ stored, quotes, now: holidayNow });
+			const r = await refreshBatch(['AAA'], {
+				...t.deps,
+				readCalendar: async () => {
+					throw new Error('db down');
+				}
+			});
+			expect(r.results[0]).toMatchObject({ outcome: 'full', reason: 'gap' });
+		});
+	});
+
+	it('runs full refetches with bounded concurrency and keeps the result order', async () => {
+		let inFlight = 0;
+		let peak = 0;
+		const symbols = Array.from({ length: 10 }, (_, i) => `S${i}`);
+		const t = setup({
+			stored: {},
+			full: async (s) => {
+				inFlight++;
+				peak = Math.max(peak, inFlight);
+				// Later symbols finish first, so completion order differs from request order.
+				await new Promise((r) => setTimeout(r, 20 - Number(s.slice(1))));
+				inFlight--;
+				if (s === 'S4') throw new Error('bad');
+				return {};
+			}
+		});
+		const r = await refreshBatch(symbols, t.deps);
+		expect(peak).toBe(FULL_REFRESH_CONCURRENCY);
+		expect(r.results.map((x) => x.symbol)).toEqual(symbols);
+		expect(r.results[4]).toMatchObject({ outcome: 'failed', reason: 'bad' });
+		expect(r.results.filter((x) => x.outcome === 'full')).toHaveLength(9);
+		expect(r.fullFetches).toBe(10);
 	});
 });

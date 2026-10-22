@@ -148,8 +148,8 @@ export function computeStageAnalysis(
 
 	const breakoutDetail = isNewHigh
 		? volumeRatio != null && volumeRatio >= 1.5
-			? `Closed at a new 50-day high on ${volumeRatio.toFixed(1)}x average volume — a textbook breakout day.`
-			: `New 50-day high, but volume was only ${volumeRatio != null ? volumeRatio.toFixed(1) + 'x' : 'not available vs'} average — breakout lacks volume confirmation.`
+			? `Closed at a new 50-day high on ${volumeRatio.toFixed(1)}x average volume - a textbook breakout day.`
+			: `New 50-day high, but volume was only ${volumeRatio != null ? volumeRatio.toFixed(1) + 'x' : 'not available vs'} average - breakout lacks volume confirmation.`
 		: 'No new 50-day high on the latest close.';
 
 	return {

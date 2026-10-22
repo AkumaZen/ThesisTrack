@@ -10,15 +10,35 @@
 		'near-high': 'tag-info',
 		'five-year-high': 'tag-info'
 	};
-	let { ids, empty = '' }: { ids: PresetId[]; empty?: string } = $props();
+	// `max` keeps a crowded row short: the rest collapse into one "+N" tag that lists them on hover.
+	let { ids, empty = '', max = Infinity }: { ids: PresetId[]; empty?: string; max?: number } = $props();
+	const passed = $derived(PRESETS.filter((p) => ids.includes(p.id)));
+	const shown = $derived(passed.length > max ? passed.slice(0, max) : passed);
+	const hidden = $derived(passed.slice(shown.length));
 </script>
 
 {#if ids.length > 0}
-	<ul class="tag-list preset-badges" aria-label="Preset scans passed">
-		{#each PRESETS.filter((p) => ids.includes(p.id)) as p (p.id)}
+	<ul class="tag-list preset-badges" class:compact={max !== Infinity} aria-label="Preset scans passed">
+		{#each shown as p (p.id)}
 			<li class="tag {TONE[p.id] ?? ''}" title={p.description}>{p.label}</li>
 		{/each}
+		{#if hidden.length}
+			<li class="tag preset-more" title={hidden.map((p) => p.label).join(', ')}>+{hidden.length}</li>
+		{/if}
 	</ul>
 {:else if empty}
 	<span class="preset-none">{empty}</span>
 {/if}
+
+<style>
+	/* Capped lists stay on one line so a crowded row does not grow tall. */
+	.preset-badges.compact {
+		flex-wrap: nowrap;
+		gap: 4px;
+		margin-top: 4px;
+	}
+	.preset-badges.compact .tag {
+		white-space: nowrap;
+		flex: none;
+	}
+</style>

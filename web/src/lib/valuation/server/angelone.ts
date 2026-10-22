@@ -196,6 +196,15 @@ interface CachedToken {
 
 let cachedToken: CachedToken | null = null;
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Angel One ends every session at midnight IST, so never cache past it (1 minute safety margin).
+export function sessionExpiry(nowMs: number): number {
+	const nextMidnightIst = Math.floor((nowMs + IST_OFFSET_MS) / DAY_MS) * DAY_MS + DAY_MS - IST_OFFSET_MS;
+	return Math.min(nowMs + 6 * 60 * 60 * 1000, nextMidnightIst - 60 * 1000);
+}
+
 async function getAccessToken(): Promise<string> {
 	if (cachedToken && Date.now() < cachedToken.expiresAt) {
 		return cachedToken.token;
@@ -236,7 +245,7 @@ async function getAccessToken(): Promise<string> {
 
 	// "Session established via SmartAPI remains active till 12 midnight" per Angel One docs;
 	// cache conservatively and re-login on any 401 regardless.
-	cachedToken = { token: body.data.jwtToken, expiresAt: Date.now() + 6 * 60 * 60 * 1000 };
+	cachedToken = { token: body.data.jwtToken, expiresAt: sessionExpiry(Date.now()) };
 	return cachedToken.token;
 }
 

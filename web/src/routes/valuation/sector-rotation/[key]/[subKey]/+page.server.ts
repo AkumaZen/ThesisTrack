@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getSectorEarnings } from '$lib/valuation/server/sectorEarningsStore';
 import { findAnyMajorSector, findAnyCustomSector } from '$lib/valuation/server/sectorStore';
@@ -7,12 +7,14 @@ import { findAnyMajorSector, findAnyCustomSector } from '$lib/valuation/server/s
 // data, and the basket summary, are fetched one at a time from the client (see +page.svelte).
 // Resolves against both built-in and user-imported sectors.
 export const load: PageServerLoad = async ({ params }) => {
+	// A basket can be retired or moved (taxonomy imports), but old links to it live on in alert
+	// history and bookmarks: send them to the nearest page that still exists instead of a 404.
 	const major = await findAnyMajorSector(params.key);
-	if (!major) error(404, `Unknown sector "${params.key}"`);
+	if (!major) redirect(307, '/valuation/sector-rotation');
 
 	const sector = await findAnyCustomSector(params.subKey);
 	if (!sector || !major.subsectorKeys.includes(sector.key)) {
-		error(404, `Unknown basket "${params.subKey}" in sector "${params.key}"`);
+		redirect(307, `/valuation/sector-rotation/${encodeURIComponent(major.key)}`);
 	}
 
 	// Stored results only; a failure just leaves the panel off.

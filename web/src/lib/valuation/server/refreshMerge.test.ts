@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Candle, DayQuote } from './angelone';
-import { chunk, classifyGap, isProvisionalQuote, mergeQuote, previousWeekday } from './refreshMerge';
+import { chunk, classifyGap, isProvisionalQuote, mergeQuote, previousSession, previousWeekday } from './refreshMerge';
 
 const candle = (day: string, close: number, extra: Partial<Candle> = {}): Candle => ({
 	date: `${day}T00:00:00+05:30`,
@@ -41,6 +41,36 @@ describe('gap detection', () => {
 	it('a missed session (or a holiday in between) is a gap', () => {
 		expect(classifyGap('2026-10-15', '2026-10-19')).toBe('gap');
 		expect(classifyGap('2026-10-14', '2026-10-16')).toBe('gap');
+	});
+});
+
+describe('holiday-aware sessions', () => {
+	// 2026-10-20 (Tuesday) was an exchange holiday.
+	const cal = ['2026-10-15', '2026-10-16', '2026-10-19', '2026-10-21'];
+	it('previousSession skips a holiday using the calendar', () => {
+		expect(previousSession('2026-10-21', cal)).toBe('2026-10-19');
+		expect(previousSession('2026-10-19', cal)).toBe('2026-10-16');
+	});
+	it('falls back to previousWeekday without a calendar or when it is stale', () => {
+		expect(previousSession('2026-10-21')).toBe('2026-10-20');
+		expect(previousSession('2026-10-21', [])).toBe('2026-10-20');
+		expect(previousSession('2026-10-21', cal.slice(0, 3))).toBe('2026-10-20');
+	});
+	it('a calendar ending the weekday before the quote day is trusted', () => {
+		expect(previousSession('2026-10-21', ['2026-10-19', '2026-10-20'])).toBe('2026-10-20');
+	});
+	it('classifyGap appends over a holiday but a real missed session stays a gap', () => {
+		expect(classifyGap('2026-10-19', '2026-10-21', cal)).toBe('append');
+		expect(classifyGap('2026-10-19', '2026-10-21')).toBe('gap');
+		expect(classifyGap('2026-10-16', '2026-10-21', cal)).toBe('gap');
+	});
+	it('mergeQuote appends across the holiday and keeps the corporate-action guard', () => {
+		const now = new Date('2026-10-21T12:00:00Z');
+		const r = mergeQuote([candle('2026-10-19', 100)], quote('2026-10-21'), now, cal);
+		expect(r.kind).toBe('appended');
+		const split = mergeQuote([candle('2026-10-19', 100)], quote('2026-10-21', { open: 40, prevClose: 40 }), now, cal);
+		expect(split).toEqual({ kind: 'full', reason: 'corporate-action' });
+		expect(mergeQuote([candle('2026-10-19', 100)], quote('2026-10-21'), now)).toEqual({ kind: 'full', reason: 'gap' });
 	});
 });
 

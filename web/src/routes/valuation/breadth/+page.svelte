@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { advanceDeclineRatio, breadthRead, pct } from '$lib/valuation/breadth';
+	import { advanceDeclineRatio, breadthRead, headlineBreadth, pct } from '$lib/valuation/breadth';
 	import DmaBreadthChart from '$lib/valuation/components/DmaBreadthChart.svelte';
 	import type { PageData } from './$types';
 
@@ -8,7 +8,10 @@
 
 	const isAdmin = $derived(data.user?.role === 'admin');
 	const canRefresh = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
-	const latest = $derived(data.rows.length ? data.rows[data.rows.length - 1] : null);
+	const headline = $derived(headlineBreadth(data.rows));
+	// The headline tiles only ever show a session that nearly the whole universe has reported.
+	const latest = $derived(headline.row);
+	const fmtDay = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 	const history = $derived([...data.rows].reverse());
 	const read = $derived(latest ? breadthRead(latest) : 'no data');
 
@@ -92,56 +95,49 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Market breadth</h1>
-		<div class="sub">
-			The share of all NSE stocks below their 50 day average, plus how many scanner stocks advance or decline and
-			make 52-week highs or lows. Computed from stored daily prices; no live data.
-		</div>
+		<div class="sub">Share of stocks above their moving averages, plus advances, declines and 52-week extremes.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				The whole-market chart shows the share of all NSE stocks below their 50 day average; the cards
+				cover the scanner stocks. Everything is computed from stored daily prices; no live data.
+			</p>
+			<p>
+				Universe: every company listed on NSE or BSE with a six-month average market cap above Rs 500 Cr (AMFI list, one row per company, no upper limit; {st.done} with stored closes{st.empty ? `, ${st.empty} with no prices` : ''}{st.failed ? `, ${st.failed} failed` : ''}{st.stale ? `, ${st.stale} to refetch` : ''}). Prices come from NSE, or BSE for BSE-only names. Funds, ETFs, debt and indices are not in the list. The list is today's: past days use today's members, so companies that have since delisted or shrunk below Rs 500 Cr are missing, and companies that have since grown past it count for days before they qualified.
+			</p>
+		</details>
 	</div>
 </div>
 
 <div class="wrap wrap-wide an-page">
 	{#if data.market.points.length > 0}
 		<DmaBreadthChart points={data.market.points} computedAt={data.market.status.computedAt} />
-		<p class="hint">
-			Universe: NSE equities in the EQ and BE series ({st.done} with stored closes{st.empty ? `, ${st.empty} with no prices` : ''}{st.failed ? `, ${st.failed} failed` : ''}{st.stale ? `, ${st.stale} to refetch` : ''}); ETFs, funds, SME, debt and indices are left out. Today's stocks only, so past days leave out stocks that have since delisted.
-		</p>
 	{:else}
 		<p class="scan-note" data-testid="dma-empty">
 			The whole-market chart has no data yet.{isAdmin ? ' Load the history below.' : ' An admin has to load the price history first.'}
 		</p>
 	{/if}
-	{#if isAdmin}
-		<div class="an-actions no-print">
-			<button type="button" class="wl-strip-btn" onclick={() => backfill()} disabled={backfilling} data-testid="breadth-backfill">
-				{backfilling ? 'Loading...' : data.market.points.length === 0 ? 'Load market history' : 'Update market history'}
-			</button>
-			{#if st.failed > 0}
-				<button type="button" class="wl-strip-btn" onclick={() => backfill({ retryFailed: true })} disabled={backfilling}>Retry failed</button>
-			{/if}
-			{#if backfillMessage}<span class="hint" role="status">{backfillMessage}</span>{/if}
-		</div>
-	{/if}
-
-	{#if canRefresh}
-		<div class="an-actions no-print">
-			<button type="button" class="wl-strip-btn" onclick={refresh} disabled={busy} data-testid="breadth-refresh">
-				{busy ? 'Computing...' : 'Refresh breadth'}
-			</button>
-			{#if message}<span class="hint" role="status">{message}</span>{/if}
-		</div>
-	{/if}
-
-	{#if !latest}
+	{#if data.rows.length === 0}
 		<p class="scan-note" data-testid="breadth-empty">
 			No breadth stored yet.{canRefresh ? ' Press "Refresh breadth" to compute it from the stored prices.' : ' An editor can compute it.'}
 		</p>
 	{:else}
-		<p class="hint">Scanner universe, as of {latest.asOf}, {latest.total} stocks measured. Overall read: <strong>{read}</strong>.</p>
+		{#if !latest}
+			<p class="scan-note" data-testid="breadth-incomplete">
+				No stored session has reported for at least 90% of the {headline.typical.toLocaleString('en-IN')} stocks yet. Recompute breadth once prices have refreshed.
+			</p>
+		{:else}
+			<p class="hint">Scanner universe, as of {latest.asOf}, {latest.total.toLocaleString('en-IN')} stocks measured. Overall read: <strong>{read}</strong>.</p>
+			{#if headline.partial}
+				<p class="hint" data-testid="breadth-partial-note">
+					{fmtDay(headline.partial.asOf)} is still loading: {headline.partial.total.toLocaleString('en-IN')} of {headline.typical.toLocaleString('en-IN')} stocks have reported. Showing {fmtDay(latest.asOf)}.
+				</p>
+			{/if}
 		<ul class="an-cards" data-testid="breadth-cards">
 			<li class="an-card">
 				<span class="an-label">Advance / decline</span>
 				<strong class="an-value">{latest.advances} / {latest.declines}</strong>
-				<span class="an-sub">{latest.unchanged} unchanged{advanceDeclineRatio(latest) != null ? ` · ratio ${f(advanceDeclineRatio(latest), 2)}` : ''}</span>
+				<span class="an-sub">of {latest.total.toLocaleString('en-IN')} stocks &middot; {latest.unchanged} unchanged{advanceDeclineRatio(latest) != null ? ` · ratio ${f(advanceDeclineRatio(latest), 2)}` : ''}</span>
 			</li>
 			<li class="an-card">
 				<span class="an-label">Above 50 DMA</span>
@@ -159,6 +155,7 @@
 				<span class="an-sub">stocks at the extreme today</span>
 			</li>
 		</ul>
+		{/if}
 
 		{#if line50 || line200}
 			<figure class="an-figure">
@@ -190,7 +187,7 @@
 				<tbody>
 					{#each history as r (r.asOf)}
 						<tr>
-							<td class="text">{r.asOf}</td>
+							<td class="text">{r.asOf}{#if headline.partialDates.has(r.asOf)}<span class="hint" style="margin-left: 0.75em" data-testid="breadth-partial-row">partial ({r.total.toLocaleString('en-IN')})</span>{/if}</td>
 							<td class="num res-up">{r.advances}</td>
 							<td class="num res-down">{r.declines}</td>
 							<td class="num">{f(advanceDeclineRatio(r), 2)}</td>
@@ -203,5 +200,33 @@
 				</tbody>
 			</table>
 		</div>
+	{/if}
+
+	{#if isAdmin || canRefresh}
+		<details class="calm-disclosure calm-data no-print" open={busy || backfilling || Boolean(message || backfillMessage)}>
+			<summary>Data</summary>
+			<div class="calm-data-body">
+				{#if isAdmin}
+					<div class="an-actions no-print">
+						<button type="button" class="wl-strip-btn" onclick={() => backfill()} disabled={backfilling} data-testid="breadth-backfill">
+							{backfilling ? 'Loading...' : data.market.points.length === 0 ? 'Load market history' : 'Update market history'}
+						</button>
+						{#if st.failed > 0}
+							<button type="button" class="wl-strip-btn" onclick={() => backfill({ retryFailed: true })} disabled={backfilling}>Retry failed</button>
+						{/if}
+						{#if backfillMessage}<span class="hint" role="status">{backfillMessage}</span>{/if}
+					</div>
+				{/if}
+			
+				{#if canRefresh}
+					<div class="an-actions no-print">
+						<button type="button" class="wl-strip-btn" onclick={refresh} disabled={busy} data-testid="breadth-refresh">
+							{busy ? 'Computing...' : 'Refresh breadth'}
+						</button>
+						{#if message}<span class="hint" role="status">{message}</span>{/if}
+					</div>
+				{/if}
+			</div>
+		</details>
 	{/if}
 </div>

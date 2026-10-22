@@ -14,7 +14,7 @@ export const POST: RequestHandler = async ({ params }) => {
 		if (message === 'MARKET_CLOSED') {
 			error(
 				409,
-				'Market is closed (NSE hours: 09:15–15:30 IST, Mon–Fri) — showing the last close.'
+				'Market is closed (NSE hours: 09:15–15:30 IST, Mon–Fri) - showing the last close.'
 			);
 		}
 		if (message === 'PRICE_NOT_FOUND') {

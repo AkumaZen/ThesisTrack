@@ -15,6 +15,13 @@ export interface CachedResponse<T = unknown> {
 export const CARD_CACHE_TTL_MS = 30 * 60 * 1000;
 const MAX_PARALLEL = 4;
 
+/** Answers fetched before this time are stale: prices were updated on the server since. Set from
+ *  the server's "last updated" time, so a reload within the TTL still shows new figures. */
+let freshAfter = 0;
+export function dropCardsOlderThan(at: number | null | undefined) {
+	if (at && at > freshAfter) freshAfter = at;
+}
+
 const store = new Map<string, { at: number; res: CachedResponse }>();
 const inFlight = new Map<string, Promise<CachedResponse>>();
 let running = 0;
@@ -39,10 +46,10 @@ const tabKey = (url: string) => `card:${url}`;
 /** The remembered answer for `url`, if it is still fresh. */
 export function peekCard<T>(url: string, now = Date.now()): CachedResponse<T> | undefined {
 	const hit = store.get(url);
-	if (hit) return now - hit.at < CARD_CACHE_TTL_MS ? (hit.res as CachedResponse<T>) : undefined;
+	if (hit) return now - hit.at < CARD_CACHE_TTL_MS && hit.at >= freshAfter ? (hit.res as CachedResponse<T>) : undefined;
 	// Not in memory (the page was reloaded): what this tab kept, if still fresh.
 	const kept = readTab<{ at: number; res: CachedResponse }>(tabKey(url), CARD_CACHE_TTL_MS, now);
-	if (!kept) return undefined;
+	if (!kept || kept.at < freshAfter) return undefined;
 	store.set(url, kept);
 	return kept.res as CachedResponse<T>;
 }

@@ -25,10 +25,10 @@ export type Sector = {
 };
 export type Company = { company_id: string; name: string };
 
-export const load: PageLoad = async () => {
+export const load: PageLoad = async ({ fetch }) => {
 	const [sectorsResp, companiesResp] = await Promise.all([
-		api.getSectors() as Promise<{ items: Sector[] }>,
-		api.listCompanies({ page_size: 500 }) as Promise<{ items: Company[] }>
+		api.getSectors(fetch) as Promise<{ items: Sector[] }>,
+		api.listCompanies({ page_size: 500 }, fetch) as Promise<{ items: Company[] }>
 	]);
 	return { sectors: sectorsResp.items, allCompanies: companiesResp.items };
 };

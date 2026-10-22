@@ -58,72 +58,63 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Concalls</h1>
-		<div class="sub">
-			One row per company and quarter for the companies in the Master Tracker. Result quality is computed from the
-			stored financials; sentiment and key points come from one model read of each transcript, saved once.
-		</div>
+		<div class="sub">One row per tracked company and quarter, with result quality and call sentiment.</div>
 	</div>
 </div>
 
 <div class="wrap wrap-wide cc">
-	<nav class="cc-links" aria-label="Related pages">
-		<a href={resolve('/valuation/red-flags')}>Red flags and guidance credibility</a>
-		<a href={resolve('/valuation/master-tracker')}>Master Tracker</a>
-	</nav>
-
 	<form class="cc-bar" role="search" onsubmit={(e) => e.preventDefault()}>
-		<label class="cc-field cc-search">
-			<span>Search</span>
-			<input class="sm-input" type="search" bind:value={query} placeholder="Company, ticker, sector or a key point" />
-		</label>
-		<label class="cc-field">
-			<span>Quarter</span>
-			<select class="sm-input" bind:value={quarter}>
-				<option value="">All quarters</option>
-				{#each quarters as q (q)}<option value={q}>{quarterLabel(q)}</option>{/each}
-			</select>
-		</label>
-		<label class="cc-field">
-			<span>Sector</span>
-			<select class="sm-input" bind:value={sector}>
-				<option value="">All sectors</option>
-				{#each data.sectors as s (s)}<option value={s}>{s}</option>{/each}
-			</select>
-		</label>
-		<label class="cc-field">
-			<span>Watchlist</span>
-			<select class="sm-input" bind:value={watchlist}>
-				<option value="">All tracked companies</option>
-				{#each data.watchlists as w (w.id)}<option value={w.id}>{w.name}</option>{/each}
-			</select>
-		</label>
-		<label class="cc-field">
-			<span>Sort by</span>
-			<span class="cc-sortrow">
-				<select class="sm-input" value={sortKey} onchange={(e) => (sortKey = e.currentTarget.value as SortKey)}>
-					{#each COLUMNS as c (c.key)}<option value={c.key}>{c.label}</option>{/each}
-				</select>
-				<button type="button" class="sm-btn cc-dir" onclick={() => (sortDir = sortDir === 'asc' ? 'desc' : 'asc')} aria-label="Sort direction: {sortDir === 'asc' ? 'ascending' : 'descending'}">
-					{sortDir === 'asc' ? 'Asc' : 'Desc'}
-				</button>
-			</span>
-		</label>
+		<input class="sm-input cc-search" type="search" aria-label="Search" bind:value={query} placeholder="Search company, ticker, sector or key point" />
+		<select class="sm-input" aria-label="Quarter" bind:value={quarter}>
+			<option value="">All quarters</option>
+			{#each quarters as q (q)}<option value={q}>{quarterLabel(q)}</option>{/each}
+		</select>
+		<select class="sm-input" aria-label="Sector" bind:value={sector}>
+			<option value="">All sectors</option>
+			{#each data.sectors as s (s)}<option value={s}>{s}</option>{/each}
+		</select>
+		<details class="calm-disclosure cc-more">
+			<summary>More filters</summary>
+			<div class="cc-more-body">
+				<label class="cc-field">
+					<span>Watchlist</span>
+					<select class="sm-input" bind:value={watchlist}>
+						<option value="">All tracked companies</option>
+						{#each data.watchlists as w (w.id)}<option value={w.id}>{w.name}</option>{/each}
+					</select>
+				</label>
+				<label class="cc-field">
+					<span>Sort by</span>
+					<span class="cc-sortrow">
+						<select class="sm-input" value={sortKey} onchange={(e) => (sortKey = e.currentTarget.value as SortKey)}>
+							{#each COLUMNS as c (c.key)}<option value={c.key}>{c.label}</option>{/each}
+						</select>
+						<button type="button" class="sm-btn cc-dir" onclick={() => (sortDir = sortDir === 'asc' ? 'desc' : 'asc')} aria-label="Sort direction: {sortDir === 'asc' ? 'ascending' : 'descending'}">
+							{sortDir === 'asc' ? 'Asc' : 'Desc'}
+						</button>
+					</span>
+				</label>
+			</div>
+		</details>
+		{#if writable}
+			<details class="calm-disclosure cc-data cc-end">
+				<summary>Data</summary>
+				<section class="cc-actions" aria-label="Refresh and analyse">
+					<button type="button" class="sm-btn" disabled={busy} onclick={() => run('refresh')}>
+						Refresh checks{data.unscanned.length ? ` (${data.unscanned.length} not scanned)` : ''}
+					</button>
+					<button type="button" class="sm-btn" disabled={busy || data.pending === 0 || !data.aiEnabled} onclick={() => run('analyse')}>
+						Analyse {data.pending} new {data.pending === 1 ? 'transcript' : 'transcripts'}
+					</button>
+					{#if !data.aiEnabled}<span class="sm-hint">AI is turned off</span>{/if}
+					<span class="sm-hint">
+						Refresh reads Screener and applies the rules, with no model. Analyse sends each new transcript to the model once, 3 at a time,
+						and never repeats a saved one. Result quality comes from stored financials; sentiment and key points from one saved model read of each transcript.
+					</span>
+				</section>
+			</details>
+		{/if}
 	</form>
-
-	{#if writable}
-		<section class="cc-actions" aria-label="Refresh and analyse">
-			<button type="button" class="sm-btn" disabled={busy} onclick={() => run('refresh')}>
-				Refresh checks{data.unscanned.length ? ` (${data.unscanned.length} not scanned)` : ''}
-			</button>
-			<button type="button" class="sm-btn sm-btn-primary" disabled={busy || data.pending === 0} onclick={() => run('analyse')}>
-				Analyse {data.pending} new {data.pending === 1 ? 'transcript' : 'transcripts'}
-			</button>
-			<span class="sm-hint">
-				Refresh reads Screener and applies the rules, with no model. Analyse sends each new transcript to the model once, 3 at a time,
-				and never repeats a saved one.
-			</span>
-		</section>
-	{/if}
 	<p class="cc-status sm-msg" class:sm-msg-error={status && !status.ok} role="status" aria-live="polite">{status?.text ?? ''}</p>
 
 	{#if data.companyCount === 0}
@@ -211,27 +202,28 @@
 		gap: 0.9rem;
 		padding-top: 1rem;
 	}
-	.cc-links {
+	.cc-bar {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem 1.2rem;
-		font-weight: 600;
-	}
-	.cc-links a {
-		display: inline-flex;
 		align-items: center;
-		min-height: 2.75rem;
+		gap: 0.5rem 0.75rem;
 	}
-	.cc-bar {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
-		gap: 0.6rem;
-		border: var(--border-w) solid var(--ink);
-		padding: 0.7rem;
-		background: var(--bg);
+	.cc-bar > :global(.sm-input) {
+		min-height: 2.75rem;
+		width: auto;
+		min-width: 9rem;
 	}
 	.cc-search {
-		grid-column: 1 / -1;
+		flex: 1 1 16rem;
+	}
+	.cc-end {
+		margin-left: auto;
+	}
+	.cc-more-body {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem 1rem;
+		padding: 0.5rem 0;
 	}
 	.cc-field {
 		display: grid;
@@ -271,15 +263,17 @@
 	.cc-actions .sm-hint {
 		flex-basis: 100%;
 		margin: 0;
+		max-width: 60ch;
+	}
+	.cc-data[open] {
+		flex-basis: 100%;
 	}
 	.cc-status {
 		margin: 0;
 		min-height: 1.2em;
 	}
 	.cc-table {
-		border: var(--border-w) solid var(--ink);
 		background: var(--bg);
-		box-shadow: var(--shadow-hard-sm);
 		min-width: 0;
 	}
 	.cc-head {
@@ -289,7 +283,7 @@
 		display: grid;
 		gap: 0.45rem;
 		padding: 0.8rem;
-		border-top: 2px solid var(--ink);
+		border-top: 1px solid var(--rule);
 	}
 	.cc-row:first-child {
 		border-top: 0;
@@ -374,7 +368,7 @@
 		.cc-head {
 			display: block;
 			background: var(--surface);
-			border-bottom: 2px solid var(--ink);
+			border-bottom: 1px solid var(--ink);
 		}
 		.cc-head [role='row'],
 		.cc-row {

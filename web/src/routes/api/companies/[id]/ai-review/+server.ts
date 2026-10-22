@@ -3,6 +3,7 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { requireWriteActor, errorResponse, handleAuthError, zodErrorMessage } from '$lib/server/http';
+import { AI_OFF_MESSAGE, aiEnabled } from '$lib/valuation/server/aiSwitch';
 import { getLlmClient } from '$lib/server/llm/client';
 import { AIReviewFailedError, NotFoundError, runAiReview } from '$lib/server/services/aiReviewer';
 
@@ -44,6 +45,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 		const parsed = aiReviewIn.safeParse(body);
 		if (!parsed.success) return errorResponse(422, zodErrorMessage(parsed.error));
 
+		if (!aiEnabled()) return errorResponse(503, AI_OFF_MESSAGE + '.');
 		const llmClient = getLlmClient();
 		const proposal = await runAiReview(params.id!, parsed.data.period, parsed.data.narrative, llmClient, actor.identity);
 		return json(toOut(proposal));

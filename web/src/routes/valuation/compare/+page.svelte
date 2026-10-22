@@ -360,9 +360,14 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Compare companies</h1>
-		<div class="sub">
-			Consolidated figures side by side for up to {data.maxSymbols} companies. Choose the metrics you want to see.
-		</div>
+		<div class="sub">Consolidated figures side by side for up to {data.maxSymbols} companies.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				Choose the metrics you want to see. Figures are in Rs crore unless marked. Market figures are
+				current; shareholding is as at each year end.
+			</p>
+		</details>
 	</div>
 </div>
 
@@ -441,8 +446,6 @@
 					<button type="button" class="link-btn" onclick={() => (sort = null)}>Clear</button>
 				</p>
 			{/if}
-
-			<p class="cmp-note">₹ Cr unless marked. Market figures are current; shareholding is as at each year end.</p>
 		</div>
 
 		<div class="cmp-scroll">
@@ -765,11 +768,6 @@
 	.cmp-years button.on {
 		background: var(--ink);
 		color: var(--bg);
-	}
-	.cmp-note {
-		margin: 0 0 0 auto;
-		font-size: 12px;
-		color: var(--muted);
 	}
 
 	/* As wide as its columns need, up to the page width, and at most a full screen tall below the
@@ -1318,10 +1316,6 @@
 			--metric-w: 116px;
 			--company-min: 96px;
 			--year-min: 72px;
-		}
-		.cmp-note {
-			flex-basis: 100%;
-			margin-left: 0;
 		}
 		.cmp-metric-col,
 		.cmp-metric,

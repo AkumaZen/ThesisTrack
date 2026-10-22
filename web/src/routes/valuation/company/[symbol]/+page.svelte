@@ -403,10 +403,10 @@
 		adopt(record);
 	}
 
-	// The team's named lists ("Q4 ideas", "Defence"...), for the Lists menu in the header.
+	// The person's own lists ("Q4 ideas", "Defence"...), for the Lists menu in the header.
 	let namedLists = $state<NamedWatchlist[]>([]);
 	async function loadLists() {
-		const res = await fetch('/api/valuation/watchlists');
+		const res = await fetch('/api/valuation/watchlist-sections');
 		if (res.ok) namedLists = (await res.json()) as NamedWatchlist[];
 	}
 	$effect(() => {
@@ -414,11 +414,14 @@
 	});
 	async function setListMembership(listId: number, member: boolean): Promise<string | null> {
 		try {
-			const res = await fetch(`/api/valuation/watchlists/${listId}/members`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ symbol: company.symbol, member })
-			});
+			const base = `/api/valuation/watchlist-sections/${listId}/items`;
+			const res = member
+				? await fetch(base, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ symbol: company.symbol, name: company.name })
+					})
+				: await fetch(`${base}/${encodeURIComponent(company.symbol)}`, { method: 'DELETE' });
 			await loadLists();
 			if (res.ok) return null;
 			return (
@@ -604,7 +607,7 @@
 		return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 	}
 	function pct1(n: number | null) {
-		return n == null ? '—' : `${fmt1(n)}%`;
+		return n == null ? '-' : `${fmt1(n)}%`;
 	}
 
 	function historyGrowthPct(i: number): number | null {
@@ -648,21 +651,29 @@
 		{:else}
 			<a class="back-link" href={resolve('/valuation')}>&larr; Watchlist</a>
 		{/if}
-		<button class="print-btn" onclick={handlePrint}>🖨 Print / PDF</button>
-		<button
-			class="print-btn print-btn-gap"
-			data-testid="export-excel"
-			disabled={exporting}
-			onclick={exportExcel}>{exporting ? 'Exporting…' : 'Excel'}</button
-		>
-		<ViewResetButton onReset={resetThisView} extraClass="print-btn print-btn-gap" />
+		<div class="co-actions">
+			<details class="co-more">
+				<summary class="print-btn" data-testid="export-menu">Export ▾</summary>
+				<div class="co-more-panel">
+					<button class="co-more-item" type="button" onclick={handlePrint}>Print / PDF</button>
+					<button
+						class="co-more-item"
+						type="button"
+						data-testid="export-excel"
+						disabled={exporting}
+						onclick={exportExcel}>{exporting ? 'Exporting…' : 'Excel'}</button
+					>
+				</div>
+			</details>
+			<ViewResetButton onReset={resetThisView} extraClass="print-btn print-btn-gap" />
+		</div>
 		{#if exportError}<p class="export-error" role="alert">{exportError}</p>{/if}
 		<h1>
 			{company.name}
 			<span class="tag {quality.rating === 'Strong' ? 'tag-good' : quality.rating === 'Watch' ? 'tag-warn' : 'tag-danger'}">{quality.rating}</span>
 		</h1>
 		<div class="sub">
-			{company.symbol} · Bear / base / bull valuation ·
+			{company.symbol} ·
 			{company.basis === 'consolidated'
 				? 'Consolidated'
 				: company.basis === 'standalone'
@@ -783,7 +794,7 @@
 		<div class="item">
 			<div class="l">CMP</div>
 			<div class="v">
-				₹{company.cmp ?? '—'}
+				₹{company.cmp ?? '-'}
 				<button
 					class="refresh-btn"
 					onclick={refreshPrice}
@@ -797,11 +808,11 @@
 		</div>
 		<div class="item">
 			<div class="l">Market Cap</div>
-			<div class="v">₹{company.marketCap ?? '—'}cr</div>
+			<div class="v">₹{company.marketCap ?? '-'}cr</div>
 		</div>
 		<div class="item">
 			<div class="l">Book Value/Share</div>
-			<div class="v">₹{company.bookValuePerShare ?? '—'}</div>
+			<div class="v">₹{company.bookValuePerShare ?? '-'}</div>
 		</div>
 		<div class="item">
 			<div class="l">Shares Outstanding (cr)</div>
@@ -818,19 +829,19 @@
 		</div>
 		<div class="item">
 			<div class="l">Stock P/E</div>
-			<div class="v">{company.stockPE ?? '—'}</div>
+			<div class="v">{company.stockPE ?? '-'}</div>
 		</div>
 		<div class="item">
 			<div class="l">ROE</div>
-			<div class="v">{company.roe != null ? `${company.roe}%` : '—'}</div>
+			<div class="v">{company.roe != null ? `${company.roe}%` : '-'}</div>
 		</div>
 		<div class="item">
 			<div class="l">ROCE</div>
-			<div class="v">{company.roce != null ? `${company.roce}%` : '—'}</div>
+			<div class="v">{company.roce != null ? `${company.roce}%` : '-'}</div>
 		</div>
 		<div class="item">
 			<div class="l">Dividend Yield</div>
-			<div class="v">{company.dividendYield != null ? `${company.dividendYield}%` : '—'}</div>
+			<div class="v">{company.dividendYield != null ? `${company.dividendYield}%` : '-'}</div>
 		</div>
 	</div>
 
@@ -838,9 +849,9 @@
 		<div class="price-error">{priceRefreshError}</div>
 	{/if}
 
-	<div class="depth-panel">
+	<details class="depth-panel co-fold"><summary class="exhibit-cap co-fold-sum">Order Book (Live, Angel One)</summary>
 		<div class="depth-head">
-			<span class="exhibit-cap" style="margin:0">Order Book (Live, Angel One)</span>
+			
 			<button class="diagnosis-apply" onclick={loadDepth} disabled={depthLoading}>
 				{depthLoading ? 'Loading…' : depthResult ? 'Refresh' : 'Load order book'}
 			</button>
@@ -872,9 +883,9 @@
 						<tbody>
 							{#each depthResult.depth.buy as level, i (i)}
 								<tr>
-									<td class="left signal-good">{level.price > 0 ? `₹${level.price}` : '—'}</td>
-									<td>{level.quantity || '—'}</td>
-									<td>{level.orders || '—'}</td>
+									<td class="left signal-good">{level.price > 0 ? `₹${level.price}` : '-'}</td>
+									<td>{level.quantity || '-'}</td>
+									<td>{level.orders || '-'}</td>
 								</tr>
 							{/each}
 						</tbody>
@@ -893,9 +904,9 @@
 						<tbody>
 							{#each depthResult.depth.sell as level, i (i)}
 								<tr>
-									<td class="left signal-bad">{level.price > 0 ? `₹${level.price}` : '—'}</td>
-									<td>{level.quantity || '—'}</td>
-									<td>{level.orders || '—'}</td>
+									<td class="left signal-bad">{level.price > 0 ? `₹${level.price}` : '-'}</td>
+									<td>{level.quantity || '-'}</td>
+									<td>{level.orders || '-'}</td>
 								</tr>
 							{/each}
 						</tbody>
@@ -903,11 +914,11 @@
 				</div>
 			</div>
 			<div class="depth-note">
-				Live NSE market depth via Angel One — populated only during trading hours (9:15am–3:30pm
+				Live NSE market depth via Angel One - populated only during trading hours (9:15am–3:30pm
 				IST, Mon–Fri).
 			</div>
 		{/if}
-	</div>
+	</details>
 
 	{#if company.pros.length > 0 || company.cons.length > 0 || extraQualityFlags.length > 0 || company.shareholding || company.balanceSheet}
 		<div class="quality-panel">
@@ -955,28 +966,28 @@
 									<span class="sh-l">Promoters</span><span class="sh-v"
 										>{company.shareholding.promoters != null
 											? `${company.shareholding.promoters}%`
-											: '—'}</span
+											: '-'}</span
 									>
 								</div>
 								<div class="sh-row">
 									<span class="sh-l">FIIs</span><span class="sh-v"
 										>{company.shareholding.fiis != null
 											? `${company.shareholding.fiis}%`
-											: '—'}</span
+											: '-'}</span
 									>
 								</div>
 								<div class="sh-row">
 									<span class="sh-l">DIIs</span><span class="sh-v"
 										>{company.shareholding.diis != null
 											? `${company.shareholding.diis}%`
-											: '—'}</span
+											: '-'}</span
 									>
 								</div>
 								<div class="sh-row">
 									<span class="sh-l">Public</span><span class="sh-v"
 										>{company.shareholding.public != null
 											? `${company.shareholding.public}%`
-											: '—'}</span
+											: '-'}</span
 									>
 								</div>
 							</div>
@@ -988,17 +999,17 @@
 							<div class="shareholding-bars">
 								<div class="sh-row">
 									<span class="sh-l">Reserves</span><span class="sh-v"
-										>₹{company.balanceSheet.reserves ?? '—'}cr</span
+										>₹{company.balanceSheet.reserves ?? '-'}cr</span
 									>
 								</div>
 								<div class="sh-row">
 									<span class="sh-l">Borrowings</span><span class="sh-v"
-										>₹{company.balanceSheet.borrowings ?? '—'}cr</span
+										>₹{company.balanceSheet.borrowings ?? '-'}cr</span
 									>
 								</div>
 								<div class="sh-row">
 									<span class="sh-l">Total Assets</span><span class="sh-v"
-										>₹{company.balanceSheet.totalAssets ?? '—'}cr</span
+										>₹{company.balanceSheet.totalAssets ?? '-'}cr</span
 									>
 								</div>
 							</div>
@@ -1059,9 +1070,9 @@
 		{/if}
 	</div>
 
-	<div class="stage-panel">
+	<details class="stage-panel co-fold"><summary class="exhibit-cap co-fold-sum">Stage Analysis (Live, Angel One)</summary>
 		<div class="depth-head">
-			<span class="exhibit-cap" style="margin:0">Stage Analysis (Live, Angel One)</span>
+			
 			<button class="diagnosis-apply" onclick={loadStageAnalysis} disabled={stageLoading}>
 				{stageLoading ? 'Loading…' : stageResult ? 'Refresh' : 'Load stage analysis'}
 			</button>
@@ -1077,7 +1088,7 @@
 						? 'warn'
 						: 'bad'}"
 			>
-				<strong>{stageResult.stage}</strong> — {stageResult.score}/{stageResult.totalCriteria} criteria
+				<strong>{stageResult.stage}</strong> - {stageResult.score}/{stageResult.totalCriteria} criteria
 				met
 			</div>
 			<div class="stage-breakout signal-{stageResult.breakoutSignal ? 'good' : 'warn'}">
@@ -1094,10 +1105,10 @@
 			<div class="depth-note">
 				52-week range ₹{stageResult.week52Low.toFixed(1)}–₹{stageResult.week52High.toFixed(1)} · {stageResult.dataPoints}
 				trading days of history used. A rule-based reading of Weinstein Stage Analysis / the Minervini
-				Trend Template — not a guarantee.
+				Trend Template - not a guarantee.
 			</div>
 		{/if}
-	</div>
+	</details>
 
 	{#if integrityChecks.length > 0}
 		<div class="integrity-panel">
@@ -1147,7 +1158,7 @@
 				<tbody>
 					<tr>
 						<td class="left">Sales</td>
-						{#each company.quarters as q (q.label)}<td>{q.sales != null ? fmt1(q.sales) : '—'}</td
+						{#each company.quarters as q (q.label)}<td>{q.sales != null ? fmt1(q.sales) : '-'}</td
 							>{/each}
 					</tr>
 					<tr class="rowname-sub">
@@ -1157,12 +1168,12 @@
 					<tr>
 						<td class="left">Net Profit</td>
 						{#each company.quarters as q (q.label)}<td
-								>{q.netProfit != null ? fmt1(q.netProfit) : '—'}</td
+								>{q.netProfit != null ? fmt1(q.netProfit) : '-'}</td
 							>{/each}
 					</tr>
 					<tr>
 						<td class="left">EPS (₹)</td>
-						{#each company.quarters as q (q.label)}<td>{q.eps != null ? fmt2(q.eps) : '—'}</td
+						{#each company.quarters as q (q.label)}<td>{q.eps != null ? fmt2(q.eps) : '-'}</td
 							>{/each}
 					</tr>
 				</tbody>
@@ -1194,7 +1205,7 @@
 					? 'bad'
 					: 'warn'}"
 		>
-			<strong>PEG {peg.label}</strong> — {peg.detail}
+			<strong>PEG {peg.label}</strong> - {peg.detail}
 		</div>
 	{/if}
 
@@ -1255,7 +1266,7 @@
 				<tr>
 					<td>Sales</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.sales != null ? fmt1(y.sales) : '—'}</td
+							>{y.sales != null ? fmt1(y.sales) : '-'}</td
 						>{/each}
 					{#each projected as p, i (i)}<td class="locked">{fmt1(p.sales)}</td>{/each}
 				</tr>
@@ -1279,7 +1290,7 @@
 				<tr>
 					<td>Expenses</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.expenses != null ? fmt1(y.expenses) : '—'}</td
+							>{y.expenses != null ? fmt1(y.expenses) : '-'}</td
 						>{/each}
 					{#each projected as p, i (i)}<td class="locked">{fmt1(p.expenses)}</td>{/each}
 				</tr>
@@ -1303,7 +1314,7 @@
 				<tr class="subtotal">
 					<td>Operating Profit (EBITDA)</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.operatingProfit != null ? fmt1(y.operatingProfit) : '—'}</td
+							>{y.operatingProfit != null ? fmt1(y.operatingProfit) : '-'}</td
 						>{/each}
 					{#each projected as p, i (i)}<td class="locked">{fmt1(p.ebitda)}</td>{/each}
 				</tr>
@@ -1319,7 +1330,7 @@
 				<tr>
 					<td>Other Income</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.otherIncome != null ? fmt1(y.otherIncome) : '—'}</td
+							>{y.otherIncome != null ? fmt1(y.otherIncome) : '-'}</td
 						>{/each}
 					{#each assumptions[activeMethod][activeScenario].years as ya, i (i)}
 						<td
@@ -1337,7 +1348,7 @@
 				<tr>
 					<td>Interest</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.interest != null ? fmt1(y.interest) : '—'}</td
+							>{y.interest != null ? fmt1(y.interest) : '-'}</td
 						>{/each}
 					{#each assumptions[activeMethod][activeScenario].years as ya, i (i)}
 						<td
@@ -1355,7 +1366,7 @@
 				<tr>
 					<td>Depreciation</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.depreciation != null ? fmt1(y.depreciation) : '—'}</td
+							>{y.depreciation != null ? fmt1(y.depreciation) : '-'}</td
 						>{/each}
 					{#each assumptions[activeMethod][activeScenario].years as ya, i (i)}
 						<td
@@ -1373,7 +1384,7 @@
 				<tr class="subtotal">
 					<td>Profit Before Tax</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.pbt != null ? fmt1(y.pbt) : '—'}</td
+							>{y.pbt != null ? fmt1(y.pbt) : '-'}</td
 						>{/each}
 					{#each projected as p, i (i)}<td class="locked">{fmt1(p.pbt)}</td>{/each}
 				</tr>
@@ -1397,7 +1408,7 @@
 				<tr class="subtotal">
 					<td>Net Profit</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.netProfit != null ? fmt1(y.netProfit) : '—'}</td
+							>{y.netProfit != null ? fmt1(y.netProfit) : '-'}</td
 						>{/each}
 					{#each projected as p, i (i)}<td class="locked">{fmt1(p.netProfit)}</td>{/each}
 				</tr>
@@ -1405,7 +1416,7 @@
 				<tr>
 					<td>EPS (₹)</td>
 					{#each historyYears as y (y.label)}<td class="locked"
-							>{y.eps != null ? fmt2(y.eps) : '—'}</td
+							>{y.eps != null ? fmt2(y.eps) : '-'}</td
 						>{/each}
 					{#each projected as p, i (i)}<td class="locked">{fmt2(p.eps)}</td>{/each}
 				</tr>
@@ -1416,7 +1427,7 @@
 						<td class="locked"
 							>{i === historyYears.length - 1 && company.bookValuePerShare != null
 								? fmt2(company.bookValuePerShare)
-								: '—'}</td
+								: '-'}</td
 						>
 					{/each}
 					{#each projected as p, i (i)}<td class="locked">{fmt2(p.bookValuePerShare)}</td>{/each}
@@ -1424,7 +1435,7 @@
 
 				<tr class="rowname-sub">
 					<td>Dividend Payout %</td>
-					{#each historyYears as y (y.label)}<td class="locked">—</td>{/each}
+					{#each historyYears as y (y.label)}<td class="locked">-</td>{/each}
 					{#each assumptions[activeMethod][activeScenario].years as ya, i (i)}
 						<td
 							><input
@@ -1441,7 +1452,7 @@
 				{#if activeMethod === 'ev_ebitda'}
 					<tr class="rowname-sub">
 						<td>Net Debt (₹cr)</td>
-						{#each historyYears as y (y.label)}<td class="locked">—</td>{/each}
+						{#each historyYears as y (y.label)}<td class="locked">-</td>{/each}
 						{#each assumptions[activeMethod][activeScenario].years as ya, i (i)}
 							<td
 								><input
@@ -1458,7 +1469,7 @@
 
 				<tr>
 					<td>{METHOD_MULTIPLE_LABEL[activeMethod]}</td>
-					{#each historyYears as y (y.label)}<td class="locked">—</td>{/each}
+					{#each historyYears as y (y.label)}<td class="locked">-</td>{/each}
 					{#each assumptions[activeMethod][activeScenario].years as ya, i (i)}
 						<td
 							><input
@@ -1474,7 +1485,7 @@
 
 				<tr class="subtotal">
 					<td>Implied Stock Price (₹)</td>
-					{#each historyYears as y (y.label)}<td class="locked">—</td>{/each}
+					{#each historyYears as y (y.label)}<td class="locked">-</td>{/each}
 					{#each projected as p, i (i)}<td class="locked">{fmt1(p.impliedPrice)}</td>{/each}
 				</tr>
 			</tbody>
@@ -1513,3 +1524,90 @@
 		/>
 	{/if}
 </div>
+
+<style>
+	.co-actions {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		float: right;
+	}
+	.co-more {
+		position: relative;
+	}
+	.co-more summary {
+		list-style: none;
+		cursor: pointer;
+	}
+	.co-more summary::-webkit-details-marker {
+		display: none;
+	}
+	.co-more-panel {
+		position: absolute;
+		right: 0;
+		z-index: 5;
+		min-width: 140px;
+		margin-top: 4px;
+		display: flex;
+		flex-direction: column;
+		background: var(--bg);
+		border: var(--border-w) solid var(--ink);
+		color: var(--ink);
+		box-shadow: var(--shadow-hard);
+	}
+	.co-more-item {
+		font: inherit;
+		text-align: left;
+		padding: 8px 12px;
+		min-height: 36px;
+		background: none;
+		border: 0;
+		cursor: pointer;
+		color: var(--ink);
+	}
+	.co-more-item:hover:not(:disabled) {
+		background: var(--zebra);
+	}
+	.co-more-item:disabled {
+		color: var(--muted);
+		cursor: default;
+	}
+	.co-fold-sum {
+		margin: 0;
+		cursor: pointer;
+	}
+	.co-fold[open] > .co-fold-sum {
+		margin-bottom: var(--space-2);
+	}
+	@media print {
+		.co-actions {
+			display: none;
+		}
+	}
+
+	/* One border level on this page: the pros, cons and holdings blocks and the live panels are
+	   hairline-separated sections instead of boxes inside boxes. */
+	:global(.vd .wrap .quality-panel) {
+		border: 0;
+		background: none;
+		gap: 0 var(--space-5);
+		margin-top: 0;
+	}
+	:global(.vd .wrap .quality-col) {
+		gap: 0;
+	}
+	:global(.vd .wrap .quality-block) {
+		border: 0;
+		border-top: 1px solid var(--rule);
+		background: none;
+		padding: 12px 0;
+	}
+	:global(.vd .wrap .depth-panel),
+	:global(.vd .wrap .stage-panel) {
+		border: 0;
+		border-top: 1px solid var(--rule);
+		box-shadow: none;
+		padding: 10px 0;
+		margin: 0;
+	}
+</style>

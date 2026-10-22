@@ -8,15 +8,17 @@ import { analysisSchema, guidanceSchema, modelSchema, validateAnalysis, latestGu
 import { mockAnalysis, mockResearch, trackerMocksEnabled } from './masterTrackerMock';
 import type { TrackerProgress } from '../trackerProgress';
 import { nativeTrackerFinancials } from './trackerFinancials';
+import { AI_OFF_MESSAGE, aiEnabled } from './aiSwitch';
 import { internalTrackerDocuments, type DocumentLink } from './trackerDocuments';
 
 export class TrackerProviderError extends Error {}
 function useMockResearch() { return trackerMocksEnabled() && env.MASTER_TRACKER_LIVE_TEST_MODE !== 'true'; }
 export function trackerConfiguration() {
-	if (useMockResearch()) return { ready: true, mock: true, missing: [] as string[] };
+	const aiOff = !aiEnabled();
+	if (useMockResearch()) return { ready: true, mock: true, aiOff, missing: [] as string[] };
 	const missing: string[] = env.VERCEL && !env.CONCALL_SERVICE_TOKEN ? ['CONCALL_SERVICE_TOKEN'] : [];
 	if (!env.OPEN_AI_KEY && !env.OPENAI_API_KEY) missing.push(...['ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL'].filter((key) => !env[key]));
-	return { ready: !missing.length, mock: false, missing };
+	return { ready: !missing.length && !aiOff, mock: false, aiOff, missing };
 }
 
 /** Recognise reported period labels; never generate future quarter cards. */
@@ -128,7 +130,7 @@ export async function loadResearch(company: TrackerCompany, quarters?: string[],
 	progress?.('financials');
 	if (useMockResearch()) { if (quarters?.length) progress?.('documents'); return mockResearch(company); }
 	const configuration = trackerConfiguration();
-	if (!configuration.ready) throw new TrackerProviderError(`Configure ${configuration.missing.join(', ')} to enable live research. No mock data is used in production.`);
+	if (configuration.missing.length) throw new TrackerProviderError(`Configure ${configuration.missing.join(', ')} to enable live research. No mock data is used in production.`);
 	let raw: Record<string, unknown>;
 	try { raw = await screener(company); } catch (e) { if (e instanceof TrackerProviderError) throw e; throw new TrackerProviderError('Screener research failed. Check the MCP connection and try again.'); }
 	const available = reportedQuarters(raw.get_quarterly_results);
@@ -269,6 +271,7 @@ export async function analyseResearch(company: TrackerCompany, research: Researc
 		progress?.('validation');
 		validateAnalysis(analysis, research, company, selected, method); return analysis;
 	}
+	if (!aiEnabled()) throw new TrackerProviderError(`${AI_OFF_MESSAGE}. Stored analyses stay available.`);
 	const historicalPeriods = valuationHistoricalPeriods(research);
 	const context = JSON.stringify({ company, selected, valuation, requestedMethod: method, historicalPeriods, research });
 	if (context.length > 450000) throw new TrackerProviderError('These documents exceed the analysis limit. Select fewer quarters. No research was silently truncated.');

@@ -145,6 +145,20 @@ describe('Master Tracker provider boundaries',()=>{
 		expect(result.guidance[0].sources[0]).toEqual(evidence.evidence[id]);
 		expect(()=>evidence.decode({...wire,guidance:[{...wire.guidance[0],sources:['invented-id']}]})).toThrow();
 	});
+	it('makes no provider call and reports not-ready when AI features are off',async()=>{
+		configured();stub.env.OPEN_AI_KEY='private-test-key';stub.env.AI_FEATURES='off';
+		const fetchMock=vi.fn();vi.stubGlobal('fetch',fetchMock);
+		expect(trackerConfiguration()).toMatchObject({ready:false,aiOff:true});
+		await expect(analyseResearch(company,mockResearch(company),['2026-06-30'],false,'auto')).rejects.toThrow('AI features are turned off');
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+	it('keeps mock analysis working when AI features are off, since it calls no provider',async()=>{
+		stub.dev=true;stub.env.MASTER_TRACKER_TEST_MODE='true';stub.env.AI_FEATURES='off';
+		const fetchMock=vi.fn();vi.stubGlobal('fetch',fetchMock);
+		expect(trackerConfiguration()).toMatchObject({ready:true,mock:true,aiOff:true});
+		const result=await analyseResearch(company,mockResearch(company),['2026-06-30'],false,'auto');
+		expect(result.guidance.length).toBeGreaterThan(0);expect(fetchMock).not.toHaveBeenCalled();
+	});
 	it('does not fall back to another model/provider after an OpenAI failure',async()=>{
 		configured();stub.env.OPEN_AI_KEY='private-test-key';const fetchMock=vi.fn().mockResolvedValue(new Response('{}',{status:429}));vi.stubGlobal('fetch',fetchMock);
 		await expect(analyseResearch(company,mockResearch(company),['2026-06-30'],false,'auto')).rejects.toThrow('No other model was used');expect(fetchMock).toHaveBeenCalledTimes(1);

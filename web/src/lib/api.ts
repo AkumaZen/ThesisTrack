@@ -27,9 +27,12 @@ function buildQuery(params?: Record<string, unknown>): string {
 	return usp.toString();
 }
 
-async function request(method: string, path: string, body?: unknown) {
+// Loads must pass their own `fetch` (SvelteKit warns about window.fetch there).
+type Fetch = typeof fetch;
+
+async function request(method: string, path: string, body?: unknown, fetchFn: Fetch = fetch) {
 	const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-	const resp = await fetch(`${API_BASE}${path}`, {
+	const resp = await fetchFn(`${API_BASE}${path}`, {
 		method,
 		headers,
 		body: body !== undefined ? JSON.stringify(body) : undefined
@@ -47,9 +50,10 @@ async function request(method: string, path: string, body?: unknown) {
 
 export const api = {
 	me: () => request('GET', '/auth/me'),
-	listCompanies: (params?: Record<string, unknown>) => request('GET', `/companies?${buildQuery(params)}`),
-	getCompany: (id: string, owner?: string | null) =>
-		request('GET', `/companies/${encodeURIComponent(id)}${owner ? `?owner=${encodeURIComponent(owner)}` : ''}`),
+	listCompanies: (params?: Record<string, unknown>, f?: Fetch) =>
+		request('GET', `/companies?${buildQuery(params)}`, undefined, f),
+	getCompany: (id: string, owner?: string | null, f?: Fetch) =>
+		request('GET', `/companies/${encodeURIComponent(id)}${owner ? `?owner=${encodeURIComponent(owner)}` : ''}`, undefined, f),
 	createCompany: (payload: unknown) => request('POST', '/companies', payload),
 	updateCompany: (id: string, payload: unknown) => request('PATCH', `/companies/${encodeURIComponent(id)}`, payload),
 	deleteCompany: (id: string) => request('DELETE', `/companies/${encodeURIComponent(id)}`),
@@ -58,14 +62,14 @@ export const api = {
 		request('GET', `/companies/${encodeURIComponent(id)}/versions${diff ? `?diff=${diff}` : ''}`),
 	entryPricePreview: (nse: string, bse: string, date: string) =>
 		request('GET', `/entry-price?nse_ticker=${encodeURIComponent(nse)}&bse_ticker=${encodeURIComponent(bse)}&date=${encodeURIComponent(date)}`),
-	getScorecard: () => request('GET', '/scorecard'),
+	getScorecard: (f?: Fetch) => request('GET', '/scorecard', undefined, f),
 	getTaxonomy: () => request('GET', '/taxonomy'),
 	proposeIndustry: (name: string) => request('POST', '/taxonomy', { name }),
 	proposeNiche: (broadIndustry: string, name: string) =>
 		request('POST', '/taxonomy/niches', { broad_industry: broadIndustry, name }),
 	proposeOperatingModel: (name: string) => request('POST', '/taxonomy/operating-models', { name }),
-	getMetrics: (operatingModel?: string) =>
-		request('GET', `/metrics${operatingModel ? `?operating_model=${operatingModel}` : ''}`),
+	getMetrics: (operatingModel?: string, f?: Fetch) =>
+		request('GET', `/metrics${operatingModel ? `?operating_model=${operatingModel}` : ''}`, undefined, f),
 	createMetric: (payload: unknown) => request('POST', '/metrics', payload),
 
 	// Custom tables (app/routers/custom_tables.py)
@@ -90,12 +94,13 @@ export const api = {
 
 	// Status proposals / review queue (app/routers/health.py)
 	listProposals: (state?: string) => request('GET', `/proposals?${buildQuery({ state: state ?? 'pending' })}`),
-	listTrackables: () => request('GET', '/trackables'),
+	listTrackables: (f?: Fetch) => request('GET', '/trackables', undefined, f),
 	resolveProposal: (id: number, payload: { action: 'accept' | 'reject'; verdict?: string | null; note?: string | null }) =>
 		request('POST', `/proposals/${id}/resolve`, payload),
 
 	// Guidance notes (app/routers/guidance.py)
-	listGuidance: (params?: Record<string, unknown>) => request('GET', `/guidance?${buildQuery(params)}`),
+	listGuidance: (params?: Record<string, unknown>, f?: Fetch) =>
+		request('GET', `/guidance?${buildQuery(params)}`, undefined, f),
 	createGuidance: (
 		companyId: string,
 		payload: {
@@ -140,7 +145,7 @@ export const api = {
 		request('POST', `/companies/${encodeURIComponent(companyId)}/ai-review`, payload),
 
 	// Sectors (app/routers/sectors.py)
-	getSectors: () => request('GET', '/sectors'),
+	getSectors: (f?: Fetch) => request('GET', '/sectors', undefined, f),
 	getSector: (id: number) => request('GET', `/sectors/${id}`),
 	createSector: (payload: unknown) => request('POST', '/sectors', payload),
 	updateSector: (id: number, payload: unknown) => request('PATCH', `/sectors/${id}`, payload),
@@ -148,18 +153,7 @@ export const api = {
 	addCompaniesToSector: (id: number, companyIds: string[]) =>
 		request('POST', `/sectors/${id}/companies`, { company_ids: companyIds }),
 	removeCompanyFromSector: (id: number, companyId: string) =>
-		request('DELETE', `/sectors/${id}/companies/${encodeURIComponent(companyId)}`),
-
-	// SFT export (app/routers/export.py)
-	getExportStats: (params?: { split?: string; include_open?: boolean }) =>
-		request('GET', `/export-training-data/stats?${buildQuery(params)}`),
-	exportTrainingDataUrl: (params: {
-		task: string;
-		format?: string;
-		split?: string;
-		min_confidence?: number;
-		include_open?: boolean;
-	}) => `${API_BASE}/export-training-data?${buildQuery(params)}`
+		request('DELETE', `/sectors/${id}/companies/${encodeURIComponent(companyId)}`)
 };
 
 export { buildQuery, request };

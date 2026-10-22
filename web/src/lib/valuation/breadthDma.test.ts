@@ -5,7 +5,6 @@ import {
 	candlesToSeries,
 	commonLastDay,
 	dayToIso,
-	isFundName,
 	isoToDay,
 	MIN_ELIGIBLE,
 	pctOf,
@@ -116,31 +115,44 @@ describe('publishableRows', () => {
 });
 
 describe('universe', () => {
-	const e = (name: string, series: string, exch = 'NSE') => ({ token: name + series, symbol: `${name}-${series}`, name, exch_seg: exch });
-	it('keeps EQ and BE, prefers EQ, drops SME, debt, other exchanges and funds', () => {
+	const r = (isin: string, symbol: string | null, priceExchange: string | null, nse: string | null = null, bse: string | null = null) => ({
+		isin,
+		symbol,
+		priceExchange,
+		angelNseToken: nse,
+		angelBseToken: bse
+	});
+	it('takes one priced listing per company: NSE token for NSE, BSE token for BSE-only, sorted by symbol', () => {
 		const u = buildBreadthUniverse([
-			e('RELIANCE', 'EQ'),
-			e('ZENITH', 'BE'),
-			e('ZENITH', 'EQ'),
-			e('TRADETOTRADE', 'BE'),
-			e('SMESTOCK', 'SM'),
-			e('GOVBOND', 'GS'),
-			e('REITX', 'RR'),
-			e('NIFTYBEES', 'EQ'),
-			e('GOLDBEES', 'EQ'),
-			e('011NSETEST', 'EQ'),
-			e('BSEONLY', 'EQ', 'BSE'),
-			{ token: '1', symbol: 'RELIANCE26OCTFUT', name: 'RELIANCE', exch_seg: 'NFO' }
+			r('INE2', 'ZENITH', 'NSE', '22', '500022'),
+			r('INE1', 'RELIANCE', 'NSE', '2885', '500325'),
+			r('INE3', 'BSEONLY', 'BSE', null, '544402')
 		]);
-		expect(u.map((x) => x.symbol)).toEqual(['RELIANCE', 'TRADETOTRADE', 'ZENITH']);
-		expect(u.find((x) => x.symbol === 'ZENITH')!.token).toBe('ZENITHEQ');
+		expect(u).toEqual([
+			{ symbol: 'BSEONLY', token: '544402', exch: 'BSE' },
+			{ symbol: 'RELIANCE', token: '2885', exch: 'NSE' },
+			{ symbol: 'ZENITH', token: '22', exch: 'NSE' }
+		]);
 	});
 
-	it('tells funds from companies by name', () => {
-		for (const f of ['NIFTYBEES', 'LIQUIDBEES', 'SETFNIF50', 'MIDCAPIETF', 'GOLDBEES', 'SILVERCASE', 'GILT5YBEES', 'HDFCSENSEX', 'MOM100', 'PSUBNKBEES', 'BANKBETF', 'EBBETF0431'])
-			expect(isFundName(f), f).toBe(true);
-		for (const c of ['RELIANCE', 'YESBANK', 'DHANBANK', 'J&KBANK', 'UNIONBANK', 'GOLDIAM', 'SUNPHARMA', 'HDFCBANK', 'SHRADDHA', 'BAJAJ-AUTO', 'TATAMOTORS', 'JSWINFRA', 'MAHABANK'])
-			expect(isFundName(c), c).toBe(false);
+	it('leaves out companies with no ticker, no price source or no token for their exchange', () => {
+		const u = buildBreadthUniverse([
+			r('INE1', null, null),
+			r('INE2', 'NOTOKEN', 'NSE', null, '500022'),
+			r('INE3', 'BLANKEX', '', '5', '6'),
+			r('INE4', 'OTHEREX', 'MSEI', '5', '6'),
+			r('INE5', 'FINE', 'NSE', '7')
+		]);
+		expect(u.map((x) => x.symbol)).toEqual(['FINE']);
+	});
+
+	it('counts a repeated ISIN or ticker once (the first wins)', () => {
+		const u = buildBreadthUniverse([
+			r('INE1', 'DUP', 'NSE', '1'),
+			r('INE1', 'DUP2', 'NSE', '2'),
+			r('INE2', 'DUP', 'NSE', '3')
+		]);
+		expect(u).toEqual([{ symbol: 'DUP', token: '1', exch: 'NSE' }]);
 	});
 });
 

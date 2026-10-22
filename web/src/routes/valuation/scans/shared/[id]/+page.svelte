@@ -1,4 +1,5 @@
 <script lang="ts">
+
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { describeScanConfig, scanOpenHref } from '$lib/valuation/savedScans';
@@ -59,11 +60,11 @@
 
 <div class="wrap wrap-wide an-page">
 	<div class="an-actions no-print">
-		<a class="wl-strip-btn" href={scanOpenHref(data.scan.id)}>Open in scanner</a>
+		<a class="calm-btn" href={scanOpenHref(data.scan.id)}>Open in scanner</a>
 		{#if canWrite && !data.scan.mine}
-			<button type="button" class="wl-strip-btn" onclick={saveCopy} disabled={saving}>Save a copy to my scans</button>
+			<button type="button" class="calm-btn" onclick={saveCopy} disabled={saving}>Save a copy to my scans</button>
 		{/if}
-		{#if data.scan.mine}<a class="wl-strip-btn" href="/valuation/scans">My saved scans</a>{/if}
+		{#if data.scan.mine}<a class="calm-btn" href="/valuation/scans">My saved scans</a>{/if}
 		{#if message}<span class="hint" role="status">{message}</span>{/if}
 	</div>
 

@@ -112,3 +112,47 @@ export function breadthRead(r: BreadthRow): 'strong' | 'mixed' | 'weak' | 'no da
 	if (above <= 40) return 'weak';
 	return 'mixed';
 }
+
+/** A session counts as complete when at least this share of the typical stock count reported. */
+export const MIN_COVERAGE = 0.9;
+
+/** The typical stocks-per-session: the median `total` of the stored rows. The median is robust to a few
+ *  partial sessions (a refresh still running) and needs no window, unlike a max, which one overcounted
+ *  row would inflate. Zero when there are no rows. */
+export function typicalTotal(rows: Pick<BreadthRow, 'total'>[]): number {
+	if (rows.length === 0) return 0;
+	const sorted = rows.map((r) => r.total).sort((a, b) => a - b);
+	const mid = sorted.length >> 1;
+	return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
+/** Share (0 to 1) of the typical stock count that a row measured. */
+export const coverage = (r: Pick<BreadthRow, 'total'>, typical: number): number => (typical > 0 ? r.total / typical : 0);
+
+export interface HeadlineBreadth {
+	/** The most recent session with enough coverage, or null when none qualifies. */
+	row: BreadthRow | null;
+	/** The typical stock count the coverage is measured against. */
+	typical: number;
+	/** The newest stored session when it is partial (and so skipped for the headline), else null. */
+	partial: BreadthRow | null;
+	/** Rows (by date) too thin to trust. */
+	partialDates: Set<string>;
+}
+
+/** Picks the session the headline tiles may show: the latest one that is at least 90% covered.
+ *  Rows are oldest first. A partial newest session is reported separately so the page can say so. */
+export function headlineBreadth(rows: BreadthRow[]): HeadlineBreadth {
+	const typical = typicalTotal(rows);
+	const isPartial = (r: BreadthRow) => coverage(r, typical) < MIN_COVERAGE;
+	const partialDates = new Set(rows.filter(isPartial).map((r) => r.asOf));
+	let row: BreadthRow | null = null;
+	for (let i = rows.length - 1; i >= 0; i--) {
+		if (!isPartial(rows[i])) {
+			row = rows[i];
+			break;
+		}
+	}
+	const newest = rows.length ? rows[rows.length - 1] : null;
+	return { row, typical, partial: newest && isPartial(newest) ? newest : null, partialDates };
+}

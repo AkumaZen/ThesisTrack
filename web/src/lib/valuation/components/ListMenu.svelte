@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { NamedWatchlist } from '$lib/valuation/watchlists';
 
-	// Puts one company on or off the team's named lists. `onChange` is awaited so the caller can
+	// Puts one company on or off the person's own lists. `onChange` is awaited so the caller can
 	// refresh the lists from the server (another analyst may have changed them meanwhile).
 	let {
 		symbol,
@@ -32,14 +32,14 @@
 	<summary
 		class={compact ? 'list-menu-trigger' : 'wl-strip-btn'}
 		aria-label="Lists for {name}"
-		title="Put {name} on a named list"
+		title="Put {name} on one of your lists"
 		>{compact
 			? `Lists${count ? ` (${count})` : ''}`
 			: `Lists${count ? ` (${count})` : ''} ▾`}</summary
 	>
 	<div class="list-menu-panel">
 		{#if lists.length === 0}
-			<p class="hint">No named lists yet. Create one from the watchlist on the home page.</p>
+			<p class="hint">No lists yet. Create one from the <a href="/valuation">watchlist</a>.</p>
 		{:else}
 			{#each lists as list (list.id)}
 				<label>

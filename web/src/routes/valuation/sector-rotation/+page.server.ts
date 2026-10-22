@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { getTaxonomySnapshot } from '$lib/valuation/server/sectorStore';
 import type { SectorSearchEntry } from '$lib/valuation/sectorSearch';
+import { getPricesUpdatedAt } from '$lib/valuation/server/intradayPrices';
 
 // Sector metadata only (built-in major sectors plus imported ones): no price data, so this is
 // instant. Each card's figures are loaded from stored prices when it is opened (see +page.svelte).
@@ -31,7 +32,11 @@ export const load: PageServerLoad = async () => {
 		}
 	}
 
+	// When the background pass last finished (null before the first one); a failed read hides the time.
+	const pricesUpdatedAt = await getPricesUpdatedAt().catch(() => null);
+
 	return {
+		pricesUpdatedAt,
 		majors: majors.map((m) => ({
 			key: m.key,
 			label: m.label,

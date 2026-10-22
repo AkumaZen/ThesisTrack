@@ -22,13 +22,35 @@ const ymd = (d: Date) => d.toISOString().slice(0, 10);
 /** The date part of a stored candle ("2026-10-16T00:00:00+05:30" -> "2026-10-16"). */
 export const candleDay = (c: Candle) => c.date.slice(0, 10);
 
-/** The previous Monday-Friday day. Exchange holidays are not known here: a holiday in between
- *  reads as a gap, which costs one full refetch and is always correct. */
+/** The previous Monday-Friday day. Exchange holidays are not known here, so on its own this
+ *  over-reports the previous session after a holiday (a stored series that ends before the
+ *  holiday then reads as a gap and costs a full refetch). `previousSession` fixes that when a
+ *  trading calendar is available; this is its safe fallback. */
 export function previousWeekday(day: string): string {
 	const d = new Date(`${day}T00:00:00Z`);
 	do d.setUTCDate(d.getUTCDate() - 1);
 	while (d.getUTCDay() === 0 || d.getUTCDay() === 6);
 	return ymd(d);
+}
+
+/** A sorted (ascending) list of trading-session days ("YYYY-MM-DD"), taken from the Nifty 50
+ *  series, which the refresh stores before any company batch runs. */
+export type SessionCalendar = readonly string[];
+
+/** The trading session just before `day`. With a calendar this is its latest session strictly
+ *  before `day`, so exchange holidays are skipped. The calendar is trusted only when it reaches
+ *  the weekday before `day` (its newest session is on or after `previousWeekday(day)`): then no
+ *  session between its newest entry and `day` can be missing, whereas a stale calendar could be
+ *  hiding sessions. Otherwise (no calendar, or stale) it falls back to `previousWeekday`, which
+ *  can only cause an extra full refetch, never a wrongly appended series. */
+export function previousSession(day: string, calendar?: SessionCalendar | null): string {
+	const weekday = previousWeekday(day);
+	const newest = calendar?.at(-1);
+	if (!calendar || !newest || newest < weekday) return weekday;
+	for (let i = calendar.length - 1; i >= 0; i--) {
+		if (calendar[i] < day) return calendar[i];
+	}
+	return weekday;
 }
 
 /** Saturday or Sunday (the exchanges do not trade; special sessions are not stored as candles). */
@@ -39,9 +61,13 @@ export function isWeekend(day: string): boolean {
 
 /** 'current': the stored series already covers the quote's session. 'append': it ends at the
  *  trading day just before. 'gap': anything else. */
-export function classifyGap(lastStoredDay: string, quoteDay: string): 'current' | 'append' | 'gap' {
+export function classifyGap(
+	lastStoredDay: string,
+	quoteDay: string,
+	calendar?: SessionCalendar | null
+): 'current' | 'append' | 'gap' {
 	if (lastStoredDay >= quoteDay) return 'current';
-	return lastStoredDay === previousWeekday(quoteDay) ? 'append' : 'gap';
+	return lastStoredDay === previousSession(quoteDay, calendar) ? 'append' : 'gap';
 }
 
 /** IST calendar date, minutes since midnight and weekday (0 = Sunday) for an instant. */
@@ -78,15 +104,21 @@ function quoteToCandle(q: DayQuote, suffix: string, provisional: boolean): Candl
 	return candle;
 }
 
-/** Applies one quote to a stored series. */
-export function mergeQuote(stored: Candle[], q: DayQuote, now: Date = new Date()): MergeResult {
+/** Applies one quote to a stored series. `calendar` (optional) makes holidays append instead of
+ *  gap, see `previousSession`. */
+export function mergeQuote(
+	stored: Candle[],
+	q: DayQuote,
+	now: Date = new Date(),
+	calendar?: SessionCalendar | null
+): MergeResult {
 	const last = stored.at(-1);
 	if (!last) return { kind: 'full', reason: 'empty' };
 	// Outside a trading week the quote endpoint keeps answering with a feed time stamped on the
 	// weekend (a re-dated copy of Friday's figures). That is never a session: do not store it.
 	if (isWeekend(q.date)) return { kind: 'unchanged' };
 	const lastDay = candleDay(last);
-	const gap = classifyGap(lastDay, q.date);
+	const gap = classifyGap(lastDay, q.date, calendar);
 	if (gap === 'gap') return { kind: 'full', reason: 'gap' };
 
 	// The time part of stored dates (T00:00:00+05:30) is copied so the new candle looks the same.

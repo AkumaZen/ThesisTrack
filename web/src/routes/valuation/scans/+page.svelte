@@ -1,4 +1,5 @@
 <script lang="ts">
+
 	import { invalidateAll } from '$app/navigation';
 	import { describeScanConfig, scanOpenHref, scanShareHref } from '$lib/valuation/savedScans';
 	import type { PageData } from './$types';
@@ -46,11 +47,15 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Saved scans</h1>
-		<div class="sub">
-			Your breakout scanner filters, kept under a name. Each day the stored scan results are matched again and the
-			symbols that newly match are listed; switch alerts on to get a push or Telegram message when a scan gains a
-			match. Save a scan from the <a href="/valuation/stage-scanner">breakout scanner</a>.
-		</div>
+		<div class="sub">Your breakout scanner filters, kept under a name.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				Each day the stored scan results are matched again and the symbols that newly match are listed;
+				switch alerts on to get a push or Telegram message when a scan gains a match. Save a scan from
+				the <a href="/valuation/stage-scanner">breakout scanner</a>.
+			</p>
+		</details>
 	</div>
 </div>
 
@@ -82,8 +87,8 @@
 						{/if}
 					</div>
 					<div class="scan-item-actions no-print">
-						<a class="wl-strip-btn" href={scanOpenHref(s.id)}>Open in scanner</a>
-						<button type="button" class="wl-strip-btn" onclick={() => copyLink(s.id)}>Copy link</button>
+						<a class="calm-btn" href={scanOpenHref(s.id)}>Open in scanner</a>
+						<button type="button" class="calm-btn" onclick={() => copyLink(s.id)}>Copy link</button>
 						{#if canWrite}
 							<label class="pc-toggle">
 								<input
@@ -94,8 +99,8 @@
 									data-testid="scan-notify"
 								/> Alert on new matches
 							</label>
-							<button type="button" class="wl-strip-btn" disabled={busyId === s.id} onclick={() => snapshot(s.id)}>Snapshot now</button>
-							<button type="button" class="wl-strip-btn scan-danger" disabled={busyId === s.id} onclick={() => remove(s.id, s.name)}>Delete</button>
+							<button type="button" class="calm-btn" disabled={busyId === s.id} onclick={() => snapshot(s.id)}>Snapshot now</button>
+							<button type="button" class="calm-btn scan-danger" disabled={busyId === s.id} onclick={() => remove(s.id, s.name)}>Delete</button>
 						{/if}
 					</div>
 				</li>

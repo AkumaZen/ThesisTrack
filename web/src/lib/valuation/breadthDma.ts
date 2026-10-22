@@ -1,5 +1,5 @@
 /**
- * Whole-market "% below 50 DMA": the share of NSE equities closing under their own 50 session
+ * Whole-market "% below 50 DMA": the share of the market cap list companies (above Rs 500 Cr, NSE or BSE priced) closing under their own 50 session
  * average, per day. Pure rules only (no network, no database): the stores feed in each symbol's
  * stored closes and the daily quotes.
  *
@@ -65,46 +65,40 @@ export const publishableRows = (rows: Map<number, DmaRow>): DmaRow[] =>
 
 // ---- Universe ----
 
-/** Exchange-traded funds and other fund units trade in the EQ series too. The scrip master has no
- *  flag for them, so they are told apart by name. The patterns come from the NSE list: ETF/BeES/IETF
- *  suffixes, liquid and gilt funds, index and commodity trackers (NIFTY..., GOLD/SILVER with a fund
- *  suffix) and the "ADD"/"BETA"/"CASE" unit names. Bank and company names that merely contain such
- *  words (YESBANK, GOLDIAM, SUNPHARMA) are kept. */
-const FUND_NAME =
-	/ETF|BEES|IETF|LIQUID|LIQ[A-Z]*BEES|GILT|GSEC|SDL$|NIFTY|SENSEX|(GOLD|SILVER|NEXT50|MID150|MIDCAP|SMALLCAP|PSUBK|PSUBNK|SMALL|MOMENTUM|MOM|LOWVOL|QUAL|TOP\d+|BSE500|NV20|NXT100|SML100|NIF\d+)(ADD|BETA|CASE|BND|AXIS|\d*)$|^(GOLD|SILVER|LIQUID|NIFTY|SENSEX|ALPHA|NEXT50|MID150|NV20|NETF|MOM\d+)\d*$|CASE$|BETA$|ADD$|CASHIETF|[A-Z]BANKIETF|^(BANK|PSUBANK|PVTBANK)(ADD|BETA|CASE|BEES|ETF|IETF)?$/;
-
-export function isFundName(name: string): boolean {
-	const n = name.toUpperCase();
-	// Real companies that happen to end in a fund-like suffix.
-	if (/^(SHRADDHA|ALPHAGEO|MANCREDIT|BALPHARMA|ADDIND|LADDERUP)$/.test(n)) return false;
-	return FUND_NAME.test(n);
-}
-
 export interface UniverseScrip {
 	symbol: string;
 	token: string;
 	exch: string;
 }
 
-/** The universe: one NSE listing per name, EQ preferred over BE (trade-to-trade), funds removed.
- *  SM (SME board), BZ, REIT/InvIT (RR/IV), debt, gold bonds and indices are not equities for this
- *  purpose and are left out. `entries` are rows of Angel One's scrip master. */
-export function buildBreadthUniverse(
-	entries: { token: string; symbol: string; name: string; exch_seg: string }[]
-): UniverseScrip[] {
-	const byName = new Map<string, { entry: (typeof entries)[number]; rank: number }>();
-	for (const e of entries) {
-		if (e.exch_seg !== 'NSE') continue;
-		const series = e.symbol.endsWith('-EQ') ? 0 : e.symbol.endsWith('-BE') ? 1 : -1;
-		if (series < 0) continue;
-		const name = e.name.toUpperCase();
-		if (isFundName(name) || /NSETEST$/.test(name)) continue; // funds and the exchange's test symbols
-		const cur = byName.get(name);
-		if (!cur || series < cur.rank) byName.set(name, { entry: e, rank: series });
+/** A valuation.mcap_universe row, the fields the breadth universe needs. */
+export interface UniverseRow {
+	isin: string;
+	symbol: string | null;
+	priceExchange: string | null;
+	angelNseToken: string | null;
+	angelBseToken: string | null;
+}
+
+/** The universe: every active market cap list company (above Rs 500 Cr, one row per ISIN) that has a
+ *  price source, priced where the list says: NSE when Angel One has the NSE listing, else BSE. The
+ *  symbol is the list's app ticker. A company with no ticker or no Angel token is left out, and a
+ *  repeated ISIN or ticker counts once. Funds, SME-board stocks without a listed cap and debt never
+ *  appear because the list is built from AMFI's company file. */
+export function buildBreadthUniverse(rows: UniverseRow[]): UniverseScrip[] {
+	const isins = new Set<string>();
+	const symbols = new Set<string>();
+	const out: UniverseScrip[] = [];
+	for (const r of rows) {
+		if (!r.symbol || isins.has(r.isin) || symbols.has(r.symbol)) continue;
+		const exch = r.priceExchange === 'NSE' || r.priceExchange === 'BSE' ? r.priceExchange : null;
+		const token = exch === 'NSE' ? r.angelNseToken : exch === 'BSE' ? r.angelBseToken : null;
+		if (!exch || !token) continue;
+		isins.add(r.isin);
+		symbols.add(r.symbol);
+		out.push({ symbol: r.symbol, token, exch });
 	}
-	return [...byName.entries()]
-		.map(([symbol, { entry }]) => ({ symbol, token: entry.token, exch: entry.exch_seg }))
-		.sort((a, b) => a.symbol.localeCompare(b.symbol));
+	return out.sort((a, b) => a.symbol.localeCompare(b.symbol));
 }
 
 // ---- Backfill resume ----

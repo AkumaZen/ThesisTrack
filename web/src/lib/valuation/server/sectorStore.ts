@@ -402,7 +402,7 @@ export async function validateUserSectorInput(
 		return { error: 'Missing or invalid "label" (expected a string).' };
 
 	if (!Array.isArray(obj.subsectors) || obj.subsectors.length === 0) {
-		return { error: 'Missing or empty "subsectors" array — need at least one.' };
+		return { error: 'Missing or empty "subsectors" array - need at least one.' };
 	}
 
 	const [majors, baskets] = await Promise.all([listAllMajorSectors(), listAllBaskets()]);
@@ -410,7 +410,7 @@ export async function validateUserSectorInput(
 	const existingSubsectorKeys = new Set(baskets.map((s) => s.key));
 
 	if (existingMajorKeys.has(key)) {
-		return { error: `Sector key "${key}" is already in use — pick a different one.` };
+		return { error: `Sector key "${key}" is already in use - pick a different one.` };
 	}
 
 	const subsectors: UserSectorSubsectorInput[] = [];
@@ -428,7 +428,7 @@ export async function validateUserSectorInput(
 			};
 		}
 		if (existingSubsectorKeys.has(subKey) || seenSubsectorKeys.has(subKey)) {
-			return { error: `Subsector key "${subKey}" is already in use — pick a different one.` };
+			return { error: `Subsector key "${subKey}" is already in use - pick a different one.` };
 		}
 		if (!isNonEmptyString(s.label))
 			return { error: `subsectors[${i}]: missing or invalid "label".` };

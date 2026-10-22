@@ -27,10 +27,11 @@
 		untracked = false;
 		try {
 			const response = await fetch(`/api/valuation/concalls/company/${encodeURIComponent(symbol)}`);
-			if (response.status === 404) { if (mine === token) untracked = true; return; }
 			if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message ?? `HTTP ${response.status}`);
-			const body = (await response.json()) as PanelData;
-			if (mine === token) data = body;
+			const body = (await response.json()) as PanelData | null;
+			if (mine !== token) return;
+			if (body) data = body;
+			else untracked = true;
 		} catch (e) {
 			if (mine === token) failure = e instanceof Error ? e.message : 'Could not load.';
 		} finally {

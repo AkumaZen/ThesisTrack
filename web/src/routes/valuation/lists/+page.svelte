@@ -61,29 +61,21 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>My lists</h1>
-		<div class="sub">
-			Group companies into named sections, flag the ones that need attention with a colour and a short label,
-			and see each section's upcoming results. The lists are yours alone.
-		</div>
+		<div class="sub">Your own lists of companies, with colour flags and each list's upcoming results.</div>
 	</div>
 </div>
 
-<div class="wrap mi">
-	<form class="mi-box" onsubmit={createSection} aria-labelledby="mi-new">
-		<h2 id="mi-new">New section</h2>
-		<div class="mi-row">
-			<label class="mi-field" style="flex: 1 1 14rem;">
-				Name
-				<input class="sm-input" bind:value={newName} maxlength={MAX_NAME} autocomplete="off" placeholder="e.g. Defence, Waiting for a dip" />
-			</label>
-			<button class="sm-btn sm-btn-primary" type="submit" disabled={busy || !newName.trim()}>Add section</button>
-		</div>
+<div class="wrap mi calm-flat">
+	<form class="new-list" onsubmit={createSection} aria-label="New list">
+		<label class="sr-only" for="new-list-name">New list name</label>
+		<input id="new-list-name" class="sm-input" bind:value={newName} maxlength={MAX_NAME} autocomplete="off" placeholder="New list, e.g. Defence" />
+		<button class="sm-btn sm-btn-primary" type="submit" disabled={busy || !newName.trim()}>Add list</button>
 	</form>
 
 	{#if status}<p class="sm-msg sm-msg-{status.kind}" role="status">{status.text}</p>{/if}
 
 	{#if data.sections.length === 0}
-		<p class="sm-empty" data-testid="lists-empty">No sections yet. Create one above, then add companies to it.</p>
+		<p class="sm-empty" data-testid="lists-empty">No lists yet. Name one above, then add companies to it.</p>
 	{/if}
 
 	{#each data.sections as s (s.id)}
@@ -92,14 +84,14 @@
 		<section class="mi-box" aria-labelledby="sec-{s.id}" data-testid="section">
 			<div class="mi-row" style="justify-content: space-between;">
 				<h2 id="sec-{s.id}">{s.name} <span class="mi-muted">({s.items.length})</span></h2>
-				<button class="sm-btn" type="button" disabled={busy} onclick={() => deleteSection(s.id, s.name)} aria-label="Delete section {s.name}">Delete section</button>
+				<button class="sm-btn" type="button" disabled={busy} onclick={() => deleteSection(s.id, s.name)} aria-label="Delete section {s.name}">Delete list</button>
 			</div>
 
 			{#if s.items.length}
 				<ul class="mi-list">
 					{#each s.items as i (i.nseSymbol)}
 						{@const key = `${s.id}:${i.nseSymbol}`}
-						<li class="mi-item">
+						<li class="mi-item row">
 							<div class="mi-title">
 								<a href="/valuation/company/{encodeURIComponent(i.nseSymbol)}">{i.nseSymbol}</a>
 								<span class="mi-muted"> {i.companyName}</span>
@@ -136,34 +128,61 @@
 				<p class="sm-hint">Empty. Search below to add companies.</p>
 			{/if}
 
-			<div class="mi-field">
-				<label for="add-{s.id}">Add a company</label>
-				<CompanyPicker id="add-{s.id}" label="Search a company to add to {s.name}" placeholder="Type a name or ticker" disabled={busy} onPick={(hit: SymbolHit) => addCompany(s.id, hit.nseSymbol ?? hit.symbol, hit.name)} />
-			</div>
-			{#if quick.length}
+			<details class="calm-disclosure">
+				<summary>Add companies</summary>
 				<div class="mi-field">
-					From your tracked companies
-					<ul class="tag-list">
-						{#each quick as t (t.nseSymbol)}
-							<li><button class="tag" type="button" disabled={busy} onclick={() => addCompany(s.id, t.nseSymbol, t.companyName)} aria-label="Add {t.companyName} to {s.name}">+ {t.nseSymbol}</button></li>
+					<label for="add-{s.id}">Add a company</label>
+					<CompanyPicker id="add-{s.id}" label="Search a company to add to {s.name}" placeholder="Type a name or ticker" disabled={busy} onPick={(hit: SymbolHit) => addCompany(s.id, hit.nseSymbol ?? hit.symbol, hit.name)} />
+				</div>
+				{#if quick.length}
+					<div class="mi-field">
+						From your tracked companies
+						<ul class="tag-list">
+							{#each quick as t (t.nseSymbol)}
+								<li><button class="tag" type="button" disabled={busy} onclick={() => addCompany(s.id, t.nseSymbol, t.companyName)} aria-label="Add {t.companyName} to {s.name}">+ {t.nseSymbol}</button></li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+
+			</details>
+			<details class="calm-disclosure">
+				<summary>Upcoming results ({s.calendar.length})</summary>
+			{#if s.calendar.length}
+					<ul class="mi-list" data-testid="section-calendar">
+						{#each s.calendar as m (m.nseSymbol + m.meetingDate + m.isResults)}
+							<li class="mi-item">
+								<div class="mi-meta"><span>{formatMeetingDay(m.meetingDate)}</span><span class="tag {m.isResults ? 'tag-info' : ''}">{m.isResults ? 'Results' : m.purpose}</span></div>
+								<div class="mi-title">{m.nseSymbol} <span class="mi-muted">{m.companyName}</span></div>
+							</li>
 						{/each}
 					</ul>
-				</div>
-			{/if}
-
-			<h3 class="mi-sub">Upcoming results</h3>
-			{#if s.calendar.length}
-				<ul class="mi-list" data-testid="section-calendar">
-					{#each s.calendar as m (m.nseSymbol + m.meetingDate + m.isResults)}
-						<li class="mi-item">
-							<div class="mi-meta"><span>{formatMeetingDay(m.meetingDate)}</span><span class="tag {m.isResults ? 'tag-info' : ''}">{m.isResults ? 'Results' : m.purpose}</span></div>
-							<div class="mi-title">{m.nseSymbol} <span class="mi-muted">{m.companyName}</span></div>
-						</li>
-					{/each}
-				</ul>
-			{:else}
-				<p class="sm-hint">No board meetings or results dates are stored yet for this section.</p>
-			{/if}
+				{:else}
+					<p class="sm-hint">No board meetings or results dates are stored yet for this section.</p>
+				{/if}
+			</details>
 		</section>
 	{/each}
 </div>
+
+<style>
+	.new-list {
+		display: flex;
+		gap: var(--space-2);
+		max-width: 28rem;
+		margin-bottom: var(--space-3);
+	}
+	.new-list input {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.mi-item.row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 12px;
+	}
+	.mi-item.row .mi-title {
+		flex: 1 1 14rem;
+	}
+</style>

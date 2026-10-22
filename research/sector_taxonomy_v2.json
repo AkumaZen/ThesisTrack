@@ -1,0 +1,5813 @@
+{
+ "version": 2,
+ "generated_at": "2026-10-21",
+ "retired": [
+  "banks",
+  "insurance",
+  "it_services_saas",
+  "nbfc_diversified_vehicle",
+  "dc_land_powered_shell",
+  "semiconductor_distribution",
+  "semicon_fabrication_foundries",
+  "semicon_fab_equipment",
+  "semicon_cleanroom",
+  "semicon_gases",
+  "aero_mro",
+  "recycling_copper_scrap",
+  "recycling_scrap_infra",
+  "solar_glass"
+ ],
+ "majors": [
+  {
+   "key": "banking",
+   "label": "Banks",
+   "baskets": [
+    {
+     "key": "banks_private",
+     "label": "Private Sector Banks",
+     "description": "Private-sector and old-private banks with national or regional franchises",
+     "symbols": [
+      "HDFCBANK",
+      "ICICIBANK",
+      "AXISBANK",
+      "KOTAKBANK",
+      "INDUSINDBK",
+      "FEDERALBNK",
+      "IDFCFIRSTB",
+      "YESBANK",
+      "RBLBANK",
+      "BANDHANBNK",
+      "KARURVYSYA",
+      "CUB",
+      "SOUTHBANK",
+      "DCBBANK",
+      "CSBBANK",
+      "KTKBANK",
+      "TMB",
+      "DHANBANK",
+      "J&KBANK"
+     ],
+     "primary": [
+      "HDFCBANK",
+      "ICICIBANK",
+      "AXISBANK",
+      "KOTAKBANK",
+      "INDUSINDBK",
+      "FEDERALBNK",
+      "IDFCFIRSTB",
+      "YESBANK",
+      "RBLBANK",
+      "BANDHANBNK",
+      "KARURVYSYA",
+      "CUB",
+      "SOUTHBANK",
+      "DCBBANK",
+      "CSBBANK",
+      "KTKBANK",
+      "TMB",
+      "DHANBANK",
+      "J&KBANK"
+     ]
+    },
+    {
+     "key": "banks_psu",
+     "label": "PSU Banks",
+     "description": "Government-owned banks including IDBI",
+     "symbols": [
+      "SBIN",
+      "BANKBARODA",
+      "PNB",
+      "CANBK",
+      "UNIONBANK",
+      "INDIANB",
+      "BANKINDIA",
+      "IOB",
+      "MAHABANK",
+      "UCOBANK",
+      "CENTRALBK",
+      "PSB",
+      "IDBI"
+     ],
+     "primary": [
+      "SBIN",
+      "BANKBARODA",
+      "PNB",
+      "CANBK",
+      "UNIONBANK",
+      "INDIANB",
+      "BANKINDIA",
+      "IOB",
+      "MAHABANK",
+      "UCOBANK",
+      "CENTRALBK",
+      "PSB",
+      "IDBI"
+     ]
+    },
+    {
+     "key": "banks_small_finance",
+     "label": "Small Finance Banks",
+     "description": "Listed small finance banks focused on microfinance and MSME credit",
+     "symbols": [
+      "AUBANK",
+      "EQUITASBNK",
+      "UJJIVANSFB",
+      "JSFB",
+      "ESAFSFB",
+      "UTKARSHBNK",
+      "SURYODAY",
+      "CAPITALSFB"
+     ],
+     "primary": [
+      "AUBANK",
+      "EQUITASBNK",
+      "UJJIVANSFB",
+      "JSFB",
+      "ESAFSFB",
+      "UTKARSHBNK",
+      "SURYODAY",
+      "CAPITALSFB"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "nbfc_lending",
+   "label": "NBFCs & Lending",
+   "baskets": [
+    {
+     "key": "nbfc_diversified",
+     "label": "NBFCs - Diversified & Retail Credit",
+     "description": "Large diversified lenders across consumer, SME and cards",
+     "symbols": [
+      "BAJFINANCE",
+      "BAJAJFINSV",
+      "LTF",
+      "JIOFIN",
+      "TATACAP",
+      "ABCAPITAL",
+      "POONAWALLA",
+      "PIRAMALFIN",
+      "CGCL",
+      "HDBFS",
+      "SAMMAANCAP",
+      "SBICARD",
+      "EDELWEISS",
+      "RELIGARE",
+      "IBULLSLTD",
+      "CIFL",
+      "NBIFIN",
+      "LAXMIINDIA",
+      "DHENUBUILD",
+      "MRUTR",
+      "YOGI"
+     ],
+     "primary": [
+      "BAJFINANCE",
+      "BAJAJFINSV",
+      "LTF",
+      "JIOFIN",
+      "TATACAP",
+      "ABCAPITAL",
+      "POONAWALLA",
+      "PIRAMALFIN",
+      "CGCL",
+      "HDBFS",
+      "SAMMAANCAP",
+      "SBICARD",
+      "EDELWEISS",
+      "RELIGARE",
+      "IBULLSLTD",
+      "CIFL",
+      "NBIFIN",
+      "LAXMIINDIA",
+      "DHENUBUILD",
+      "MRUTR",
+      "YOGI"
+     ]
+    },
+    {
+     "key": "nbfc_vehicle_finance",
+     "label": "NBFCs - Vehicle & Equipment Finance",
+     "description": "Commercial vehicle, tractor and two-wheeler lenders",
+     "symbols": [
+      "SHRIRAMFIN",
+      "CHOLAFIN",
+      "M&MFIN",
+      "SUNDARMFIN",
+      "INDOSTAR",
+      "MANBA"
+     ],
+     "primary": [
+      "SHRIRAMFIN",
+      "CHOLAFIN",
+      "M&MFIN",
+      "SUNDARMFIN",
+      "INDOSTAR",
+      "MANBA"
+     ]
+    },
+    {
+     "key": "nbfc_housing",
+     "label": "NBFCs - Housing Finance",
+     "description": "Housing finance companies, prime and affordable",
+     "symbols": [
+      "BAJAJHFL",
+      "LICHSGFIN",
+      "PNBHOUSING",
+      "AAVAS",
+      "APTUS",
+      "HOMEFIRST",
+      "AADHARHFC",
+      "CANFINHOME",
+      "INDIASHLTR",
+      "REPCOHOME",
+      "GICHSGFIN"
+     ],
+     "primary": [
+      "BAJAJHFL",
+      "LICHSGFIN",
+      "PNBHOUSING",
+      "AAVAS",
+      "APTUS",
+      "HOMEFIRST",
+      "AADHARHFC",
+      "CANFINHOME",
+      "INDIASHLTR",
+      "REPCOHOME",
+      "GICHSGFIN"
+     ]
+    },
+    {
+     "key": "nbfc_gold_mfi",
+     "label": "NBFCs - Gold Loans & Microfinance",
+     "description": "Gold loan and microfinance lenders",
+     "symbols": [
+      "MUTHOOTFIN",
+      "MANAPPURAM",
+      "IIFL",
+      "CREDITACC",
+      "FUSION",
+      "SPANDANA",
+      "MUTHOOTMF",
+      "SATIN",
+      "ARMANFIN"
+     ],
+     "primary": [
+      "MUTHOOTFIN",
+      "MANAPPURAM",
+      "IIFL",
+      "CREDITACC",
+      "FUSION",
+      "SPANDANA",
+      "MUTHOOTMF",
+      "SATIN",
+      "ARMANFIN"
+     ]
+    },
+    {
+     "key": "nbfc_sme_lending",
+     "label": "NBFCs - SME, MSME & Used-Asset Lending",
+     "description": "Small-ticket secured and unsecured business lenders",
+     "symbols": [
+      "FIVESTAR",
+      "SBFC",
+      "UGROCAP",
+      "MASFIN",
+      "NORTHARC",
+      "AYE",
+      "PAISALO",
+      "FEDFINA",
+      "CSLFINANCE",
+      "SGFIN",
+      "IFINSEC",
+      "MUFIN"
+     ],
+     "primary": [
+      "FIVESTAR",
+      "SBFC",
+      "UGROCAP",
+      "MASFIN",
+      "NORTHARC",
+      "AYE",
+      "PAISALO",
+      "FEDFINA",
+      "CSLFINANCE",
+      "SGFIN",
+      "IFINSEC",
+      "MUFIN"
+     ]
+    },
+    {
+     "key": "infra_finance_psu",
+     "label": "Infrastructure & Power Finance",
+     "description": "PSU and specialised infrastructure, power and renewable financiers",
+     "symbols": [
+      "PFC",
+      "RECLTD",
+      "IRFC",
+      "IREDA",
+      "HUDCO",
+      "PFS",
+      "TFCILTD",
+      "IFCI"
+     ],
+     "primary": [
+      "PFC",
+      "RECLTD",
+      "IRFC",
+      "IREDA",
+      "HUDCO",
+      "PFS",
+      "TFCILTD",
+      "IFCI"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "insurance_major",
+   "label": "Insurance",
+   "baskets": [
+    {
+     "key": "insurance_life",
+     "label": "Life Insurance",
+     "description": "Listed life insurers",
+     "symbols": [
+      "LICI",
+      "SBILIFE",
+      "HDFCLIFE",
+      "ICICIPRULI",
+      "CANHLIFE",
+      "MFSL"
+     ],
+     "primary": [
+      "LICI",
+      "SBILIFE",
+      "HDFCLIFE",
+      "ICICIPRULI",
+      "CANHLIFE",
+      "MFSL"
+     ]
+    },
+    {
+     "key": "insurance_general_health",
+     "label": "General, Health Insurance & TPAs",
+     "description": "General and standalone health insurers plus TPA",
+     "symbols": [
+      "ICICIGI",
+      "GICRE",
+      "NIACL",
+      "STARHEALTH",
+      "NIVABUPA",
+      "GODIGIT",
+      "MEDIASSIST"
+     ],
+     "primary": [
+      "ICICIGI",
+      "GICRE",
+      "NIACL",
+      "STARHEALTH",
+      "NIVABUPA",
+      "GODIGIT",
+      "MEDIASSIST"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "capital_markets_fintech",
+   "label": "Capital Markets & Fintech",
+   "baskets": [
+    {
+     "key": "capital_market_infra",
+     "label": "Exchanges, Depositories, RTAs & Ratings",
+     "description": "Market infrastructure, registrars and rating agencies",
+     "symbols": [
+      "BSE",
+      "MCX",
+      "IEX",
+      "CDSL",
+      "NSDL",
+      "CAMS",
+      "KFINTECH",
+      "63MOONS",
+      "CRISIL",
+      "ICRA",
+      "CARERATING",
+      "PROTEAN"
+     ],
+     "primary": [
+      "BSE",
+      "MCX",
+      "IEX",
+      "CDSL",
+      "NSDL",
+      "CAMS",
+      "KFINTECH",
+      "63MOONS",
+      "CRISIL",
+      "ICRA",
+      "CARERATING",
+      "PROTEAN"
+     ]
+    },
+    {
+     "key": "amcs_wealth",
+     "label": "Asset Managers & Wealth Managers",
+     "description": "Listed AMCs, wealth and distribution firms",
+     "symbols": [
+      "HDFCAMC",
+      "NAM-INDIA",
+      "ABSLAMC",
+      "UTIAMC",
+      "ICICIAMC",
+      "CRAMC",
+      "SRAMSET",
+      "360ONE",
+      "NUVAMA",
+      "ANANDRATHI",
+      "PRUDENT",
+      "WEALTH",
+      "NISUS"
+     ],
+     "primary": [
+      "HDFCAMC",
+      "NAM-INDIA",
+      "ABSLAMC",
+      "UTIAMC",
+      "ICICIAMC",
+      "CRAMC",
+      "SRAMSET",
+      "360ONE",
+      "NUVAMA",
+      "ANANDRATHI",
+      "PRUDENT",
+      "WEALTH",
+      "NISUS"
+     ]
+    },
+    {
+     "key": "brokers_investment_banks",
+     "label": "Brokers & Investment Banks",
+     "description": "Stock brokers, merchant bankers and capital-market intermediaries",
+     "symbols": [
+      "ANGELONE",
+      "MOTILALOFS",
+      "IIFLCAPS",
+      "SHAREINDIA",
+      "GEOJITFSL",
+      "5PAISA",
+      "CHOICEIN",
+      "JMFINANCIL",
+      "SMCGLOBAL",
+      "MONARCH",
+      "ARIHANTCAP",
+      "BIRLAMONEY",
+      "DAMCAPITAL",
+      "EMKAY",
+      "MASTERTR",
+      "ARSSBL",
+      "INDOTHAI",
+      "AKCAPIT",
+      "SYSTMTXC",
+      "GROWW",
+      "CENTRUM",
+      "AFSL",
+      "GCSL",
+      "ARYAMAN",
+      "ALGOQUANT",
+      "DOLATALGO",
+      "PNBGILTS",
+      "ASHIKAG",
+      "ARYACAPM"
+     ],
+     "primary": [
+      "ANGELONE",
+      "MOTILALOFS",
+      "IIFLCAPS",
+      "SHAREINDIA",
+      "GEOJITFSL",
+      "5PAISA",
+      "CHOICEIN",
+      "JMFINANCIL",
+      "SMCGLOBAL",
+      "MONARCH",
+      "ARIHANTCAP",
+      "BIRLAMONEY",
+      "DAMCAPITAL",
+      "EMKAY",
+      "MASTERTR",
+      "ARSSBL",
+      "INDOTHAI",
+      "AKCAPIT",
+      "SYSTMTXC",
+      "GROWW",
+      "CENTRUM",
+      "AFSL",
+      "GCSL",
+      "ARYAMAN",
+      "ALGOQUANT",
+      "DOLATALGO",
+      "PNBGILTS",
+      "ASHIKAG",
+      "ARYACAPM"
+     ]
+    },
+    {
+     "key": "fintech_platforms",
+     "label": "Fintech - Payments & Platforms",
+     "description": "Payments, insurance distribution and digital financial platforms",
+     "symbols": [
+      "PAYTM",
+      "POLICYBZR",
+      "MOBIKWIK",
+      "PINELABS",
+      "ZAGGLE",
+      "CCAVENUE",
+      "FINOPB",
+      "NPST",
+      "TURTLEMINT",
+      "FINKURVE",
+      "KISSHT",
+      "GYFTR"
+     ],
+     "primary": [
+      "PAYTM",
+      "POLICYBZR",
+      "MOBIKWIK",
+      "PINELABS",
+      "ZAGGLE",
+      "CCAVENUE",
+      "FINOPB",
+      "NPST",
+      "TURTLEMINT",
+      "FINKURVE",
+      "KISSHT",
+      "GYFTR"
+     ]
+    },
+    {
+     "key": "holding_investment_cos",
+     "label": "Holding & Investment Companies",
+     "description": "Listed holding companies and investment arms whose value is mostly stakes in others",
+     "symbols": [
+      "BAJAJHLDNG",
+      "TATAINVEST",
+      "AIIL",
+      "CHOLAHLDNG",
+      "JSWHL",
+      "MAHSCOOTER",
+      "PILANIINVS",
+      "KICL",
+      "NSIL",
+      "ELCIDIN",
+      "ZSARACOM",
+      "RANEHOLDIN",
+      "TVSHLTD",
+      "DHUNINV",
+      "BFINVEST",
+      "KAMAHOLD",
+      "VHL",
+      "VLSFINANCE",
+      "CONSOFINVT",
+      "INDPRUD",
+      "HEXATRADEX",
+      "STEL",
+      "WELINV",
+      "TSFINV",
+      "KIRLOSIND",
+      "THEINVEST",
+      "SUMMITSEC",
+      "PRIMESECU",
+      "BENGALASM",
+      "RPSGVENT",
+      "PTL",
+      "JAICORPLTD",
+      "ALEMBICLTD",
+      "KIRANVYPAR",
+      "BLIL",
+      "KOTIC",
+      "GFLLIMITED",
+      "ISTLTD",
+      "ZUARIIND",
+      "CREST",
+      "DVL",
+      "OSWALAGRO",
+      "JPOLYINVST",
+      "JINDALPHOT",
+      "GKWLIMITED",
+      "FEDDERSHOL"
+     ],
+     "primary": [
+      "BAJAJHLDNG",
+      "TATAINVEST",
+      "AIIL",
+      "CHOLAHLDNG",
+      "JSWHL",
+      "MAHSCOOTER",
+      "PILANIINVS",
+      "KICL",
+      "NSIL",
+      "ELCIDIN",
+      "ZSARACOM",
+      "RANEHOLDIN",
+      "TVSHLTD",
+      "DHUNINV",
+      "BFINVEST",
+      "KAMAHOLD",
+      "VHL",
+      "VLSFINANCE",
+      "CONSOFINVT",
+      "INDPRUD",
+      "HEXATRADEX",
+      "STEL",
+      "WELINV",
+      "TSFINV",
+      "KIRLOSIND",
+      "THEINVEST",
+      "SUMMITSEC",
+      "PRIMESECU",
+      "BENGALASM",
+      "RPSGVENT",
+      "PTL",
+      "JAICORPLTD",
+      "ALEMBICLTD",
+      "KIRANVYPAR",
+      "BLIL",
+      "KOTIC",
+      "GFLLIMITED",
+      "ISTLTD",
+      "ZUARIIND",
+      "CREST",
+      "DVL",
+      "OSWALAGRO",
+      "JPOLYINVST",
+      "JINDALPHOT",
+      "GKWLIMITED",
+      "FEDDERSHOL"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "it_services_software",
+   "label": "IT Services & Software",
+   "baskets": [
+    {
+     "key": "it_services_large",
+     "label": "IT Services - Large & Upper Mid-caps",
+     "description": "Top-tier IT services exporters",
+     "symbols": [
+      "TCS",
+      "INFY",
+      "HCLTECH",
+      "WIPRO",
+      "TECHM",
+      "LTM",
+      "PERSISTENT",
+      "COFORGE",
+      "MPHASIS",
+      "HEXT"
+     ],
+     "primary": [
+      "TCS",
+      "INFY",
+      "HCLTECH",
+      "WIPRO",
+      "TECHM",
+      "LTM",
+      "PERSISTENT",
+      "COFORGE",
+      "MPHASIS",
+      "HEXT"
+     ]
+    },
+    {
+     "key": "it_services_midsmall",
+     "label": "IT Services - Mid & Small Caps",
+     "description": "Smaller IT services and digital engineering firms",
+     "symbols": [
+      "BSOFT",
+      "SONATSOFTW",
+      "ZENSARTECH",
+      "HAPPSTMNDS",
+      "MASTEK",
+      "RSYSTEMS",
+      "DATAMATICS",
+      "KELLTONTEC",
+      "INFOBEAN",
+      "SAKSOFT",
+      "SILVERTUC",
+      "KSOLVES",
+      "EXPLEOSOL",
+      "XCHANGING",
+      "CEINSYS",
+      "TAKE",
+      "BLUECLOUDS",
+      "IZMO",
+      "HYPERSOFT",
+      "UNIFIED",
+      "NINSYS",
+      "TECHNVISN",
+      "COLAB",
+      "MCLOUD",
+      "INNOVANA",
+      "GENESYS",
+      "KSSMART",
+      "AXISOL"
+     ],
+     "primary": [
+      "BSOFT",
+      "SONATSOFTW",
+      "ZENSARTECH",
+      "HAPPSTMNDS",
+      "MASTEK",
+      "RSYSTEMS",
+      "DATAMATICS",
+      "KELLTONTEC",
+      "INFOBEAN",
+      "SAKSOFT",
+      "SILVERTUC",
+      "KSOLVES",
+      "EXPLEOSOL",
+      "XCHANGING",
+      "CEINSYS",
+      "TAKE",
+      "BLUECLOUDS",
+      "IZMO",
+      "HYPERSOFT",
+      "UNIFIED",
+      "NINSYS",
+      "TECHNVISN",
+      "COLAB",
+      "MCLOUD",
+      "INNOVANA",
+      "GENESYS",
+      "KSSMART",
+      "AXISOL"
+     ]
+    },
+    {
+     "key": "it_er_d",
+     "label": "Engineering R and D and Auto-Tech Services",
+     "description": "ER and D, software-defined vehicle and engineering services",
+     "symbols": [
+      "KPITTECH",
+      "LTTS",
+      "TATAELXSI",
+      "TATATECH",
+      "CYIENT",
+      "AXISCADES",
+      "SASKEN",
+      "ONWARDTEC",
+      "MINDTECK",
+      "TAALTECH"
+     ],
+     "primary": [
+      "KPITTECH",
+      "LTTS",
+      "TATAELXSI",
+      "TATATECH",
+      "CYIENT",
+      "AXISCADES",
+      "SASKEN",
+      "ONWARDTEC",
+      "MINDTECK",
+      "TAALTECH"
+     ]
+    },
+    {
+     "key": "it_software_products",
+     "label": "Software Products & Vertical SaaS",
+     "description": "Product and SaaS companies selling to banks, enterprises and travel",
+     "symbols": [
+      "OFSS",
+      "NEWGEN",
+      "INTELLECT",
+      "RAMCOSYS",
+      "NUCLEUS",
+      "SUBEXLTD",
+      "RATEGAIN",
+      "CAPILLARY",
+      "QUICKHEAL",
+      "UNIECOM",
+      "ACCELYA",
+      "EMUDHRA",
+      "AURIONPRO",
+      "TANLA",
+      "ROUTE",
+      "IRIS",
+      "EXCELSOFT",
+      "VEEFIN"
+     ],
+     "primary": [
+      "OFSS",
+      "NEWGEN",
+      "INTELLECT",
+      "RAMCOSYS",
+      "NUCLEUS",
+      "SUBEXLTD",
+      "RATEGAIN",
+      "CAPILLARY",
+      "QUICKHEAL",
+      "UNIECOM",
+      "ACCELYA",
+      "EMUDHRA",
+      "AURIONPRO",
+      "TANLA",
+      "ROUTE",
+      "IRIS",
+      "EXCELSOFT",
+      "VEEFIN"
+     ]
+    },
+    {
+     "key": "bpo_analytics_ai",
+     "label": "BPO, Analytics & AI Services",
+     "description": "Customer experience outsourcing, analytics and healthcare or life-science services",
+     "symbols": [
+      "FSL",
+      "SAGILITY",
+      "HGS",
+      "ECLERX",
+      "LATENTVIEW",
+      "FRACTAL",
+      "IKS",
+      "INDGN",
+      "DIGITIDE",
+      "ALLDIGI",
+      "ONEGLOBAL",
+      "ONEPOINT",
+      "BLUSPRING"
+     ],
+     "primary": [
+      "FSL",
+      "SAGILITY",
+      "HGS",
+      "ECLERX",
+      "LATENTVIEW",
+      "FRACTAL",
+      "IKS",
+      "INDGN",
+      "DIGITIDE",
+      "ALLDIGI",
+      "ONEGLOBAL",
+      "ONEPOINT",
+      "BLUSPRING"
+     ]
+    },
+    {
+     "key": "it_hardware_si",
+     "label": "IT Hardware, Distribution & System Integrators",
+     "description": "IT distribution, servers, networking integrators",
+     "symbols": [
+      "REDINGTON",
+      "RPTECH",
+      "BBOX",
+      "NETWEB",
+      "E2E",
+      "DSSL",
+      "ORIENTTECH",
+      "IVALUE",
+      "ADSL",
+      "PROSTARM",
+      "TVSELECT",
+      "DLINKINDIA",
+      "PANACHE",
+      "MICEL",
+      "CNL",
+      "BGDL"
+     ],
+     "primary": [
+      "REDINGTON",
+      "RPTECH",
+      "BBOX",
+      "NETWEB",
+      "E2E",
+      "DSSL",
+      "ORIENTTECH",
+      "IVALUE",
+      "ADSL",
+      "PROSTARM",
+      "TVSELECT",
+      "DLINKINDIA",
+      "PANACHE",
+      "MICEL",
+      "CNL",
+      "BGDL"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "internet_platforms",
+   "label": "Internet & Consumer Platforms",
+   "baskets": [
+    {
+     "key": "new_age_platforms",
+     "label": "New-Age Consumer Internet & D2C",
+     "description": "Listed consumer internet and D2C platforms",
+     "symbols": [
+      "ETERNAL",
+      "SWIGGY",
+      "NYKAA",
+      "MEESHO",
+      "LENSKART",
+      "FIRSTCRY",
+      "URBANCO",
+      "WAKEFIT",
+      "HONASA",
+      "ROBU",
+      "AURUM"
+     ],
+     "primary": [
+      "ETERNAL",
+      "SWIGGY",
+      "NYKAA",
+      "MEESHO",
+      "LENSKART",
+      "FIRSTCRY",
+      "URBANCO",
+      "WAKEFIT",
+      "HONASA",
+      "ROBU",
+      "AURUM"
+     ]
+    },
+    {
+     "key": "internet_classifieds",
+     "label": "Classifieds, Ad-Tech & Digital Services",
+     "description": "Online marketplaces, classifieds, mapping and ad-tech",
+     "symbols": [
+      "INDIAMART",
+      "NAUKRI",
+      "JUSTDIAL",
+      "CARTRADE",
+      "MATRIMONY",
+      "MAPMYINDIA",
+      "BLACKBUCK",
+      "AFFLE",
+      "MOBAVENUE",
+      "BCG"
+     ],
+     "primary": [
+      "INDIAMART",
+      "NAUKRI",
+      "JUSTDIAL",
+      "CARTRADE",
+      "MATRIMONY",
+      "MAPMYINDIA",
+      "BLACKBUCK",
+      "AFFLE",
+      "MOBAVENUE",
+      "BCG"
+     ]
+    },
+    {
+     "key": "edtech_education",
+     "label": "Education & Edtech",
+     "description": "Edtech, skilling and education publishers",
+     "symbols": [
+      "PWL",
+      "NIITLTD",
+      "NIITMTS",
+      "VERANDA",
+      "NAVNETEDUL",
+      "SCHAND",
+      "APTECHT",
+      "SEIL",
+      "JARO",
+      "CRIZAC",
+      "MPSLTD"
+     ],
+     "primary": [
+      "PWL",
+      "NIITLTD",
+      "NIITMTS",
+      "VERANDA",
+      "NAVNETEDUL",
+      "SCHAND",
+      "APTECHT",
+      "SEIL",
+      "JARO",
+      "CRIZAC",
+      "MPSLTD"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "data_center_digital_infra",
+   "label": "Data Center & Digital Infrastructure",
+   "baskets": [
+    {
+     "key": "dc_colocation_hyperscale_operators",
+     "label": "Colocation & Data Centre Operators",
+     "description": "Listed data centre operators and DC-exposed infrastructure builders (megacap conglomerates excluded)",
+     "symbols": [
+      "TECHNOE",
+      "ANANTRAJ",
+      "RAILTEL",
+      "E2E",
+      "TATACOMM"
+     ],
+     "primary": [
+      "TECHNOE"
+     ]
+    },
+    {
+     "key": "ai_compute_servers_gpu",
+     "label": "AI Compute, Servers & GPU Cloud",
+     "description": "AI servers, GPU cloud and hardware integrators",
+     "symbols": [
+      "NETWEB",
+      "SYRMA",
+      "E2E",
+      "REDINGTON",
+      "RPTECH",
+      "PROSTARM"
+     ],
+     "primary": []
+    },
+    {
+     "key": "dc_cooling_thermal",
+     "label": "Cooling, Thermal & MEP",
+     "description": "Precision cooling, HVAC and DC MEP contractors",
+     "symbols": [
+      "BLUESTARCO",
+      "VOLTAS",
+      "KRN",
+      "THERMAX",
+      "AMBER",
+      "AHLUCONT",
+      "BBOX",
+      "ICEMAKE",
+      "SHREEREF"
+     ],
+     "primary": [
+      "KRN",
+      "ICEMAKE",
+      "SHREEREF"
+     ]
+    },
+    {
+     "key": "dc_cables_connectivity",
+     "label": "Cables & Connectivity (Power + Fibre)",
+     "description": "Power cables and optical fibre",
+     "symbols": [
+      "POLYCAB",
+      "KEI",
+      "APARINDS",
+      "STLTECH",
+      "HFCL",
+      "TEJASNET",
+      "FINCABLES",
+      "RRKABEL"
+     ],
+     "primary": []
+    },
+    {
+     "key": "dc_backup_power",
+     "label": "Backup Power (Gensets & Batteries)",
+     "description": "Gensets, turbines and batteries for DC uptime",
+     "symbols": [
+      "CUMMINSIND",
+      "KIRLOSENG",
+      "TRITURBINE",
+      "ARE&M",
+      "EXIDEIND"
+     ],
+     "primary": []
+    },
+    {
+     "key": "dc_electrical_equipment_distribution",
+     "label": "Electrical Equipment & Power Distribution",
+     "description": "Switchgear, transformers and power distribution for DCs",
+     "symbols": [
+      "POWERINDIA",
+      "CGPOWER",
+      "ABB",
+      "SIEMENS",
+      "ENRIN",
+      "GVT&D",
+      "VOLTAMP",
+      "MARINE",
+      "SCHNEIDER"
+     ],
+     "primary": []
+    },
+    {
+     "key": "dc_power_gen_transmission_grid",
+     "label": "Green Power & Transmission for DCs",
+     "description": "Renewable supply and grid",
+     "symbols": [
+      "ADANIGREEN",
+      "NTPCGREEN",
+      "ADANIENSOL",
+      "KEC",
+      "TATAPOWER",
+      "TORNTPOWER",
+      "POWERGRID"
+     ],
+     "primary": []
+    },
+    {
+     "key": "dc_connectivity_subsea",
+     "label": "Connectivity, Subsea & Interconnection",
+     "description": "Interconnection, subsea cable and edge connectivity",
+     "symbols": [
+      "TATACOMM",
+      "RAILTEL",
+      "GTLINFRA"
+     ],
+     "primary": []
+    },
+    {
+     "key": "dc_it_hardware_distribution",
+     "label": "IT Hardware Distribution",
+     "description": "Distributors of servers, networking and compute hardware",
+     "symbols": [
+      "REDINGTON",
+      "RPTECH",
+      "PROSTARM",
+      "CNL"
+     ],
+     "primary": []
+    },
+    {
+     "key": "dc_construction_mep",
+     "label": "Construction, MEP, Land & DC Integration",
+     "description": "Builders, integrators and land or powered-shell developers for data centres",
+     "symbols": [
+      "BBOX",
+      "AHLUCONT",
+      "TECHNOE",
+      "LODHA",
+      "ANANTRAJ"
+     ],
+     "primary": []
+    }
+   ]
+  },
+  {
+   "key": "semiconductors_electronics",
+   "label": "Semiconductors & Electronics Manufacturing",
+   "baskets": [
+    {
+     "key": "ems_system_integration",
+     "label": "EMS & Electronics Manufacturing",
+     "description": "Electronics manufacturing services and box-build",
+     "symbols": [
+      "DIXON",
+      "KAYNES",
+      "SYRMA",
+      "AVALON",
+      "CYIENTDLM",
+      "CENTUM",
+      "AIMTRON",
+      "PGEL",
+      "EPACK",
+      "ELIN",
+      "IKIO",
+      "OPTIEMUS",
+      "VOEPL",
+      "EBGNG",
+      "AMBER",
+      "CPPLUS",
+      "MRTX"
+     ],
+     "primary": [
+      "DIXON",
+      "KAYNES",
+      "SYRMA",
+      "AVALON",
+      "CYIENTDLM",
+      "CENTUM",
+      "AIMTRON",
+      "PGEL",
+      "EPACK",
+      "ELIN",
+      "IKIO",
+      "OPTIEMUS",
+      "VOEPL",
+      "EBGNG",
+      "AMBER",
+      "CPPLUS",
+      "MRTX"
+     ]
+    },
+    {
+     "key": "osat_atmp",
+     "label": "OSAT / ATMP",
+     "description": "Semiconductor assembly, test and packaging",
+     "symbols": [
+      "CGPOWER",
+      "KAYNES",
+      "SPELS",
+      "SAHASRA",
+      "RRP",
+      "MOSCHIP"
+     ],
+     "primary": [
+      "SPELS",
+      "SAHASRA",
+      "RRP",
+      "MOSCHIP"
+     ]
+    },
+    {
+     "key": "semicon_chemicals",
+     "label": "Semiconductor Chemicals",
+     "description": "Electronic-grade and specialty chemicals for fabs",
+     "symbols": [
+      "NAVINFLUOR",
+      "JUBLINGREA",
+      "ACUTAAS",
+      "TATVA",
+      "AETHER",
+      "FLUOROCHEM",
+      "LINDEINDIA",
+      "ELLEN"
+     ],
+     "primary": [
+      "LINDEINDIA",
+      "ELLEN"
+     ]
+    },
+    {
+     "key": "chip_design_ip",
+     "label": "Chip Design & Semiconductor Services",
+     "description": "VLSI, design services and embedded",
+     "symbols": [
+      "HCLTECH",
+      "LTTS",
+      "TATATECH",
+      "TATAELXSI",
+      "KPITTECH",
+      "CYIENT",
+      "MOSCHIP",
+      "SASKEN",
+      "MINDTECK"
+     ],
+     "primary": []
+    },
+    {
+     "key": "semicon_ultrapure_water",
+     "label": "Ultrapure Water",
+     "description": "Ultrapure water systems for fabs",
+     "symbols": [
+      "IONEXCHANG",
+      "THERMAX",
+      "WABAG"
+     ],
+     "primary": []
+    },
+    {
+     "key": "power_semiconductors_discretes",
+     "label": "Power Semiconductors / Discretes",
+     "description": "Power electronics, rectifiers and discretes",
+     "symbols": [
+      "HIRECT",
+      "RIR",
+      "SPELS",
+      "RRP"
+     ],
+     "primary": [
+      "HIRECT",
+      "RIR"
+     ]
+    },
+    {
+     "key": "semicon_fab_equipment_cleanroom",
+     "label": "Fab Equipment & Cleanroom",
+     "description": "Semiconductor equipment, engineering services and cleanroom builders",
+     "symbols": [
+      "ASMTEC",
+      "HVAX",
+      "SIKA"
+     ],
+     "primary": [
+      "ASMTEC",
+      "HVAX",
+      "SIKA"
+     ]
+    },
+    {
+     "key": "semicon_fluoropolymers",
+     "label": "Fluoropolymers",
+     "description": "Fluoropolymer and fluorospecialty producers",
+     "symbols": [
+      "FLUOROCHEM",
+      "SRF",
+      "NAVINFLUOR",
+      "STALLION",
+      "TANFACIND"
+     ],
+     "primary": [
+      "FLUOROCHEM"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "telecom_major",
+   "label": "Telecom",
+   "baskets": [
+    {
+     "key": "telecom",
+     "label": "Telecom Operators & Services",
+     "description": "Mobile and enterprise telecom operators and PSU telecom",
+     "symbols": [
+      "BHARTIARTL",
+      "BHARTIHEXA",
+      "IDEA",
+      "TATACOMM",
+      "TTML",
+      "MTNL",
+      "RAILTEL",
+      "NELCO"
+     ],
+     "primary": [
+      "BHARTIARTL",
+      "BHARTIHEXA",
+      "IDEA",
+      "TATACOMM",
+      "TTML",
+      "MTNL",
+      "RAILTEL",
+      "NELCO"
+     ]
+    },
+    {
+     "key": "telecom_equipment_towers",
+     "label": "Telecom Equipment, Towers & Fibre",
+     "description": "Tower companies, optical and network equipment makers",
+     "symbols": [
+      "INDUSTOWER",
+      "GTLINFRA",
+      "SUYOG",
+      "TEJASNET",
+      "HFCL",
+      "STLTECH",
+      "ITI",
+      "AVANTEL",
+      "VINDHYATEL",
+      "PARACABLES",
+      "ADCINDIA",
+      "VALIANT",
+      "STLNETWORK",
+      "PACEDIGITK"
+     ],
+     "primary": [
+      "INDUSTOWER",
+      "GTLINFRA",
+      "SUYOG",
+      "TEJASNET",
+      "HFCL",
+      "STLTECH",
+      "ITI",
+      "AVANTEL",
+      "VINDHYATEL",
+      "PARACABLES",
+      "ADCINDIA",
+      "VALIANT",
+      "STLNETWORK",
+      "PACEDIGITK"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "pharma_life_sciences",
+   "label": "Pharmaceuticals & Life Sciences",
+   "baskets": [
+    {
+     "key": "pharma_innovators_specialty",
+     "label": "Large Pharma - Innovators & Specialty",
+     "description": "Large caps with innovation pipelines and specialty US or branded exposure",
+     "symbols": [
+      "SUNPHARMA",
+      "CIPLA",
+      "DRREDDY",
+      "LUPIN",
+      "ZYDUSLIFE",
+      "GLENMARK",
+      "AUROPHARMA",
+      "SPARC",
+      "NATCOPHARM",
+      "WOCKPHARMA",
+      "SUVEN"
+     ],
+     "primary": [
+      "SUNPHARMA",
+      "CIPLA",
+      "DRREDDY",
+      "LUPIN",
+      "ZYDUSLIFE",
+      "GLENMARK",
+      "AUROPHARMA",
+      "SPARC",
+      "NATCOPHARM",
+      "WOCKPHARMA",
+      "SUVEN"
+     ]
+    },
+    {
+     "key": "pharma_domestic_branded",
+     "label": "Domestic Branded Formulations",
+     "description": "India-focused branded generics and chronic therapy",
+     "symbols": [
+      "MANKIND",
+      "TORNTPHARM",
+      "ALKEM",
+      "AJANTPHARM",
+      "IPCALAB",
+      "ERIS",
+      "CORONA",
+      "FDC",
+      "EMCURE",
+      "JAGSNPHARM",
+      "THEMISMED",
+      "MOREPENLAB",
+      "INNOVACAP",
+      "LINCOLN",
+      "RPGLIFE"
+     ],
+     "primary": [
+      "MANKIND",
+      "TORNTPHARM",
+      "ALKEM",
+      "AJANTPHARM",
+      "IPCALAB",
+      "ERIS",
+      "CORONA",
+      "FDC",
+      "EMCURE",
+      "JAGSNPHARM",
+      "THEMISMED",
+      "MOREPENLAB",
+      "INNOVACAP",
+      "LINCOLN",
+      "RPGLIFE"
+     ]
+    },
+    {
+     "key": "pharma_mnc_india",
+     "label": "MNC Pharma in India",
+     "description": "Listed subsidiaries of global pharma and consumer-health majors",
+     "symbols": [
+      "ABBOTINDIA",
+      "GLAXO",
+      "PFIZER",
+      "SANOFI",
+      "NOVARTIND",
+      "ASTRAZEN",
+      "SANOFICONR"
+     ],
+     "primary": [
+      "ABBOTINDIA",
+      "GLAXO",
+      "PFIZER",
+      "SANOFI",
+      "NOVARTIND",
+      "ASTRAZEN",
+      "SANOFICONR"
+     ]
+    },
+    {
+     "key": "pharma_generics_exporters",
+     "label": "Generics & Formulation Exporters",
+     "description": "US, EU and RoW generics, injectables and contract formulators",
+     "symbols": [
+      "APLLTD",
+      "GLAND",
+      "MARKSANS",
+      "CAPLIPOINT",
+      "STAR",
+      "UNICHEMLAB",
+      "INDOCO",
+      "BLISSGVS",
+      "ORCHPHARMA",
+      "SENORES",
+      "ALIVUS",
+      "SHILPAMED",
+      "AKUMS",
+      "BAJAJHCARE",
+      "SYNCOMF",
+      "FREDUN",
+      "BETA",
+      "SAIPARENT",
+      "KILITCH",
+      "ASTEC",
+      "KPL",
+      "BPLPHARMA",
+      "RUBICON",
+      "WINDLAS",
+      "SAKAR",
+      "NGLFINE"
+     ],
+     "primary": [
+      "APLLTD",
+      "GLAND",
+      "MARKSANS",
+      "CAPLIPOINT",
+      "STAR",
+      "UNICHEMLAB",
+      "INDOCO",
+      "BLISSGVS",
+      "ORCHPHARMA",
+      "SENORES",
+      "ALIVUS",
+      "SHILPAMED",
+      "AKUMS",
+      "BAJAJHCARE",
+      "SYNCOMF",
+      "FREDUN",
+      "BETA",
+      "SAIPARENT",
+      "KILITCH",
+      "ASTEC",
+      "KPL",
+      "BPLPHARMA",
+      "RUBICON",
+      "WINDLAS",
+      "SAKAR",
+      "NGLFINE"
+     ]
+    },
+    {
+     "key": "cdmo_crdmo",
+     "label": "CDMO / CRDMO",
+     "description": "Contract development and manufacturing organisations",
+     "symbols": [
+      "DIVISLAB",
+      "SYNGENE",
+      "SAILIFE",
+      "LAURUSLABS",
+      "ANTHEM",
+      "CONCORDBIO",
+      "NEULANDLAB",
+      "PPLPHARMA",
+      "COHANCE",
+      "JUBLPHARMA",
+      "GLAND",
+      "DCAL",
+      "ONESOURCE",
+      "BLUEJET",
+      "VIYASH",
+      "PAUSHAKLTD"
+     ],
+     "primary": [
+      "DIVISLAB",
+      "SYNGENE",
+      "SAILIFE",
+      "LAURUSLABS",
+      "ANTHEM",
+      "CONCORDBIO",
+      "NEULANDLAB",
+      "PPLPHARMA",
+      "COHANCE",
+      "JUBLPHARMA",
+      "DCAL",
+      "ONESOURCE",
+      "BLUEJET",
+      "VIYASH",
+      "PAUSHAKLTD"
+     ]
+    },
+    {
+     "key": "pharma_apis",
+     "label": "APIs, Intermediates & Excipients",
+     "description": "API and intermediate manufacturers",
+     "symbols": [
+      "DIVISLAB",
+      "LAURUSLABS",
+      "NEULANDLAB",
+      "AARTIDRUGS",
+      "SOLARA",
+      "GRANULES",
+      "CONCORDBIO",
+      "AARTIPHARM",
+      "SMSPHARMA",
+      "HIKAL",
+      "SUPRIYA",
+      "SIGACHI",
+      "BHAGCHEM",
+      "IOLCP",
+      "SHUKRAPHAR",
+      "INDSWFTLAB",
+      "WANBURY",
+      "KOPRAN",
+      "FERMENTA",
+      "ANUHPHR",
+      "SUDEEPPHRM",
+      "ZOTA",
+      "GUJTHEM",
+      "SUDARSHAN",
+      "SGRL"
+     ],
+     "primary": [
+      "AARTIDRUGS",
+      "SOLARA",
+      "GRANULES",
+      "AARTIPHARM",
+      "SMSPHARMA",
+      "HIKAL",
+      "SUPRIYA",
+      "SIGACHI",
+      "BHAGCHEM",
+      "IOLCP",
+      "SHUKRAPHAR",
+      "INDSWFTLAB",
+      "WANBURY",
+      "KOPRAN",
+      "FERMENTA",
+      "ANUHPHR",
+      "SUDEEPPHRM",
+      "ZOTA",
+      "GUJTHEM",
+      "SUDARSHAN",
+      "SGRL"
+     ]
+    },
+    {
+     "key": "biosimilars",
+     "label": "Biologics, Biosimilars & Vaccines",
+     "description": "Biotech, biosimilars, vaccines and enzymes",
+     "symbols": [
+      "BIOCON",
+      "DRREDDY",
+      "ZYDUSLIFE",
+      "PANACEABIO",
+      "HESTERBIO",
+      "ADVENZYMES",
+      "GUFICBIO",
+      "3BBLACKBIO",
+      "VENUSREM",
+      "TITANBIO"
+     ],
+     "primary": [
+      "BIOCON",
+      "PANACEABIO",
+      "HESTERBIO",
+      "ADVENZYMES",
+      "GUFICBIO",
+      "3BBLACKBIO",
+      "VENUSREM",
+      "TITANBIO"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "healthcare_delivery_medtech",
+   "label": "Healthcare Delivery & MedTech",
+   "baskets": [
+    {
+     "key": "hospitals",
+     "label": "Hospitals",
+     "description": "Multi-speciality hospital chains",
+     "symbols": [
+      "APOLLOHOSP",
+      "MAXHEALTH",
+      "FORTIS",
+      "NH",
+      "MEDANTA",
+      "ASTERDM",
+      "KIMS",
+      "RAINBOW",
+      "JLHL",
+      "KOVAI",
+      "YATHARTH",
+      "ARTEMISMED",
+      "PARKHOSPS",
+      "SHALBY",
+      "INDRAMEDCO",
+      "KMCSHIL",
+      "GKSL",
+      "JSLL",
+      "GPTHEALTH"
+     ],
+     "primary": [
+      "APOLLOHOSP",
+      "MAXHEALTH",
+      "FORTIS",
+      "NH",
+      "MEDANTA",
+      "ASTERDM",
+      "KIMS",
+      "RAINBOW",
+      "JLHL",
+      "KOVAI",
+      "YATHARTH",
+      "ARTEMISMED",
+      "PARKHOSPS",
+      "SHALBY",
+      "INDRAMEDCO",
+      "KMCSHIL",
+      "GKSL",
+      "JSLL",
+      "GPTHEALTH"
+     ]
+    },
+    {
+     "key": "specialty_care_chains",
+     "label": "Speciality Care Chains (Eye, Dialysis, IVF, Oncology)",
+     "description": "Single-speciality care providers",
+     "symbols": [
+      "AGARWALEYE",
+      "DRAGARWQ",
+      "NEPHROPLUS",
+      "GAUDIUMIVF",
+      "HCG"
+     ],
+     "primary": [
+      "AGARWALEYE",
+      "DRAGARWQ",
+      "NEPHROPLUS",
+      "GAUDIUMIVF",
+      "HCG"
+     ]
+    },
+    {
+     "key": "diagnostics",
+     "label": "Diagnostics & Labs",
+     "description": "Pathology, radiology and testing labs",
+     "symbols": [
+      "LALPATHLAB",
+      "METROPOLIS",
+      "VIJAYA",
+      "THYROCARE",
+      "KRSNAA",
+      "SURAKSHA",
+      "VIMTALABS"
+     ],
+     "primary": [
+      "LALPATHLAB",
+      "METROPOLIS",
+      "VIJAYA",
+      "THYROCARE",
+      "KRSNAA",
+      "SURAKSHA",
+      "VIMTALABS"
+     ]
+    },
+    {
+     "key": "medical_devices",
+     "label": "Medical Devices & Consumables",
+     "description": "Devices, disposables and labware",
+     "symbols": [
+      "POLYMED",
+      "LAXMIDENTL",
+      "FISCHER",
+      "PREVEST",
+      "TARSONS",
+      "AHCL"
+     ],
+     "primary": [
+      "POLYMED",
+      "LAXMIDENTL",
+      "FISCHER",
+      "PREVEST",
+      "TARSONS",
+      "AHCL"
+     ]
+    },
+    {
+     "key": "healthcare_distribution_services",
+     "label": "Healthcare Distribution & Services",
+     "description": "Pharmacy retail, distribution and health services platforms",
+     "symbols": [
+      "MEDPLUS",
+      "ENTERO",
+      "HEALTHX",
+      "MEDIASSIST",
+      "MAXIND"
+     ],
+     "primary": [
+      "MEDPLUS",
+      "ENTERO",
+      "HEALTHX",
+      "MAXIND"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "chemicals_major",
+   "label": "Chemicals",
+   "baskets": [
+    {
+     "key": "chem_fluoro",
+     "label": "Fluorochemicals & Refrigerant Gases",
+     "description": "Fluoro specialities, refrigerants and fluoropolymers",
+     "symbols": [
+      "SRF",
+      "NAVINFLUOR",
+      "FLUOROCHEM",
+      "TANFACIND",
+      "STALLION",
+      "REFEX"
+     ],
+     "primary": [
+      "SRF",
+      "NAVINFLUOR",
+      "TANFACIND",
+      "STALLION",
+      "REFEX"
+     ]
+    },
+    {
+     "key": "specialty_chemicals",
+     "label": "Specialty Chemicals - Diversified & CRAMS",
+     "description": "Multi-product specialty chemical and custom synthesis names",
+     "symbols": [
+      "AARTIIND",
+      "DEEPAKNTR",
+      "ANURAS",
+      "ACUTAAS",
+      "AETHER",
+      "PRIVISCL",
+      "NEOGEN",
+      "TATVA",
+      "LXCHEM",
+      "EPIGRAL",
+      "JUBLINGREA",
+      "CHEMCON",
+      "VISHNU",
+      "MOL",
+      "CLEAN",
+      "FINEORG",
+      "CHEMPLASTS",
+      "BASF",
+      "GRAUWEIL",
+      "JGCHEM",
+      "INDOKEM",
+      "PLATIND",
+      "YASHO",
+      "SUNSHIEL",
+      "AMAL",
+      "EXCELINDUS"
+     ],
+     "primary": [
+      "AARTIIND",
+      "DEEPAKNTR",
+      "ANURAS",
+      "ACUTAAS",
+      "AETHER",
+      "PRIVISCL",
+      "NEOGEN",
+      "TATVA",
+      "LXCHEM",
+      "EPIGRAL",
+      "JUBLINGREA",
+      "CHEMCON",
+      "VISHNU",
+      "MOL",
+      "CLEAN",
+      "FINEORG",
+      "CHEMPLASTS",
+      "BASF",
+      "GRAUWEIL",
+      "JGCHEM",
+      "INDOKEM",
+      "PLATIND",
+      "YASHO",
+      "SUNSHIEL",
+      "AMAL",
+      "EXCELINDUS"
+     ]
+    },
+    {
+     "key": "chem_amines_intermediates",
+     "label": "Amines, Nitriles & Intermediates",
+     "description": "Amines, aromatics and pharma/agro intermediates",
+     "symbols": [
+      "ALKYLAMINE",
+      "BALAMINES",
+      "VINATIORGA",
+      "INDOAMIN",
+      "AMNPLST",
+      "PUNJABCHEM",
+      "TRANSPEK",
+      "SADHNANIQ",
+      "INOVSYNTH",
+      "VIKRAMTH"
+     ],
+     "primary": [
+      "ALKYLAMINE",
+      "BALAMINES",
+      "VINATIORGA",
+      "INDOAMIN",
+      "AMNPLST",
+      "PUNJABCHEM",
+      "TRANSPEK",
+      "SADHNANIQ",
+      "INOVSYNTH",
+      "VIKRAMTH"
+     ]
+    },
+    {
+     "key": "chem_dyes_pigments",
+     "label": "Dyes, Pigments & Colourants",
+     "description": "Dyes, pigments, textile colours and chemicals",
+     "symbols": [
+      "ATUL",
+      "SUDARSCHEM",
+      "SUDARCOLOR",
+      "ULTRAMAR",
+      "BODALCHEM",
+      "BHAGERIA",
+      "KIRIINDUS",
+      "DMCC",
+      "VALIANTORG",
+      "FCL",
+      "ROSSARI"
+     ],
+     "primary": [
+      "ATUL",
+      "SUDARSCHEM",
+      "SUDARCOLOR",
+      "ULTRAMAR",
+      "BODALCHEM",
+      "BHAGERIA",
+      "KIRIINDUS",
+      "DMCC",
+      "VALIANTORG",
+      "FCL",
+      "ROSSARI"
+     ]
+    },
+    {
+     "key": "chem_oleo_surfactants_flavours",
+     "label": "Surfactants, Oleochemicals & Aroma Chemicals",
+     "description": "Surfactants, oleo, fragrance and flavour chemicals",
+     "symbols": [
+      "GALAXYSURF",
+      "FAIRCHEMOR",
+      "CAMLINFINE",
+      "OAL",
+      "GEMAROMA",
+      "SHREEPUSHK",
+      "AVTNPL",
+      "VIDHIING",
+      "SHK"
+     ],
+     "primary": [
+      "GALAXYSURF",
+      "FAIRCHEMOR",
+      "CAMLINFINE",
+      "OAL",
+      "GEMAROMA",
+      "SHREEPUSHK",
+      "AVTNPL",
+      "VIDHIING",
+      "SHK"
+     ]
+    },
+    {
+     "key": "chem_carbon_rubber_polymers",
+     "label": "Carbon, Rubber Chemicals & Engineering Polymers",
+     "description": "Carbon black, rubber chemicals, latex and polymers",
+     "symbols": [
+      "PCBL",
+      "HSCL",
+      "RAIN",
+      "NOCIL",
+      "APCOTEXIND",
+      "STYRENIX",
+      "KINGFA",
+      "BEPL",
+      "DDEVPLSTIK",
+      "SHRJAGP",
+      "GRPLTD"
+     ],
+     "primary": [
+      "PCBL",
+      "HSCL",
+      "RAIN",
+      "NOCIL",
+      "APCOTEXIND",
+      "STYRENIX",
+      "KINGFA",
+      "BEPL",
+      "DDEVPLSTIK",
+      "SHRJAGP",
+      "GRPLTD"
+     ]
+    },
+    {
+     "key": "chem_chlor_alkali_inorganics",
+     "label": "Chlor-Alkali, Soda Ash & Inorganics",
+     "description": "Commodity inorganic chemicals",
+     "symbols": [
+      "GHCL",
+      "TATACHEM",
+      "GUJALKALI",
+      "CHEMFAB",
+      "TUTIALKA",
+      "DCW",
+      "ACI",
+      "INDOBORAX",
+      "DCMSHRIRAM",
+      "KHAICHEM",
+      "TIRUMALCHM",
+      "SRHHYPOLTD",
+      "TGVSL"
+     ],
+     "primary": [
+      "GHCL",
+      "TATACHEM",
+      "GUJALKALI",
+      "CHEMFAB",
+      "TUTIALKA",
+      "DCW",
+      "ACI",
+      "INDOBORAX",
+      "DCMSHRIRAM",
+      "KHAICHEM",
+      "TIRUMALCHM",
+      "SRHHYPOLTD",
+      "TGVSL"
+     ]
+    },
+    {
+     "key": "commodity_petrochemicals",
+     "label": "Petrochemicals & Polymers",
+     "description": "Petrochemical, solvents and polyester value chain",
+     "symbols": [
+      "DEEPAKFERT",
+      "SPLPETRO",
+      "IGPL",
+      "MANALIPETC",
+      "TNPETRO",
+      "PANAMAPET",
+      "KOTHARIPET",
+      "SPIC",
+      "GANESHBE",
+      "INDORAMA",
+      "INDIAGLYCO",
+      "PRIMO"
+     ],
+     "primary": [
+      "DEEPAKFERT",
+      "SPLPETRO",
+      "IGPL",
+      "MANALIPETC",
+      "TNPETRO",
+      "PANAMAPET",
+      "KOTHARIPET",
+      "SPIC",
+      "GANESHBE",
+      "INDORAMA",
+      "INDIAGLYCO",
+      "PRIMO"
+     ]
+    },
+    {
+     "key": "paints_adhesives",
+     "label": "Paints, Coatings & Adhesives",
+     "description": "Decorative and industrial paints, adhesives and resins",
+     "symbols": [
+      "ASIANPAINT",
+      "BERGEPAINT",
+      "KANSAINER",
+      "PIDILITIND",
+      "INDIGOPNTS",
+      "JSWDULUX",
+      "SIRCA",
+      "JYOTIRES",
+      "ELANTAS"
+     ],
+     "primary": [
+      "ASIANPAINT",
+      "BERGEPAINT",
+      "KANSAINER",
+      "PIDILITIND",
+      "INDIGOPNTS",
+      "JSWDULUX",
+      "SIRCA",
+      "JYOTIRES",
+      "ELANTAS"
+     ]
+    },
+    {
+     "key": "agrochemicals",
+     "label": "Crop Protection & Seeds",
+     "description": "Agrochemicals, crop protection and seed companies",
+     "symbols": [
+      "UPL",
+      "PIIND",
+      "DHANUKA",
+      "RALLIS",
+      "INSECTICID",
+      "BAYERCROP",
+      "SHARDACROP",
+      "SUMICHEM",
+      "IPL",
+      "BHARATRAS",
+      "GSPCROP",
+      "DHARMAJ",
+      "HERANBA",
+      "BNAGROCHEM",
+      "ADVANCE",
+      "NACLIND",
+      "JUBLCPL",
+      "KSCL",
+      "BSHSL",
+      "BESTAGRO",
+      "UNIENTER"
+     ],
+     "primary": [
+      "UPL",
+      "PIIND",
+      "DHANUKA",
+      "RALLIS",
+      "INSECTICID",
+      "BAYERCROP",
+      "SHARDACROP",
+      "SUMICHEM",
+      "IPL",
+      "BHARATRAS",
+      "GSPCROP",
+      "DHARMAJ",
+      "HERANBA",
+      "BNAGROCHEM",
+      "ADVANCE",
+      "NACLIND",
+      "JUBLCPL",
+      "KSCL",
+      "BSHSL",
+      "BESTAGRO",
+      "UNIENTER"
+     ]
+    },
+    {
+     "key": "agri_inputs_fertilizers",
+     "label": "Fertilisers",
+     "description": "Urea, DAP, NPK and speciality nutrients",
+     "symbols": [
+      "COROMANDEL",
+      "CHAMBLFERT",
+      "GNFC",
+      "RCF",
+      "NFL",
+      "FACT",
+      "PARADEEP",
+      "GSFC",
+      "MADRASFERT",
+      "ZUARI",
+      "KRISHANA",
+      "MBAPL"
+     ],
+     "primary": [
+      "COROMANDEL",
+      "CHAMBLFERT",
+      "GNFC",
+      "RCF",
+      "NFL",
+      "FACT",
+      "PARADEEP",
+      "GSFC",
+      "MADRASFERT",
+      "ZUARI",
+      "KRISHANA",
+      "MBAPL"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "conventional_energy",
+   "label": "Oil, Gas & Coal",
+   "baskets": [
+    {
+     "key": "oil_gas",
+     "label": "Refining, Marketing & Gas Midstream",
+     "description": "Refiners, OMCs, gas transmission and LNG terminals",
+     "symbols": [
+      "IOC",
+      "BPCL",
+      "HINDPETRO",
+      "MRPL",
+      "CHENNPETRO",
+      "RELIANCE",
+      "GAIL",
+      "PETRONET",
+      "AEGISLOG",
+      "AEGISVOPAK"
+     ],
+     "primary": [
+      "IOC",
+      "BPCL",
+      "HINDPETRO",
+      "MRPL",
+      "CHENNPETRO",
+      "GAIL",
+      "PETRONET",
+      "AEGISLOG",
+      "AEGISVOPAK"
+     ]
+    },
+    {
+     "key": "oil_gas_upstream",
+     "label": "Oil and Gas Exploration, Production & Oilfield Services",
+     "description": "Upstream producers and drilling or offshore service providers",
+     "symbols": [
+      "ONGC",
+      "OIL",
+      "HINDOILEXP",
+      "VOGL",
+      "ANTELOPUS",
+      "PRABHA",
+      "DEEPINDS",
+      "JINDRILL",
+      "SEAMECLTD",
+      "ASIANENE",
+      "DOLPHIN",
+      "GNRL"
+     ],
+     "primary": [
+      "ONGC",
+      "OIL",
+      "HINDOILEXP",
+      "VOGL",
+      "ANTELOPUS",
+      "PRABHA",
+      "DEEPINDS",
+      "JINDRILL",
+      "SEAMECLTD",
+      "ASIANENE",
+      "DOLPHIN",
+      "GNRL"
+     ]
+    },
+    {
+     "key": "city_gas_distribution",
+     "label": "City Gas Distribution",
+     "description": "CGD networks",
+     "symbols": [
+      "ATGL",
+      "IGL",
+      "MGL",
+      "GUJENERGY",
+      "IRMENERGY"
+     ],
+     "primary": [
+      "ATGL",
+      "IGL",
+      "MGL",
+      "GUJENERGY",
+      "IRMENERGY"
+     ]
+    },
+    {
+     "key": "lubricants_specialty_oils",
+     "label": "Lubricants & Specialty Oils",
+     "description": "Branded lubricants and base-oil blenders",
+     "symbols": [
+      "CASTROLIND",
+      "GULFOILLUB",
+      "SOTL",
+      "VEEDOL",
+      "GANDHAR",
+      "CONFIPET"
+     ],
+     "primary": [
+      "CASTROLIND",
+      "GULFOILLUB",
+      "SOTL",
+      "VEEDOL",
+      "GANDHAR",
+      "CONFIPET"
+     ]
+    },
+    {
+     "key": "coal_mining_services",
+     "label": "Coal & Mining Equipment and Services",
+     "description": "Coal producers, mine planners and mining consumables",
+     "symbols": [
+      "COALINDIA",
+      "BHARATCOAL",
+      "CMPDI",
+      "TEGA",
+      "THEJO",
+      "AIAENG",
+      "SINDHUTRAD"
+     ],
+     "primary": [
+      "COALINDIA",
+      "BHARATCOAL",
+      "CMPDI",
+      "TEGA",
+      "THEJO",
+      "AIAENG",
+      "SINDHUTRAD"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "power_utilities_equipment",
+   "label": "Power Utilities & Equipment",
+   "baskets": [
+    {
+     "key": "conventional_power",
+     "label": "Thermal, Hydro & Integrated Power Generation",
+     "description": "Utilities and IPPs",
+     "symbols": [
+      "NTPC",
+      "ADANIPOWER",
+      "NHPC",
+      "SJVN",
+      "NLCINDIA",
+      "JSWENERGY",
+      "RTNPOWER",
+      "RPOWER",
+      "JPPOWER",
+      "VEDPOWER",
+      "GIPCL",
+      "GMRP&UI",
+      "TATAPOWER",
+      "BGRENERGY"
+     ],
+     "primary": [
+      "NTPC",
+      "ADANIPOWER",
+      "NHPC",
+      "SJVN",
+      "NLCINDIA",
+      "JSWENERGY",
+      "RTNPOWER",
+      "RPOWER",
+      "JPPOWER",
+      "VEDPOWER",
+      "GIPCL",
+      "GMRP&UI",
+      "TATAPOWER",
+      "BGRENERGY"
+     ]
+    },
+    {
+     "key": "power_t_d_utilities",
+     "label": "Power Transmission & Distribution Utilities",
+     "description": "Regulated transmission, discoms and traders",
+     "symbols": [
+      "POWERGRID",
+      "ADANIENSOL",
+      "CESC",
+      "TORNTPOWER",
+      "PTC",
+      "RELINFRA",
+      "DPSCLTD"
+     ],
+     "primary": [
+      "POWERGRID",
+      "ADANIENSOL",
+      "CESC",
+      "TORNTPOWER",
+      "PTC",
+      "RELINFRA",
+      "DPSCLTD"
+     ]
+    },
+    {
+     "key": "grid_equipment",
+     "label": "Grid Equipment & Heavy Electricals",
+     "description": "Transformers, switchgear and HVDC suppliers",
+     "symbols": [
+      "GVT&D",
+      "POWERINDIA",
+      "ENRIN",
+      "ABB",
+      "SIEMENS",
+      "CGPOWER",
+      "SCHNEIDER",
+      "BBL",
+      "TDPOWERSYS",
+      "APARINDS",
+      "NEUEON",
+      "HIIL"
+     ],
+     "primary": [
+      "GVT&D",
+      "POWERINDIA",
+      "ENRIN",
+      "ABB",
+      "SIEMENS",
+      "CGPOWER",
+      "SCHNEIDER",
+      "BBL",
+      "TDPOWERSYS",
+      "APARINDS",
+      "NEUEON",
+      "HIIL"
+     ]
+    },
+    {
+     "key": "transformers_manufacturing",
+     "label": "Transformers & Power Components",
+     "description": "Power and distribution transformers and components",
+     "symbols": [
+      "TARIL",
+      "VOLTAMP",
+      "ATLANTAELE",
+      "SHILCTECH",
+      "INDOTECH",
+      "QPOWER",
+      "MARSONS",
+      "YASHHV",
+      "MEIL",
+      "SUPREMEPWR",
+      "MARINE",
+      "MODINSU"
+     ],
+     "primary": [
+      "TARIL",
+      "VOLTAMP",
+      "ATLANTAELE",
+      "SHILCTECH",
+      "INDOTECH",
+      "QPOWER",
+      "MARSONS",
+      "YASHHV",
+      "MEIL",
+      "SUPREMEPWR",
+      "MARINE",
+      "MODINSU"
+     ]
+    },
+    {
+     "key": "power_t_d_epc_towers",
+     "label": "Power T and D EPC & Towers",
+     "description": "Transmission line EPC, towers and substations",
+     "symbols": [
+      "KEC",
+      "KPIL",
+      "TRANSRAILL",
+      "SKIPPER",
+      "JYOTISTRUC",
+      "SALASAR",
+      "BAJEL",
+      "POWERMECH",
+      "RAJESH",
+      "VIKRAN",
+      "VIVIANA"
+     ],
+     "primary": [
+      "KEC",
+      "KPIL",
+      "TRANSRAILL",
+      "SKIPPER",
+      "JYOTISTRUC",
+      "SALASAR",
+      "BAJEL",
+      "POWERMECH",
+      "RAJESH",
+      "VIKRAN",
+      "VIVIANA"
+     ]
+    },
+    {
+     "key": "industrial_automation_electricals",
+     "label": "Industrial Automation, Motors & Smart Meters",
+     "description": "Automation, motors, metering and instruments",
+     "symbols": [
+      "HONAUT",
+      "KECL",
+      "RISHABH",
+      "SALZERELEC",
+      "GENUSPOWER",
+      "HPL",
+      "CONTROLPR",
+      "INDLMETER",
+      "ELECON",
+      "PITTIENG",
+      "SELECTRIC",
+      "MODISONLTD",
+      "SPECTRUM"
+     ],
+     "primary": [
+      "HONAUT",
+      "KECL",
+      "RISHABH",
+      "SALZERELEC",
+      "GENUSPOWER",
+      "HPL",
+      "CONTROLPR",
+      "INDLMETER",
+      "ELECON",
+      "PITTIENG",
+      "SELECTRIC",
+      "MODISONLTD",
+      "SPECTRUM"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "renewable_energy",
+   "label": "Renewable Energy",
+   "baskets": [
+    {
+     "key": "renewable_ipp",
+     "label": "Renewable Power Generation / IPPs",
+     "description": "Wind, solar and hybrid power producers",
+     "symbols": [
+      "ADANIGREEN",
+      "NTPCGREEN",
+      "ACMESOLAR",
+      "KPIGREEN",
+      "CLEANMAX",
+      "GREENPOWER",
+      "KPEL",
+      "RELTD",
+      "JSWENERGY",
+      "TATAPOWER",
+      "BFUTILITIE"
+     ],
+     "primary": [
+      "ADANIGREEN",
+      "NTPCGREEN",
+      "ACMESOLAR",
+      "KPIGREEN",
+      "CLEANMAX",
+      "GREENPOWER",
+      "KPEL",
+      "RELTD",
+      "BFUTILITIE"
+     ]
+    },
+    {
+     "key": "solar_manufacturing",
+     "label": "Solar Manufacturing",
+     "description": "Modules, cells, wafers and solar glass",
+     "symbols": [
+      "WAAREEENER",
+      "PREMIERENE",
+      "WEBELSOLAR",
+      "VIKRAMSOLR",
+      "ALPEXSOLAR",
+      "BORORENEW",
+      "INA",
+      "SAATVIKGL",
+      "SOLEX",
+      "ZODIAC",
+      "EMMVEE",
+      "UTLSOLAR",
+      "WAAREEINDO",
+      "UEL",
+      "SWELECTES",
+      "ONIXSOLAR",
+      "ARROWGREEN"
+     ],
+     "primary": [
+      "WAAREEENER",
+      "PREMIERENE",
+      "WEBELSOLAR",
+      "VIKRAMSOLR",
+      "ALPEXSOLAR",
+      "BORORENEW",
+      "INA",
+      "SAATVIKGL",
+      "SOLEX",
+      "ZODIAC",
+      "EMMVEE",
+      "UTLSOLAR",
+      "WAAREEINDO",
+      "UEL",
+      "SWELECTES",
+      "ONIXSOLAR",
+      "ARROWGREEN"
+     ]
+    },
+    {
+     "key": "solar_epc_rooftop",
+     "label": "Solar EPC, Rooftop & Solar Pumps",
+     "description": "Utility EPC, rooftop and pump players",
+     "symbols": [
+      "WAAREERTL",
+      "SWSOLAR",
+      "SERVOTECH",
+      "SOLARWORLD",
+      "GKENERGY",
+      "SHAKTIPUMP",
+      "OSWALPUMPS",
+      "KPGEL",
+      "BONDADA",
+      "URJA"
+     ],
+     "primary": [
+      "WAAREERTL",
+      "SWSOLAR",
+      "SERVOTECH",
+      "SOLARWORLD",
+      "GKENERGY",
+      "SHAKTIPUMP",
+      "OSWALPUMPS",
+      "KPGEL",
+      "BONDADA",
+      "URJA"
+     ]
+    },
+    {
+     "key": "wind_energy",
+     "label": "Wind OEMs, Components & O and M",
+     "description": "Turbine makers and wind supply chain",
+     "symbols": [
+      "SUZLON",
+      "INOXWIND",
+      "INOXGREEN",
+      "TDPOWERSYS",
+      "ELECON",
+      "SHANTIGEAR"
+     ],
+     "primary": [
+      "SUZLON",
+      "INOXWIND",
+      "INOXGREEN",
+      "SHANTIGEAR"
+     ]
+    },
+    {
+     "key": "ev_cells_batteries",
+     "label": "Batteries & Energy Storage",
+     "description": "Lead-acid, lithium and storage players",
+     "symbols": [
+      "EXIDEIND",
+      "ARE&M",
+      "HBLENGINE",
+      "EVEREADY",
+      "EXICOM",
+      "ELECTHERM"
+     ],
+     "primary": [
+      "EXIDEIND",
+      "ARE&M",
+      "HBLENGINE",
+      "EVEREADY",
+      "EXICOM",
+      "ELECTHERM"
+     ]
+    },
+    {
+     "key": "green_hydrogen",
+     "label": "Green Hydrogen",
+     "description": "Electrolyser, green ammonia and renewable-hydrogen developers; LT kept for electrolyser manufacturing",
+     "symbols": [
+      "ACMESOLAR",
+      "WAAREEENER",
+      "ADVAIT",
+      "ADANIGREEN",
+      "NTPCGREEN",
+      "LT"
+     ],
+     "primary": [
+      "ADVAIT"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "capital_goods_industrials",
+   "label": "Capital Goods & Industrials",
+   "baskets": [
+    {
+     "key": "capital_goods_heavy_electrical",
+     "label": "Boilers, Turbines & Process Equipment",
+     "description": "Power, process and heavy equipment",
+     "symbols": [
+      "BHEL",
+      "GVPIL",
+      "TRITURBINE",
+      "THERMAX",
+      "ISGEC",
+      "GMMPFAUDLR",
+      "HLEGLAS",
+      "INOXINDIA",
+      "PRAJIND",
+      "ANUP",
+      "EKC",
+      "KRN",
+      "LLOYDSENGG",
+      "COCKERILL",
+      "DEEDEV",
+      "JNKINDIA"
+     ],
+     "primary": [
+      "BHEL",
+      "GVPIL",
+      "TRITURBINE",
+      "THERMAX",
+      "ISGEC",
+      "GMMPFAUDLR",
+      "HLEGLAS",
+      "INOXINDIA",
+      "PRAJIND",
+      "ANUP",
+      "EKC",
+      "LLOYDSENGG",
+      "COCKERILL",
+      "DEEDEV",
+      "JNKINDIA"
+     ]
+    },
+    {
+     "key": "industrial_pumps_compressors_engines",
+     "label": "Pumps, Compressors & Engines",
+     "description": "Pumps, compressors, valves, engines",
+     "symbols": [
+      "CUMMINSIND",
+      "KIRLOSENG",
+      "KSB",
+      "KIRLOSBROS",
+      "WPIL",
+      "ROTO",
+      "ELGIEQUIP",
+      "INGERRAND",
+      "KIRLPNU",
+      "GREAVESCOT",
+      "HONDAPOWER",
+      "POWERICA",
+      "YUKEN"
+     ],
+     "primary": [
+      "CUMMINSIND",
+      "KIRLOSENG",
+      "KSB",
+      "KIRLOSBROS",
+      "WPIL",
+      "ROTO",
+      "ELGIEQUIP",
+      "INGERRAND",
+      "KIRLPNU",
+      "GREAVESCOT",
+      "HONDAPOWER",
+      "POWERICA",
+      "YUKEN"
+     ]
+    },
+    {
+     "key": "material_handling_construction_equipment",
+     "label": "Construction & Material Handling Equipment",
+     "description": "Cranes, earth-moving and rental",
+     "symbols": [
+      "ACE",
+      "TIL",
+      "BEML",
+      "SANGHVIMOV",
+      "EIMCOELECO",
+      "AJAXENGG"
+     ],
+     "primary": [
+      "ACE",
+      "TIL",
+      "BEML",
+      "SANGHVIMOV",
+      "EIMCOELECO",
+      "AJAXENGG"
+     ]
+    },
+    {
+     "key": "cnc_machine_tools",
+     "label": "CNC, Machine Tools & Cutting Tools",
+     "description": "Machine tools, textile and plastic machinery and tooling",
+     "symbols": [
+      "JYOTICNC",
+      "LMW",
+      "MACPOWER",
+      "KENNAMET",
+      "WINDMACHIN",
+      "TOTEM",
+      "RAJOOENG",
+      "KLBRENG-B",
+      "MAMATA",
+      "DISAQ",
+      "KABRAEXTRU",
+      "AXTEL",
+      "BAJAJST"
+     ],
+     "primary": [
+      "JYOTICNC",
+      "LMW",
+      "MACPOWER",
+      "KENNAMET",
+      "WINDMACHIN",
+      "TOTEM",
+      "RAJOOENG",
+      "KLBRENG-B",
+      "MAMATA",
+      "DISAQ",
+      "KABRAEXTRU",
+      "AXTEL",
+      "BAJAJST"
+     ]
+    },
+    {
+     "key": "bearings_transmission",
+     "label": "Bearings & Power Transmission",
+     "description": "Bearings, gears and rings",
+     "symbols": [
+      "TIMKEN",
+      "SKFINDIA",
+      "SKFINDUS",
+      "NRBBEARING",
+      "SCHAEFFLER",
+      "MENONBE",
+      "HARSHA",
+      "SATANIBRG",
+      "OMPOWER"
+     ],
+     "primary": [
+      "TIMKEN",
+      "SKFINDIA",
+      "SKFINDUS",
+      "NRBBEARING",
+      "SCHAEFFLER",
+      "MENONBE",
+      "HARSHA",
+      "SATANIBRG",
+      "OMPOWER"
+     ]
+    },
+    {
+     "key": "abrasives_refractories_consumables",
+     "label": "Abrasives, Refractories & Industrial Consumables",
+     "description": "Abrasives, welding, refractories and foundry inputs",
+     "symbols": [
+      "GRINDWELL",
+      "CARBORUNIV",
+      "ESABINDIA",
+      "ADOR",
+      "RHIM",
+      "VESUVIUS",
+      "IFGLEXPOR",
+      "FOSECOIND",
+      "FOSECOC",
+      "WENDT",
+      "DIFFNKG",
+      "RPEL"
+     ],
+     "primary": [
+      "GRINDWELL",
+      "CARBORUNIV",
+      "ESABINDIA",
+      "ADOR",
+      "RHIM",
+      "VESUVIUS",
+      "IFGLEXPOR",
+      "FOSECOIND",
+      "FOSECOC",
+      "WENDT",
+      "DIFFNKG",
+      "RPEL"
+     ]
+    },
+    {
+     "key": "precision_engineering",
+     "label": "Precision Engineering & Fasteners",
+     "description": "Precision machined and fastener companies",
+     "symbols": [
+      "CRAFTSMAN",
+      "SUNDRMFAST",
+      "MTARTECH",
+      "PRECAM",
+      "UNIMECH",
+      "JASH",
+      "GALAPREC",
+      "AEROFLEX",
+      "PRADPME",
+      "RATNAVEER",
+      "CFF",
+      "SETL",
+      "INTEGRAEN"
+     ],
+     "primary": [
+      "CRAFTSMAN",
+      "SUNDRMFAST",
+      "MTARTECH",
+      "PRECAM",
+      "UNIMECH",
+      "JASH",
+      "GALAPREC",
+      "AEROFLEX",
+      "PRADPME",
+      "RATNAVEER",
+      "CFF",
+      "SETL",
+      "INTEGRAEN"
+     ]
+    },
+    {
+     "key": "wires_cables",
+     "label": "Cables & Wires",
+     "description": "Power cables, winding and specialty wires",
+     "symbols": [
+      "POLYCAB",
+      "KEI",
+      "FINCABLES",
+      "APARINDS",
+      "UNIVCABLES",
+      "RRKABEL",
+      "DYCL",
+      "PRECWIRE",
+      "RAMRAT",
+      "DIACABS",
+      "VIDYAWIRES",
+      "BHAGYANGR",
+      "KSHINTL",
+      "BANSALWIRE",
+      "BHARATWIRE",
+      "MMP",
+      "BELDING"
+     ],
+     "primary": [
+      "POLYCAB",
+      "KEI",
+      "FINCABLES",
+      "UNIVCABLES",
+      "RRKABEL",
+      "DYCL",
+      "PRECWIRE",
+      "RAMRAT",
+      "DIACABS",
+      "VIDYAWIRES",
+      "BHAGYANGR",
+      "KSHINTL",
+      "BANSALWIRE",
+      "BHARATWIRE",
+      "MMP",
+      "BELDING"
+     ]
+    },
+    {
+     "key": "steel_pipes_tubes",
+     "label": "Steel Pipes & Tubes",
+     "description": "Welded, seamless and stainless pipes",
+     "symbols": [
+      "APLAPOLLO",
+      "RATNAMANI",
+      "JINDALSAW",
+      "WELCORP",
+      "MAHSEAMLES",
+      "MANINDS",
+      "VENUSPIPES",
+      "HARIOMPIPE",
+      "GANDHITUBE",
+      "SAMBHV",
+      "RAMASTEEL",
+      "SCODATUBES",
+      "WELSPLSOL",
+      "HITECH",
+      "GOODLUCK",
+      "PENIND",
+      "JTLIND",
+      "AEROENTER",
+      "BMW"
+     ],
+     "primary": [
+      "APLAPOLLO",
+      "RATNAMANI",
+      "JINDALSAW",
+      "WELCORP",
+      "MAHSEAMLES",
+      "MANINDS",
+      "VENUSPIPES",
+      "HARIOMPIPE",
+      "GANDHITUBE",
+      "SAMBHV",
+      "RAMASTEEL",
+      "SCODATUBES",
+      "WELSPLSOL",
+      "HITECH",
+      "GOODLUCK",
+      "PENIND",
+      "JTLIND",
+      "AEROENTER",
+      "BMW"
+     ]
+    },
+    {
+     "key": "plastic_pipes",
+     "label": "Plastic Pipes & Fittings",
+     "description": "PVC, CPVC and HDPE pipes",
+     "symbols": [
+      "ASTRAL",
+      "SUPREMEIND",
+      "FINPIPE",
+      "PRINCEPIPE",
+      "APOLLOPIPE",
+      "PPL",
+      "SHISHIND"
+     ],
+     "primary": [
+      "ASTRAL",
+      "SUPREMEIND",
+      "FINPIPE",
+      "PRINCEPIPE",
+      "APOLLOPIPE",
+      "PPL",
+      "SHISHIND"
+     ]
+    },
+    {
+     "key": "water_waste_environment",
+     "label": "Water, Waste & Environmental Services",
+     "description": "Water treatment, waste and environmental infrastructure",
+     "symbols": [
+      "WABAG",
+      "IONEXCHANG",
+      "EMSLIMITED",
+      "CEWATER",
+      "DENTA",
+      "AWHCL",
+      "EIEL",
+      "RAMKY",
+      "SEPC"
+     ],
+     "primary": [
+      "WABAG",
+      "IONEXCHANG",
+      "EMSLIMITED",
+      "CEWATER",
+      "DENTA",
+      "AWHCL",
+      "EIEL",
+      "RAMKY",
+      "SEPC"
+     ]
+    },
+    {
+     "key": "railways",
+     "label": "Railway Rolling Stock, Components & Signalling",
+     "description": "Wagons, coaches, components and signalling",
+     "symbols": [
+      "TITAGARH",
+      "JWL",
+      "TEXRAIL",
+      "ORIRAIL",
+      "AIRFLOA",
+      "SSWL",
+      "KERNEX",
+      "HBLENGINE",
+      "QUADFUTURE"
+     ],
+     "primary": [
+      "TITAGARH",
+      "JWL",
+      "TEXRAIL",
+      "ORIRAIL",
+      "AIRFLOA",
+      "SSWL",
+      "KERNEX",
+      "QUADFUTURE"
+     ]
+    },
+    {
+     "key": "railways_psu_epc",
+     "label": "Railway PSUs & EPC",
+     "description": "Railway PSUs, EPC and services",
+     "symbols": [
+      "RVNL",
+      "IRCON",
+      "RITES",
+      "RAILTEL",
+      "IRCTC",
+      "CONCOR"
+     ],
+     "primary": [
+      "RVNL",
+      "IRCON",
+      "RITES",
+      "IRCTC",
+      "CONCOR"
+     ]
+    },
+    {
+     "key": "roads_epc",
+     "label": "Roads & Highways EPC",
+     "description": "Road builders and BOT players",
+     "symbols": [
+      "KNRCON",
+      "PNCINFRA",
+      "IRB",
+      "GRINFRA",
+      "ASHOKA",
+      "HGINFRA",
+      "DBL",
+      "CEIGALL",
+      "GPTINFRA",
+      "GHVINFRA",
+      "WELENT",
+      "SRM"
+     ],
+     "primary": [
+      "KNRCON",
+      "PNCINFRA",
+      "IRB",
+      "GRINFRA",
+      "ASHOKA",
+      "HGINFRA",
+      "DBL",
+      "CEIGALL",
+      "GPTINFRA",
+      "GHVINFRA",
+      "WELENT",
+      "SRM"
+     ]
+    },
+    {
+     "key": "infra_epc_diversified",
+     "label": "Infrastructure EPC - Diversified",
+     "description": "Large and mid EPC contractors",
+     "symbols": [
+      "LT",
+      "KPIL",
+      "NCC",
+      "AFCONS",
+      "CEMPRO",
+      "PATELENG",
+      "HCC",
+      "NBCC",
+      "JKIL",
+      "PSPPROJECT",
+      "CAPACITE",
+      "BLKASHYAP",
+      "SIMPLEXINF",
+      "SUPREMEINF",
+      "VASCONEQ",
+      "SPMLINFRA",
+      "ABINFRA",
+      "MANINFRA",
+      "AHLUCONT",
+      "ARTSON",
+      "CCCL",
+      "OMINFRAL",
+      "LIKHITHA",
+      "HAZOOR",
+      "GARUDA",
+      "WSI",
+      "VPRPL"
+     ],
+     "primary": [
+      "LT",
+      "NCC",
+      "AFCONS",
+      "CEMPRO",
+      "PATELENG",
+      "HCC",
+      "NBCC",
+      "JKIL",
+      "PSPPROJECT",
+      "CAPACITE",
+      "BLKASHYAP",
+      "SIMPLEXINF",
+      "SUPREMEINF",
+      "VASCONEQ",
+      "SPMLINFRA",
+      "ABINFRA",
+      "MANINFRA",
+      "AHLUCONT",
+      "ARTSON",
+      "CCCL",
+      "OMINFRAL",
+      "LIKHITHA",
+      "HAZOOR",
+      "GARUDA",
+      "WSI",
+      "VPRPL"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "auto_ev_value_chain",
+   "label": "Automobiles & EV Value Chain",
+   "baskets": [
+    {
+     "key": "auto_pv_dealers",
+     "label": "Passenger Vehicles & Dealerships",
+     "description": "Car makers and auto dealers",
+     "symbols": [
+      "MARUTI",
+      "M&M",
+      "TMPV",
+      "HYUNDAI",
+      "LANDMARK",
+      "PVSL"
+     ],
+     "primary": [
+      "MARUTI",
+      "M&M",
+      "TMPV",
+      "HYUNDAI",
+      "LANDMARK",
+      "PVSL"
+     ]
+    },
+    {
+     "key": "auto_2w_oems",
+     "label": "Two-Wheeler OEMs",
+     "description": "Motorcycle and scooter makers",
+     "symbols": [
+      "BAJAJ-AUTO",
+      "HEROMOTOCO",
+      "TVSMOTOR",
+      "EICHERMOT",
+      "OLAELEC",
+      "ATHERENERG",
+      "KINETICENG"
+     ],
+     "primary": [
+      "BAJAJ-AUTO",
+      "HEROMOTOCO",
+      "TVSMOTOR",
+      "EICHERMOT",
+      "OLAELEC",
+      "ATHERENERG",
+      "KINETICENG"
+     ]
+    },
+    {
+     "key": "auto_cv_3w_oems",
+     "label": "CV, Bus & Three-Wheeler OEMs",
+     "description": "Trucks, buses and three-wheelers",
+     "symbols": [
+      "TMCV",
+      "ASHOKLEY",
+      "SMLMAH",
+      "ATULAUTO",
+      "FORCEMOT",
+      "AZADIND"
+     ],
+     "primary": [
+      "TMCV",
+      "ASHOKLEY",
+      "SMLMAH",
+      "ATULAUTO",
+      "FORCEMOT",
+      "AZADIND"
+     ]
+    },
+    {
+     "key": "tractors_farm_equipment",
+     "label": "Tractors, Farm Equipment & Irrigation",
+     "description": "Tractors, implements and micro-irrigation",
+     "symbols": [
+      "ESCORTS",
+      "VSTTILLERS",
+      "SWARAJENG",
+      "INDOFARM",
+      "JISLJALEQS",
+      "RMDRIP"
+     ],
+     "primary": [
+      "ESCORTS",
+      "VSTTILLERS",
+      "SWARAJENG",
+      "INDOFARM",
+      "JISLJALEQS",
+      "RMDRIP"
+     ]
+    },
+    {
+     "key": "ev_auto_oems",
+     "label": "EV Makers & Platforms",
+     "description": "Electric vehicle OEMs and e-mobility",
+     "symbols": [
+      "OLAELEC",
+      "ATHERENERG",
+      "OLECTRA",
+      "JBMA",
+      "ZELIO",
+      "MERCURYEV",
+      "ECOSMOBLTY",
+      "TMPV",
+      "M&M"
+     ],
+     "primary": [
+      "OLECTRA",
+      "JBMA",
+      "ZELIO",
+      "MERCURYEV",
+      "ECOSMOBLTY"
+     ]
+    },
+    {
+     "key": "auto_tyres",
+     "label": "Tyres & Rubber",
+     "description": "Tyre makers",
+     "symbols": [
+      "MRF",
+      "APOLLOTYRE",
+      "CEATLTD",
+      "JKTYRE",
+      "BALKRISIND",
+      "TVSSRICHAK",
+      "GOODYEAR",
+      "RAJRATAN"
+     ],
+     "primary": [
+      "MRF",
+      "APOLLOTYRE",
+      "CEATLTD",
+      "JKTYRE",
+      "BALKRISIND",
+      "TVSSRICHAK",
+      "GOODYEAR",
+      "RAJRATAN"
+     ]
+    },
+    {
+     "key": "traditional_auto_components",
+     "label": "Auto Components - Diversified Tier-1",
+     "description": "Broad-line Tier-1 and mid-cap suppliers",
+     "symbols": [
+      "MOTHERSON",
+      "MSUMI",
+      "BOSCHLTD",
+      "UNOMINDA",
+      "ENDURANCE",
+      "TIINDIA",
+      "CIEINDIA",
+      "ASKAUTOLTD",
+      "VARROC",
+      "BELRISE",
+      "SANDHAR",
+      "SUBROS",
+      "SHARDAMOTR",
+      "ASAL",
+      "ACGL",
+      "BHARATSE",
+      "KROSS",
+      "IMPAL",
+      "SAPL",
+      "RICOAUTO",
+      "SJS"
+     ],
+     "primary": [
+      "MOTHERSON",
+      "MSUMI",
+      "BOSCHLTD",
+      "UNOMINDA",
+      "ENDURANCE",
+      "TIINDIA",
+      "CIEINDIA",
+      "ASKAUTOLTD",
+      "VARROC",
+      "BELRISE",
+      "SANDHAR",
+      "SUBROS",
+      "SHARDAMOTR",
+      "ASAL",
+      "ACGL",
+      "BHARATSE",
+      "KROSS",
+      "IMPAL",
+      "SAPL",
+      "RICOAUTO",
+      "SJS"
+     ]
+    },
+    {
+     "key": "auto_comp_engine_drivetrain",
+     "label": "Engine, Transmission & Drivetrain Components",
+     "description": "Pistons, rings, gears, axles and exhaust",
+     "symbols": [
+      "SHRIPISTON",
+      "FMGOETZE",
+      "SCHAEFFLER",
+      "HITECHGEAR",
+      "PIXTRANS",
+      "DIVGIITTS",
+      "TENNIND",
+      "CARRARO",
+      "AUTOAXLES",
+      "GNA",
+      "RACLGEAR",
+      "NDRAUTO",
+      "LGBBROSLTD"
+     ],
+     "primary": [
+      "SHRIPISTON",
+      "FMGOETZE",
+      "HITECHGEAR",
+      "PIXTRANS",
+      "DIVGIITTS",
+      "TENNIND",
+      "CARRARO",
+      "AUTOAXLES",
+      "GNA",
+      "RACLGEAR",
+      "NDRAUTO",
+      "LGBBROSLTD"
+     ]
+    },
+    {
+     "key": "auto_comp_chassis_brakes_wheels",
+     "label": "Chassis, Suspension, Brakes & Wheels",
+     "description": "Suspension, springs, brakes and wheels",
+     "symbols": [
+      "ZFCVINDIA",
+      "GABRIEL",
+      "JAMNAAUTO",
+      "FRONTSP",
+      "TALBROAUTO",
+      "MUNJALSHOW",
+      "MUNJALAU",
+      "WHEELS",
+      "SSWL",
+      "ENKEIWHEL",
+      "RML",
+      "ZFSTEERING",
+      "BANCOINDIA",
+      "STERTOOLS",
+      "JTEKTINDIA",
+      "HINDCOMPOS"
+     ],
+     "primary": [
+      "ZFCVINDIA",
+      "GABRIEL",
+      "JAMNAAUTO",
+      "FRONTSP",
+      "TALBROAUTO",
+      "MUNJALSHOW",
+      "MUNJALAU",
+      "WHEELS",
+      "ENKEIWHEL",
+      "RML",
+      "ZFSTEERING",
+      "BANCOINDIA",
+      "STERTOOLS",
+      "JTEKTINDIA",
+      "HINDCOMPOS"
+     ]
+    },
+    {
+     "key": "auto_comp_electrical_lighting",
+     "label": "Auto Electricals, Lighting & Electronics",
+     "description": "Lighting, instrumentation and electronics",
+     "symbols": [
+      "LUMAXIND",
+      "LUMAXTECH",
+      "PRICOLLTD",
+      "MINDACORP",
+      "FIEMIND",
+      "SUPRAJIT",
+      "IGARASHI",
+      "SEDEMAC",
+      "JAYBARMARU",
+      "INDNIPPON"
+     ],
+     "primary": [
+      "LUMAXIND",
+      "LUMAXTECH",
+      "PRICOLLTD",
+      "MINDACORP",
+      "FIEMIND",
+      "SUPRAJIT",
+      "IGARASHI",
+      "SEDEMAC",
+      "JAYBARMARU",
+      "INDNIPPON"
+     ]
+    },
+    {
+     "key": "ev_powertrain",
+     "label": "EV Powertrain & Electronics",
+     "description": "EV motors, controllers and transmissions",
+     "symbols": [
+      "SONACOMS",
+      "UNOMINDA",
+      "ENDURANCE",
+      "SUPRAJIT",
+      "SEDEMAC",
+      "IGARASHI"
+     ],
+     "primary": [
+      "SONACOMS"
+     ]
+    },
+    {
+     "key": "auto_forgings",
+     "label": "Auto and Industrial Forgings",
+     "description": "Forged components",
+     "symbols": [
+      "BHARATFORG",
+      "RKFORGE",
+      "HAPPYFORGE",
+      "MMFL",
+      "SANSERA",
+      "ROLEXRINGS",
+      "AMIC",
+      "TIRUPATIFL",
+      "BALUFORGE",
+      "TEMBO",
+      "COSMICCRF"
+     ],
+     "primary": [
+      "BHARATFORG",
+      "RKFORGE",
+      "HAPPYFORGE",
+      "MMFL",
+      "SANSERA",
+      "ROLEXRINGS",
+      "AMIC",
+      "TIRUPATIFL",
+      "BALUFORGE",
+      "TEMBO",
+      "COSMICCRF"
+     ]
+    },
+    {
+     "key": "auto_castings",
+     "label": "Castings & Foundries",
+     "description": "Iron, aluminium and steel castings",
+     "symbols": [
+      "ALICON",
+      "SGIL",
+      "STEELCAS",
+      "NELCAST",
+      "KIRLFER",
+      "ELECTCAST",
+      "UNIPARTS",
+      "OMNI",
+      "SUNCLAY",
+      "UNIABEXAL",
+      "INVPRECQ"
+     ],
+     "primary": [
+      "ALICON",
+      "SGIL",
+      "STEELCAS",
+      "NELCAST",
+      "KIRLFER",
+      "ELECTCAST",
+      "UNIPARTS",
+      "OMNI",
+      "SUNCLAY",
+      "UNIABEXAL",
+      "INVPRECQ"
+     ]
+    },
+    {
+     "key": "ev_charging_infra",
+     "label": "EV Charging & Charging Equipment",
+     "description": "Charger makers and charging-network operators",
+     "symbols": [
+      "EXICOM",
+      "SERVOTECH",
+      "TATAPOWER",
+      "HBLENGINE",
+      "ARE&M",
+      "EXIDEIND"
+     ],
+     "primary": []
+    }
+   ]
+  },
+  {
+   "key": "consumer_major",
+   "label": "Consumer Staples & Lifestyle",
+   "baskets": [
+    {
+     "key": "fmcg",
+     "label": "FMCG - Large Staples & Tobacco",
+     "description": "Staples and tobacco leaders",
+     "symbols": [
+      "HINDUNILVR",
+      "ITC",
+      "NESTLEIND",
+      "BRITANNIA",
+      "GODFRYPHLP",
+      "VSTIND",
+      "ELITECON"
+     ],
+     "primary": [
+      "HINDUNILVR",
+      "ITC",
+      "NESTLEIND",
+      "BRITANNIA",
+      "GODFRYPHLP",
+      "VSTIND",
+      "ELITECON"
+     ]
+    },
+    {
+     "key": "fmcg_hpc",
+     "label": "Household & Personal Care",
+     "description": "HPC and personal care brands",
+     "symbols": [
+      "GODREJCP",
+      "COLPAL",
+      "DABUR",
+      "MARICO",
+      "PGHH",
+      "PGHL",
+      "GILLETTE",
+      "EMAMILTD",
+      "JYOTHYLAB",
+      "BAJAJCON",
+      "ZYDUSWELL",
+      "AMRUTANJAN",
+      "TTKHLTCARE",
+      "CUPID"
+     ],
+     "primary": [
+      "GODREJCP",
+      "COLPAL",
+      "DABUR",
+      "MARICO",
+      "PGHH",
+      "PGHL",
+      "GILLETTE",
+      "EMAMILTD",
+      "JYOTHYLAB",
+      "BAJAJCON",
+      "ZYDUSWELL",
+      "AMRUTANJAN",
+      "TTKHLTCARE",
+      "CUPID"
+     ]
+    },
+    {
+     "key": "packaged_foods_snacks",
+     "label": "Packaged Foods & Snacks",
+     "description": "Packaged foods, snacks and specialty food brands",
+     "symbols": [
+      "TATACONSUM",
+      "NESTLEIND",
+      "BRITANNIA",
+      "BIKAJI",
+      "BECTORFOOD",
+      "ORKLAINDIA",
+      "DIAMONDYD",
+      "GOPAL",
+      "ADFFOODS",
+      "TASTYBITE",
+      "LOTUSCHO",
+      "HNDFDS",
+      "KRISHIVAL",
+      "GANESHCP",
+      "APIS",
+      "NWIL"
+     ],
+     "primary": [
+      "TATACONSUM",
+      "BIKAJI",
+      "BECTORFOOD",
+      "ORKLAINDIA",
+      "DIAMONDYD",
+      "GOPAL",
+      "ADFFOODS",
+      "TASTYBITE",
+      "LOTUSCHO",
+      "HNDFDS",
+      "KRISHIVAL",
+      "GANESHCP",
+      "APIS",
+      "NWIL"
+     ]
+    },
+    {
+     "key": "dairy_ice_cream",
+     "label": "Dairy & Ice Cream",
+     "description": "Milk, dairy and ice cream",
+     "symbols": [
+      "HATSUN",
+      "DODLA",
+      "PARAGMILK",
+      "HERITGFOOD",
+      "VADILALIND",
+      "KWIL",
+      "VADILENT"
+     ],
+     "primary": [
+      "HATSUN",
+      "DODLA",
+      "PARAGMILK",
+      "HERITGFOOD",
+      "VADILALIND",
+      "KWIL",
+      "VADILENT"
+     ]
+    },
+    {
+     "key": "beverages_tea_coffee",
+     "label": "Beverages, Tea & Coffee",
+     "description": "Soft drinks, tea and coffee",
+     "symbols": [
+      "VBL",
+      "CCL",
+      "COFFEEDAY",
+      "MCLEODRUSS",
+      "VINCOFE",
+      "BBTC"
+     ],
+     "primary": [
+      "VBL",
+      "CCL",
+      "COFFEEDAY",
+      "MCLEODRUSS",
+      "VINCOFE",
+      "BBTC"
+     ]
+    },
+    {
+     "key": "alco_bev",
+     "label": "Alcoholic Beverages",
+     "description": "Spirits, beer and wine",
+     "symbols": [
+      "UNITDSPR",
+      "RADICO",
+      "UBL",
+      "TI",
+      "ABDL",
+      "SULA",
+      "GLOBUSSPR",
+      "SDBL",
+      "GMBREW",
+      "ASALCBR",
+      "GRANDOAK",
+      "ASGARD",
+      "MONIKA",
+      "JAGAJITIND",
+      "PICCADIL",
+      "BCLIND"
+     ],
+     "primary": [
+      "UNITDSPR",
+      "RADICO",
+      "UBL",
+      "TI",
+      "ABDL",
+      "SULA",
+      "GLOBUSSPR",
+      "SDBL",
+      "GMBREW",
+      "ASALCBR",
+      "GRANDOAK",
+      "ASGARD",
+      "MONIKA",
+      "JAGAJITIND",
+      "PICCADIL",
+      "BCLIND"
+     ]
+    },
+    {
+     "key": "sugar_ethanol",
+     "label": "Sugar & Ethanol",
+     "description": "Sugar millers and ethanol producers",
+     "symbols": [
+      "BALRAMCHIN",
+      "TRIVENI",
+      "EIDPARRY",
+      "DALMIASUG",
+      "BANARISUG",
+      "DWARKESH",
+      "RENUKA",
+      "BAJAJHIND",
+      "DBOL",
+      "DHAMPURSUG",
+      "AVADHSUGAR",
+      "UTTAMSUGAR",
+      "MAGADSUGAR",
+      "DAVANGERE",
+      "ANDHRSUGAR",
+      "GODAVARIB",
+      "TRUALT",
+      "PRAJIND",
+      "DCMSIL"
+     ],
+     "primary": [
+      "BALRAMCHIN",
+      "TRIVENI",
+      "EIDPARRY",
+      "DALMIASUG",
+      "BANARISUG",
+      "DWARKESH",
+      "RENUKA",
+      "BAJAJHIND",
+      "DBOL",
+      "DHAMPURSUG",
+      "AVADHSUGAR",
+      "UTTAMSUGAR",
+      "MAGADSUGAR",
+      "DAVANGERE",
+      "ANDHRSUGAR",
+      "GODAVARIB",
+      "TRUALT",
+      "DCMSIL"
+     ]
+    },
+    {
+     "key": "agri_commodities_oils_grains",
+     "label": "Edible Oils, Rice & Agri Commodities",
+     "description": "Edible oil, rice and agri-trading",
+     "symbols": [
+      "AWL",
+      "PATANJALI",
+      "GOKULAGRO",
+      "MANORAMA",
+      "JAYAGROGN",
+      "KRBL",
+      "LTFOODS",
+      "GRMOVER",
+      "AGARIND",
+      "GAEL",
+      "CIANAGRO",
+      "BPAGRI",
+      "CROPSTER",
+      "SUNDROP",
+      "CLSEL",
+      "SVRL"
+     ],
+     "primary": [
+      "AWL",
+      "PATANJALI",
+      "GOKULAGRO",
+      "MANORAMA",
+      "JAYAGROGN",
+      "KRBL",
+      "LTFOODS",
+      "GRMOVER",
+      "AGARIND",
+      "GAEL",
+      "CIANAGRO",
+      "BPAGRI",
+      "CROPSTER",
+      "SUNDROP",
+      "CLSEL",
+      "SVRL"
+     ]
+    },
+    {
+     "key": "poultry_aqua_feed",
+     "label": "Poultry, Aqua & Animal Feed",
+     "description": "Feed, poultry, aqua and meat exporters",
+     "symbols": [
+      "AVANTIFEED",
+      "GODREJAGRO",
+      "VENKEYS",
+      "APEX",
+      "SKMEGGPROD",
+      "MUKKA",
+      "HMAAGRO",
+      "EIFFL",
+      "IFBAGRO",
+      "KSE",
+      "SHINDL"
+     ],
+     "primary": [
+      "AVANTIFEED",
+      "GODREJAGRO",
+      "VENKEYS",
+      "APEX",
+      "SKMEGGPROD",
+      "MUKKA",
+      "HMAAGRO",
+      "EIFFL",
+      "IFBAGRO",
+      "KSE",
+      "SHINDL"
+     ]
+    },
+    {
+     "key": "food_ingredients",
+     "label": "Food Ingredients & Specialty Nutrition",
+     "description": "Gelatin, polyols, flavours and nutrition ingredients",
+     "symbols": [
+      "GULPOLY",
+      "NITTAGELA",
+      "AVTNPL",
+      "VIDHIING",
+      "SUDEEPPHRM",
+      "ADVENZYMES",
+      "HNDFDS",
+      "SUKHJITS",
+      "RIDDHI",
+      "HEXAGON",
+      "SANSTAR",
+      "REGAAL"
+     ],
+     "primary": [
+      "GULPOLY",
+      "NITTAGELA",
+      "SUKHJITS",
+      "RIDDHI",
+      "HEXAGON",
+      "SANSTAR",
+      "REGAAL"
+     ]
+    },
+    {
+     "key": "discretionary_durables",
+     "label": "Appliances & Cooling",
+     "description": "Room ACs, refrigeration and home appliances",
+     "symbols": [
+      "VOLTAS",
+      "BLUESTARCO",
+      "WHIRLPOOL",
+      "LGEINDIA",
+      "SYMPHONY",
+      "IFBIND",
+      "ONIDA",
+      "EUREKAFORB",
+      "BOSCH-HCIL",
+      "DIXON",
+      "AMBER"
+     ],
+     "primary": [
+      "VOLTAS",
+      "BLUESTARCO",
+      "WHIRLPOOL",
+      "LGEINDIA",
+      "SYMPHONY",
+      "IFBIND",
+      "ONIDA",
+      "EUREKAFORB",
+      "BOSCH-HCIL"
+     ]
+    },
+    {
+     "key": "electricals_fans_lighting",
+     "label": "Electricals - Fans, Lighting & Wiring Devices",
+     "description": "Fans, lighting, switches and wires",
+     "symbols": [
+      "HAVELLS",
+      "CROMPTON",
+      "ORIENTELEC",
+      "VGUARD",
+      "BAJAJELEC",
+      "SURYAROSNI",
+      "FOCUS",
+      "WEL"
+     ],
+     "primary": [
+      "HAVELLS",
+      "CROMPTON",
+      "ORIENTELEC",
+      "VGUARD",
+      "BAJAJELEC",
+      "SURYAROSNI",
+      "FOCUS",
+      "WEL"
+     ]
+    },
+    {
+     "key": "kitchenware_housewares",
+     "label": "Kitchenware & Housewares",
+     "description": "Cookware, kitchen appliances and houseware",
+     "symbols": [
+      "TTKPRESTIG",
+      "HAWKINCOOK",
+      "STOVEKRAFT",
+      "BUTTERFLY",
+      "CELLO"
+     ],
+     "primary": [
+      "TTKPRESTIG",
+      "HAWKINCOOK",
+      "STOVEKRAFT",
+      "BUTTERFLY",
+      "CELLO"
+     ]
+    },
+    {
+     "key": "home_furnishing_furniture",
+     "label": "Furniture, Mattresses & Home Furnishing",
+     "description": "Furniture, foam, mattresses",
+     "symbols": [
+      "SFL",
+      "NILKAMAL",
+      "STANLEY",
+      "RESPONIND",
+      "WAKEFIT",
+      "HARDWYN"
+     ],
+     "primary": [
+      "SFL",
+      "NILKAMAL",
+      "STANLEY",
+      "RESPONIND",
+      "HARDWYN"
+     ]
+    },
+    {
+     "key": "watches_luggage_accessories",
+     "label": "Watches, Luggage & Accessories",
+     "description": "Watches, luggage, helmets and luxury retail",
+     "symbols": [
+      "TITAN",
+      "SAFARI",
+      "VIPIND",
+      "TIMEX",
+      "KDDL",
+      "STUDDS",
+      "ETHOSLTD"
+     ],
+     "primary": [
+      "SAFARI",
+      "VIPIND",
+      "TIMEX",
+      "KDDL",
+      "STUDDS",
+      "ETHOSLTD"
+     ]
+    },
+    {
+     "key": "retail_value_departmental",
+     "label": "Value Retail, Department Stores & Electronics Retail",
+     "description": "Hypermarkets, value fashion, electronics retail",
+     "symbols": [
+      "DMART",
+      "VMM",
+      "V2RETAIL",
+      "VMART",
+      "SHOPERSTOP",
+      "STYLEBAAZA",
+      "PATELRMART",
+      "AVL",
+      "EMIL"
+     ],
+     "primary": [
+      "DMART",
+      "VMM",
+      "V2RETAIL",
+      "VMART",
+      "SHOPERSTOP",
+      "STYLEBAAZA",
+      "PATELRMART",
+      "AVL",
+      "EMIL"
+     ]
+    },
+    {
+     "key": "apparel_brands_fashion_retail",
+     "label": "Apparel Brands & Fashion Retail",
+     "description": "Branded apparel and fashion retail",
+     "symbols": [
+      "TRENT",
+      "ABFRL",
+      "ABLBL",
+      "MANYAVAR",
+      "ARVINDFASN",
+      "KKCL",
+      "CANTABIL",
+      "GOCOLORS",
+      "RAYMONDLSL",
+      "MUFTI",
+      "KALAMANDIR",
+      "MONTECARLO",
+      "BIZOTIC",
+      "CPML"
+     ],
+     "primary": [
+      "TRENT",
+      "ABFRL",
+      "ABLBL",
+      "MANYAVAR",
+      "ARVINDFASN",
+      "KKCL",
+      "CANTABIL",
+      "GOCOLORS",
+      "RAYMONDLSL",
+      "MUFTI",
+      "KALAMANDIR",
+      "MONTECARLO",
+      "BIZOTIC",
+      "CPML"
+     ]
+    },
+    {
+     "key": "innerwear_basics",
+     "label": "Innerwear & Basics",
+     "description": "Innerwear and basic apparel",
+     "symbols": [
+      "PAGEIND",
+      "LUXIND",
+      "DOLLAR",
+      "RUPA",
+      "IRISDOREME"
+     ],
+     "primary": [
+      "PAGEIND",
+      "LUXIND",
+      "DOLLAR",
+      "RUPA",
+      "IRISDOREME"
+     ]
+    },
+    {
+     "key": "footwear",
+     "label": "Footwear",
+     "description": "Footwear makers and retailers",
+     "symbols": [
+      "BATAINDIA",
+      "RELAXO",
+      "METROBRAND",
+      "CAMPUS",
+      "REDTAPE",
+      "MAYURUNIQ"
+     ],
+     "primary": [
+      "BATAINDIA",
+      "RELAXO",
+      "METROBRAND",
+      "CAMPUS",
+      "REDTAPE",
+      "MAYURUNIQ"
+     ]
+    },
+    {
+     "key": "retail_qsr",
+     "label": "Restaurants & QSR",
+     "description": "QSR, dining and food-service operators",
+     "symbols": [
+      "JUBLFOOD",
+      "DEVYANI",
+      "SAPPHIRE",
+      "WESTLIFE",
+      "RBA",
+      "SPECIALITY",
+      "TRAVELFOOD",
+      "SPICELOUNG",
+      "UFBL"
+     ],
+     "primary": [
+      "JUBLFOOD",
+      "DEVYANI",
+      "SAPPHIRE",
+      "WESTLIFE",
+      "RBA",
+      "SPECIALITY",
+      "TRAVELFOOD",
+      "SPICELOUNG",
+      "UFBL"
+     ]
+    },
+    {
+     "key": "stationery_writing",
+     "label": "Stationery & Writing Instruments",
+     "description": "Pens, pencils, art material and stationery",
+     "symbols": [
+      "DOMS",
+      "FLAIR",
+      "KOKUYOCMLN",
+      "LINC",
+      "CELLO",
+      "NAVNETEDUL"
+     ],
+     "primary": [
+      "DOMS",
+      "FLAIR",
+      "KOKUYOCMLN",
+      "LINC"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "media_entertainment",
+   "label": "Media & Entertainment",
+   "baskets": [
+    {
+     "key": "media_tv_cable",
+     "label": "TV Broadcast, Cable & DTH",
+     "description": "Broadcasters, cable and DTH",
+     "symbols": [
+      "SUNTV",
+      "ZEEL",
+      "NETWORK18",
+      "TVTODAY",
+      "ZEEMEDIA",
+      "NDTV",
+      "BALAJITELE",
+      "DISHTV",
+      "DEN",
+      "HATHWAY",
+      "GTPL",
+      "AQYLON"
+     ],
+     "primary": [
+      "SUNTV",
+      "ZEEL",
+      "NETWORK18",
+      "TVTODAY",
+      "ZEEMEDIA",
+      "NDTV",
+      "BALAJITELE",
+      "DISHTV",
+      "DEN",
+      "HATHWAY",
+      "GTPL",
+      "AQYLON"
+     ]
+    },
+    {
+     "key": "media_print_radio_outdoor",
+     "label": "Print, Radio & Outdoor Advertising",
+     "description": "Newspapers, radio and out-of-home",
+     "symbols": [
+      "JAGRAN",
+      "DBCORP",
+      "SANDESH",
+      "HMVL",
+      "ENIL",
+      "BRIGHT",
+      "SIGNPOST",
+      "EXHICON",
+      "MMWL",
+      "REPRO"
+     ],
+     "primary": [
+      "JAGRAN",
+      "DBCORP",
+      "SANDESH",
+      "HMVL",
+      "ENIL",
+      "BRIGHT",
+      "SIGNPOST",
+      "EXHICON",
+      "MMWL",
+      "REPRO"
+     ]
+    },
+    {
+     "key": "media_content_music_vfx",
+     "label": "Music, Films, VFX & Content Tech",
+     "description": "Music labels, studios, VFX and cloud broadcast",
+     "symbols": [
+      "SAREGAMA",
+      "TIPSMUSIC",
+      "PANORAMA",
+      "PFOCUS",
+      "AMAGI",
+      "PVRINOX",
+      "JOJO"
+     ],
+     "primary": [
+      "SAREGAMA",
+      "TIPSMUSIC",
+      "PANORAMA",
+      "PFOCUS",
+      "AMAGI",
+      "PVRINOX",
+      "JOJO"
+     ]
+    },
+    {
+     "key": "leisure_parks_cinemas",
+     "label": "Theme Parks, Leisure & Experiences",
+     "description": "Theme parks and leisure",
+     "symbols": [
+      "WONDERLA",
+      "IMAGICAA",
+      "MHRIL",
+      "PVRINOX",
+      "ITDC"
+     ],
+     "primary": [
+      "WONDERLA",
+      "IMAGICAA",
+      "MHRIL",
+      "ITDC"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tourism_hospitality_travel",
+   "label": "Tourism, Hospitality & Travel",
+   "baskets": [
+    {
+     "key": "hotels_hospitality",
+     "label": "Hotels & Resorts - Branded & Large",
+     "description": "Branded and institutional hotel owners",
+     "symbols": [
+      "INDHOTEL",
+      "EIHOTEL",
+      "LEMONTREE",
+      "CHALET",
+      "PARKHOTELS",
+      "ITCHOTELS",
+      "THELEELA",
+      "VENTIVE",
+      "JUNIPER",
+      "SAMHI",
+      "BRIGHOTEL",
+      "PRAVEG"
+     ],
+     "primary": [
+      "INDHOTEL",
+      "EIHOTEL",
+      "LEMONTREE",
+      "CHALET",
+      "PARKHOTELS",
+      "ITCHOTELS",
+      "THELEELA",
+      "VENTIVE",
+      "JUNIPER",
+      "SAMHI",
+      "BRIGHOTEL",
+      "PRAVEG"
+     ]
+    },
+    {
+     "key": "hotels_regional_small",
+     "label": "Hotels - Regional & Small Caps",
+     "description": "Smaller hotel owners and resorts",
+     "symbols": [
+      "EIHAHOTELS",
+      "ORIENTHOT",
+      "TAJGVK",
+      "ROHLTD",
+      "ASIANHOTNR",
+      "VHLTD",
+      "ADVENTHTL",
+      "KAMATHOTEL",
+      "BENARAS",
+      "UPHOT",
+      "HLVLTD"
+     ],
+     "primary": [
+      "EIHAHOTELS",
+      "ORIENTHOT",
+      "TAJGVK",
+      "ROHLTD",
+      "ASIANHOTNR",
+      "VHLTD",
+      "ADVENTHTL",
+      "KAMATHOTEL",
+      "BENARAS",
+      "UPHOT",
+      "HLVLTD"
+     ]
+    },
+    {
+     "key": "travel_booking_ota",
+     "label": "Travel Platforms & Services",
+     "description": "OTAs, B2B travel and visa services",
+     "symbols": [
+      "EASEMYTRIP",
+      "IRCTC",
+      "IXIGO",
+      "YATRA",
+      "TBOTEK",
+      "THOMASCOOK",
+      "BLS",
+      "RATEGAIN"
+     ],
+     "primary": [
+      "EASEMYTRIP",
+      "IXIGO",
+      "YATRA",
+      "TBOTEK",
+      "THOMASCOOK",
+      "BLS"
+     ]
+    },
+    {
+     "key": "airports_aviation",
+     "label": "Airlines, Airports & Aviation Services",
+     "description": "Airlines, airport operators and aviation MRO",
+     "symbols": [
+      "GMRAIRPORT",
+      "INDIGO",
+      "SPICEJET",
+      "GMRP&UI"
+     ],
+     "primary": [
+      "GMRAIRPORT",
+      "INDIGO",
+      "SPICEJET"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "infra_transport_logistics",
+   "label": "Infrastructure, Transport & Logistics",
+   "baskets": [
+    {
+     "key": "ports_logistics",
+     "label": "Ports & Marine Services",
+     "description": "Ports, terminals and marine services",
+     "symbols": [
+      "ADANIPORTS",
+      "JSWINFRA",
+      "GPPL",
+      "SHREEJISPG",
+      "KMEW",
+      "DREDGECORP"
+     ],
+     "primary": [
+      "ADANIPORTS",
+      "JSWINFRA",
+      "GPPL",
+      "SHREEJISPG",
+      "KMEW",
+      "DREDGECORP"
+     ]
+    },
+    {
+     "key": "logistics_cfs_container",
+     "label": "Container Freight, CFS & Rail Logistics",
+     "description": "CFS, ICD and container logistics",
+     "symbols": [
+      "CONCOR",
+      "GATEWAY",
+      "ATL",
+      "NAVKARCORP",
+      "ALLCARGO",
+      "SICALLOG",
+      "JITFINFRA",
+      "TREL"
+     ],
+     "primary": [
+      "GATEWAY",
+      "ATL",
+      "NAVKARCORP",
+      "ALLCARGO",
+      "SICALLOG",
+      "JITFINFRA",
+      "TREL"
+     ]
+    },
+    {
+     "key": "logistics_express_3pl",
+     "label": "Express, 3PL & Supply Chain",
+     "description": "Parcel, express and contract logistics",
+     "symbols": [
+      "DELHIVERY",
+      "BLUEDART",
+      "TCIEXP",
+      "SHADOWFAX",
+      "MAHLOG",
+      "TVSSCS",
+      "SNOWMAN",
+      "AFCOM",
+      "GLOTTIS"
+     ],
+     "primary": [
+      "DELHIVERY",
+      "BLUEDART",
+      "TCIEXP",
+      "SHADOWFAX",
+      "MAHLOG",
+      "TVSSCS",
+      "SNOWMAN",
+      "AFCOM",
+      "GLOTTIS"
+     ]
+    },
+    {
+     "key": "logistics_road_freight",
+     "label": "Road Freight & Fleet Operators",
+     "description": "Surface transport and fleet",
+     "symbols": [
+      "TCI",
+      "VRLLOG",
+      "WCIL",
+      "RITCO",
+      "SVLL",
+      "AEGISLOG"
+     ],
+     "primary": [
+      "TCI",
+      "VRLLOG",
+      "WCIL",
+      "RITCO",
+      "SVLL"
+     ]
+    },
+    {
+     "key": "commercial_shipping_maritime",
+     "label": "Commercial Shipping & Dredging",
+     "description": "Shipping companies",
+     "symbols": [
+      "GESHIP",
+      "SCI",
+      "ESSARSHPNG",
+      "SCILAL",
+      "DREDGECORP",
+      "SEAMECLTD"
+     ],
+     "primary": [
+      "GESHIP",
+      "SCI",
+      "ESSARSHPNG",
+      "SCILAL"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "business_services",
+   "label": "Business & Support Services",
+   "baskets": [
+    {
+     "key": "staffing_facility_services",
+     "label": "Staffing, Security & Facility Services",
+     "description": "Staffing, security, cash logistics and facility services",
+     "symbols": [
+      "QUESS",
+      "TEAMLEASE",
+      "UDS",
+      "SIS",
+      "KRYSTAL",
+      "KAPSTON",
+      "CMSINFO",
+      "STYL",
+      "BLSE",
+      "VAKRANGEE",
+      "INNOVISION"
+     ],
+     "primary": [
+      "QUESS",
+      "TEAMLEASE",
+      "UDS",
+      "SIS",
+      "KRYSTAL",
+      "KAPSTON",
+      "CMSINFO",
+      "STYL",
+      "BLSE",
+      "VAKRANGEE",
+      "INNOVISION"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "real_estate_major",
+   "label": "Real Estate",
+   "baskets": [
+    {
+     "key": "resi_developers_large",
+     "label": "Residential Developers - Large & Listed Leaders",
+     "description": "Large listed residential developers",
+     "symbols": [
+      "DLF",
+      "GODREJPROP",
+      "OBEROIRLTY",
+      "LODHA",
+      "PRESTIGE",
+      "BRIGADE",
+      "SOBHA",
+      "SIGNATURE",
+      "PURVA",
+      "SUNTECK",
+      "ABREL",
+      "RAYMONDREL",
+      "MAHLIFE",
+      "RUSTOMJEE",
+      "KALPATARU",
+      "EMBDL"
+     ],
+     "primary": [
+      "DLF",
+      "GODREJPROP",
+      "OBEROIRLTY",
+      "LODHA",
+      "PRESTIGE",
+      "BRIGADE",
+      "SOBHA",
+      "SIGNATURE",
+      "PURVA",
+      "SUNTECK",
+      "ABREL",
+      "RAYMONDREL",
+      "MAHLIFE",
+      "RUSTOMJEE",
+      "KALPATARU",
+      "EMBDL"
+     ]
+    },
+    {
+     "key": "resi_developers_midsmall",
+     "label": "Residential Developers - Mid & Small Caps",
+     "description": "Regional and smaller developers",
+     "symbols": [
+      "KOLTEPATIL",
+      "ASHIANA",
+      "ARVSMART",
+      "ARIHANTSUP",
+      "AJMERA",
+      "MARATHON",
+      "HEMIPROP",
+      "LOTUSDEV",
+      "SURAJEST",
+      "MAXESTATES",
+      "TARC",
+      "OMAXE",
+      "UNITECH",
+      "PENINLAND",
+      "NILASPACES",
+      "SHRIRAMPPS",
+      "DBREALTY",
+      "GANESHHOU",
+      "ELDEHSG",
+      "ARIHANT",
+      "HUBTOWN",
+      "PROZONER",
+      "MODIS",
+      "ARKADE",
+      "BRRL",
+      "SHRADDHA",
+      "PANSARI",
+      "ANANTRAJ",
+      "TCC",
+      "ELPROINTL",
+      "MIIL",
+      "AGIIL",
+      "PVP",
+      "RDBIPL",
+      "NATIONSTD",
+      "TEXINFRA",
+      "BLAL",
+      "OSWALGREEN",
+      "MCCHRLS-B",
+      "GEECEE",
+      "KESAR"
+     ],
+     "primary": [
+      "KOLTEPATIL",
+      "ASHIANA",
+      "ARVSMART",
+      "ARIHANTSUP",
+      "AJMERA",
+      "MARATHON",
+      "HEMIPROP",
+      "LOTUSDEV",
+      "SURAJEST",
+      "MAXESTATES",
+      "TARC",
+      "OMAXE",
+      "UNITECH",
+      "PENINLAND",
+      "NILASPACES",
+      "SHRIRAMPPS",
+      "DBREALTY",
+      "GANESHHOU",
+      "ELDEHSG",
+      "ARIHANT",
+      "HUBTOWN",
+      "PROZONER",
+      "MODIS",
+      "ARKADE",
+      "BRRL",
+      "SHRADDHA",
+      "PANSARI",
+      "ANANTRAJ",
+      "TCC",
+      "ELPROINTL",
+      "MIIL",
+      "AGIIL",
+      "PVP",
+      "RDBIPL",
+      "NATIONSTD",
+      "TEXINFRA",
+      "BLAL",
+      "OSWALGREEN",
+      "MCCHRLS-B",
+      "GEECEE",
+      "KESAR"
+     ]
+    },
+    {
+     "key": "real_estate_reits",
+     "label": "Commercial Real Estate, REITs & Flex Workspace",
+     "description": "Office REITs, rentals and co-working",
+     "symbols": [
+      "EMBASSY",
+      "MINDSPACE",
+      "BIRET",
+      "NXST",
+      "NIRLON",
+      "WEWORK",
+      "SMARTWORKS",
+      "AWFIS",
+      "INDIQUBE",
+      "EFCIL",
+      "PHOENIXLTD"
+     ],
+     "primary": [
+      "EMBASSY",
+      "MINDSPACE",
+      "BIRET",
+      "NXST",
+      "NIRLON",
+      "WEWORK",
+      "SMARTWORKS",
+      "AWFIS",
+      "INDIQUBE",
+      "EFCIL",
+      "PHOENIXLTD"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "materials_mining",
+   "label": "Metals, Mining & Materials",
+   "baskets": [
+    {
+     "key": "ferrous",
+     "label": "Steel - Integrated & Flat Products",
+     "description": "Integrated and flat steel",
+     "symbols": [
+      "TATASTEEL",
+      "JSWSTEEL",
+      "SAIL",
+      "JINDALSTEL",
+      "NSLNISP",
+      "VISL",
+      "JAYNECOIND"
+     ],
+     "primary": [
+      "TATASTEEL",
+      "JSWSTEEL",
+      "SAIL",
+      "JINDALSTEL",
+      "NSLNISP",
+      "VISL",
+      "JAYNECOIND"
+     ]
+    },
+    {
+     "key": "steel_long_sponge",
+     "label": "Steel - Long Products, TMT & Sponge Iron",
+     "description": "Sponge iron, TMT and long products",
+     "symbols": [
+      "GPIL",
+      "SARDAEN",
+      "SHYAMMETL",
+      "LLOYDSME",
+      "KIRLFER",
+      "MSPL",
+      "GALLANTT",
+      "JAIBALAJI",
+      "PRAKASH",
+      "RHETAN",
+      "MAHASTEEL",
+      "KAMDHENU",
+      "STEELXIND",
+      "PANCHMAHQ",
+      "BEEKAY",
+      "INDIAHOMES"
+     ],
+     "primary": [
+      "GPIL",
+      "SARDAEN",
+      "SHYAMMETL",
+      "LLOYDSME",
+      "MSPL",
+      "GALLANTT",
+      "JAIBALAJI",
+      "PRAKASH",
+      "RHETAN",
+      "MAHASTEEL",
+      "KAMDHENU",
+      "STEELXIND",
+      "PANCHMAHQ",
+      "BEEKAY",
+      "INDIAHOMES"
+     ]
+    },
+    {
+     "key": "steel_stainless_special",
+     "label": "Stainless, Alloy & Special Steel",
+     "description": "Stainless and special steel",
+     "symbols": [
+      "JSL",
+      "USHAMART",
+      "VSSL",
+      "SUNFLAG",
+      "KSL",
+      "MUKANDLTD",
+      "RSL",
+      "SBCL",
+      "MANAKCOAT"
+     ],
+     "primary": [
+      "JSL",
+      "USHAMART",
+      "VSSL",
+      "SUNFLAG",
+      "KSL",
+      "MUKANDLTD",
+      "RSL",
+      "SBCL",
+      "MANAKCOAT"
+     ]
+    },
+    {
+     "key": "ferro_alloys_graphite",
+     "label": "Ferro Alloys & Graphite Electrodes",
+     "description": "Ferro alloys, graphite electrodes",
+     "symbols": [
+      "MAITHANALL",
+      "IMFA",
+      "VISACHROME",
+      "GRAPHITE",
+      "HEGAM",
+      "NAVA"
+     ],
+     "primary": [
+      "MAITHANALL",
+      "IMFA",
+      "VISACHROME",
+      "GRAPHITE",
+      "HEGAM",
+      "NAVA"
+     ]
+    },
+    {
+     "key": "non_ferrous_mining",
+     "label": "Aluminium, Copper & Zinc",
+     "description": "Non-ferrous metal producers",
+     "symbols": [
+      "HINDALCO",
+      "NATIONALUM",
+      "VAML",
+      "VEDL",
+      "HINDZINC",
+      "HINDCOPPER",
+      "MAANALU",
+      "ARFIN"
+     ],
+     "primary": [
+      "HINDALCO",
+      "NATIONALUM",
+      "VAML",
+      "VEDL",
+      "HINDZINC",
+      "HINDCOPPER",
+      "MAANALU",
+      "ARFIN"
+     ]
+    },
+    {
+     "key": "critical_minerals_rare_earths",
+     "label": "Critical Minerals, Iron Ore & Rare Earths",
+     "description": "Mining PSUs, minerals and rare earth names",
+     "symbols": [
+      "GMDCLTD",
+      "NMDC",
+      "MOIL",
+      "KIOCL",
+      "SANDUMA",
+      "ORISSAMINE",
+      "ASHAPURMIN",
+      "PERMAGN",
+      "DECNGOLD",
+      "MIDWESTLTD",
+      "SOUTHWEST",
+      "20MICRONS"
+     ],
+     "primary": [
+      "GMDCLTD",
+      "NMDC",
+      "MOIL",
+      "KIOCL",
+      "SANDUMA",
+      "ORISSAMINE",
+      "ASHAPURMIN",
+      "PERMAGN",
+      "DECNGOLD",
+      "MIDWESTLTD",
+      "SOUTHWEST",
+      "20MICRONS"
+     ]
+    },
+    {
+     "key": "psu_diversified_trading",
+     "label": "PSU Trading & Diversified Services",
+     "description": "Government trading and diversified entities",
+     "symbols": [
+      "MMTC",
+      "STCINDIA",
+      "MSTCLTD",
+      "BALMLAWRIE",
+      "HMT",
+      "ANDREWYU"
+     ],
+     "primary": [
+      "MMTC",
+      "STCINDIA",
+      "BALMLAWRIE",
+      "HMT",
+      "ANDREWYU"
+     ]
+    },
+    {
+     "key": "cement",
+     "label": "Cement - Large Pan-India",
+     "description": "Large cement producers",
+     "symbols": [
+      "ULTRACEMCO",
+      "AMBUJACEM",
+      "ACC",
+      "SHREECEM",
+      "DALBHARAT",
+      "JKCEMENT",
+      "JSWCEMENT",
+      "NUVOCO"
+     ],
+     "primary": [
+      "ULTRACEMCO",
+      "AMBUJACEM",
+      "ACC",
+      "SHREECEM",
+      "DALBHARAT",
+      "JKCEMENT",
+      "JSWCEMENT",
+      "NUVOCO"
+     ]
+    },
+    {
+     "key": "cement_south",
+     "label": "Cement - South India",
+     "description": "South-centric cement",
+     "symbols": [
+      "RAMCOCEM",
+      "INDIACEM",
+      "SAGCEM",
+      "ORIENTCEM",
+      "DECCANCE",
+      "ACL",
+      "KCP",
+      "NCLIND"
+     ],
+     "primary": [
+      "RAMCOCEM",
+      "INDIACEM",
+      "SAGCEM",
+      "ORIENTCEM",
+      "DECCANCE",
+      "ACL",
+      "KCP",
+      "NCLIND"
+     ]
+    },
+    {
+     "key": "cement_regional_midsmall",
+     "label": "Cement - Regional Mid and Small Caps",
+     "description": "Regional cement",
+     "symbols": [
+      "STARCEMENT",
+      "JKLAKSHMI",
+      "BIRLACORPN",
+      "HEIDELBERG",
+      "MANGLMCEM",
+      "SHREDIGCEM",
+      "SAURASHCEM",
+      "SHIVACEM"
+     ],
+     "primary": [
+      "STARCEMENT",
+      "JKLAKSHMI",
+      "BIRLACORPN",
+      "HEIDELBERG",
+      "MANGLMCEM",
+      "SHREDIGCEM",
+      "SAURASHCEM",
+      "SHIVACEM"
+     ]
+    },
+    {
+     "key": "tiles_sanitaryware",
+     "label": "Tiles, Sanitaryware & Bath",
+     "description": "Tiles, sanitaryware and bath fittings",
+     "symbols": [
+      "KAJARIACER",
+      "SOMANYCERA",
+      "CERA",
+      "ASIANTILES",
+      "NITCO",
+      "HINDWAREAP",
+      "CARYSIL",
+      "EUROPRATIK",
+      "POKARNA"
+     ],
+     "primary": [
+      "KAJARIACER",
+      "SOMANYCERA",
+      "CERA",
+      "ASIANTILES",
+      "NITCO",
+      "HINDWAREAP",
+      "CARYSIL",
+      "EUROPRATIK",
+      "POKARNA"
+     ]
+    },
+    {
+     "key": "wood_panels_laminates",
+     "label": "Plywood, Panels & Laminates",
+     "description": "Plywood, MDF and laminates",
+     "symbols": [
+      "CENTURYPLY",
+      "GREENPANEL",
+      "GREENLAM",
+      "GREENPLY",
+      "STYLAMIND",
+      "RUSHIL"
+     ],
+     "primary": [
+      "CENTURYPLY",
+      "GREENPANEL",
+      "GREENLAM",
+      "GREENPLY",
+      "STYLAMIND",
+      "RUSHIL"
+     ]
+    },
+    {
+     "key": "building_materials",
+     "label": "Roofing, PEB, AAC & Construction Products",
+     "description": "Roofing, PEB and building products",
+     "symbols": [
+      "EVERESTIND",
+      "RAMCOIND",
+      "VISAKAIND",
+      "BIGBLOC",
+      "INTERARCH",
+      "EPACKPEB",
+      "BUILDPRO",
+      "SGMART",
+      "ARIS",
+      "INDIANHUME",
+      "PRSMJOHNSN",
+      "MBEL",
+      "BIRLANU"
+     ],
+     "primary": [
+      "EVERESTIND",
+      "RAMCOIND",
+      "VISAKAIND",
+      "BIGBLOC",
+      "INTERARCH",
+      "EPACKPEB",
+      "BUILDPRO",
+      "SGMART",
+      "ARIS",
+      "INDIANHUME",
+      "PRSMJOHNSN",
+      "MBEL",
+      "BIRLANU"
+     ]
+    },
+    {
+     "key": "paper_pulp",
+     "label": "Paper, Pulp & Newsprint",
+     "description": "Paper and board",
+     "symbols": [
+      "JKPAPER",
+      "WSTCSTPAPR",
+      "SESHAPAPER",
+      "ANDHRAPAP",
+      "PDMJEPAPER",
+      "TNPL",
+      "KUANTUM",
+      "SATIA",
+      "NRAIL",
+      "VOITHPAPR"
+     ],
+     "primary": [
+      "JKPAPER",
+      "WSTCSTPAPR",
+      "SESHAPAPER",
+      "ANDHRAPAP",
+      "PDMJEPAPER",
+      "TNPL",
+      "KUANTUM",
+      "SATIA",
+      "NRAIL",
+      "VOITHPAPR"
+     ]
+    },
+    {
+     "key": "packaging_flexible_films",
+     "label": "Flexible Packaging & Polymer Films",
+     "description": "Flexible packaging and BOPET or BOPP",
+     "symbols": [
+      "UFLEX",
+      "COSMOFIRST",
+      "POLYPLEX",
+      "JINDALPOLY",
+      "GRWRHITECH",
+      "XPROINDIA",
+      "NAHARPOLY",
+      "ESTER",
+      "TCPLPACK",
+      "PREMIERPOL",
+      "SHREERAMA"
+     ],
+     "primary": [
+      "UFLEX",
+      "COSMOFIRST",
+      "POLYPLEX",
+      "JINDALPOLY",
+      "GRWRHITECH",
+      "XPROINDIA",
+      "NAHARPOLY",
+      "ESTER",
+      "TCPLPACK",
+      "PREMIERPOL",
+      "SHREERAMA"
+     ]
+    },
+    {
+     "key": "packaging_rigid_industrial",
+     "label": "Rigid, Paper & Industrial Packaging",
+     "description": "Rigid and industrial packaging",
+     "symbols": [
+      "HUHTAMAKI",
+      "MOLDTKPAC",
+      "EPL",
+      "TIMETECHNO",
+      "AGI",
+      "COMSYN",
+      "PYRAMID",
+      "SHAILY",
+      "ALLTIME",
+      "UNITEDPOLY",
+      "TPLPLASTEH"
+     ],
+     "primary": [
+      "HUHTAMAKI",
+      "MOLDTKPAC",
+      "EPL",
+      "TIMETECHNO",
+      "COMSYN",
+      "PYRAMID",
+      "SHAILY",
+      "ALLTIME",
+      "UNITEDPOLY",
+      "TPLPLASTEH"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "textiles_major",
+   "label": "Textiles & Apparel",
+   "baskets": [
+    {
+     "key": "home_textiles",
+     "label": "Home Textiles & Terry",
+     "description": "Home textiles",
+     "symbols": [
+      "WELSPUNLIV",
+      "ICIL",
+      "HIMATSEIDE",
+      "TRIDENT",
+      "ALOKINDS",
+      "BOMDYEING",
+      "FAZE3Q"
+     ],
+     "primary": [
+      "WELSPUNLIV",
+      "ICIL",
+      "HIMATSEIDE",
+      "TRIDENT",
+      "ALOKINDS",
+      "BOMDYEING",
+      "FAZE3Q"
+     ]
+    },
+    {
+     "key": "textiles",
+     "label": "Cotton Yarn, Spinning & Integrated Textiles",
+     "description": "Spinners and integrated players",
+     "symbols": [
+      "VTL",
+      "KPRMILL",
+      "NITINSPIN",
+      "SPORTKING",
+      "SUTLEJTEX",
+      "PASHUPATI",
+      "RSWM",
+      "RAJPALAYAM",
+      "NAHARSPING",
+      "AMBIKCO",
+      "ABCOTS",
+      "GHCLTEXTIL",
+      "LAKSHMIMIL",
+      "VTMLTD",
+      "SUMEETINDS",
+      "PRECOT",
+      "JAYTEX",
+      "SUNRAKSHAK"
+     ],
+     "primary": [
+      "VTL",
+      "KPRMILL",
+      "NITINSPIN",
+      "SPORTKING",
+      "SUTLEJTEX",
+      "PASHUPATI",
+      "RSWM",
+      "RAJPALAYAM",
+      "NAHARSPING",
+      "AMBIKCO",
+      "ABCOTS",
+      "GHCLTEXTIL",
+      "LAKSHMIMIL",
+      "VTMLTD",
+      "SUMEETINDS",
+      "PRECOT",
+      "JAYTEX",
+      "SUNRAKSHAK"
+     ]
+    },
+    {
+     "key": "textiles_synthetic_fibres",
+     "label": "Polyester, Viscose & Synthetic Fibres",
+     "description": "Synthetic yarn and fibre",
+     "symbols": [
+      "FILATEX",
+      "SARLAPOLY",
+      "CENTENKA",
+      "AYMSYNTEX",
+      "RAJRILTD",
+      "INDORAMA",
+      "GANECOS"
+     ],
+     "primary": [
+      "FILATEX",
+      "SARLAPOLY",
+      "CENTENKA",
+      "AYMSYNTEX",
+      "RAJRILTD",
+      "GANECOS"
+     ]
+    },
+    {
+     "key": "textiles_fabrics_denim",
+     "label": "Fabrics, Denim & Suiting",
+     "description": "Fabrics, denim and suiting",
+     "symbols": [
+      "ARVIND",
+      "JINDWORLD",
+      "RNBDENIMS",
+      "SIYSIL",
+      "VISHAL",
+      "MAFATIND",
+      "RAYMOND",
+      "RUBYMILLS",
+      "SANGAMIND",
+      "BORANA",
+      "MWL"
+     ],
+     "primary": [
+      "ARVIND",
+      "JINDWORLD",
+      "RNBDENIMS",
+      "SIYSIL",
+      "VISHAL",
+      "MAFATIND",
+      "RAYMOND",
+      "RUBYMILLS",
+      "SANGAMIND",
+      "BORANA",
+      "MWL"
+     ]
+    },
+    {
+     "key": "garments_exporters",
+     "label": "Garments & Apparel Exporters",
+     "description": "Garment exporters",
+     "symbols": [
+      "GOKEX",
+      "KITEX",
+      "PGIL",
+      "SPAL",
+      "SBC",
+      "LEMERITE",
+      "PDSL"
+     ],
+     "primary": [
+      "GOKEX",
+      "KITEX",
+      "PGIL",
+      "SPAL",
+      "SBC",
+      "LEMERITE",
+      "PDSL"
+     ]
+    },
+    {
+     "key": "textile_technical_jute",
+     "label": "Technical Textiles & Jute",
+     "description": "Technical textile, fibres and jute",
+     "symbols": [
+      "SANATHAN",
+      "GARFIBRES",
+      "CHEVIOT",
+      "GLOSTERLTD",
+      "TIIL",
+      "MALLCOM"
+     ],
+     "primary": [
+      "SANATHAN",
+      "GARFIBRES",
+      "CHEVIOT",
+      "GLOSTERLTD",
+      "TIIL",
+      "MALLCOM"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "defence_major",
+   "label": "Defence",
+   "baskets": [
+    {
+     "key": "defence_platforms",
+     "label": "Defence Platforms and Prime Contractors",
+     "description": "Prime contractors",
+     "symbols": [
+      "HAL",
+      "BDL",
+      "BEML",
+      "MIDHANI",
+      "BHARATFORG"
+     ],
+     "primary": [
+      "HAL",
+      "BDL",
+      "MIDHANI"
+     ]
+    },
+    {
+     "key": "defence_shipbuilding",
+     "label": "Naval Shipbuilding",
+     "description": "Naval yards",
+     "symbols": [
+      "MAZDOCK",
+      "COCHINSHIP",
+      "GRSE",
+      "SWANDEF",
+      "KMEW"
+     ],
+     "primary": [
+      "MAZDOCK",
+      "COCHINSHIP",
+      "GRSE",
+      "SWANDEF"
+     ]
+    },
+    {
+     "key": "defence_electronics",
+     "label": "Defence Electronics",
+     "description": "Radar, EW and mission electronics",
+     "symbols": [
+      "BEL",
+      "DATAPATTNS",
+      "ASTRAMICRO",
+      "ZENTEC",
+      "APOLLO",
+      "IDEAFORGE",
+      "PARAS",
+      "CENTUM",
+      "SIGMAADV",
+      "CNCRD"
+     ],
+     "primary": [
+      "BEL",
+      "DATAPATTNS",
+      "ASTRAMICRO",
+      "ZENTEC",
+      "APOLLO",
+      "IDEAFORGE",
+      "PARAS",
+      "SIGMAADV",
+      "CNCRD"
+     ]
+    },
+    {
+     "key": "defence_ammunition_explosives",
+     "label": "Ammunition, Explosives and Munitions",
+     "description": "Explosives and munitions",
+     "symbols": [
+      "SOLARINDS",
+      "PREMEXPLN",
+      "GOCLCORP",
+      "NIBE",
+      "BAJAJINDEF",
+      "KRISHNADEF",
+      "RRPDEFENSE",
+      "JAYKAY"
+     ],
+     "primary": [
+      "SOLARINDS",
+      "PREMEXPLN",
+      "GOCLCORP",
+      "NIBE",
+      "BAJAJINDEF",
+      "KRISHNADEF",
+      "RRPDEFENSE",
+      "JAYKAY"
+     ]
+    },
+    {
+     "key": "aero_systems_integration_ems",
+     "label": "Systems Integration and Aero-Defence EMS",
+     "description": "Aero-defence EMS",
+     "symbols": [
+      "CYIENTDLM",
+      "DCXINDIA",
+      "ROSSTECH",
+      "AXISCADES",
+      "CNCRD",
+      "AVANTEL",
+      "SIGMAADV"
+     ],
+     "primary": [
+      "DCXINDIA",
+      "ROSSTECH"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "aerospace_major",
+   "label": "Aerospace",
+   "baskets": [
+    {
+     "key": "aero_forgings_castings_precision",
+     "label": "Aerospace Forgings, Castings & Precision",
+     "description": "Aero-grade forgings, investment castings and precision machining",
+     "symbols": [
+      "AZAD",
+      "UNIMECH",
+      "SANSERA",
+      "BHARATFORG",
+      "PTCIL",
+      "MTARTECH"
+     ],
+     "primary": [
+      "AZAD",
+      "PTCIL"
+     ]
+    },
+    {
+     "key": "aero_space_satellite_systems",
+     "label": "Space and Satellite Systems",
+     "description": "Space supply chain",
+     "symbols": [
+      "MTARTECH",
+      "PARAS",
+      "ASTRAMICRO",
+      "CENTUM",
+      "APOLLO"
+     ],
+     "primary": []
+    },
+    {
+     "key": "aero_raw_materials_metallurgy",
+     "label": "Raw Materials & Aerospace-Grade Metallurgy",
+     "description": "Titanium, superalloys and special metals",
+     "symbols": [
+      "PTCIL",
+      "MIDHANI",
+      "UNIABEXAL"
+     ],
+     "primary": []
+    },
+    {
+     "key": "aero_aerostructures_airframe_assembly",
+     "label": "Aerostructures, Airframe & Aircraft/Helicopter Assembly",
+     "description": "Airframes and aerostructures",
+     "symbols": [
+      "HAL",
+      "AEQUS",
+      "DYNAMATECH",
+      "MTARTECH",
+      "TANAA"
+     ],
+     "primary": [
+      "AEQUS",
+      "DYNAMATECH",
+      "TANAA"
+     ]
+    },
+    {
+     "key": "aero_avionics_radar_mission_electronics",
+     "label": "Avionics, Radar & Mission Electronics",
+     "description": "Avionics and radar electronics",
+     "symbols": [
+      "BEL",
+      "DATAPATTNS",
+      "ASTRAMICRO",
+      "CENTUM",
+      "APOLLO",
+      "AVANTEL"
+     ],
+     "primary": []
+    },
+    {
+     "key": "aero_drones_uav",
+     "label": "Drones / UAV Systems",
+     "description": "Drones, UAVs and counter-drone systems",
+     "symbols": [
+      "IDEAFORGE",
+      "ZENTEC",
+      "PARAS",
+      "SIGMAADV",
+      "AVANTEL",
+      "ASTRAMICRO",
+      "DATAPATTNS"
+     ],
+     "primary": []
+    }
+   ]
+  },
+  {
+   "key": "conglomerates_diversified",
+   "label": "Conglomerates & Diversified",
+   "baskets": [
+    {
+     "key": "conglomerates_diversified",
+     "label": "Conglomerates & Diversified Groups",
+     "description": "Multi-business groups that do not fit a single sector basket",
+     "symbols": [
+      "RELIANCE",
+      "ADANIENT",
+      "GRASIM",
+      "GODREJIND",
+      "RTNINDIA",
+      "LLOYDSENT",
+      "3MINDIA",
+      "SWANCORP",
+      "NESCO",
+      "ORICONENT",
+      "RIIL",
+      "BIL",
+      "EMPIND"
+     ],
+     "primary": [
+      "RELIANCE",
+      "ADANIENT",
+      "GRASIM",
+      "GODREJIND",
+      "RTNINDIA",
+      "LLOYDSENT",
+      "3MINDIA",
+      "SWANCORP",
+      "NESCO",
+      "ORICONENT",
+      "RIIL",
+      "BIL",
+      "EMPIND"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "metal_ewaste_recycling",
+   "label": "Metal & E-Waste Recycling",
+   "baskets": [
+    {
+     "key": "recycling_ewaste_recovery",
+     "label": "E-waste / WEEE & Precious-Industrial Metal Recovery",
+     "description": "E-waste recyclers and refurbishers",
+     "symbols": [
+      "ECORECO",
+      "NAMOEWASTE",
+      "EBGNG"
+     ],
+     "primary": [
+      "ECORECO",
+      "NAMOEWASTE"
+     ]
+    },
+    {
+     "key": "recycling_aluminium_scrap",
+     "label": "Aluminium Scrap Recycling (Ingots & Alloys)",
+     "description": "Secondary aluminium",
+     "symbols": [
+      "BAHETI",
+      "ARFIN",
+      "MAANALU"
+     ],
+     "primary": [
+      "BAHETI"
+     ]
+    },
+    {
+     "key": "recycling_lead_battery",
+     "label": "Lead & Battery-Scrap Recycling (Secondary Lead Smelting)",
+     "description": "Secondary lead",
+     "symbols": [
+      "POCL",
+      "JAINREC",
+      "ARDEE",
+      "POEL"
+     ],
+     "primary": [
+      "POCL",
+      "JAINREC",
+      "ARDEE",
+      "POEL"
+     ]
+    },
+    {
+     "key": "recycling_plastics_rubber",
+     "label": "Plastics, PET & Rubber Recycling",
+     "description": "Recycled PET fibre, tyre and reclaimed rubber",
+     "symbols": [
+      "TINNARUBR",
+      "GANECOS",
+      "GRPLTD"
+     ],
+     "primary": [
+      "TINNARUBR"
+     ]
+    },
+    {
+     "key": "recycling_multimetal_global",
+     "label": "Integrated Multi-Metal & Global Recycling",
+     "description": "Multi-metal secondary processors",
+     "symbols": [
+      "GRAVITA",
+      "CMRGREEN",
+      "SUNLITE",
+      "MSTCLTD"
+     ],
+     "primary": [
+      "GRAVITA",
+      "CMRGREEN",
+      "SUNLITE",
+      "MSTCLTD"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "glass",
+   "label": "Glass",
+   "baskets": [
+    {
+     "key": "industrial_toughened_glass",
+     "label": "Glass - Architectural, Auto, Containers & Glassware",
+     "description": "Glass makers",
+     "symbols": [
+      "ASAHIINDIA",
+      "SEKURITIND",
+      "SEJALLTD",
+      "HALDYNGL",
+      "AGI",
+      "BOROLTD",
+      "BOROSCI",
+      "LAOPALA",
+      "BORORENEW"
+     ],
+     "primary": [
+      "ASAHIINDIA",
+      "SEKURITIND",
+      "SEJALLTD",
+      "HALDYNGL",
+      "AGI",
+      "BOROLTD",
+      "BOROSCI",
+      "LAOPALA"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gems_jewellery_major",
+   "label": "Gems & Jewellery",
+   "baskets": [
+    {
+     "key": "gems_jewellery_retail",
+     "label": "Gems & Jewellery Retail",
+     "description": "Branded jewellery retail chains",
+     "symbols": [
+      "TITAN",
+      "KALYANKJIL",
+      "SENCO",
+      "THANGAMAYL",
+      "PNGJL",
+      "TBZ",
+      "BLUESTONE",
+      "PCJEWELLER",
+      "MOTISONS",
+      "DPABHUSHAN",
+      "RBZJEWEL",
+      "KHAZANCHI",
+      "SHRINGARMS",
+      "LGHL",
+      "PNGSREVA",
+      "GARGI",
+      "AAYUSHBULL"
+     ],
+     "primary": [
+      "TITAN",
+      "KALYANKJIL",
+      "SENCO",
+      "THANGAMAYL",
+      "PNGJL",
+      "TBZ",
+      "BLUESTONE",
+      "PCJEWELLER",
+      "MOTISONS",
+      "DPABHUSHAN",
+      "RBZJEWEL",
+      "KHAZANCHI",
+      "SHRINGARMS",
+      "LGHL",
+      "PNGSREVA",
+      "GARGI",
+      "AAYUSHBULL"
+     ]
+    },
+    {
+     "key": "jewellery_manufacturers_exporters",
+     "label": "Jewellery Manufacturers, Diamonds, Exporters & Gem Certification",
+     "description": "Jewellery makers, diamond and lab-grown processors, exporters and the IGI gem certification lab",
+     "symbols": [
+      "SKYGOLD",
+      "GOLDIAM",
+      "RAJESHEXPO",
+      "RGL",
+      "ASTAR",
+      "RADHIKAJWE",
+      "SHANTIGOLD",
+      "MVGJL",
+      "AEROPLANE",
+      "VAIBHAVGBL",
+      "IGIL"
+     ],
+     "primary": [
+      "SKYGOLD",
+      "GOLDIAM",
+      "RAJESHEXPO",
+      "RGL",
+      "ASTAR",
+      "RADHIKAJWE",
+      "SHANTIGOLD",
+      "MVGJL",
+      "AEROPLANE",
+      "VAIBHAVGBL",
+      "IGIL"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gaming_esports_major",
+   "label": "Gaming, Esports & AVGC",
+   "baskets": [
+    {
+     "key": "gaming_esports_avgc",
+     "label": "Gaming, Esports & AVGC",
+     "description": "Gaming and AVGC",
+     "symbols": [
+      "NAZARA",
+      "DELTACORP",
+      "ONMOBILE",
+      "META",
+      "PFOCUS"
+     ],
+     "primary": [
+      "NAZARA",
+      "DELTACORP",
+      "ONMOBILE",
+      "META"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "nuclear_power_major",
+   "label": "Nuclear Power / SMR",
+   "baskets": [
+    {
+     "key": "nuclear_power_smr",
+     "label": "Nuclear Power / SMR",
+     "description": "Nuclear equipment, EPC and materials suppliers",
+     "symbols": [
+      "BHEL",
+      "LT",
+      "NTPC",
+      "MTARTECH",
+      "WALCHANNAG",
+      "ENGINERSIN",
+      "GVPIL"
+     ],
+     "primary": [
+      "WALCHANNAG",
+      "ENGINERSIN"
+     ]
+    }
+   ]
+  }
+ ]
+}

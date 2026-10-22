@@ -81,56 +81,37 @@
 
 <div class="band">
 	<div class="band-inner">
-		<h1>Price and shareholding alerts</h1>
-		<div class="sub">
-			Get a push or Telegram message when a stock reaches a price you set, and when a tracked company's
-			promoter, FII or DII holding moves by more than you choose.
-		</div>
+		<h1>Price alerts</h1>
+		<div class="sub">Get notified when a price level is hit or holdings shift.</div>
 	</div>
 </div>
 
-<div class="wrap mi">
-	<section class="mi-box" aria-labelledby="mi-del" data-testid="delivery">
-		<h2 id="mi-del">Where alerts are sent</h2>
-		{#if data.delivery.push || data.delivery.telegram}
-			<p class="sm-hint">
-				{data.delivery.push ? 'Push notifications are on for your devices.' : ''}
-				{data.delivery.telegram ? 'Telegram is connected.' : ''}
-			</p>
-		{:else}
-			<p class="sm-hint">
-				No device or Telegram chat is connected, so alerts would not reach you.
-				{data.delivery.pushAvailable ? '' : 'Push is not set up on the server yet.'}
-			</p>
-		{/if}
-		<a class="mi-link" href="/valuation/tracking">Set up notifications on the tracked companies page</a>
-	</section>
-
+<div class="wrap mi pa">
 	<form class="mi-box" onsubmit={create} aria-labelledby="mi-new">
 		<h2 id="mi-new">New price alert</h2>
-		<div class="mi-field">
-			<label for="paSearch">Company</label>
-			<CompanyPicker id="paSearch" label="Search a company for the alert" placeholder="Type a name or ticker" bind:value={pickerText} clearOnPick={false} disabled={busy} onPick={(hit) => { picked = hit; pickerText = hit.name; }} />
-			{#if picked}<span class="sm-hint">Selected: {picked.name} ({picked.nseSymbol ?? picked.symbol})</span>{/if}
-		</div>
-		<div class="mi-form">
+		<div class="pa-form">
+			<div class="mi-field pa-company">
+				<label for="paSearch" class="pa-sr">Company</label>
+				<CompanyPicker id="paSearch" label="Search a company for the alert" placeholder="Company name or ticker" bind:value={pickerText} clearOnPick={false} disabled={busy} onPick={(hit) => { picked = hit; pickerText = hit.name; }} />
+			</div>
 			<label class="mi-field">
-				When
-				<select bind:value={kind}>
+				<span class="pa-sr">When</span>
+				<select bind:value={kind} aria-label="When">
 					{#each PRICE_ALERT_KINDS as k (k)}
 						<option value={k}>{PRICE_ALERT_LABELS[k]}</option>
 					{/each}
 				</select>
 			</label>
 			<label class="mi-field">
-				{percent ? 'Percent' : 'Price (Rs)'}
-				<input class="sm-input" bind:value={threshold} type="number" min="0" step="any" inputmode="decimal" required />
+				<span class="pa-sr">{percent ? 'Percent' : 'Price (Rs)'}</span>
+				<input class="sm-input" bind:value={threshold} type="number" min="0" step="any" inputmode="decimal" required placeholder={percent ? 'Percent' : 'Price (Rs)'} aria-label={percent ? 'Percent' : 'Price (Rs)'} />
 			</label>
+			<button class="sm-btn sm-btn-primary pa-add" type="submit" disabled={busy}>Add alert</button>
 		</div>
+		{#if picked}<span class="sm-hint">Selected: {picked.name} ({picked.nseSymbol ?? picked.symbol})</span>{/if}
 		{#if percent}
-			<p class="sm-hint">A percentage move is measured from the latest stored price at the moment you add the alert.</p>
+			<p class="sm-hint">A percentage move is measured from the latest stored price when you add the alert.</p>
 		{/if}
-		<div class="mi-row"><button class="sm-btn sm-btn-primary" type="submit" disabled={busy}>Add alert</button></div>
 	</form>
 
 	{#if status}<p class="sm-msg sm-msg-{status.kind}" role="status">{status.text}</p>{/if}
@@ -153,9 +134,9 @@
 						</div>
 						<p class="mi-text">{describePriceRule({ kind: r.kind as PriceAlertKind, threshold: r.threshold, basePrice: r.basePrice })}</p>
 						<p class="mi-text mi-muted">Latest stored price: {inr(r.price)}</p>
-						<div class="mi-row">
-							{#if !r.active}<button class="sm-btn" type="button" onclick={() => rearm(r.id)}>Turn on again</button>{/if}
-							<button class="sm-btn" type="button" onclick={() => remove(r.id)} aria-label="Remove alert for {r.nseSymbol}">Remove</button>
+						<div class="mi-row pa-actions">
+							{#if !r.active}<button class="calm-btn" type="button" onclick={() => rearm(r.id)}>Turn on again</button>{/if}
+							<button class="calm-btn is-danger" type="button" onclick={() => remove(r.id)} aria-label="Remove alert for {r.nseSymbol}">Remove</button>
 						</div>
 					</li>
 				{/each}
@@ -163,17 +144,83 @@
 		{/if}
 	</section>
 
-	<form class="mi-box" onsubmit={saveHolding} aria-labelledby="mi-hold" data-testid="holding-form">
-		<h2 id="mi-hold">Shareholding change alerts</h2>
-		<p class="sm-hint">
-			When a tracked company reports a new quarter, you are told if a group's share moved by at least this many
-			percentage points. Leave a field empty to turn it off.
-		</p>
-		<div class="mi-form">
-			<label class="mi-field">Promoter (points)<input class="sm-input" type="number" min="0" max="50" step="any" inputmode="decimal" value={val(promoter, data.holding.promoterPp)} oninput={(e) => (promoter = e.currentTarget.value)} /></label>
-			<label class="mi-field">FII (points)<input class="sm-input" type="number" min="0" max="50" step="any" inputmode="decimal" value={val(fii, data.holding.fiiPp)} oninput={(e) => (fii = e.currentTarget.value)} /></label>
-			<label class="mi-field">DII (points)<input class="sm-input" type="number" min="0" max="50" step="any" inputmode="decimal" value={val(dii, data.holding.diiPp)} oninput={(e) => (dii = e.currentTarget.value)} /></label>
-		</div>
-		<div class="mi-row"><button class="sm-btn sm-btn-primary" type="submit" disabled={busy}>Save</button></div>
-	</form>
+	<details class="calm-disclosure pa-hold">
+		<summary>Shareholding change alerts</summary>
+		<form class="mi-box" onsubmit={saveHolding} aria-labelledby="mi-hold" data-testid="holding-form">
+			<h2 id="mi-hold" class="pa-sr">Shareholding change alerts</h2>
+			<p class="sm-hint">
+				When a tracked company reports a new quarter, you are told if a group's share moved by at least this many
+				percentage points. Leave a field empty to turn it off.
+			</p>
+			<div class="mi-form">
+				<label class="mi-field">Promoter (points)<input class="sm-input" type="number" min="0" max="50" step="any" inputmode="decimal" value={val(promoter, data.holding.promoterPp)} oninput={(e) => (promoter = e.currentTarget.value)} /></label>
+				<label class="mi-field">FII (points)<input class="sm-input" type="number" min="0" max="50" step="any" inputmode="decimal" value={val(fii, data.holding.fiiPp)} oninput={(e) => (fii = e.currentTarget.value)} /></label>
+				<label class="mi-field">DII (points)<input class="sm-input" type="number" min="0" max="50" step="any" inputmode="decimal" value={val(dii, data.holding.diiPp)} oninput={(e) => (dii = e.currentTarget.value)} /></label>
+			</div>
+			<div class="mi-row"><button class="sm-btn sm-btn-primary" type="submit" disabled={busy}>Save</button></div>
+		</form>
+	</details>
+
+	<p class="sm-hint pa-delivery" data-testid="delivery">
+		{#if data.delivery.push || data.delivery.telegram}
+			Sent to {[data.delivery.push ? 'your devices' : '', data.delivery.telegram ? 'Telegram' : ''].filter(Boolean).join(' and ')}.
+		{:else}
+			No device or Telegram chat is connected, so alerts would not reach you.
+			{data.delivery.pushAvailable ? '' : 'Push is not set up on the server yet.'}
+		{/if}
+	</p>
 </div>
+
+<style>
+	.pa {
+		gap: 1.5rem;
+		margin-top: 1rem;
+	}
+	.pa-sr {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+	:global(.vd) .pa .mi-box {
+		border: 0;
+		padding: 0;
+		background: none;
+	}
+	:global(.vd) .pa .mi-item {
+		border: 0;
+		border-bottom: 1px solid var(--rule);
+		padding: 0.8rem 0;
+		background: none;
+	}
+	:global(.vd) .pa .mi-list {
+		gap: 0;
+	}
+	.pa-form {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6rem;
+		align-items: end;
+	}
+	.pa-add {
+		justify-self: start;
+		min-height: 2.75rem;
+	}
+	@media (min-width: 760px) {
+		.pa-form {
+			grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) auto;
+		}
+	}
+	.pa-actions {
+		margin-left: -0.5rem;
+	}
+	.pa-hold form {
+		margin-top: 0.5rem;
+		max-width: 44rem;
+	}
+	.pa-delivery {
+		margin: 0;
+	}
+</style>

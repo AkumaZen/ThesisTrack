@@ -8,9 +8,7 @@ import {
 	concallGuidance,
 	masterTrackerResearch,
 	savedValuations,
-	shareholdingSnapshots,
-	watchlistMembers,
-	watchlists
+	shareholdingSnapshots
 } from '$lib/server/db/valuationSchema';
 import type { RedFlagReport } from '../concall/redFlags';
 import type { ResultQuality } from '../concall/resultQuality';
@@ -18,6 +16,7 @@ import type { StoredAnalysis } from '../concall/analysis';
 import type { GuidanceEvaluation } from '../concall/guidance';
 import type { StoredSource, TranscriptRef } from '../concall/transcripts';
 import { parseMeetingDate } from '../boardMeetings';
+import { listSections } from './marketIntelStore';
 
 export interface TrackedCompany { symbol: string; name: string; sector: string; subsector: string }
 
@@ -133,16 +132,15 @@ export async function saveEvaluations(updates: { id: number; evaluation: Guidanc
 
 export interface WatchlistOption { id: string; name: string; symbols: string[] }
 
-/** The main watchlist plus every named one, as symbol sets for the filter. */
-export async function listWatchlistOptions(): Promise<WatchlistOption[]> {
-	const [main, named, members] = await Promise.all([
+/** The main watchlist plus the person's own lists (watchlist sections), as symbol sets for the filter. */
+export async function listWatchlistOptions(userId: number): Promise<WatchlistOption[]> {
+	const [main, sections] = await Promise.all([
 		db.select({ symbol: savedValuations.symbol }).from(savedValuations),
-		db.select().from(watchlists).orderBy(asc(watchlists.name)),
-		db.select().from(watchlistMembers)
+		listSections(userId)
 	]);
 	return [
 		{ id: 'main', name: 'Main watchlist', symbols: main.map((m) => m.symbol) },
-		...named.map((w) => ({ id: String(w.id), name: w.name, symbols: members.filter((m) => m.watchlistId === w.id).map((m) => m.symbol) }))
+		...sections.map((w) => ({ id: String(w.id), name: w.name, symbols: w.items.map((i) => i.nseSymbol) }))
 	];
 }
 

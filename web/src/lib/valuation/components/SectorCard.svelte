@@ -4,7 +4,7 @@
 	import type { StrengthEvaluation } from '$lib/valuation/strength';
 	import { rotationBadge, ROTATION_TONE_CLASS, type SectorReturn } from '$lib/valuation/sectorRotation';
 	import { windowWithAverage } from '$lib/valuation/movingAverage';
-	import { formatAsOf } from '$lib/valuation/priceAge';
+	import { formatDataThrough } from '$lib/valuation/priceAge';
 	import { whenVisible } from '$lib/valuation/whenVisible';
 	import {
 		DEFAULT_SECTOR_CARD_METRICS,
@@ -22,7 +22,6 @@
 	// being used at.
 	let {
 		label,
-		tag,
 		row,
 		href,
 		linkText,
@@ -33,7 +32,6 @@
 		refreshing = null
 	}: {
 		label: string;
-		tag: string;
 		row: SectorReturn | 'error' | 'loading' | undefined;
 		href: string;
 		linkText: string;
@@ -63,7 +61,7 @@
 	);
 
 	function fmtPct(n: number | null) {
-		return n == null ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+		return n == null ? '-' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 	}
 	function toneClass(n: number | null) {
 		if (n == null) return '';
@@ -75,7 +73,6 @@
 	<div class="sector-card-head">
 		<div class="sector-card-title">
 			<span class="sector-card-label">{label}</span>
-			<span class="tag">{tag}</span>
 		</div>
 		{#if row && row !== 'error' && row !== 'loading'}
 			{@const badge = rotationBadge(row)}
@@ -116,8 +113,8 @@
 			<span class="sector-card-asof">
 				{#if refreshing}
 					{refreshing}
-				{:else if row.asOf}
-					Prices as of {formatAsOf(row.asOf)}{row.missing ? ` · ${row.missing} without prices` : ''}
+				{:else if row.dataThrough}
+					Prices to {formatDataThrough(row.dataThrough)}{row.missing ? ` · ${row.missing} without prices` : ''}
 				{:else}
 					No stored prices
 				{/if}

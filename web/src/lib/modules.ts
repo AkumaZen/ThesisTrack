@@ -1,28 +1,32 @@
 // Which module of the app a path belongs to. Drives the module switch, the tools row and the drawer.
 // URLs stay under /valuation; only the nav grouping differs. The most specific prefix wins.
-export type ModuleKey = 'thesis' | 'valuation' | 'sector' | 'analysis';
+export type ModuleKey = 'thesis' | 'valuation' | 'markets' | 'filings' | 'alerts';
 
 export const MODULES: { key: ModuleKey; label: string; landing: string }[] = [
 	{ key: 'thesis', label: 'Thesis', landing: '/' },
 	{ key: 'valuation', label: 'Valuation', landing: '/valuation' },
-	{ key: 'sector', label: 'Sector', landing: '/valuation/sector-rotation' },
-	{ key: 'analysis', label: 'Analysis', landing: '/valuation/stage-scanner' }
+	{ key: 'markets', label: 'Markets', landing: '/valuation/sector-rotation' },
+	{ key: 'filings', label: 'Filings', landing: '/valuation/announcements' },
+	{ key: 'alerts', label: 'Alerts', landing: '/valuation/alerts' }
 ];
 
 // Longest prefix wins, so these beat the general '/valuation' entry.
 const PREFIXES: [string, ModuleKey][] = [
-	['/valuation/sector-rotation', 'sector'],
-	['/valuation/sectors', 'sector'],
-	['/valuation/stage-scanner', 'analysis'],
-	['/valuation/compare', 'analysis'],
-	['/valuation/results', 'analysis'],
-	['/valuation/returns', 'analysis'],
-	['/valuation/breadth', 'analysis'],
-	['/valuation/scans', 'analysis'],
-	['/valuation/announcements', 'analysis'],
-	['/valuation/filings', 'analysis'],
-	['/valuation/insider-trades', 'analysis'],
-	['/valuation/corporate-actions', 'analysis'],
+	['/valuation/sector-rotation', 'markets'],
+	['/valuation/sectors', 'markets'],
+	['/valuation/stage-scanner', 'markets'],
+	['/valuation/results', 'markets'],
+	['/valuation/returns', 'markets'],
+	['/valuation/breadth', 'markets'],
+	['/valuation/scans', 'markets'],
+	['/valuation/settings', 'markets'],
+	['/valuation/announcements', 'filings'],
+	['/valuation/filings', 'filings'],
+	['/valuation/insider-trades', 'filings'],
+	['/valuation/corporate-actions', 'filings'],
+	['/valuation/alerts', 'alerts'],
+	['/valuation/tracking', 'alerts'],
+	['/valuation/price-alerts', 'alerts'],
 	['/valuation', 'valuation']
 ];
 

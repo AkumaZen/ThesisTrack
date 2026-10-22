@@ -37,52 +37,59 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Insider trades and SAST</h1>
-		<div class="sub">
-			Trades by promoters, directors and other insiders (SEBI PIT) and substantial acquisitions or sales
-			(SAST Regulation 29), as disclosed to NSE. Search a shareholder's name to follow one person across companies.
-		</div>
+		<div class="sub">Insider trades and substantial acquisitions, as disclosed to NSE.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				Insider trades are by promoters, directors and other insiders (SEBI PIT); substantial acquisitions
+				or sales are SAST Regulation 29 disclosures. Search a shareholder's name to follow one person
+				across companies.
+			</p>
+		</details>
 	</div>
 </div>
 
-<div class="wrap mi">
+<div class="wrap mi calm-flat">
 	<div class="mi-tabs" role="group" aria-label="Disclosure type">
 		<a class="tag" href={tabHref(null)} aria-current={data.tab === 'pit' ? 'true' : undefined}>Insider trades</a>
 		<a class="tag" href={tabHref('sast')} aria-current={data.tab === 'sast' ? 'true' : undefined}>Substantial acquisitions (SAST)</a>
 	</div>
 
-	<form class="mi-box" method="get" action="/valuation/insider-trades" aria-labelledby="mi-filter">
-		<h2 id="mi-filter">Filter</h2>
+	<form class="calm-toolbar" method="get" action="/valuation/insider-trades" aria-label="Filter disclosures">
 		{#if data.tab === 'sast'}<input type="hidden" name="tab" value="sast" />{/if}
-		<div class="mi-form">
-			<label class="mi-field">Company or ticker<input class="sm-input" name="company" value={f.company} maxlength="60" autocomplete="off" /></label>
-			<label class="mi-field">Shareholder name<input class="sm-input" name="person" value={f.person} maxlength="60" autocomplete="off" placeholder="e.g. Jhunjhunwala" /></label>
-			<label class="mi-field">
-				Person category
-				<select name="category">
-					<option value="">All</option>
-					{#each PERSON_CATEGORIES as c (c)}
-						<option value={c} selected={f.category === c}>{c}</option>
-					{/each}
-				</select>
-			</label>
-			<label class="mi-field">
-				Buy or sell
-				<select name="side">
-					<option value="">All</option>
-					<option value="buy" selected={f.side === 'buy'}>Buy / acquisition</option>
-					<option value="sell" selected={f.side === 'sell'}>Sell / disposal</option>
-					{#if data.tab === 'pit'}<option value="pledge" selected={f.side === 'pledge'}>Pledge</option>{/if}
-				</select>
-			</label>
-			{#if data.tab === 'pit'}
-				<label class="mi-field">Minimum value (Rs lakh)<input class="sm-input" type="number" min="0" step="any" inputmode="decimal" name="minLakh" value={f.minValue ? f.minValue / 100_000 : ''} /></label>
-			{/if}
-			<label class="mi-field">From<input class="sm-input" type="date" name="from" value={f.from ?? ''} /></label>
-			<label class="mi-field">To<input class="sm-input" type="date" name="to" value={f.to ?? ''} /></label>
-		</div>
-		<div class="mi-row">
-			<button class="sm-btn sm-btn-primary" type="submit">Apply filters</button>
-			<a class="sm-btn mi-link" href={data.tab === 'sast' ? '/valuation/insider-trades?tab=sast' : '/valuation/insider-trades'}>Clear</a>
+		<label class="calm-field"><span class="sr-only">Company or ticker</span><input name="company" value={f.company} maxlength="60" autocomplete="off" placeholder="Company or ticker" /></label>
+		<label class="calm-field"><span class="sr-only">Shareholder name</span><input name="person" value={f.person} maxlength="60" autocomplete="off" placeholder="Shareholder name" /></label>
+		<label class="calm-field">
+			<span class="sr-only">Person category</span>
+			<select name="category" onchange={(e) => e.currentTarget.form?.requestSubmit()}>
+				<option value="">All categories</option>
+				{#each PERSON_CATEGORIES as c (c)}
+					<option value={c} selected={f.category === c}>{c}</option>
+				{/each}
+			</select>
+		</label>
+		<label class="calm-field">
+			<span class="sr-only">Buy or sell</span>
+			<select name="side" onchange={(e) => e.currentTarget.form?.requestSubmit()}>
+				<option value="">Buy or sell</option>
+				<option value="buy" selected={f.side === 'buy'}>Buy / acquisition</option>
+				<option value="sell" selected={f.side === 'sell'}>Sell / disposal</option>
+				{#if data.tab === 'pit'}<option value="pledge" selected={f.side === 'pledge'}>Pledge</option>{/if}
+			</select>
+		</label>
+		<details class="calm-disclosure calm-more" open={Boolean(f.from || f.to || f.minValue)}>
+			<summary>More filters</summary>
+			<div class="calm-more-body">
+				{#if data.tab === 'pit'}
+					<label class="calm-field">Minimum value (Rs lakh)<input type="number" min="0" step="any" inputmode="decimal" name="minLakh" value={f.minValue ? f.minValue / 100_000 : ''} /></label>
+				{/if}
+				<label class="calm-field">From<input type="date" name="from" value={f.from ?? ''} onchange={(e) => e.currentTarget.form?.requestSubmit()} /></label>
+				<label class="calm-field">To<input type="date" name="to" value={f.to ?? ''} onchange={(e) => e.currentTarget.form?.requestSubmit()} /></label>
+			</div>
+		</details>
+		<div class="calm-end">
+			<button class="calm-btn" type="submit">Apply</button>
+			<a class="calm-btn" href={data.tab === 'sast' ? '/valuation/insider-trades?tab=sast' : '/valuation/insider-trades'}>Clear</a>
 		</div>
 	</form>
 
@@ -101,24 +108,19 @@
 			{#each pit as t (t.id)}
 				{@const side = sideOf(t.txnType)}
 				<li class="mi-item">
-					<div class="mi-meta">
+					<div class="mi-meta ins-meta">
 						<span>{when(t.broadcastAt)}</span>
 						<span class="tag">{t.personCategory}</span>
 						<span class={side === 'buy' ? 'mi-side-buy' : side === 'sell' ? 'mi-side-sell' : ''}>{t.txnType}</span>
+						{#if t.sourceUrl}<a class="ins-link" href={t.sourceUrl} target="_blank" rel="noopener noreferrer">Open filing</a>{/if}
 					</div>
 					<div class="mi-title">
 						<a href="/valuation/company/{encodeURIComponent(t.nseSymbol)}">{t.nseSymbol}</a>
-						<span class="mi-muted"> {t.companyName}</span>
+						<span class="mi-muted"> {t.companyName}, {t.personName}</span>
 					</div>
-					<div class="mi-title">{t.personName}</div>
-					<dl class="mi-facts">
-						<div><dt>Shares</dt><dd>{qty(t.quantity)}</dd></div>
-						<div><dt>Value</dt><dd>{rupees(t.value)}</dd></div>
-						<div><dt>Holding before</dt><dd>{pct(t.beforePct)}</dd></div>
-						<div><dt>Holding after</dt><dd>{pct(t.afterPct)}</dd></div>
-						<div><dt>Mode</dt><dd>{t.mode || 'n/a'}</dd></div>
-					</dl>
-					{#if t.sourceUrl}<a class="mi-link" href={t.sourceUrl} target="_blank" rel="noopener noreferrer">Open filing</a>{/if}
+					<p class="ins-facts" title="Shares, value, holding before to after, mode">
+						{qty(t.quantity)} shares · {rupees(t.value)} · {pct(t.beforePct)} to {pct(t.afterPct)} · {t.mode || 'n/a'}
+					</p>
 				</li>
 			{/each}
 		</ul>
@@ -126,25 +128,19 @@
 		<ul class="mi-list" data-testid="sast-list">
 			{#each sast as s (s.id)}
 				<li class="mi-item">
-					<div class="mi-meta">
+					<div class="mi-meta ins-meta">
 						<span>{when(s.disclosedAt)}</span>
 						<span class="tag {s.isPromoter ? 'tag-info' : ''}">{s.isPromoter ? 'Promoter' : 'Acquirer'}</span>
 						<span class={s.action.toLowerCase().startsWith('acq') ? 'mi-side-buy' : 'mi-side-sell'}>{s.action}</span>
+						{#if s.sourceUrl}<a class="ins-link" href={s.sourceUrl} target="_blank" rel="noopener noreferrer">Open filing</a>{/if}
 					</div>
 					<div class="mi-title">
 						<a href="/valuation/company/{encodeURIComponent(s.nseSymbol)}">{s.nseSymbol}</a>
-						<span class="mi-muted"> {s.companyName}</span>
+						<span class="mi-muted"> {s.companyName}, {s.acquirerName}</span>
 					</div>
-					<div class="mi-title">{s.acquirerName}</div>
-					<dl class="mi-facts">
-						<div><dt>Shares acquired</dt><dd>{qty(s.sharesAcquired)}</dd></div>
-						<div><dt>Shares sold</dt><dd>{qty(s.sharesSold)}</dd></div>
-						<div><dt>Change</dt><dd>{pct(s.pctAcquired ?? s.pctSold)}</dd></div>
-						<div><dt>Holding after</dt><dd>{pct(s.pctAfter)}</dd></div>
-						<div><dt>Mode</dt><dd>{s.mode || 'n/a'}</dd></div>
-					</dl>
-					<p class="mi-text mi-muted">{s.regulation}{s.periodText ? `, ${s.periodText}` : ''}</p>
-					{#if s.sourceUrl}<a class="mi-link" href={s.sourceUrl} target="_blank" rel="noopener noreferrer">Open filing</a>{/if}
+					<p class="ins-facts" title="Shares acquired, shares sold, change, holding after, mode, regulation">
+						{qty(s.sharesAcquired)} acquired · {qty(s.sharesSold)} sold · change {pct(s.pctAcquired ?? s.pctSold)} · holding after {pct(s.pctAfter)} · {s.mode || 'n/a'} · {s.regulation}{s.periodText ? `, ${s.periodText}` : ''}
+					</p>
 				</li>
 			{/each}
 		</ul>
@@ -157,3 +153,40 @@
 		</nav>
 	{/if}
 </div>
+
+<style>
+	.ins-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 2px 10px;
+	}
+	/* Category tags read as plain text here; the colour of Buy and Sell carries the meaning. */
+	.ins-meta :global(.tag) {
+		border: 0;
+		background: none;
+		box-shadow: none;
+		padding: 0;
+		font-weight: 500;
+		text-transform: none;
+		letter-spacing: 0;
+		color: var(--muted);
+	}
+	.ins-meta :global(.tag-info) {
+		color: var(--ink);
+	}
+	.ins-link {
+		font-size: 12px;
+		font-weight: 500;
+		color: var(--muted);
+		text-decoration: underline;
+	}
+	.ins-link:hover {
+		color: var(--ink);
+	}
+	.ins-facts {
+		margin: 2px 0 0;
+		font-size: 13px;
+		color: var(--muted);
+	}
+</style>

@@ -4,7 +4,7 @@
 	const current = $derived(trackerSteps.findIndex((s) => s.id === step));
 </script>
 <section class="progress" aria-label="Analysis progress" aria-busy={status==='running'}>
-	<p role="status">{status==='ready' ? 'Draft ready for review' : status==='error' ? 'Analysis stopped — see the error above' : `Currently: ${trackerSteps[current].label}`}</p>
+	<p role="status">{status==='ready' ? 'Draft ready for review' : status==='error' ? 'Analysis stopped - see the error above' : `Currently: ${trackerSteps[current].label}`}</p>
 	<ol>{#each trackerSteps as item,i}<li class:complete={i<current||status==='ready'} class:active={i===current&&status==='running'} aria-current={i===current&&status==='running' ? 'step' : undefined}>
 		<span class="marker" aria-hidden="true">{i<current||status==='ready' ? '✓' : i+1}</span><div><strong>{item.label}</strong><small>{i<current||status==='ready' ? 'Complete' : i===current&&status==='error' ? 'Stopped' : i===current ? item.detail : 'Waiting'}</small></div>
 	</li>{/each}</ol>

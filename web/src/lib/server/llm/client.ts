@@ -10,6 +10,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { env } from '$env/dynamic/private';
+import { AI_OFF_MESSAGE, aiEnabled } from '$lib/valuation/server/aiSwitch';
 
 // Python's _default_log_dir() resolves to <repo_root>/logs/llm_calls (three
 // parents up from app/llm/client.py) unless VERCEL is set, in which case it
@@ -119,6 +120,7 @@ export class AnthropicLLMClient implements LLMClient {
 
 /** Route dependency equivalent - throws clearly if unconfigured. */
 export function getLlmClient(): LLMClient {
+	if (!aiEnabled()) throw new Error(AI_OFF_MESSAGE);
 	const apiKey = env.ANTHROPIC_API_KEY;
 	if (!apiKey) {
 		throw new Error(

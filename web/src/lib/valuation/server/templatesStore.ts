@@ -1,12 +1,20 @@
 import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { valuationTemplateDefaults, valuationTemplates } from '$lib/server/db/valuationSchema';
-import { isUniqueViolation } from './watchlistsStore';
 import { listAllBaskets } from './sectorStore';
 import type { MethodId } from '$lib/valuation/valuationEngine';
 import type { StartingTemplate, ValuationTemplate } from '$lib/valuation/templates';
 
 type Row = typeof valuationTemplates.$inferSelect;
+
+/** Postgres unique_violation (23505). Drizzle wraps driver errors, so look at the cause too. */
+function isUniqueViolation(e: unknown): boolean {
+	for (let err = e, depth = 0; err && depth < 4; depth++) {
+		if (typeof err === 'object' && (err as { code?: string }).code === '23505') return true;
+		err = (err as { cause?: unknown }).cause;
+	}
+	return false;
+}
 
 function toTemplate(r: Row, basketDefaults: string[]): ValuationTemplate {
 	return {

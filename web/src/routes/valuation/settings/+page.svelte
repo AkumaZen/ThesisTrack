@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import {
@@ -116,11 +115,7 @@
 <div class="band">
 	<div class="band-inner">
 		<h1>Settings</h1>
-		<div class="sub">
-			Team-wide thresholds behind the rotation signals and the breakout scanner. Everyone sees the
-			same signals, so only the admin can change them. Relative-strength alert levels are on the
-			<a href={resolve('/valuation/alerts')}>Alerts</a> page.
-		</div>
+		<div class="sub">Team-wide thresholds for rotation signals and the breakout scanner.</div>
 	</div>
 </div>
 
@@ -139,7 +134,10 @@
 		{#each groups as g (g.id)}
 			<fieldset class="settings-group" data-testid="settings-{g.id}">
 				<legend>{g.title}</legend>
-				<p class="hint">{g.intro}</p>
+				<details class="calm-disclosure">
+					<summary>How this works</summary>
+					<div class="calm-disclosure-body">{g.intro}</div>
+				</details>
 				<div class="settings-grid">
 					{#each Object.entries(g.fields) as [key, spec] (key)}
 						<div class="settings-field">
@@ -175,7 +173,7 @@
 				<button class="wl-strip-btn btn-primary" type="submit" disabled={busy}>Save settings</button
 				>
 				<button
-					class="link-btn"
+					class="calm-btn"
 					type="button"
 					disabled={busy}
 					onclick={() => send({ reset: true }, 'Back to the default values.')}
@@ -192,13 +190,16 @@
 
 	<fieldset class="settings-group" data-testid="settings-reset-all">
 		<legend>Your view preferences</legend>
-		<p class="hint">
-			Sorting, chart ranges, open panels, filters and the figures on sector cards are remembered for you
-			alone. This returns all of them to the defaults. Your alert rules and saved valuations are not
-			affected.
-		</p>
+		<details class="calm-disclosure">
+			<summary>What this resets</summary>
+			<div class="calm-disclosure-body">
+				Sorting, chart ranges, open panels, filters and the figures on sector cards are remembered for
+				you alone. This returns all of them to the defaults. Your alert rules and saved valuations are
+				not affected.
+			</div>
+		</details>
 		<div class="settings-actions">
-			<button class="link-btn" type="button" disabled={resetting} onclick={resetAllPreferences}
+			<button class="calm-btn" type="button" disabled={resetting} onclick={resetAllPreferences}
 				>Reset all preferences</button
 			>
 		</div>
@@ -209,3 +210,16 @@
 		{/if}
 	</fieldset>
 </div>
+
+<style>
+	:global(.vd) .settings-page .settings-group {
+		border: 0;
+		border-top: 1px solid var(--rule);
+		padding: var(--space-3) 0 var(--space-4);
+		margin: 0;
+	}
+	:global(.vd) .settings-page .settings-group legend {
+		padding: 0 var(--space-2) 0 0;
+		font-weight: 700;
+	}
+</style>

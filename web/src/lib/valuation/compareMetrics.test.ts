@@ -205,7 +205,7 @@ describe('compareMetrics', () => {
 	});
 
 	it('formats values with Indian grouping and units', () => {
-		expect(formatValue(null, 'cr')).toBe('—');
+		expect(formatValue(null, 'cr')).toBe('-');
 		expect(formatValue(123456, 'cr')).toBe('1,23,456');
 		expect(formatValue(22.75, 'rs')).toBe('₹22.75');
 		expect(formatValue(27, 'pct')).toBe('27%');

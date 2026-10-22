@@ -13,7 +13,7 @@
 		{ key: 'c', label: 'Compare', href: resolve('/valuation/compare') },
 		{ key: 's', label: 'Sector rotation', href: resolve('/valuation/sector-rotation') },
 		{ key: 'b', label: 'Breakout scanner', href: resolve('/valuation/stage-scanner') },
-		{ key: 'a', label: 'Alerts', href: resolve('/valuation/alerts') },
+		{ key: 'a', label: 'Alerts inbox', href: resolve('/valuation/alerts') },
 		{ key: 't', label: 'Settings', href: resolve('/valuation/settings') }
 	];
 

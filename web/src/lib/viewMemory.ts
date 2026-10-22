@@ -154,6 +154,8 @@ export const VIEWS = {
 		basket: field.text(120, { lasting: true, url: 'basket' }),
 		mcap: field.oneOf(SCANNER_MCAP_KEYS, 'all', { lasting: true, url: 'mcap' }),
 		signal: field.oneOf(SCANNER_SIGNAL_KEYS, 'all', { lasting: true, url: 'signal' }),
+		/** A preset scan id (checked against PRESETS by the page); in the address so a scan can be shared. */
+		preset: field.text(40, { url: 'preset' }),
 		query: field.text(80),
 		scrollY
 	},

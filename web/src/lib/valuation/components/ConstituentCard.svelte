@@ -48,7 +48,7 @@
 	);
 
 	function fmtPct(n: number | null) {
-		return n == null ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+		return n == null ? '-' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 	}
 	function toneClass(n: number | null) {
 		if (n == null) return '';

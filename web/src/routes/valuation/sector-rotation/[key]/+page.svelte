@@ -200,11 +200,14 @@
 	<div class="band-inner">
 		<a class="back-link" href={resolve('/valuation/sector-rotation')}>&larr; Back to Sector Rotation</a>
 		<h1>{data.majorLabel}</h1>
-		<div class="sub">
-			Thematic sub-baskets measured against Nifty 50. Figures come from prices stored on the server
-			(refreshed automatically after each weekday's close, or press Refresh on a card).
-			{loadedCount} of {data.subsectors.length} loaded.
-		</div>
+		<div class="sub">Thematic sub-baskets measured against Nifty 50.</div>
+		<details class="calm-disclosure no-print">
+			<summary>How this works</summary>
+			<p>
+				Figures come from prices stored on the server (refreshed automatically after each weekday's
+				close, or press Refresh on a card).
+			</p>
+		</details>
 	</div>
 </div>
 
@@ -223,6 +226,8 @@
 			bind:openState={strengthPanel}
 			bind:settled={strengthSettled}
 		/>
+
+		<p class="calm-meta" aria-live="polite">{loadedCount} of {data.subsectors.length} loaded</p>
 
 		<div class="sector-sort-bar">
 			<span class="sector-sort-label">Sort by</span>
@@ -263,7 +268,6 @@
 						metrics={cardMetrics}
 						evaluation={strength.active ? strength.byKey[s.key] : undefined}
 						label={s.label}
-						tag={`basket · ${s.constituentCount}`}
 						row={sectorData[s.key]}
 						onLoad={() => loadSector(s.key)}
 						onRefresh={() => refreshSectorCard(s.key)}

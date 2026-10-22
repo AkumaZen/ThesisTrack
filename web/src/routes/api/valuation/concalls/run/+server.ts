@@ -2,6 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { AnalysisError } from '$lib/valuation/concall/analysis';
 import { analyseBatch, MAX_ANALYSES_PER_RUN, modelConfig, refreshBatch } from '$lib/valuation/server/concallJob';
+import { AI_OFF_MESSAGE, aiEnabled } from '$lib/valuation/server/aiSwitch';
 import type { RequestHandler } from './$types';
 
 export const config = { maxDuration: 300 };
@@ -28,6 +29,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const { mode, limit, symbols } = parsed.data;
 		if (mode === 'refresh') return json({ mode, ...(await refreshBatch(Math.min(limit, 5), symbols)) });
+		if (!aiEnabled()) error(503, AI_OFF_MESSAGE + '.');
 		if (!modelConfig().key) error(503, 'The OpenAI key is not configured on the server.');
 		return json({ mode, cap: MAX_ANALYSES_PER_RUN, ...(await analyseBatch(limit, symbols)) });
 	} catch (e) {

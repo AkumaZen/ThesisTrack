@@ -87,12 +87,16 @@ describe('parseUniverseCsv', () => {
 		expect(duplicates).toEqual([{ isin: 'INE000D01010', company_name: 'Jash New', kept: 'INE000E01010', symbol: 'JASH' }]);
 	});
 
-	const real = path.resolve(__dirname, '../../../../research/companies_mcap_500_20000cr.csv');
-	it.skipIf(!fs.existsSync(real))('reads the AMFI file: 1,496 companies, 14 without a price source', () => {
-		const { rows } = parseUniverseCsv(fs.readFileSync(real, 'utf8'));
-		expect(rows).toHaveLength(1496);
-		expect(rows.filter((r) => r.price_source_status === 'No price source')).toHaveLength(14);
-		expect(rows.filter((r) => r.symbol === null && r.price_source_status === 'matched')).toHaveLength(1); // JASH twin
+	const real = path.resolve(__dirname, '../../../../research/companies_mcap_above_500cr.csv');
+	it.skipIf(!fs.existsSync(real))('reads the AMFI file: every company above 500 Cr, one row per ISIN and per ticker', () => {
+		const { rows, duplicates } = parseUniverseCsv(fs.readFileSync(real, 'utf8'));
+		expect(rows).toHaveLength(1833);
+		expect(rows.every((r) => r.market_cap_cr > 500)).toBe(true);
+		expect(rows.some((r) => r.market_cap_cr >= 20000)).toBe(true); // no upper bound
+		expect(new Set(rows.map((r) => r.isin)).size).toBe(rows.length);
+		expect(rows.filter((r) => r.price_source_status === 'No price source')).toHaveLength(13);
+		expect(rows.filter((r) => r.symbol === null && r.price_source_status === 'matched')).toHaveLength(0);
+		expect(duplicates).toEqual([]);
 	});
 });
 

@@ -500,12 +500,12 @@ export const CUSTOM_SECTORS: CustomSector[] = [
 	},
 	{
 		key: 'nbfc_diversified_vehicle',
-		label: 'NBFCs — Diversified / Vehicle Finance',
+		label: 'NBFCs - Diversified / Vehicle Finance',
 		symbols: ['BAJFINANCE', 'LTF', 'JIOFIN', 'SHRIRAMFIN', 'CHOLAFIN', 'M&MFIN', 'SUNDARMFIN']
 	},
 	{
 		key: 'nbfc_housing',
-		label: 'NBFCs — Housing Finance',
+		label: 'NBFCs - Housing Finance',
 		symbols: [
 			'BAJAJHFL',
 			'LICHSGFIN',
@@ -520,7 +520,7 @@ export const CUSTOM_SECTORS: CustomSector[] = [
 	},
 	{
 		key: 'nbfc_gold_mfi',
-		label: 'NBFCs — Gold Loans & Microfinance',
+		label: 'NBFCs - Gold Loans & Microfinance',
 		symbols: ['MUTHOOTFIN', 'MANAPPURAM', 'IIFL', 'CREDITACC', 'FUSION', 'SPANDANA']
 	},
 	{

@@ -1,5 +1,4 @@
-// Ports app/llm/prompts.py. Same version tag gets written into every export
-// row's metadata (see exporter.ts) - keep this string in lockstep with the
+// Ports app/llm/prompts.py. Keep this version tag in lockstep with the
 // Python REVIEWER_PROMPT_VERSION if the prompt ever changes.
 export const REVIEWER_PROMPT_VERSION = 'v1';
 

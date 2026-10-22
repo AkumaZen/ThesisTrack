@@ -31,7 +31,7 @@
 </script>
 
 <h1 class="page-title mb-1">Review queue</h1>
-<p class="text-sm text-muted-fg mb-5">Trackables from your current theses, grouped by company. Amend a company's Trackables section to update this queue.</p>
+<p class="text-sm text-muted-fg mb-5">Trackables from your theses, grouped by company.</p>
 {#if data.trackables.length}
 	<div class="relative mb-5">
 		<svg
@@ -67,9 +67,9 @@
 		{/if}
 	</div>
 {/if}
-<div class="space-y-4">
+<div>
 	{#each groups as group (group.id)}
-		<section class="rounded-xl border border-border bg-surface p-5">
+		<section class="border-b border-border py-5 first:pt-0">
 			<h3 class="font-semibold mb-3 flex flex-wrap items-center gap-2"><a class="hover:underline" href="/company/{encodeURIComponent(group.id)}#cp-sec-trackables">{group.name}</a>
 				{#if group.stale}
 					<span class="tag tag-warn" title={group.reasons.join('. ')}>Review due</span>

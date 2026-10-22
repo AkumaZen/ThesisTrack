@@ -165,7 +165,7 @@
 	const summaryBadge = $derived(summary && summary !== 'error' ? rotationBadge(summary) : null);
 
 	function fmtPct(n: number | null) {
-		return n == null ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+		return n == null ? '-' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 	}
 </script>
 

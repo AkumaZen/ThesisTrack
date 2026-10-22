@@ -81,7 +81,7 @@ export function runIntegrityChecks(input: IntegrityInput): IntegrityCheck[] {
 			actual,
 			deltaPct,
 			status: statusFor(deltaPct, 8, 25),
-			detail: `₹${latestWithEps.eps} EPS (${latestWithEps.label}) × ${input.stockPE}x = ₹${actual.toFixed(1)} vs CMP ₹${expected} (approximate — Stock P/E is usually TTM, not last annual EPS)`
+			detail: `₹${latestWithEps.eps} EPS (${latestWithEps.label}) × ${input.stockPE}x = ₹${actual.toFixed(1)} vs CMP ₹${expected} (approximate - Stock P/E is usually TTM, not last annual EPS)`
 		});
 	}
 
@@ -146,9 +146,9 @@ export function runIntegrityChecks(input: IntegrityInput): IntegrityCheck[] {
 				status: sum > 101 ? 'fail' : sum < 60 ? 'warn' : 'ok',
 				detail:
 					sum > 101
-						? `Promoters+FIIs+DIIs+Public = ${sum.toFixed(1)}% exceeds 100% — likely a scraping error`
+						? `Promoters+FIIs+DIIs+Public = ${sum.toFixed(1)}% exceeds 100% - likely a scraping error`
 						: sum < 60
-							? `Only ${sum.toFixed(1)}% captured across tracked categories — Govt/Others/mutual funds aren't broken out separately, so this is expected, not a fault`
+							? `Only ${sum.toFixed(1)}% captured across tracked categories - Govt/Others/mutual funds aren't broken out separately, so this is expected, not a fault`
 							: `${sum.toFixed(1)}% across tracked categories`
 			});
 		}

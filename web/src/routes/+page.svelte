@@ -27,7 +27,7 @@
 	let filteredCompanies = $derived(filterCompaniesByName(companies, companyQuery));
 </script>
 
-<PageHeader title="Companies" subtitle="Every company with an investment thesis, and how each one is tracking.">
+<PageHeader title="Companies" subtitle="Every thesis and how it is tracking.">
 	{#snippet actions()}
 		<a href="/ingest" class="btn btn-primary">+ New company</a>
 	{/snippet}
