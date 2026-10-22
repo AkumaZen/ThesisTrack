@@ -6,6 +6,7 @@
 	import AppHeader from '$lib/components/shell/AppHeader.svelte';
 	import KeyboardShortcuts from '$lib/components/shell/KeyboardShortcuts.svelte';
 	import PushPrompt from '$lib/components/shell/PushPrompt.svelte';
+	import BackgroundRuns from '$lib/components/shell/BackgroundRuns.svelte';
 
 	let { children, data } = $props();
 
@@ -41,6 +42,7 @@
 	<AppHeader user={data.user} />
 	<PushPrompt userId={data.user.id} />
 	<KeyboardShortcuts />
+	<BackgroundRuns />
 	<main id="main" class="app-main">
 		{@render children()}
 	</main>
