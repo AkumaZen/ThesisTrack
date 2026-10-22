@@ -88,7 +88,11 @@ significant changes. Historical references, loaded only as relevant: `harness/me
 - Python: services/concall/.venv/Scripts/python.exe -m unittest test_server test_hints -v from
   services/concall. Windows adapter-vercel EPERM is known; do not call a failing build verified.
 
-## Active adaptive harness contract
+## Working mode (decided 2026-10-22)
+- Opus 5.5 Medium works directly. Executor agents and Agent Teams only when the user explicitly asks in that
+  request. Reason: the master/executor harness used too many tokens. Compaction windows now Opus 150000,
+  Sonnet 200000, Haiku 80000; team/task env vars removed from settings.
+- The notes below are the former harness contract (2026-10-19), kept for reference when agents are requested.
 - Opus5.5 Medium only: architecture, requirements, coordination, actual code/evidence review;
   NEVER application implementation. Sonnet5.5 Medium default, Low simple work; Haiku5.5 Low bounded
   exploration/mechanical tasks. Models explicit. Only lead spawns; workers reuse context.
