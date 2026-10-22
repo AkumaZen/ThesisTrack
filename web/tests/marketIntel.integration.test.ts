@@ -231,11 +231,13 @@ describe.skipIf(!dbUp)('market intel (database)', () => {
 		});
 
 		it('ranks a word used often this week as trending', async () => {
+			// 20 mentions stays under the boilerplate cap (4% of the week once there are 500+ notices)
+			// whatever else a developer database holds, so this passes on an empty or a full one.
 			await store.saveFeedAnnouncements(
-				Array.from({ length: 60 }, (_, n) => n + 1).map((i) => ({ ...ann(`trend${i}`, i, 'Update', `Notice about zzquorbit financing number ${i}`) }))
+				Array.from({ length: 20 }, (_, n) => n + 1).map((i) => ({ ...ann(`trend${i}`, i, 'Update', `Notice about zzquorbit financing number ${i}`) }))
 			);
 			const words = await store.trendingWords(new Date(), 400);
-			expect(words.find((w) => w.word === 'zzquorbit')?.current).toBe(60);
+			expect(words.find((w) => w.word === 'zzquorbit')?.current).toBe(20);
 		});
 	});
 

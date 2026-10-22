@@ -1,7 +1,9 @@
 // DB-backed run of the concall pipeline with a fake model: refresh from stored research, one model
 // call per transcript (cached by content hash afterwards), quote verification, failure handling and
 // guidance verdicts against the stored results. The OpenAI endpoint is a stub; nothing leaves the machine.
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+// The model is a stub here, so a developer .env with AI_FEATURES=off must not stop the pipeline.
+vi.mock('../src/lib/valuation/server/aiSwitch', async (load) => ({ ...(await load<object>()), aiEnabled: () => true }));
 import { eq } from 'drizzle-orm';
 import { db } from '../src/lib/server/db';
 import { concallAnalyses, concallGuidance, masterTrackerCompanies, masterTrackerResearch, concallCompanyScan } from '../src/lib/server/db/valuationSchema';
