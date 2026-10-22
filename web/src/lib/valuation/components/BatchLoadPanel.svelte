@@ -2,9 +2,13 @@
 	// A resumable "load what is missing" button for slow background data (Screener statements,
 	// 5-year highs). It asks the server which symbols are still missing, posts them in small batches
 	// and reports progress; stopping part way loses nothing, because the next run asks again and only
-	// fetches what is still missing. Writers only: the caller hides it from read-only accounts.
-	import { onDestroy } from 'svelte';
-	import { beforeNavigate } from '$app/navigation';
+	// fetches what is still missing. The run is shared and lives outside this panel
+	// (lib/valuation/valuationRuns.ts), so leaving the page does not stop it. Writers only: the caller
+	// hides it from read-only accounts.
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { batchLoadRun } from '$lib/valuation/valuationRuns';
+	import { revealActiveRun } from '$lib/valuation/backgroundRun.svelte';
 
 	let {
 		label,
@@ -32,128 +36,69 @@
 		onFinished: () => Promise<void> | void;
 	} = $props();
 
-	type Phase = 'idle' | 'planning' | 'running' | 'cancelling' | 'done';
-	let phase = $state<Phase>('idle');
-	let total = $state(0);
-	let done = $state(0);
-	let ok = $state(0);
-	let failed = $state<{ symbol: string; error: string }[]>([]);
-	let error = $state<string | null>(null);
-	let cancelled = $state(false);
-	let destroyed = false;
-	const busy = $derived(phase === 'planning' || phase === 'running' || phase === 'cancelling');
-	const pct = $derived(total > 0 ? Math.round((done / total) * 100) : 0);
-
-	async function start() {
-		if (busy) return;
-		phase = 'planning';
-		error = null;
-		cancelled = false;
-		ok = 0;
-		done = 0;
-		failed = [];
-		let symbols: string[];
-		try {
-			const res = await fetch(missingUrl);
-			if (!res.ok) throw new Error(String(res.status));
-			symbols = ((await res.json()) as { symbols: string[] }).symbols;
-		} catch {
-			error = "Couldn't load the list of companies to fetch. Try again.";
-			phase = 'idle';
-			return;
-		}
-		total = symbols.length;
-		if (total === 0) {
-			phase = 'done';
-			return;
-		}
-		phase = 'running';
-		for (let i = 0; i < symbols.length; i += batchSize) {
-			if (cancelled || destroyed) break;
-			const part = symbols.slice(i, i + batchSize);
-			try {
-				const res = await fetch(batchUrl, {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ symbols: part })
-				});
-				if (!res.ok) throw new Error(`HTTP ${res.status}`);
-				const body = (await res.json()) as { ok: number; failed: { symbol: string; error: string }[] };
-				ok += body.ok;
-				failed = [...failed, ...body.failed];
-			} catch (e) {
-				const message = e instanceof Error ? e.message : 'request failed';
-				failed = [...failed, ...part.map((symbol) => ({ symbol, error: message }))];
-			}
-			done += part.length;
-		}
-		if (destroyed) return;
-		phase = 'done';
-		try {
-			await onFinished();
-		} catch {
-			/* the page keeps what it had */
-		}
-	}
-
-	function cancel() {
-		cancelled = true;
-		phase = 'cancelling';
-	}
-
-	beforeNavigate((nav) => {
-		if (!busy || nav.willUnload) return;
-		if (!confirm(`Loading ${noun} is still running. Leaving this page stops the rest of it. Leave anyway?`)) nav.cancel();
+	// svelte-ignore state_referenced_locally
+	const run = batchLoadRun({ title: `Loading ${noun}`, href: page.url.pathname, missingUrl, batchUrl, batchSize });
+	let root: HTMLElement;
+	onMount(() => {
+		revealActiveRun(root, run);
+		return run.attach(() => onFinished());
 	});
-	onDestroy(() => {
-		destroyed = true;
-		cancelled = true;
-	});
+
+	const phase = $derived(run.phase);
+	const progress = $derived(run.progress);
+	const busy = $derived(run.busy);
+	const failed = $derived(progress?.failedItems ?? []);
+	const pct = $derived(progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0);
 </script>
 
-<svelte:window onbeforeunload={(e) => busy && e.preventDefault()} />
-
-<div class="bl" data-testid={testId}>
+<div class="bl" bind:this={root} data-testid={testId}>
 	<div class="bl-bar">
-		<button type="button" class="bl-btn" disabled={busy || (missing === 0 && phase === 'idle')} onclick={start}>
+		<button type="button" class="bl-btn" disabled={busy || (missing === 0 && phase === 'idle')} onclick={() => run.start()}>
 			{phase === 'planning' ? 'Preparing…' : busy ? 'Loading…' : label}
 		</button>
 		{#if phase === 'idle'}
 			<span class="bl-hint">
-				{#if missing > 0}
-					{missing} companies have no stored {noun}. Fetched {batchSize} at a time; you can keep using the page.
+				{#if run.nothingToDo}
+					Nothing to load: every company already has stored {noun}.
+				{:else if missing > 0}
+					{missing} companies have no stored {noun}. Fetched {batchSize} at a time; it keeps running while you
+					use other pages.
 				{:else}
 					Every company already has stored {noun}.
 				{/if}
 			</span>
 		{/if}
 	</div>
-	{#if error}<p class="bl-error" role="alert">{error}</p>{/if}
-	{#if phase !== 'idle' && phase !== 'planning'}
+	{#if run.planError}<p class="bl-error" role="alert">{run.planError}</p>{/if}
+	{#if progress && phase !== 'idle' && phase !== 'planning'}
 		<div class="bl-panel" role="status" aria-live="polite">
 			{#if phase === 'done'}
 				<p class="bl-line">
-					{total === 0 ? `Nothing to load.` : cancelled ? 'Stopped.' : 'Finished.'}
-					{#if total > 0}Stored {ok} of {total}{failed.length > 0 ? `, ${failed.length} failed` : ''}.{/if}
+					{run.cancelled ? 'Stopped.' : 'Finished.'}
+					Stored {run.allOk} of {run.total}{failed.length > 0 ? `, ${failed.length} failed` : ''}.
 				</p>
 				{#if failed.length > 0}
 					<ul class="bl-fails">
 						{#each failed.slice(0, 30) as f, i (i)}
-							<li><strong>{f.symbol}</strong> {f.error}</li>
+							<li><strong>{f.symbol}</strong> {f.error ?? ''}</li>
 						{/each}
 					</ul>
 					<p class="bl-counts">Run it again to retry the failed ones.</p>
 				{/if}
-				<button type="button" class="bl-btn bl-secondary" onclick={() => (phase = 'idle')}>Dismiss</button>
+				<button type="button" class="bl-btn bl-secondary" onclick={() => run.dismiss()}>Dismiss</button>
 			{:else}
 				<p class="bl-line">
-					{phase === 'cancelling' ? 'Stopping after the request in flight…' : `Loading ${noun}…`}
+					{phase === 'cancelling'
+						? 'Stopping after the request in flight…'
+						: phase === 'reloading'
+							? 'Updating the page…'
+							: `Loading ${noun}…`}
 				</p>
-				<div class="bl-track" role="progressbar" aria-label="Loading {noun}" aria-valuemin="0" aria-valuemax={total} aria-valuenow={done}>
+				<div class="bl-track" role="progressbar" aria-label="Loading {noun}" aria-valuemin="0" aria-valuemax={progress.total} aria-valuenow={progress.done}>
 					<div class="bl-fill" style="width: {pct}%"></div>
 				</div>
-				<p class="bl-counts">{done}/{total} companies · {failed.length} failed</p>
-				{#if phase === 'running'}<button type="button" class="bl-btn bl-secondary" onclick={cancel}>Stop</button>{/if}
+				<p class="bl-counts">{progress.done}/{progress.total} companies · {failed.length} failed</p>
+				{#if phase === 'running'}<button type="button" class="bl-btn bl-secondary" onclick={() => run.cancel()}>Stop</button>{/if}
 			{/if}
 		</div>
 	{/if}

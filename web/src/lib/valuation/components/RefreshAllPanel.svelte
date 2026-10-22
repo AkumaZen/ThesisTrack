@@ -1,139 +1,41 @@
 <script lang="ts">
-	// "Refresh all sectors": a button plus a live progress panel. The work is driven from here, one
-	// small request at a time (see lib/valuation/refreshAll.ts), so no single server call runs long.
-	import { onDestroy } from 'svelte';
-	import { beforeNavigate } from '$app/navigation';
-	import {
-		buildSteps,
-		countCompanies,
-		forgetSectorCards,
-		runSteps,
-		stepsForFailed,
-		type RefreshPlan,
-		type RefreshStep,
-		type RunProgress
-	} from '$lib/valuation/refreshAll';
+	// "Refresh all sectors": a button plus a live progress panel. The run itself lives in a shared
+	// background run (lib/valuation/valuationRuns.ts), one small request at a time, so leaving this
+	// page does not stop it; the shell's indicator shows it everywhere else.
+	import { onMount } from 'svelte';
+	import { fmtDuration, revealActiveRun } from '$lib/valuation/backgroundRun.svelte';
+	import { refreshAllRun } from '$lib/valuation/valuationRuns';
 
 	let { onFinished }: { onFinished: () => Promise<void> | void } = $props();
 
-	type Phase = 'idle' | 'planning' | 'running' | 'cancelling' | 'reloading' | 'done';
-	let phase = $state<Phase>('idle');
-	let progress = $state<RunProgress | null>(null);
-	let cancelled = $state(false);
-	let planError = $state<string | null>(null);
-	let companiesTotal = $state(0);
-	// Totals across the first run and any "Retry failed" runs, so the summary stays honest.
-	let allOk = $state(0);
-	let allUnlisted = $state(0);
-	let startedAt = 0;
-	let finishedInMs = $state(0);
-	let destroyed = false;
+	const run = refreshAllRun();
+	let root: HTMLElement;
+	onMount(() => {
+		revealActiveRun(root, run);
+		return run.attach(() => onFinished());
+	});
 
-	const busy = $derived(phase !== 'idle' && phase !== 'done');
+	const phase = $derived(run.phase);
+	const progress = $derived(run.progress);
+	const busy = $derived(run.busy);
 	const pct = $derived(progress && progress.stepsTotal > 0 ? Math.round((progress.stepsDone / progress.stepsTotal) * 100) : 0);
 	const now = $derived(progress?.current);
-
-	async function start() {
-		if (busy) return;
-		phase = 'planning';
-		planError = null;
-		cancelled = false;
-		progress = null;
-		allOk = 0;
-		allUnlisted = 0;
-		let steps: RefreshStep[];
-		try {
-			const res = await fetch('/api/valuation/sector-refresh-plan');
-			if (!res.ok) throw new Error(String(res.status));
-			steps = buildSteps((await res.json()) as RefreshPlan);
-		} catch {
-			planError = "Couldn't load the list of sectors to refresh. Try again.";
-			phase = 'idle';
-			return;
-		}
-		companiesTotal = countCompanies(steps);
-		startedAt = Date.now();
-		await run(steps);
-	}
-
-	async function run(steps: RefreshStep[]) {
-		phase = 'running';
-		cancelled = false;
-		const result = await runSteps(steps, {
-			isCancelled: () => cancelled || destroyed,
-			onProgress: (p) => (progress = p)
-		});
-		allOk += result.ok;
-		allUnlisted += result.unlisted;
-		if (destroyed) return;
-		// Show the new prices: forget the browser's copies and let the page reload its cards.
-		phase = 'reloading';
-		forgetSectorCards();
-		try {
-			await onFinished();
-		} catch {
-			/* the cards keep their old figures; the summary still reports what was refreshed */
-		}
-		finishedInMs = Date.now() - startedAt;
-		phase = 'done';
-	}
-
-	function cancel() {
-		cancelled = true;
-		phase = 'cancelling';
-	}
-
-	function retryFailed() {
-		if (busy || !progress || progress.failedItems.length === 0) return;
-		const steps = stepsForFailed(progress.failedItems);
-		companiesTotal = countCompanies(steps);
-		allOk = 0;
-		allUnlisted = 0;
-		void run(steps);
-	}
-
-	function dismiss() {
-		phase = 'idle';
-		progress = null;
-	}
-
-	// Leaving the page stops the run (requests already sent still finish). Ask first, because the
-	// rest of the sectors would be left with yesterday's prices.
-	beforeNavigate((nav) => {
-		if (!busy || nav.willUnload) return;
-		if (!confirm('A refresh is still running. Leaving this page cancels the rest of it. Leave anyway?')) {
-			nav.cancel();
-		}
-	});
-	function warnOnUnload(e: BeforeUnloadEvent) {
-		if (busy) e.preventDefault();
-	}
-	onDestroy(() => {
-		destroyed = true;
-		cancelled = true;
-	});
-
-	function fmtDuration(ms: number) {
-		const s = Math.round(ms / 1000);
-		return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
-	}
 </script>
 
-<svelte:window onbeforeunload={warnOnUnload} />
-
-<div class="ra">
+<div class="ra" bind:this={root}>
 	<div class="ra-bar">
-		<button type="button" class="ra-btn" disabled={busy} onclick={start}>
+		<button type="button" class="ra-btn" disabled={busy} onclick={() => run.start()}>
 			{phase === 'planning' ? 'Preparing…' : busy ? 'Refreshing…' : 'Refresh all sectors'}
 		</button>
 		{#if phase === 'idle'}
 			<span class="ra-hint"
 				>Brings every sector, subsector and company up to date in batches of 50. Usually under a
-				minute; longer for companies with no stored prices yet. You can keep using the page.</span
+				minute; longer for companies with no stored prices yet. It keeps running while you use other
+				pages.</span
 			>
 		{/if}
 	</div>
-	{#if planError}<p class="ra-error" role="alert">{planError}</p>{/if}
+	{#if run.planError}<p class="ra-error" role="alert">{run.planError}</p>{/if}
 
 	{#if progress && phase !== 'idle'}
 		<div class="ra-panel" role="status" aria-live="polite">
@@ -170,17 +72,22 @@
 					{#if progress.unlisted > 0}· {progress.unlisted} without a price source{/if}
 				</p>
 				{#if phase === 'running'}
-					<button type="button" class="ra-btn ra-secondary" onclick={cancel}>Cancel</button>
+					<button type="button" class="ra-btn ra-secondary" onclick={() => run.cancel()}>Cancel</button>
 				{/if}
 			{:else}
 				<p class="ra-line">
-					{cancelled ? 'Cancelled.' : 'Finished.'}
-					Refreshed {allOk} of {companiesTotal} in {fmtDuration(finishedInMs)}{allUnlisted > 0
-						? `, ${allUnlisted} have no price source`
+					{run.cancelled ? 'Cancelled.' : 'Finished.'}
+					Refreshed {run.allOk} of {run.total} in {fmtDuration(run.finishedInMs)}{run.allUnlisted > 0
+						? `, ${run.allUnlisted} have no price source`
 						: ''}{progress.failed > 0 ? `, ${progress.failed} failed` : ''}.
 				</p>
-				{#if cancelled && progress.total - progress.done > 0}
+				{#if run.cancelled && progress.total - progress.done > 0}
 					<p class="ra-counts">{progress.total - progress.done} were not reached. Run it again to carry on.</p>
+				{/if}
+				{#if progress.unlistedItems.length > 0}
+					<p class="ra-counts">
+						No price source on Angel One: {progress.unlistedItems.join(', ')}
+					</p>
 				{/if}
 				{#if progress.failedItems.length > 0}
 					<ul class="ra-fails">
@@ -191,9 +98,9 @@
 				{/if}
 				<div class="ra-actions">
 					{#if progress.failedItems.length > 0}
-						<button type="button" class="ra-btn" onclick={retryFailed}>Retry failed</button>
+						<button type="button" class="ra-btn" onclick={() => run.retryFailed()}>Retry failed</button>
 					{/if}
-					<button type="button" class="ra-btn ra-secondary" onclick={dismiss}>Dismiss</button>
+					<button type="button" class="ra-btn ra-secondary" onclick={() => run.dismiss()}>Dismiss</button>
 				</div>
 			{/if}
 		</div>

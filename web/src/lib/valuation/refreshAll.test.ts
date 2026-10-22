@@ -68,7 +68,7 @@ describe('summariseBatch', () => {
 			{ symbol: 'D', outcome: 'unlisted' },
 			{ symbol: 'E', outcome: 'failed' }
 		]);
-		expect(r).toEqual({ ok: 3, unlisted: 1, failed: ['E'] });
+		expect(r).toEqual({ ok: 3, unlisted: 1, failed: ['E'], unlistedSymbols: ['D'] });
 	});
 });
 

@@ -33,12 +33,17 @@ export interface StepResult {
 	ok: number;
 	unlisted: number;
 	failed: string[];
+	/** The companies counted in `unlisted`, where known. */
+	unlistedSymbols?: string[];
+	/** Why a failed company failed, where the server said. */
+	errors?: Record<string, string>;
 }
 
 /** A company that failed, with where it sits. */
 export interface FailedItem {
 	symbol: string | null;
 	where: string;
+	error?: string;
 }
 
 /** Benchmark first, then every company in sector then subsector order in batches of `size`. A
@@ -96,6 +101,8 @@ export interface RunProgress {
 	current: RefreshStep | null;
 	/** Companies (or the benchmark) that failed, for the summary and "Retry failed". */
 	failedItems: FailedItem[];
+	/** Companies Angel One has no price for, for the summary. */
+	unlistedItems: string[];
 }
 
 export interface RunOptions {
@@ -131,9 +138,12 @@ export async function sendStep(step: RefreshStep): Promise<StepResult> {
 
 /** Maps the server's per-company outcomes onto the three counts the panel shows. */
 export function summariseBatch(results: { symbol: string; outcome: string }[]): StepResult {
-	const out: StepResult = { ok: 0, unlisted: 0, failed: [] };
+	const out: StepResult = { ok: 0, unlisted: 0, failed: [], unlistedSymbols: [] };
 	for (const r of results) {
-		if (r.outcome === 'unlisted') out.unlisted++;
+		if (r.outcome === 'unlisted') {
+			out.unlisted++;
+			out.unlistedSymbols!.push(r.symbol);
+		}
 		else if (r.outcome === 'failed') out.failed.push(r.symbol);
 		else out.ok++;
 	}
@@ -160,9 +170,11 @@ export async function runSteps(steps: RefreshStep[], opts: RunOptions = {}): Pro
 		unlisted: 0,
 		failed: 0,
 		current: null,
-		failedItems: []
+		failedItems: [],
+		unlistedItems: []
 	};
-	const emit = () => onProgress({ ...progress, failedItems: [...progress.failedItems] });
+	const emit = () =>
+		onProgress({ ...progress, failedItems: [...progress.failedItems], unlistedItems: [...progress.unlistedItems] });
 	emit();
 
 	for (const step of steps) {
@@ -182,17 +194,22 @@ export async function runSteps(steps: RefreshStep[], opts: RunOptions = {}): Pro
 			result = {
 				ok: result.ok + again.ok,
 				unlisted: result.unlisted + again.unlisted,
-				failed: again.failed
+				failed: again.failed,
+				unlistedSymbols: [...(result.unlistedSymbols ?? []), ...(again.unlistedSymbols ?? [])],
+				errors: again.errors
 			};
 		}
 		progress.done += size;
 		progress.ok += result.ok;
 		progress.unlisted += result.unlisted;
 		progress.failed += result.failed.length;
+		progress.unlistedItems.push(...(result.unlistedSymbols ?? []));
 		for (const f of result.failed) {
+			const error = result.errors?.[f];
 			progress.failedItems.push({
 				symbol: step.symbols === null ? null : f,
-				where: step.symbols === null ? step.where : (step.sectorOf?.[f] ?? step.where)
+				where: step.symbols === null ? step.where : (step.sectorOf?.[f] ?? step.where),
+				...(error ? { error } : {})
 			});
 		}
 		progress.stepsDone++;
