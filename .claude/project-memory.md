@@ -123,3 +123,19 @@ significant changes. Historical references, loaded only as relevant: `harness/me
   usage (not an invoice or performance benchmark).
 - Existing MCP settings preserved; smoke disabled MCP for isolation, so live MCP connectivity is
   not verified. No unrelated app features requested.
+
+## Background runs and unpriced companies (feat/breadth-50dma, Oct 22, not pushed)
+- Commits 65cc9b2, 51077a4, 4d75301. Long batch jobs (Refresh all sectors, Load missing history,
+  financials, 5-year highs) live in lib/valuation/backgroundRun.svelte.ts + valuationRuns.ts, not in
+  panels; leaving the page keeps them running. shell/BackgroundRuns.svelte shows progress, Cancel and
+  Open on every page (compact strip under 600px). Full reload or tab close still ends a run.
+- Verified locally: check 0 errors, vitest 1182 pass/5 skip twice, Playwright navigation/cancel/mobile.
+  Unreproduced flake once: telegram.integration "links the chat with a valid one-time token".
+- Test fixes: concall integration mocks aiEnabled; marketIntel trending test uses 20 mentions.
+- Prod company import done earlier: +352 added, 1481 updated, 15 deactivated; taxonomy 35 majors,
+  197 baskets. Backup JSON kept in that session's scratchpad (not in git).
+- 13 active mcap_universe rows have no price source (blank NSE/BSE in the AMFI CSV): merged
+  (J.B. Chemicals into Torrent, GSPL into Gujarat Gas, Cigniti into Coforge, Sanghi likely Ambuja)
+  or suspended/delisted. Deactivating them is a prod write and NOT approved yet.
+- Angel scrip master dropped COLAB, SPELS, RRP, RRPDEFENSE, JAYTEX, SATANIBRG between Oct 19 and 22
+  (likely surveillance/suspension); INDLMETER looks like a wrong ticker.
