@@ -12,7 +12,7 @@ export const FULL_REFRESH_CONCURRENCY = 3;
 /** One request's worth: matches the quote endpoint's 50-token limit. */
 export const BATCH_SIZE = QUOTE_MAX_TOKENS;
 
-export type BatchOutcome = 'appended' | 'full' | 'unchanged' | 'unlisted' | 'failed';
+export type BatchOutcome = 'appended' | 'full' | 'unchanged' | 'unlisted' | 'failed' | 'deferred';
 
 export interface BatchItem {
 	symbol: string;
@@ -77,7 +77,13 @@ const realDeps: Deps = {
  *  ends the session before (or is current) are served from ONE quote request and a single
  *  database write; symbols with no series, a longer gap or a suspicious jump get the full
  *  history refetch. Results come back in the order given (duplicates dropped). */
-export async function refreshBatch(symbols: string[], overrides: Partial<Deps> = {}): Promise<BatchSummary> {
+export async function refreshBatch(
+	symbols: string[],
+	overrides: Partial<Deps> = {},
+	/** The background job caps the slow full refetches per call: the rest come back 'deferred'
+	 *  (untouched, nothing stored) and wait for the next pass or the nightly run. */
+	options: { maxFull?: number } = {}
+): Promise<BatchSummary> {
 	const deps = { ...realDeps, ...overrides };
 	const wanted = [...new Set(symbols.map((s) => s.toUpperCase()))];
 	const outcomes = new Map<string, BatchItem>();
@@ -130,6 +136,9 @@ export async function refreshBatch(symbols: string[], overrides: Partial<Deps> =
 	}
 
 	const queue = [...needFull];
+	for (const [symbol] of queue.splice(options.maxFull ?? queue.length)) {
+		outcomes.set(symbol, { symbol, outcome: 'deferred', reason: needFull.get(symbol) });
+	}
 	const fullFetches = queue.length;
 	const worker = async () => {
 		for (let next = queue.shift(); next; next = queue.shift()) {

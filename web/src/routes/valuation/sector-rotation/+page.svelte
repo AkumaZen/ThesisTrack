@@ -11,7 +11,7 @@
 	import CardsLoading from '$lib/valuation/components/CardsLoading.svelte';
 	import { untrack } from 'svelte';
 	import { refreshSector } from '$lib/valuation/seriesRefresh';
-	import { fetchCard, peekCard } from '$lib/valuation/cardCache';
+	import { dropCardsOlderThan, fetchCard, peekCard } from '$lib/valuation/cardCache';
 	import RefreshAllPanel from '$lib/valuation/components/RefreshAllPanel.svelte';
 	import SectorSearch from '$lib/valuation/components/SectorSearch.svelte';
 	import ViewResetButton from '$lib/valuation/components/ViewResetButton.svelte';
@@ -22,6 +22,19 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	// Prices were updated on the server after some cached cards were fetched: do not reuse those.
+	untrack(() => dropCardsOlderThan(data.pricesUpdatedAt));
+	/** "14:35" for today, "20 Oct 16:35" for an earlier day, in India time. */
+	function updatedLabel(at: number | null): string | null {
+		if (!at) return null;
+		const zone = { timeZone: 'Asia/Kolkata' } as const;
+		const time = new Date(at).toLocaleTimeString('en-GB', { ...zone, hour: '2-digit', minute: '2-digit' });
+		const sameDay =
+			new Date(at).toLocaleDateString('en-CA', zone) === new Date().toLocaleDateString('en-CA', zone);
+		return sameDay ? time : `${new Date(at).toLocaleDateString('en-GB', { ...zone, day: 'numeric', month: 'short' })} ${time}`;
+	}
+	const updated = $derived(updatedLabel(data.pricesUpdatedAt));
 
 	async function resetThisView() {
 		memory.reset();
@@ -283,8 +296,8 @@
 		<details class="calm-disclosure no-print">
 			<summary>How this works</summary>
 			<p>
-				Figures come from prices stored on the server (refreshed automatically after each weekday's
-				close, or press Refresh on a card).
+				Figures come from prices stored on the server (refreshed automatically about every 30 minutes
+				while the market is open and after each weekday's close, or press Refresh on a card).
 			</p>
 			<p>
 				<strong>Rotating In</strong> = relative strength vs Nifty is accelerating (1M RS &gt; 3M RS
@@ -403,7 +416,7 @@
 			bind:settled={strengthSettled}
 		/>
 
-		<p class="calm-meta" aria-live="polite">{loadedCount} of {data.majors.length} loaded</p>
+		<p class="calm-meta" aria-live="polite">{loadedCount} of {data.majors.length} loaded{#if updated} &middot; Prices updated {updated}{/if}</p>
 
 		<div class="sector-sort-bar">
 			<span class="sector-sort-label">Sort by</span>

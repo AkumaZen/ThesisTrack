@@ -4,6 +4,7 @@ import { BATCH_SIZE, refreshBatch } from './batchRefresh';
 import { chunk } from './refreshMerge';
 import { refreshBenchmarkCandles } from './benchmarkSeries';
 import { runStructuralChecks } from './alertChecks';
+import { holdPriceLease, markPricesUpdated } from './intradayPrices';
 import { dueRefreshSlot } from './refreshSlots';
 import { db } from '$lib/server/db';
 import { companyGrowthSeriesCache, savedValuations, watchlistMembers } from '$lib/server/db/valuationSchema';
@@ -148,7 +149,17 @@ export function startSectorRotationScheduler() {
 			const slot = dueRefreshSlot();
 			if (!slot || slot === g.__lastRefreshSlot) return;
 			g.__lastRefreshSlot = slot;
-			warmAllSectors().catch((e) => console.error('[sector-rotation-scheduler] refresh failed:', e));
+			// Same lease as the intraday passes, so the two never overlap.
+			holdPriceLease()
+				.then(async (release) => {
+					try {
+						await warmAllSectors();
+						await markPricesUpdated().catch(() => {});
+					} finally {
+						await release();
+					}
+				})
+				.catch((e) => console.error('[sector-rotation-scheduler] refresh failed:', e));
 		},
 		5 * 60 * 1000
 	);

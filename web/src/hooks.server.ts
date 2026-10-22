@@ -7,6 +7,7 @@ import { hasApiCredential, resolveActor } from '$lib/server/auth';
 import { SESSION_COOKIE } from '$lib/auth';
 import { decideAccess, isApiPath } from '$lib/access';
 import { startSectorRotationScheduler } from '$lib/valuation/server/sectorRotationScheduler';
+import { startIntradayPriceScheduler } from '$lib/valuation/server/intradayPrices';
 import { startAlertScheduler } from '$lib/valuation/server/alertScheduler';
 import { IDLE_GRACE_MS, holdIdleConnections } from '$lib/server/db';
 import { isTrackerTestRequest, mockCompanies } from '$lib/valuation/server/masterTrackerMock';
@@ -18,6 +19,7 @@ import { isTrackerTestRequest, mockCompanies } from '$lib/valuation/server/maste
 if (!building && !env.VERCEL && env.DISABLE_BACKGROUND_JOBS !== 'true') {
 	startSectorRotationScheduler();
 	startAlertScheduler();
+	startIntradayPriceScheduler();
 }
 
 /**
