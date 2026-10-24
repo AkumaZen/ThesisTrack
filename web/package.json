@@ -7,6 +7,7 @@
 		"dev": "vite dev",
 		"dev:tracker": "node scripts/dev-master-tracker.mjs",
 		"build": "vite build && node scripts/package-concall.mjs",
+		"build:linux": "node scripts/build-linux.mjs",
 		"preview": "vite preview",
 		"test:tracker": "playwright test tests/e2e/master-tracker.spec.ts",
 		"prepare": "svelte-kit sync || echo ''",
