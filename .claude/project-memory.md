@@ -86,7 +86,7 @@ significant changes. Historical references, loaded only as relevant: `harness/me
   migrations with docker exec -i thesistrack-postgres-1 psql -U thesis -d thesis;
   _prod_migrate.mjs refuses non-production hosts.
 - Python: services/concall/.venv/Scripts/python.exe -m unittest test_server test_hints -v from
-  services/concall. Windows adapter-vercel EPERM is known; do not call a failing build verified.
+  services/concall. Windows adapter-vercel EPERM is known; verify production builds with `npm run build:linux` (Docker, node:24-bookworm-slim).
 
 ## Working mode (decided 2026-10-24)
 - Opus 5.5 works directly in the main session. The master, executor-medium, executor-low and
@@ -116,7 +116,8 @@ significant changes. Historical references, loaded only as relevant: `harness/me
 - Admin toggle: `web/src/lib/components/shell/ShowcaseToggle.svelte` on both company pages, PUT `/api/admin/showcase`.
 - Guests never trigger live loads: `web/src/lib/server/guestContext.ts` blocks cross-origin fetch inside guest requests; companyCache and price routes serve stored data or a friendly "sign in to load it" 404.
 - UI: guest banner, locked nav, `LockedAction.svelte` ("Subscribers only - coming soon") in place of saving, refresh, AI, team writes; strength prefs not loaded or saved for guests.
-- BEFORE deploy: migration 0035 needs an approved production apply.
+- Production: migration 0035 applied 2026-10-25 and a `'*'` row inserted (show every company to guests, user's choice). `'*'` (`SHOWCASE_ALL`) opens all companies incl. future ones; ShowcaseToggle offers "Choose companies instead".
+- Guests see no role on the owner chip; one-word names are redacted case-sensitively; the team directory is rebuilt per guest request (no cache).
 - Friendly refusals: guest API 403s carry `guest: true` + `GUEST_WRITE_MESSAGE`; `web/src/lib/guestNotice.svelte.ts` wraps fetch for guests and `GuestNotice.svelte` shows a toast with Sign in. Page refusals and unopenable pages go to `/guest/members-only`; `+error.svelte` has a guest card (no status codes). Shared `apiErrorMessage` in `web/src/lib/api.ts` returns '' for guest refusals; valuation panels use `GuestNote.svelte`. `seriesRefresh.ts` stops at the first 403.
 - Identity redaction: every guest response passes `redactGuestResponse` (`web/src/lib/server/guestResponse.ts`, pure rules in `guestRedact.ts`, unit-tested): person fields become "Analyst N" by user id (unknown "Team member"), account ids null, `members` emptied, emails/display names in text replaced; `?owner=Analyst N` is mapped back to the email, anything else dropped. Leak probe (116 guest responses) found 0 emails/names. Thesis-page write prompts (Start Your Own Thesis, CustomTables Add/Edit/Delete) are hidden when `session.isReadOnly`.
 - Evidence (2026-10-24, local DB): guest/access/guestContext vitest 39 passed; `npm run check` 0 errors; Playwright guest walkthrough 41/41 at 390px with no guest console errors, 401/403 or 5xx; 0 live fetches blocked in the walkthrough (all routes served stored data). adapter-vercel build not run.
