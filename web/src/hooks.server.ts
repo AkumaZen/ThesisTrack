@@ -22,6 +22,7 @@ import {
 } from '$lib/guest';
 import { isCompanyShowcased, isSymbolShowcased, isTableShowcased } from '$lib/server/showcase';
 import { GuestLiveFetchError, runAsGuest } from '$lib/server/guestContext';
+import { redactGuestResponse, unmaskGuestParams } from '$lib/server/guestResponse';
 
 // Background jobs for the valuation tools: refresh the stored prices four times each weekday
 // (see refreshSlots.ts) and check prices against fair value every 10 min in market hours. A long-running server (local
@@ -134,9 +135,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 						: await isSymbolShowcased(target.symbol);
 			if (!shown) return json({ message: 'Not found.', detail: 'Not found.' }, { status: 404 });
 		}
+		// A guest only ever sees team members as "Analyst 1", "Analyst 2"...: map the one it picked
+		// back to the person, and hide every identity in what is sent back.
+		await unmaskGuestParams(event.url);
+		const response = await runAsGuest(event.url.origin, () => resolve(event));
+		holdInstanceForIdleConnections();
+		return redactGuestResponse(response);
 	}
 
-	const response = guest ? await runAsGuest(event.url.origin, () => resolve(event)) : await resolve(event);
+	const response = await resolve(event);
 	holdInstanceForIdleConnections();
 	return response;
 };
