@@ -38,6 +38,7 @@ Type the company name to confirm:`
 	import ActionPanels from './ActionPanels.svelte';
 	import Trackables from '$lib/components/Trackables.svelte';
 	import ProposalReview from '$lib/components/ProposalReview.svelte';
+	import ShowcaseToggle from '$lib/components/shell/ShowcaseToggle.svelte';
 	import { THESIS_SECTIONS, readTrackables } from '$lib/sections';
 	import type { PageData } from './$types';
 	import type { CompanyDetail } from './+page';
@@ -294,6 +295,9 @@ Type the company name to confirm:`
 				title="Permanently delete this company and all its theses"
 				onclick={deleteThesis}>Delete</button
 			>
+		{/if}
+		{#if session.isAdmin}
+			<span class="shrink-0 max-sm:order-7"><ShowcaseToggle symbol={(detail.nse_ticker || detail.bse_ticker || null)?.toUpperCase() ?? null} /></span>
 		{/if}
 		{#if deleteError}<p class="text-sm text-danger w-full max-sm:order-8" role="alert">{deleteError}</p>{/if}
 		{#if detail.scenario_id}
