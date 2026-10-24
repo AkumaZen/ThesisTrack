@@ -38,6 +38,8 @@ describe('createGuestRedactor', () => {
 		expect(r.text('Note from siddhesh.dige: margins hold')).toBe('Note from Analyst 2: margins hold');
 		// Only whole names: a longer word containing a name is left alone.
 		expect(r.text('Rohit.Negi2 wrote')).toBe('Rohit.Negi2 wrote');
+		const plain = createGuestRedactor([{ id: 7, email: 'mark@rdc.in', displayName: 'Mark' }]);
+		expect(plain.text('Mark says mark to market')).toBe('Analyst 1 says mark to market');
 		expect(r.text('')).toBe('');
 	});
 

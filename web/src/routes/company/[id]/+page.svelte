@@ -294,10 +294,11 @@ Type the company name to confirm:`
 				{#if !viewingOwnScenario}
 					<span
 						class="text-xs px-2 py-1.5 rounded-md bg-surface-2 ring-1 ring-border shrink-0"
-						title="Viewing {detail.scenario_owner}'s thesis - read only"
+						title="Viewing {detail.scenario_owner}'s thesis"
 					>
 						<span class="font-medium text-fg">{detail.scenario_owner}</span>
-						<span class="text-muted-fg">&middot; Read Only</span>
+						<!-- A guest reads it as the analyst's role; the guest banner already says read only. -->
+						{#if session.role !== 'guest'}<span class="text-muted-fg">&middot; Read Only</span>{/if}
 					</span>
 				{:else}
 					<a

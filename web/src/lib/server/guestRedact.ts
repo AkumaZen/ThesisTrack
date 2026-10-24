@@ -88,8 +88,14 @@ export function createGuestRedactor(team: TeamIdentity[]): GuestRedactor {
 		.filter((n) => n.name.trim().length >= 3)
 		// Longest first, so "Rohit.Negi2" is not half replaced by "Rohit.Negi".
 		.sort((a, b) => b.name.length - a.name.length);
+	// A name with a separator or digit ("Rohit.Negi") cannot be an ordinary word, so it is matched
+	// in any case. A plain one-word name ("Mark") only matches as written, so "mark to market" in a
+	// note stays as it is.
 	const nameRes = names.map((n) => ({
-		re: new RegExp(`(?<![A-Za-z0-9])${escapeRe(n.name)}(?![A-Za-z0-9])`, 'gi'),
+		re: new RegExp(
+			`(?<![A-Za-z0-9])${escapeRe(n.name)}(?![A-Za-z0-9])`,
+			/^[A-Za-z]+$/.test(n.name) ? 'g' : 'gi'
+		),
 		label: n.label
 	}));
 

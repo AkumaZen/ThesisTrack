@@ -5,18 +5,14 @@ import { db } from './db';
 import { users } from './db/schema';
 import { createGuestRedactor, type GuestRedactor } from './guestRedact';
 
-// The team is small and changes rarely; a new account is picked up within CACHE_MS.
-const CACHE_MS = 60_000;
-let cache: { at: number; redactor: GuestRedactor } | null = null;
-
+/** Built from the current team on every call: the users table is a handful of rows, and a cache
+ *  would show a brand-new account as "Team member" until it expired. */
 export async function guestRedactor(): Promise<GuestRedactor> {
-	if (cache && Date.now() - cache.at < CACHE_MS) return cache.redactor;
 	const team = await db
 		.select({ id: users.id, email: users.email, displayName: users.displayName })
 		.from(users)
 		.orderBy(asc(users.id));
-	cache = { at: Date.now(), redactor: createGuestRedactor(team) };
-	return cache.redactor;
+	return createGuestRedactor(team);
 }
 
 /** Query parameters that name a person: a guest sends the label it was shown. */
