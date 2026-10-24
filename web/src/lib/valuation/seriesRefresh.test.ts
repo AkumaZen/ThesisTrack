@@ -56,6 +56,35 @@ describe('refreshSymbols', () => {
 		expect(r).toMatchObject({ refreshed: 2, unlisted: 1, failed: 0 });
 	});
 
+	it('stops after the first refused (403) request instead of asking for every company', async () => {
+		const calls: string[] = [];
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url: string) => {
+				calls.push(url);
+				return bad(403);
+			})
+		);
+		const r = await refreshSymbols(syms(120));
+		expect(calls).toEqual(['/api/valuation/refresh-batch']);
+		expect(r).toEqual({ total: 120, refreshed: 0, unlisted: 0, failed: 120 });
+	});
+
+	it('stops the one-by-one fallback once a company refresh is refused', async () => {
+		const calls: string[] = [];
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url: string) => {
+				calls.push(url);
+				return url.endsWith('/refresh-batch') ? bad(502) : bad(403);
+			})
+		);
+		const r = await refreshSymbols(syms(3));
+		expect(calls.filter((u) => u.includes('/refresh-series'))).toHaveLength(1);
+		expect(calls.filter((u) => u.endsWith('/refresh-benchmark'))).toHaveLength(0);
+		expect(r).toEqual({ total: 3, refreshed: 0, unlisted: 0, failed: 3 });
+	});
+
 	it('keeps a single company on its own endpoint', async () => {
 		const fetchMock = vi.fn(async (_url: string) => ok({}));
 		vi.stubGlobal('fetch', fetchMock);

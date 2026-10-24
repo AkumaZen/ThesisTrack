@@ -12,10 +12,12 @@ export interface RefreshResult {
 	failed: number;
 }
 
-async function post(url: string): Promise<'ok' | 'unlisted' | 'failed'> {
+// 'refused' (403) means this user may not refresh at all (a guest), so retrying is pointless.
+async function post(url: string): Promise<'ok' | 'unlisted' | 'failed' | 'refused'> {
 	try {
 		const res = await fetch(url, { method: 'POST' });
 		if (res.ok) return 'ok';
+		if (res.status === 403) return 'refused';
 		return res.status === 404 ? 'unlisted' : 'failed';
 	} catch {
 		return 'failed';
@@ -23,13 +25,16 @@ async function post(url: string): Promise<'ok' | 'unlisted' | 'failed'> {
 }
 
 /** One batch request; null when the request itself failed (network, 4xx/5xx). */
-async function postBatch(symbols: string[]): Promise<ReturnType<typeof summariseBatch> | null> {
+async function postBatch(
+	symbols: string[]
+): Promise<ReturnType<typeof summariseBatch> | 'refused' | null> {
 	try {
 		const res = await fetch('/api/valuation/refresh-batch', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ symbols })
 		});
+		if (res.status === 403) return 'refused';
 		if (!res.ok) return null;
 		return summariseBatch(((await res.json()) as { results: { symbol: string; outcome: string }[] }).results);
 	} catch {
@@ -45,21 +50,24 @@ export async function refreshSymbols(
 ): Promise<RefreshResult> {
 	const result: RefreshResult = { total: symbols.length, refreshed: 0, unlisted: 0, failed: 0 };
 	onProgress(0, symbols.length);
+	let refused = false;
 	const single = async (symbol: string) => {
 		const outcome = await post(`/api/valuation/company/${encodeURIComponent(symbol)}/refresh-series`);
 		if (outcome === 'ok') result.refreshed++;
 		else if (outcome === 'unlisted') result.unlisted++;
 		else result.failed++;
+		if (outcome === 'refused') refused = true;
 	};
 	let done = 0;
 	if (symbols.length === 1) {
 		await single(symbols[0]);
 		onProgress(1, 1);
 	} else {
-		for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+		for (let i = 0; i < symbols.length && !refused; i += BATCH_SIZE) {
 			const part = symbols.slice(i, i + BATCH_SIZE);
 			const counts = await postBatch(part);
-			if (counts) {
+			if (counts === 'refused') refused = true;
+			else if (counts) {
 				result.refreshed += counts.ok;
 				result.unlisted += counts.unlisted;
 				result.failed += counts.failed.length;
@@ -68,11 +76,17 @@ export async function refreshSymbols(
 			} else {
 				// The batch request itself failed: do what Refresh always did, one company each.
 				for (const symbol of part) {
+					if (refused) break;
 					await single(symbol);
 					onProgress(++done, symbols.length);
 				}
 			}
 		}
+	}
+	// Refused: nothing was refreshed or will be, so stop rather than ask again for every company.
+	if (refused) {
+		result.failed = result.total - result.refreshed - result.unlisted;
+		return result;
 	}
 	if (withBenchmark) await post('/api/valuation/refresh-benchmark');
 	// New prices change these companies' charts and every sector figure built from them.
