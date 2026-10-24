@@ -312,6 +312,14 @@ export const users = pgTable('users', {
 	mustChangePassword: boolean('must_change_password').notNull().default(false)
 });
 
+// Guest mode (migration 0035): the listing symbols (uppercase NSE, else BSE) a visitor without
+// an account may see. Toggled by an admin from the company pages; read by lib/server/showcase.ts.
+export const showcaseSymbols = pgTable('showcase_symbols', {
+	symbol: text('symbol').primaryKey(),
+	addedBy: integer('added_by').references(() => users.id, { onDelete: 'set null' }),
+	addedAt: timestamp('added_at', { withTimezone: true }).notNull().defaultNow()
+});
+
 // Browser sessions (httpOnly cookie). Only a SHA-256 digest of the cookie
 // token is stored, so a database leak can't be replayed as a login. Deleting
 // a user cascades to their sessions (instant sign-out everywhere).
