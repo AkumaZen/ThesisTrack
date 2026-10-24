@@ -9,12 +9,19 @@
 	import BackgroundRuns from '$lib/components/shell/BackgroundRuns.svelte';
 	import { page } from '$app/state';
 	import { isGuest } from '$lib/guest';
+	import GuestNotice from '$lib/components/shell/GuestNotice.svelte';
+	import { watchGuestRefusals } from '$lib/guestNotice.svelte';
 
 	let { children, data } = $props();
 	const guest = $derived(isGuest(data.user));
 
 	// The thesis pages read the signed-in person from this shared store.
 	$effect.pre(() => session.set(data.user));
+
+	// While a guest browses, a refused request shows a friendly notice instead of an error.
+	$effect(() => {
+		if (guest) return watchGuestRefusals();
+	});
 
 	// Cross-fade route swaps via the View Transitions API where the browser has it (an instant
 	// swap everywhere else). Each page's data comes from its load(), so SvelteKit keeps the old
@@ -48,6 +55,7 @@
 			<span>You're exploring as a guest.</span>
 			<a href="/login?next={encodeURIComponent(page.url.pathname + page.url.search)}">Sign in</a>
 		</div>
+		<GuestNotice />
 	{:else}
 		<PushPrompt userId={data.user.id} />
 		<BackgroundRuns />

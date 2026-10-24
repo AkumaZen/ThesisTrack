@@ -4,7 +4,8 @@
 // was the old onMount fetch racing the route transition; this removes that
 // race entirely. Depends on params.id, so it automatically reruns when
 // navigating from one company to another without a full remount.
-import { api } from '$lib/api';
+import { error } from '@sveltejs/kit';
+import { ApiError, api } from '$lib/api';
 import type { PageLoad } from './$types';
 
 export type KillTrigger = {
@@ -82,6 +83,12 @@ export type CompanyDetail = {
 
 export const load: PageLoad = async ({ params, url, fetch }) => {
 	const owner = url.searchParams.get('owner');
-	const detail = (await api.getCompany(params.id, owner, fetch)) as CompanyDetail;
-	return { detail };
+	try {
+		const detail = (await api.getCompany(params.id, owner, fetch)) as CompanyDetail;
+		return { detail };
+	} catch (e) {
+		// A missing company is a 404 page (for a guest: one not in the showcase), not a crash.
+		if (e instanceof ApiError && e.status === 404) error(404, 'Not found.');
+		throw e;
+	}
 };
