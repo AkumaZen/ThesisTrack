@@ -88,41 +88,10 @@ significant changes. Historical references, loaded only as relevant: `harness/me
 - Python: services/concall/.venv/Scripts/python.exe -m unittest test_server test_hints -v from
   services/concall. Windows adapter-vercel EPERM is known; do not call a failing build verified.
 
-## Working mode (decided 2026-10-22)
-- Opus 5.5 Medium works directly. Executor agents and Agent Teams only when the user explicitly asks in that
-  request. Reason: the master/executor harness used too many tokens. Compaction windows now Opus 150000,
-  Sonnet 200000, Haiku 80000; team/task env vars removed from settings.
-- The notes below are the former harness contract (2026-10-19), kept for reference when agents are requested.
-- Opus5.5 Medium only: architecture, requirements, coordination, actual code/evidence review;
-  NEVER application implementation. Sonnet5.5 Medium default, Low simple work; Haiku5.5 Low bounded
-  exploration/mechanical tasks. Models explicit. Only lead spawns; workers reuse context.
-- One cheap subagent for small tasks; native shared tasks/messaging teams for independent ongoing
-  collaboration, 2 when useful, 3 default maximum; more requires concrete throughput benefit.
-  Separate ownership/interfaces before parallel work; integrate and validate. Shut down idle workers.
-- Requirements/acceptance supplied once, redirect affected tasks on changes. One Sonnet memory
-  owner; recover here after compaction. After two failed repairs Opus re-diagnoses. No false passes.
-- In-process teams; compaction tokens Opus300000, Sonnet600000, Haiku100000 (debug effectiveWindow
-  280k/580k/80k, native reserve; no threshold-filling compaction test run).
-- Task tools root cause: VS Code extension 2.1.301 panel runs the CLI over stream-json SDK protocol
-  and hard-codes CLAUDE_CODE_ENABLE_TASKS=0 (extension.js c5). Fix: project settings env
-  CLAUDE_CODE_ENABLE_TASKS=1 (settings env overrides inherited env). Verified 2026-10-19: live panel
-  session gained TaskCreate/TaskGet/TaskList/TaskUpdate without restart; terminal CLI 2.1.303 with
-  inherited 0 also got them.
-- Panel is an SDK-protocol session: docs say teammates are not spawned there; use the terminal CLI
-  (`claude` in a terminal, or claudeCode.useTerminal) for native teams. Panel subagents work.
-- CLAUDE_CODE_SUBAGENT_MODEL=claude-sonnet-5-5 is a fallback only (definition model wins; _FORCE
-  unset). Transcripts: unnamed executor-haiku subagent ran haiku-5-5 low; executor-medium ran
-  sonnet-5-5 medium; lead opus-5-5 medium.
-- Terminal team smoke (session 51ede6af, CLI 2.1.303): in-process teammates executor-haiku ->
-  haiku-5-5 low, executor-low -> sonnet-5-5 low; shared tasks created/owned/completed,
-  teammate-to-teammate SendMessage, worker reuse, both shutdown approvals. Limitation: the lead
-  idled after shutdown approvals (they did not wake it); nudge the lead or do not block on shutdown
-  confirmation. Harness: scratchpad pywinpty driver (not in repo).
-- Original permissions auto-allows for push/prod scripts changed to ask. No app code changed, no
-  deploy/push/prod writes. Initial multiworker -p smoke reported $0.602752135 list-equivalent
-  usage (not an invoice or performance benchmark).
-- Existing MCP settings preserved; smoke disabled MCP for isolation, so live MCP connectivity is
-  not verified. No unrelated app features requested.
+## Working mode (decided 2026-10-24)
+- Opus 5.5 works directly in the main session. The master, executor-medium, executor-low and
+  executor-haiku agent definitions were removed on user request (too slow, too many tokens).
+  Use built-in subagents only when the user explicitly asks. Older harness notes: git history.
 
 ## Background runs and unpriced companies (feat/breadth-50dma, Oct 22, not pushed)
 - Commits 65cc9b2, 51077a4, 4d75301. Long batch jobs (Refresh all sectors, Load missing history,

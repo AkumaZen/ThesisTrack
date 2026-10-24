@@ -3,7 +3,6 @@ Read `.claude/project-memory.md` at the start of meaningful work and after compa
 ## Working mode
 - The main session is Opus 5.5 at Medium effort and does the work itself: reading, editing, running commands and tests.
 - Do not spawn subagents or Agent Teams unless the user explicitly asks for them in that request.
-- When the user asks for agents, use the pinned definitions in `.claude/agents/` (`executor-medium`, `executor-low`, `executor-haiku`) without per-call model or effort overrides.
 - Keep `.claude/project-memory.md` compact and current. Older `harness/memory/` records are historical references, loaded only when relevant.
 
 ## Shared standards
