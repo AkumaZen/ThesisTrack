@@ -31,6 +31,13 @@ export async function listShowcaseSymbols(): Promise<string[]> {
 /** The cached set, for filtering a list in one pass. */
 export const showcasedSymbols = (): Promise<Set<string>> => showcaseSet();
 
+/** For a guest, keep only the rows whose symbol is showcased; anyone else gets every row. */
+export async function showcaseOnly<T extends { symbol: string }>(rows: T[], guest: boolean): Promise<T[]> {
+	if (!guest) return rows;
+	const set = await showcaseSet();
+	return rows.filter((r) => set.has(normalizeShowcaseSymbol(r.symbol)));
+}
+
 export async function isSymbolShowcased(symbol: string): Promise<boolean> {
 	const s = normalizeShowcaseSymbol(symbol);
 	return s !== '' && (await showcaseSet()).has(s);

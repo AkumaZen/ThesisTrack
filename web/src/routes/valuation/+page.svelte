@@ -51,6 +51,8 @@
 	import ColumnChooser from '$lib/valuation/components/ColumnChooser.svelte';
 	import { interpretSparkline, isFinalTrend, TREND_LABEL, type TrendState } from '$lib/valuation/trendState';
 	import type { PageData } from './$types';
+	import { isGuest } from '$lib/guest';
+	import LockedAction from '$lib/components/shell/LockedAction.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -66,6 +68,8 @@
 	}
 
 	const me = $derived(data.user?.username ?? '');
+	// A guest browses the showcase companies read only: nothing on this page saves for them.
+	const guest = $derived(isGuest(data.user));
 	$effect(() => {
 		refreshSaved();
 	});
@@ -380,6 +384,7 @@
 	let prefsUnsaved = $state(false);
 	function sendPrefs() {
 		prefsTimer = undefined;
+		if (guest) return; // a guest's layout lives in this tab only
 		fetch('/api/valuation/me/prefs', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
@@ -450,6 +455,7 @@
 	// "Changed since you last looked": rows a teammate saved after this person's previous visit.
 	let previousVisit = $state<number | null>(null);
 	$effect(() => {
+		if (untrack(() => guest)) return;
 		void fetch('/api/valuation/me/visit', { method: 'POST' })
 			.then((r) => (r.ok ? r.json() : null))
 			.then((d: { previous: number | null } | null) => (previousVisit = d?.previous ?? null))
@@ -921,11 +927,15 @@
 
 <div class="wrap wrap-wide">
 	<div class="no-print">
-		<AddCompanyPanel
-			canWrite={data.user?.role !== 'read_only'}
-			isAdmin={data.user?.role === 'admin'}
-			onAdded={refreshSaved}
-		/>
+		{#if guest}
+			<LockedAction label="Add companies and save your own valuations" />
+		{:else}
+			<AddCompanyPanel
+				canWrite={data.user?.role !== 'read_only'}
+				isAdmin={data.user?.role === 'admin'}
+				onAdded={refreshSaved}
+			/>
+		{/if}
 	</div>
 	{#if undo || undoMessage}
 		<div class="undo-toast" role="status" data-testid="undo-toast">
@@ -949,14 +959,16 @@
 						aria-pressed={effectiveView === 'all'}
 						onclick={() => setView('all')}>All ({watchRows.length})</button
 					>
-					<button
-						type="button"
-						class="wl-view"
-						class:active={effectiveView === 'mine'}
-						aria-pressed={effectiveView === 'mine'}
-						data-testid="view-mine"
-						onclick={() => setView('mine')}>My coverage ({viewCount('mine')})</button
-					>
+					{#if !guest}
+						<button
+							type="button"
+							class="wl-view"
+							class:active={effectiveView === 'mine'}
+							aria-pressed={effectiveView === 'mine'}
+							data-testid="view-mine"
+							onclick={() => setView('mine')}>My coverage ({viewCount('mine')})</button
+						>
+					{/if}
 					{#each lists as l (l.id)}
 						<button
 							type="button"
@@ -966,7 +978,9 @@
 							onclick={() => setView(`list:${l.id}`)}>{l.name} ({viewCount(`list:${l.id}`)})</button
 						>
 					{/each}
-					{#if creatingList}
+					{#if guest}
+						<!-- Lists are a subscriber feature; the showcase list above is read only. -->
+					{:else if creatingList}
 						<form
 							class="wl-newlist"
 							onsubmit={(e) => {
@@ -1022,13 +1036,15 @@
 							>
 						</div>
 					</details>
-					<button
-						class="link-btn wl-import-link"
-						type="button"
-						data-testid="import-toggle"
-						aria-expanded={importOpen}
-						onclick={() => (importOpen = !importOpen)}>Import JSON</button
-					>
+					{#if !guest}
+						<button
+							class="link-btn wl-import-link"
+							type="button"
+							data-testid="import-toggle"
+							aria-expanded={importOpen}
+							onclick={() => (importOpen = !importOpen)}>Import JSON</button
+						>
+					{/if}
 				</div>
 				{#if exportError}<p class="team-error" role="alert">{exportError}</p>{/if}
 				{#if prefsUnsaved}
@@ -1039,7 +1055,7 @@
 			</div>
 			{#if importOpen}{@render importPanel()}{/if}
 
-			{#if activeList}
+			{#if activeList && !guest}
 				<div class="wl-listbar no-print" data-testid="list-bar">
 					{#if renaming}
 						<form
@@ -1210,7 +1226,9 @@
 										{/each}
 									{/if}
 									<td class="wl-actions">
-										{#if activeList}
+										{#if guest}
+											<!-- read only -->
+										{:else if activeList}
 											<button
 												class="link-btn"
 												type="button"
@@ -1240,6 +1258,11 @@
 				{/if}
 			{/if}
 		</div>
+	{:else if savedLoaded && guest}
+		<p class="wl-empty" data-testid="watchlist-empty">
+			No showcase companies are set up yet. <a href={resolve('/login')}>Sign in</a> to see the full
+			watchlist.
+		</p>
 	{:else if savedLoaded}
 		<p class="wl-empty" data-testid="watchlist-empty">
 			Your watchlist is empty. Use <strong>+ Add company</strong> above, or open a company and click
@@ -1254,10 +1277,12 @@
 		{#if importOpen}{@render importPanel()}{/if}
 	{/if}
 
-	<div class="no-print">
-		<RemovedValuations refreshKey={savedVersion} onRestored={refreshSaved} />
-		<ActivityFeed />
-	</div>
+	{#if !guest}
+		<div class="no-print">
+			<RemovedValuations refreshKey={savedVersion} onRestored={refreshSaved} />
+			<ActivityFeed />
+		</div>
+	{/if}
 
 	{#snippet importPanel()}
 		<div class="integrity-panel no-print" data-testid="import-panel">
@@ -1386,7 +1411,7 @@
 					<button type="button" class="trend-act" disabled title={TREND_LABEL.fetching.title}
 						>{TREND_LABEL.fetching.text}</button
 					>
-				{:else if data.user?.role === 'read_only'}
+				{:else if data.user?.role === 'read_only' || guest}
 					<span class="trend-note" title="No trend yet. The next scheduled price refresh will fill it.">No data yet</span>
 				{:else}
 					{@const label = TREND_LABEL[r.trend === 'error' ? 'error' : 'not_stored']}

@@ -58,7 +58,11 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 		// actor's own scenario when absent or when it doesn't match anyone,
 		// so an unrecognized/stale owner param degrades to today's behavior
 		// instead of erroring.
-		const scenario = (viewOwner ? allScenarios.find((s) => s.owner === viewOwner) : null) ?? mine;
+		// A guest owns no scenario, so it opens on the first analyst's instead of an empty page.
+		const scenario =
+			(viewOwner ? allScenarios.find((s) => s.owner === viewOwner) : null) ??
+			mine ??
+			(actor.role === 'guest' ? (allScenarios[0] ?? null) : null);
 		const otherScenarios = allScenarios
 			.filter((s) => s.owner !== actor.identity)
 			.map((s) => ({ id: s.id, owner: s.owner, label: s.label, status: s.status, last_reviewed: s.lastReviewed }));

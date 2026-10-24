@@ -3,6 +3,8 @@ import { listAllBaskets } from '$lib/valuation/server/sectorStore';
 import { listSections } from '$lib/valuation/server/marketIntelStore';
 import { listSavedValuationRows } from '$lib/valuation/server/savedValuationsStore';
 import { readStoredFinancials, symbolsMissingFinancials } from '$lib/valuation/server/fundamentalStore';
+import { showcaseOnly } from '$lib/server/showcase';
+import { isGuest } from '$lib/guest';
 import { buildResultsRow, type ResultsRow } from '$lib/valuation/quarterlyResults';
 
 // Reads stored Screener results only: nothing here fetches. Companies nobody has opened have no stored
@@ -12,7 +14,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		readStoredFinancials(),
 		listAllBaskets(),
 		listSections(locals.user!.id).catch(() => []),
-		listSavedValuationRows().catch(() => []),
+		listSavedValuationRows()
+			.then((rows) => showcaseOnly(rows, isGuest(locals.user)))
+			.catch(() => []),
 		symbolsMissingFinancials().catch((): string[] => [])
 	]);
 	const basketsBySymbol = new Map<string, string[]>();

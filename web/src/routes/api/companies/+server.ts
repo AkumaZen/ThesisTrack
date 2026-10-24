@@ -6,6 +6,7 @@ import { db } from '$lib/server/db';
 import {
 	broadIndustries,
 	companies,
+	showcaseSymbols,
 	customNotes,
 	customTables,
 	specificNiches,
@@ -74,6 +75,12 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 				)
 			)
 		];
+		// A guest sees only the showcased companies (matched on the same symbol priceSymbol() gives).
+		if (actor.role === 'guest') {
+			conditions.push(
+				sql`upper(coalesce(nullif(${companies.nseTicker}, ''), nullif(${companies.bseTicker}, ''))) in (select ${showcaseSymbols.symbol} from ${showcaseSymbols})`
+			);
+		}
 		if (q) conditions.push(ilike(companies.name, `%${q}%`));
 		if (broadIndustryNames.length) conditions.push(inArray(broadIndustries.name, broadIndustryNames));
 		if (nicheNames.length) conditions.push(inArray(specificNiches.name, nicheNames));

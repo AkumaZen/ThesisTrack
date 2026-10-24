@@ -3,19 +3,23 @@ import { PERIODS, type Period } from '$lib/valuation/returns';
 import { RETURN_INDICES } from '$lib/valuation/server/longRangeStore';
 import { readReturnItems } from '$lib/valuation/server/returnsStore';
 import { listSavedValuationRows } from '$lib/valuation/server/savedValuationsStore';
+import { showcaseOnly } from '$lib/server/showcase';
+import { isGuest } from '$lib/guest';
 
 /** At most this many stocks at once: the chart stays readable and the page reads a bounded amount. */
 const MAX_STOCKS = 12;
 const DEFAULT_STOCKS = 4;
 
 // Stored prices only. The selection lives in the URL (?s=TICKER,TICKER&i=IDX:NIFTY50&p=6M) so a view can be shared.
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
 	const asked = url.searchParams.get('s');
 	let symbols: string[];
 	if (asked !== null) {
 		symbols = [...new Set(asked.split(',').map((s) => s.trim().toUpperCase()).filter((s) => /^[A-Z0-9&_.-]{1,20}$/.test(s)))];
 	} else {
-		const saved = await listSavedValuationRows().catch(() => []);
+		const saved = await listSavedValuationRows()
+			.then((rows) => showcaseOnly(rows, isGuest(locals.user)))
+			.catch(() => []);
 		symbols = saved.slice(0, DEFAULT_STOCKS).map((s) => s.symbol);
 	}
 	symbols = symbols.slice(0, MAX_STOCKS);

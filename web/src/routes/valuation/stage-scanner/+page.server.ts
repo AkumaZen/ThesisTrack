@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { isGuest } from '$lib/guest';
 import { db } from '$lib/server/db';
 import { stageScanCache } from '$lib/server/db/valuationSchema';
 import { listAllBaskets, getSymbolNames } from '$lib/valuation/server/sectorStore';
@@ -23,7 +24,7 @@ import {
 // Results computed with different settings are left out so the page fetches them fresh.
 // The universe is the sector baskets plus the market cap list (valuation.mcap_universe); a
 // company on the list with no price source is shown apart and never scanned.
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
 	const [baskets, rows, settings, listed, growthMap, fundamentalMap, longRange, missingFinancials, missingLongRange] =
 		await Promise.all([
 		listAllBaskets(),
@@ -77,7 +78,8 @@ export const load: PageServerLoad = async ({ url }) => {
 	const fundamentals = Object.fromEntries(fundamentalMap);
 	const high5y = Object.fromEntries([...longRange].map(([symbol, v]) => [symbol, v.high5y]));
 	// ?scan=<id> opens a saved scan (yours or a shared one): its filters are applied on load.
-	const scanId = url.searchParams.get('scan');
+	// Saved scans are a subscriber feature, so a guest's link opens the plain scanner.
+	const scanId = isGuest(locals.user) ? null : url.searchParams.get('scan');
 	const found = scanId && isScanId(scanId) ? await getScan(scanId).catch(() => null) : null;
 	const appliedScan = found ? { id: found.id, name: found.name, config: found.config } : null;
 	return {
