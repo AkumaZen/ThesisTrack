@@ -11,7 +11,7 @@ import {
 	validateDisplayName,
 	validateEmail,
 	validatePassword,
-	type Role,
+	type AccountRole,
 	type SessionUser,
 	type UserRow
 } from '../auth';
@@ -38,7 +38,7 @@ const toRow = (r: typeof users.$inferSelect): UserRow => ({
 	id: r.id,
 	email: r.email,
 	username: r.displayName,
-	role: r.role as Role,
+	role: r.role as AccountRole,
 	mustChangePassword: r.mustChangePassword,
 	isActive: r.isActive,
 	createdAt: r.createdAt.getTime(),
@@ -49,7 +49,7 @@ const toSessionUser = (r: typeof users.$inferSelect): SessionUser => ({
 	id: r.id,
 	email: r.email,
 	username: r.displayName,
-	role: r.role as Role,
+	role: r.role as AccountRole,
 	mustChangePassword: r.mustChangePassword
 });
 
@@ -71,7 +71,7 @@ export async function listUsers(): Promise<UserRow[]> {
 export async function createUser(input: {
 	email: string;
 	displayName?: string;
-	role: Role;
+	role: AccountRole;
 	/** Omit to have a temporary password generated. */
 	password?: string;
 }): Promise<{ user: UserRow; temporaryPassword: string }> {
@@ -128,7 +128,7 @@ export async function deleteUser(id: number, actingUserId: number): Promise<User
 	const blocked = removalBlocked({
 		targetId: id,
 		actingId: actingUserId,
-		targetRole: target.role as Role,
+		targetRole: target.role as AccountRole,
 		adminCount: await adminCount()
 	});
 	if (blocked) throw new AuthError(403, blocked);
@@ -138,7 +138,7 @@ export async function deleteUser(id: number, actingUserId: number): Promise<User
 }
 
 /** Changes someone's role. The last admin can't be demoted, or nobody could manage the team. */
-export async function setRole(id: number, role: Role, actingUserId: number): Promise<UserRow> {
+export async function setRole(id: number, role: AccountRole, actingUserId: number): Promise<UserRow> {
 	if (!ROLES.includes(role)) throw new AuthError(400, 'Unknown role.');
 	const [target] = await db.select().from(users).where(eq(users.id, id));
 	if (!target || !target.isActive) throw new AuthError(404, 'No such user.');

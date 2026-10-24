@@ -5,12 +5,16 @@
  * read_write: the normal analyst account.
  * read_only: can look at everything, change nothing.
  */
-export type Role = 'admin' | 'read_write' | 'read_only';
-export const ROLES: Role[] = ['admin', 'read_write', 'read_only'];
+export type AccountRole = 'admin' | 'read_write' | 'read_only';
+/** guest: nobody signed in; the person is exploring the showcase read-only (see lib/guest.ts).
+ *  It is never stored on an account, so it is not part of AccountRole or the DB enum. */
+export type Role = AccountRole | 'guest';
+export const ROLES: AccountRole[] = ['admin', 'read_write', 'read_only'];
 export const ROLE_LABELS: Record<Role, string> = {
 	admin: 'Admin',
 	read_write: 'Analyst',
-	read_only: 'Read only'
+	read_only: 'Read only',
+	guest: 'Guest'
 };
 
 export interface SessionUser {
@@ -89,7 +93,7 @@ export interface UserRow {
 	id: number;
 	email: string;
 	username: string;
-	role: Role;
+	role: AccountRole;
 	mustChangePassword: boolean;
 	isActive: boolean;
 	createdAt: number;
@@ -101,7 +105,7 @@ export interface UserRow {
 export function removalBlocked(input: {
 	targetId: number;
 	actingId: number;
-	targetRole: Role;
+	targetRole: AccountRole;
 	adminCount: number;
 }): string | null {
 	if (input.targetId === input.actingId) return "You can't remove your own account.";

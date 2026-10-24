@@ -11,6 +11,7 @@ import {
 	canWrite,
 	type SessionUser
 } from './auth';
+import { GUEST_USER } from './guest';
 
 const admin: SessionUser = {
 	id: 1,
@@ -154,6 +155,76 @@ describe('decideAccess: read only', () => {
 		// ...but not the team's alert rules next to them.
 		expect(d('/api/valuation/strength/rules', 'POST', viewer)).toBe('forbidden');
 		expect(d('/api/valuation/strength', 'POST', viewer)).toBe('forbidden');
+	});
+});
+
+describe('decideAccess: guest', () => {
+	const g = (pathname: string, method = 'GET') => d(pathname, method, GUEST_USER);
+	const gKey = (pathname: string, method = 'GET') =>
+		decideAccess({ pathname, method, user: GUEST_USER, hasApiCredential: true });
+
+	it('can open the guest pages', () => {
+		for (const p of [
+			'/',
+			'/company/X',
+			'/valuation',
+			'/valuation/company/TCS',
+			'/valuation/compare',
+			'/valuation/results',
+			'/valuation/stage-scanner',
+			'/locked/alerts'
+		]) {
+			expect(g(p), p).toBe('allow');
+		}
+	});
+
+	it('sees a preview of locked features', () => {
+		for (const p of ['/valuation/alerts', '/valuation/master-tracker/TCS', '/review', '/ingest', '/sectors']) {
+			expect(g(p), p).toBe('locked');
+		}
+	});
+
+	it('is sent to sign in for anything else, admin pages included', () => {
+		for (const p of ['/admin/users', '/valuation/sectors', '/account/password', '/valuation/lists-x']) {
+			expect(g(p), p).toBe('login');
+		}
+	});
+
+	it('can never write, even to personal preferences or with an API key', () => {
+		for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+			expect(g('/api/companies/X/thesis', method), method).toBe('forbidden');
+			expect(g('/api/valuation/me/prefs', method), method).toBe('forbidden');
+			expect(g('/api/valuation/valuations/TCS', method), method).toBe('forbidden');
+			expect(g('/valuation', method), method).toBe('forbidden');
+			expect(gKey('/api/companies/X/thesis', method), method).toBe('forbidden');
+		}
+		expect(canWrite('guest')).toBe(false);
+	});
+
+	it('reads only the allowlisted APIs', () => {
+		for (const p of ['/api/companies', '/api/companies/X', '/api/valuation/valuations', '/api/valuation/company/TCS']) {
+			expect(g(p), p).toBe('allow');
+		}
+		for (const p of [
+			'/api/admin/users',
+			'/api/admin/showcase',
+			'/api/valuation/alerts',
+			'/api/valuation/me/prefs',
+			'/api/valuation/valuations/removed',
+			'/api/valuation/company/TCS/refresh-price',
+			'/api/tables/1',
+			'/api/account/password'
+		]) {
+			expect(g(p), p).toBe('forbidden');
+			expect(gKey(p), p).toBe('forbidden');
+		}
+	});
+
+	it('still reaches the public paths, so it can sign in or leave', () => {
+		expect(g('/login')).toBe('allow');
+		expect(g('/api/auth/login', 'POST')).toBe('allow');
+		expect(g('/api/auth/guest', 'POST')).toBe('allow');
+		expect(g('/logout', 'POST')).toBe('allow');
 	});
 });
 

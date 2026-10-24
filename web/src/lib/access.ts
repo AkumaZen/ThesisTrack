@@ -1,13 +1,14 @@
 import type { SessionUser } from './auth';
+import { guestMayCallApi, guestMayOpenPage, lockedFeatureForPath } from './guest';
 
 // The whole access policy in one pure function, so every rule is unit-tested and the hook that
 // enforces it stays a thin wrapper. Anything not listed as public needs a signed-in user.
 
-export type AccessDecision = 'allow' | 'login' | 'forbidden' | 'change-password';
+export type AccessDecision = 'allow' | 'login' | 'forbidden' | 'change-password' | 'locked';
 
 /** /api/cron/* checks its own CRON_SECRET (Vercel Cron calls it without a session); the Telegram webhook
  *  checks its own X-Telegram-Bot-Api-Secret-Token (Telegram's servers have no session either). */
-const PUBLIC_PATHS = ['/login', '/logout', '/api/auth/login', '/api/health', '/api/cron', '/api/telegram/webhook'];
+const PUBLIC_PATHS = ['/login', '/logout', '/api/auth/login', '/api/auth/guest', '/api/health', '/api/cron', '/api/telegram/webhook'];
 
 /** Pages only an admin may open (they edit shared configuration or manage people). */
 const ADMIN_PAGE_PREFIXES = ['/admin', '/valuation/sectors'];
@@ -66,6 +67,16 @@ export function decideAccess(input: {
 			return 'allow';
 		}
 		return 'login';
+	}
+
+	// A guest (no account, see lib/guest.ts) is read only and sees only the showcase: every write
+	// is refused, APIs are deny-by-default, locked features open their preview, other pages
+	// send the person to sign in.
+	if (user.role === 'guest') {
+		if (!isRead(method)) return 'forbidden';
+		if (isApiPath(pathname)) return guestMayCallApi(pathname, method) ? 'allow' : 'forbidden';
+		if (lockedFeatureForPath(pathname)) return 'locked';
+		return guestMayOpenPage(pathname) ? 'allow' : 'login';
 	}
 
 	if (

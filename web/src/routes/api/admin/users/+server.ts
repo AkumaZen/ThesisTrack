@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { handleAuth, readJson, requireAdmin } from '$lib/server/authApi';
 import { createUser, listUsers } from '$lib/server/accounts';
-import { ROLES, type Role } from '$lib/auth';
+import { ROLES, type AccountRole } from '$lib/auth';
 
 export const GET: RequestHandler = async ({ locals }) => {
 	requireAdmin(locals);
@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 export const POST: RequestHandler = async ({ request, locals }) => {
 	requireAdmin(locals);
 	const body = await readJson(request);
-	const role = ROLES.includes(body.role as Role) ? (body.role as Role) : 'read_write';
+	const role = ROLES.includes(body.role as AccountRole) ? (body.role as AccountRole) : 'read_write';
 	return handleAuth(
 		() =>
 			createUser({

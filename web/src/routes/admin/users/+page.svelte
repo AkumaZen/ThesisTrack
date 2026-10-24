@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { ROLES, ROLE_LABELS, displayNameFromEmail, type Role, type UserRow } from '$lib/auth';
+	import { ROLES, ROLE_LABELS, displayNameFromEmail, type AccountRole, type UserRow } from '$lib/auth';
 	import PageHeader from '$lib/components/shell/PageHeader.svelte';
 	import type { PageData } from './$types';
 
@@ -8,7 +8,7 @@
 
 	let newEmail = $state('');
 	let newName = $state('');
-	let newRole = $state<Role>('read_write');
+	let newRole = $state<AccountRole>('read_write');
 	let newPassword = $state('');
 	let busy = $state<string | null>(null);
 	let message = $state<{ kind: 'ok' | 'error'; text: string } | null>(null);
@@ -20,7 +20,7 @@
 
 	const namePlaceholder = $derived(newEmail.includes('@') ? displayNameFromEmail(newEmail) : 'First.Last');
 
-	const ROLE_HELP: Record<Role, string> = {
+	const ROLE_HELP: Record<AccountRole, string> = {
 		admin: 'Everything, plus team, sector baskets and shared settings',
 		read_write: 'Write theses and valuations',
 		read_only: 'View everything, change nothing'
@@ -73,7 +73,7 @@
 		await invalidateAll();
 	}
 
-	async function changeRole(u: UserRow, role: Role) {
+	async function changeRole(u: UserRow, role: AccountRole) {
 		busy = `role-${u.id}`;
 		message = null;
 		const res = await call<UserRow>('PATCH', `/api/admin/users/${u.id}`, { role });
@@ -232,7 +232,7 @@
 							class="input role-select"
 							value={u.role}
 							disabled={me || busy === `role-${u.id}`}
-							onchange={(e) => changeRole(u, (e.currentTarget as HTMLSelectElement).value as Role)}
+							onchange={(e) => changeRole(u, (e.currentTarget as HTMLSelectElement).value as AccountRole)}
 						>
 							{#each ROLES as r (r)}<option value={r}>{ROLE_LABELS[r]}</option>{/each}
 						</select>
