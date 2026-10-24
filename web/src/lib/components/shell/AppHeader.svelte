@@ -6,6 +6,7 @@
 	import { MODULES, moduleOf, type ModuleKey } from '$lib/modules';
 	import GlobalSearch from './GlobalSearch.svelte';
 	import AlertBell from './AlertBell.svelte';
+	import { guestPageRedirect, isGuest, lockedFeatureForPath } from '$lib/guest';
 
 	let { user }: { user: SessionUser } = $props();
 
@@ -64,9 +65,17 @@
 		]
 	};
 
+	// A guest sees the same nav; locked tools carry a lock and open their preview instead.
+	const guest = $derived(isGuest(user));
+	const navHref = (href: string) => (guest ? (guestPageRedirect(href) ?? href) : href);
+	const isLocked = (href: string) => guest && lockedFeatureForPath(href) !== undefined;
+	const signInHref = $derived(
+		`/login?next=${encodeURIComponent(page.url.pathname + page.url.search)}`
+	);
+
 	const path = $derived(page.url.pathname);
 	const current = $derived(moduleOf(path));
-		const tools = $derived(TOOLS[current]);
+	const tools = $derived(TOOLS[current]);
 	const onAccountPage = $derived(starts('/account')(path) || starts('/admin')(path));
 
 	let drawerOpen = $state(false);
@@ -96,6 +105,17 @@
 	);
 </script>
 
+{#snippet lock()}
+	<svg class="nav-lock" width="10" height="12" viewBox="0 0 10 12" aria-label="Locked" role="img"
+		><rect x="1" y="5" width="8" height="6" fill="currentColor" /><path
+			d="M3 5V3.5a2 2 0 0 1 4 0V5"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="1.5"
+		/></svg
+	>
+{/snippet}
+
 <svelte:window onkeydown={onKeydown} />
 
 <svelte:document
@@ -117,15 +137,19 @@
 			<nav class="modules" aria-label="Module">
 				{#each MODULES as m (m.key)}
 					<a
-						href={m.landing}
+						href={navHref(m.landing)}
 						class="module"
-						aria-current={current === m.key && !onAccountPage ? 'true' : undefined}>{m.label}</a
+						aria-current={current === m.key && !onAccountPage ? 'true' : undefined}
+						>{m.label}{#if isLocked(m.landing)}{@render lock()}{/if}</a
 					>
 				{/each}
 			</nav>
 
 			<div class="shell-actions">
 				<div class="shell-search"><GlobalSearch /></div>
+				{#if guest}
+					<a class="btn btn-primary guest-signin" href={signInHref} data-testid="guest-sign-in">Sign in</a>
+				{:else}
 				<AlertBell />
 				<details class="account" bind:this={menu} data-testid="user-menu">
 					<summary class="account-trigger" aria-label="Account menu for {user.username}">
@@ -154,6 +178,7 @@
 						</form>
 					</div>
 				</details>
+				{/if}
 				<button
 					class="icon-btn menu-btn"
 					type="button"
@@ -177,8 +202,8 @@
 	<nav class="tools" aria-label="{MODULES.find((m) => m.key === current)?.label} tools">
 		<div class="shell-inner tools-inner">
 			{#each tools as t (t.href)}
-				<a href={t.href} class="tool" aria-current={t.match(path) ? 'page' : undefined}
-					>{t.label}</a
+				<a href={navHref(t.href)} class="tool" aria-current={t.match(path) ? 'page' : undefined}
+					>{t.label}{#if isLocked(t.href)}{@render lock()}{/if}</a
 				>
 			{/each}
 		</div>
@@ -208,12 +233,18 @@
 			<div class="drawer-group">
 				<div class="eyebrow">{group.name}</div>
 				{#each group.list as t (t.href)}
-					<a href={t.href} class="drawer-link" aria-current={t.match(path) ? 'page' : undefined}
-						>{t.label}</a
+					<a href={navHref(t.href)} class="drawer-link" aria-current={t.match(path) ? 'page' : undefined}
+						>{t.label}{#if isLocked(t.href)}{@render lock()}{/if}</a
 					>
 				{/each}
 			</div>
 		{/each}
+		{#if guest}
+		<div class="drawer-group">
+			<div class="eyebrow">{ROLE_LABELS[user.role]}</div>
+			<a href={signInHref} class="drawer-link">Sign in</a>
+		</div>
+		{:else}
 		<div class="drawer-group">
 			<div class="eyebrow">{user.username} · {ROLE_LABELS[user.role]}</div>
 			<a href="/valuation/settings" class="drawer-link">Settings</a>
@@ -224,5 +255,6 @@
 				<button type="submit" class="drawer-link">Sign out</button>
 			</form>
 		</div>
+		{/if}
 	</div>
 {/if}

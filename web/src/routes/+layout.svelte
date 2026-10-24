@@ -7,8 +7,11 @@
 	import KeyboardShortcuts from '$lib/components/shell/KeyboardShortcuts.svelte';
 	import PushPrompt from '$lib/components/shell/PushPrompt.svelte';
 	import BackgroundRuns from '$lib/components/shell/BackgroundRuns.svelte';
+	import { page } from '$app/state';
+	import { isGuest } from '$lib/guest';
 
 	let { children, data } = $props();
+	const guest = $derived(isGuest(data.user));
 
 	// The thesis pages read the signed-in person from this shared store.
 	$effect.pre(() => session.set(data.user));
@@ -40,9 +43,16 @@
 
 {#if data.user && !data.user.mustChangePassword}
 	<AppHeader user={data.user} />
-	<PushPrompt userId={data.user.id} />
+	{#if guest}
+		<div class="guest-banner" role="status" data-testid="guest-banner">
+			<span>You're exploring as a guest.</span>
+			<a href="/login?next={encodeURIComponent(page.url.pathname + page.url.search)}">Sign in</a>
+		</div>
+	{:else}
+		<PushPrompt userId={data.user.id} />
+		<BackgroundRuns />
+	{/if}
 	<KeyboardShortcuts />
-	<BackgroundRuns />
 	<main id="main" class="app-main">
 		{@render children()}
 	</main>
@@ -51,3 +61,22 @@
 		{@render children()}
 	</main>
 {/if}
+
+<style>
+	.guest-banner {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1) var(--space-3);
+		padding: var(--space-2) var(--space-3);
+		background: var(--warn-soft);
+		border-bottom: var(--border-w) solid var(--ink);
+		font-size: 0.875rem;
+		text-align: center;
+	}
+	.guest-banner a {
+		font-weight: 600;
+		color: var(--ink);
+	}
+</style>

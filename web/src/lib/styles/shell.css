@@ -331,6 +331,16 @@ html {
 	color: var(--muted);
 }
 
+/* Guest mode: a lock on tools that open a preview, and Sign in where the account menu sits. */
+.nav-lock {
+	flex-shrink: 0;
+	margin-left: 6px;
+	opacity: 0.7;
+}
+.guest-signin {
+	flex-shrink: 0;
+}
+
 /* Account menu. */
 .account {
 	position: relative;

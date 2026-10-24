@@ -66,6 +66,14 @@
 			{submitting ? 'Signing in…' : 'Sign in'}
 		</button>
 	</form>
+
+	<div class="guest-entry">
+		<span class="guest-or">or</span>
+		<form method="POST" action="/api/auth/guest">
+			<button class="btn btn-block" type="submit" data-testid="explore-as-guest">Explore without an account</button>
+		</form>
+		<p class="guest-note">Look around a few showcase companies. Read only, no signup.</p>
+	</div>
 </AuthFrame>
 
 <style>
@@ -73,6 +81,33 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
+	}
+	.guest-entry {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		margin-top: var(--space-4);
+	}
+	.guest-or {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--muted);
+	}
+	.guest-or::before,
+	.guest-or::after {
+		content: '';
+		flex: 1;
+		border-top: 1px solid var(--rule);
+	}
+	.guest-note {
+		margin: 0;
+		font-size: 0.8125rem;
+		color: var(--muted);
 	}
 	.pw {
 		position: relative;
