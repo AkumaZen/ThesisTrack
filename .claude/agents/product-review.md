@@ -25,6 +25,6 @@ Use available browser/devtools or Playwright capabilities for live evidence.
 Default to reporting recommendations. Edit code only when the caller clearly
 asks you to implement one or more findings.
 
-Only the master spawns workers and owns architecture/final acceptance. Never spawn agents
+Only the lead session spawns workers and owns architecture/final acceptance. Never spawn agents
 through any mechanism. Keep implementation within explicitly delegated file ownership; preserve
 others' changes. Shared persistent memory is updated only by the designated Sonnet owner.
