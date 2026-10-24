@@ -3,9 +3,11 @@ import type { Actions, PageServerLoad } from './$types';
 import { SESSION_COOKIE, normalizeEmail, safeNextPath } from '$lib/auth';
 import { authenticate, createSession } from '$lib/server/accounts';
 import { loginThrottle } from '$lib/server/loginThrottle';
+import { GUEST_COOKIE, isGuest } from '$lib/guest';
 
 export const load: PageServerLoad = ({ locals, url }) => {
-	if (locals.user) redirect(303, safeNextPath(url.searchParams.get('next')));
+	// A guest is here to sign in, so only a real session skips the form.
+	if (locals.user && !isGuest(locals.user)) redirect(303, safeNextPath(url.searchParams.get('next')));
 	return { next: url.searchParams.get('next') ?? '' };
 };
 
@@ -42,6 +44,7 @@ export const actions: Actions = {
 			secure: url.protocol === 'https:',
 			expires: new Date(expiresAt)
 		});
+		cookies.delete(GUEST_COOKIE, { path: '/' });
 		redirect(303, user.mustChangePassword ? '/account/password' : safeNextPath(next));
 	}
 };

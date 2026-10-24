@@ -11,6 +11,9 @@ import { startIntradayPriceScheduler } from '$lib/valuation/server/intradayPrice
 import { startAlertScheduler } from '$lib/valuation/server/alertScheduler';
 import { IDLE_GRACE_MS, holdIdleConnections } from '$lib/server/db';
 import { isTrackerTestRequest, mockCompanies } from '$lib/valuation/server/masterTrackerMock';
+import { GUEST_COOKIE, GUEST_USER, guestShowcaseTarget, isGuest, lockedFeatureForPath } from '$lib/guest';
+import { isCompanyShowcased, isSymbolShowcased } from '$lib/server/showcase';
+import { runAsGuest } from '$lib/server/guestContext';
 
 // Background jobs for the valuation tools: refresh the stored prices four times each weekday
 // (see refreshSlots.ts) and check prices against fair value every 10 min in market hours. A long-running server (local
@@ -59,7 +62,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	const token = event.cookies.get(SESSION_COOKIE) ?? null;
 	event.locals.sessionToken = token;
-	event.locals.user = await getSessionUser(token ?? undefined);
+	// A real session always wins; only without one does the guest cookie count (lib/guest.ts).
+	event.locals.user =
+		(await getSessionUser(token ?? undefined)) ??
+		(event.cookies.get(GUEST_COOKIE) === '1' ? GUEST_USER : null);
+	const guest = isGuest(event.locals.user);
 	try {
 		event.locals.actor = await resolveActor(event.request.headers, event.locals.user);
 	} catch {
@@ -75,6 +82,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		hasApiCredential: hasApiCredential(event.request.headers)
 	});
 
+	if (decision === 'locked') {
+		redirect(303, `/locked/${lockedFeatureForPath(pathname)?.key ?? ''}`);
+	}
 	if (decision === 'login') {
 		if (isApiPath(pathname)) return json({ message: 'Sign in required.', detail: 'Sign in required.' }, { status: 401 });
 		const next = encodeURIComponent(pathname + search);
@@ -89,16 +99,29 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	if (decision === 'forbidden') {
 		if (isApiPath(pathname)) {
-			const message = 'You do not have access to this action.';
+			const message = guest
+				? 'Guests can look around but not make changes. Sign in to do this.'
+				: 'You do not have access to this action.';
 			return json({ message, detail: message }, { status: 403 });
 		}
-		return new Response('Forbidden: this page is limited to the admin.', {
+		return new Response(guest ? 'Guests can look around but not make changes.' : 'Forbidden: this page is limited to the admin.', {
 			status: 403,
 			headers: { 'content-type': 'text/plain; charset=utf-8' }
 		});
 	}
 
-	const response = await resolve(event);
+	if (guest) {
+		// Guests see showcased companies only. A read about any other company looks like it does
+		// not exist, so the list of what we cover is not revealed either.
+		const target = guestShowcaseTarget(pathname);
+		if (target) {
+			const shown =
+				target.kind === 'company' ? await isCompanyShowcased(target.id) : await isSymbolShowcased(target.symbol);
+			if (!shown) return json({ message: 'Not found.', detail: 'Not found.' }, { status: 404 });
+		}
+	}
+
+	const response = guest ? await runAsGuest(event.url.origin, () => resolve(event)) : await resolve(event);
 	holdInstanceForIdleConnections();
 	return response;
 };
