@@ -1,5 +1,7 @@
 <script lang="ts">
 	import PageHeader from '$lib/components/shell/PageHeader.svelte';
+	import LockedAction from '$lib/components/shell/LockedAction.svelte';
+	import { isGuest } from '$lib/guest';
 	// Ports the dashboard portion of frontend/app.js (loadCards/refreshCompanies)
 	// + renderCards/renderFacetBar/renderHeaderStats. Initial data now comes
 	// from +page.ts's load() (see that file for why) instead of onMount, so
@@ -29,7 +31,11 @@
 
 <PageHeader title="Companies" subtitle="Every thesis and how it is tracking.">
 	{#snippet actions()}
-		<a href="/ingest" class="btn btn-primary">+ New company</a>
+		{#if isGuest(data.user)}
+			<LockedAction label="Add a company" />
+		{:else}
+			<a href="/ingest" class="btn btn-primary">+ New company</a>
+		{/if}
 	{/snippet}
 </PageHeader>
 <HeaderStats {companies} />

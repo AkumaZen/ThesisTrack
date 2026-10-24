@@ -44,9 +44,11 @@ async function sectorsFor(symbol: string) {
 }
 
 export const load: PageServerLoad = async ({ params, locals }) => {
+	const guest = isGuest(locals.user);
+	// Guests see showcased companies only; any other one looks like it does not exist.
+	if (guest && !(await isSymbolShowcased(params.symbol))) error(404, 'Not found.');
 	try {
 		const { data } = await getCompanyData(params.symbol);
-		const guest = isGuest(locals.user);
 		const [sectors, startingTemplate, thesisId, scanMatch, segments, showcased] = await Promise.all([
 			sectorsFor(data.symbol),
 			startingTemplateFor(data.symbol, locals.user!.id),
