@@ -139,3 +139,13 @@ significant changes. Historical references, loaded only as relevant: `harness/me
   or suspended/delisted. Deactivating them is a prod write and NOT approved yet.
 - Angel scrip master dropped COLAB, SPELS, RRP, RRPDEFENSE, JAYTEX, SATANIBRG between Oct 19 and 22
   (likely surveillance/suspension); INDLMETER looks like a wrong ticker.
+
+## Guest mode (feat/guest-mode, not pushed)
+- Design: "Explore without an account" on /login sets the `tt_guest` cookie; hooks.server.ts maps it to `GUEST_USER` (id 0, role 'guest') only when no real session exists.
+- Policy lives in `web/src/lib/guest.ts` (page/API allowlists, locked features, `guestShowcaseTarget`) and `web/src/lib/access.ts`; every guest write is 403, locked pages redirect to `/locked/<key>`.
+- Showcase: one flag per listing symbol in `showcase_symbols` (migration `web/drizzle/0035`), read via `web/src/lib/server/showcase.ts` (30s cache). Non-showcase companies, valuations, notes, team and thesis tables are 404 for guests; lists are filtered.
+- Admin toggle: `web/src/lib/components/shell/ShowcaseToggle.svelte` on both company pages, PUT `/api/admin/showcase`.
+- Guests never trigger live loads: `web/src/lib/server/guestContext.ts` blocks cross-origin fetch inside guest requests; companyCache and price routes serve stored data or a friendly "sign in to load it" 404.
+- UI: guest banner, locked nav, `LockedAction.svelte` ("Subscribers only - coming soon") in place of saving, refresh, AI, team writes; strength prefs not loaded or saved for guests.
+- BEFORE deploy: migration 0035 needs an approved production apply.
+- Evidence (2026-10-24, local DB): guest/access/guestContext vitest 39 passed; `npm run check` 0 errors; Playwright guest walkthrough 41/41 at 390px with no guest console errors, 401/403 or 5xx; 0 live fetches blocked in the walkthrough (all routes served stored data). adapter-vercel build not run.
