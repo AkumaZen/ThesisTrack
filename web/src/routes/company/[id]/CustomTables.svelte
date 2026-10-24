@@ -10,7 +10,7 @@
 	// visible without an extra click. A user can still collapse a table they
 	// don't want to see right now via the Hide/Show toggle.
 	import { tick } from 'svelte';
-	import { api, ApiError } from '$lib/api';
+	import { api, apiErrorMessage } from '$lib/api';
 	import TableBuilderModal, { type BuiltTable } from '$lib/components/TableBuilderModal.svelte';
 	import TableCard from '$lib/components/TableCard.svelte';
 
@@ -133,17 +133,6 @@
 	$effect(() => {
 		onTablesChange?.(tables.map((t) => ({ id: t.id, name: t.name })));
 	});
-
-	function apiErrorMessage(e: unknown): string {
-		if (e instanceof ApiError) {
-			// Server errors are FastAPI-shaped {"detail": "..."} - reading
-			// `.message` here (a key that never exists on this body) fell
-			// through to `e.message`, the raw JSON.stringify'd body.
-			const body = e.body as { detail?: string } | string;
-			return typeof body === 'string' ? body : (body?.detail ?? e.message);
-		}
-		return String(e);
-	}
 
 	function openBuilder() {
 		builderInitialName = '';

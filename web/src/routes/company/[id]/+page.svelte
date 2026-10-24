@@ -6,7 +6,7 @@
 	// multi-scenario ("Also tracked by" / "Start Your Own Thesis"), and a
 	// wired-up "Run AI Review" action.
 	import { goto } from '$app/navigation';
-	import { api, ApiError } from '$lib/api';
+	import { api, apiErrorMessage } from '$lib/api';
 	import { STATUS_STYLES, operatingModelLabel } from '$lib/format';
 	import { session } from '$lib/session.svelte';
 	import { formatReturn, returnPct } from '$lib/entryPrice.js';
@@ -131,7 +131,7 @@ Type the company name to confirm:`
 			newEditOperatingModelName = '';
 			addingEditOperatingModel = false;
 		} catch (e) {
-			editError = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+			editError = apiErrorMessage(e);
 		}
 	}
 
@@ -170,7 +170,7 @@ Type the company name to confirm:`
 			editOpen = false;
 			await reload();
 		} catch (e) {
-			editError = e instanceof ApiError ? String((e.body as { detail?: string })?.detail ?? e.message) : String(e);
+			editError = apiErrorMessage(e);
 		} finally {
 			editSubmitting = false;
 		}
@@ -233,17 +233,6 @@ Type the company name to confirm:`
 	let aiError = $state('');
 	type AiReviewResult = { proposed_status: string; rationale: string; state: string; evidence: { reasoning_chain?: string[] } };
 	let aiResult = $state<AiReviewResult | null>(null);
-
-	function apiErrorMessage(e: unknown): string {
-		if (e instanceof ApiError) {
-			// Server errors are FastAPI-shaped {"detail": "..."} - reading
-			// `.message` here (a key that never exists on this body) fell
-			// through to `e.message`, the raw JSON.stringify'd body.
-			const body = e.body as { detail?: string } | string;
-			return typeof body === 'string' ? body : (body?.detail ?? e.message);
-		}
-		return String(e);
-	}
 
 	async function runAiReview() {
 		aiError = '';

@@ -5,6 +5,8 @@
 	import CompanyPicker from '$lib/components/CompanyPicker.svelte';
 	import type { SymbolHit } from '$lib/valuation/symbolSearch';
 	import { session } from '$lib/session.svelte';
+	import { guestSignInHref, isGuest } from '$lib/guest';
+	import { page as appPage } from '$app/state';
 	import {
 		DEFAULT_METRIC_KEYS,
 		SECTION_ORDER,
@@ -492,6 +494,11 @@
 										<span class="cmp-status">Waiting to load…</span>
 									{:else if c.load.status === 'loading'}
 										<span class="cmp-status">Loading figures…</span>
+									{:else if c.load.status === 'error' && isGuest(session.user)}
+										<span class="cmp-status" data-testid="guest-note">
+											{c.load.message}
+											<a href={guestSignInHref(appPage.url.pathname + appPage.url.search)}>Sign in</a>
+										</span>
 									{:else if c.load.status === 'error'}
 										<span class="cmp-status cmp-status-bad">
 											{c.load.message}

@@ -2,6 +2,8 @@
 // backend phase, same as the original file did. Auth is the httpOnly session
 // cookie, which the browser sends with every same-origin fetch on its own.
 
+import { guestRefusalMessage } from './guest';
+
 const API_BASE = '/api';
 
 export class ApiError extends Error {
@@ -12,6 +14,17 @@ export class ApiError extends Error {
 		this.status = status;
 		this.body = body;
 	}
+}
+
+// Text for an inline error. Server errors are FastAPI-shaped {"detail": "..."}. A guest refusal
+// returns '' because the layout's guest notice already explains it with a Sign in link.
+export function apiErrorMessage(e: unknown): string {
+	if (e instanceof ApiError) {
+		if (guestRefusalMessage(e.status, e.body) !== null) return '';
+		const body = e.body as { detail?: string } | string;
+		return typeof body === 'string' ? body : (body?.detail ?? e.message);
+	}
+	return String(e);
 }
 
 function buildQuery(params?: Record<string, unknown>): string {

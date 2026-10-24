@@ -43,6 +43,7 @@
 	import ListMenu from '$lib/valuation/components/ListMenu.svelte';
 	import ShowcaseToggle from '$lib/components/shell/ShowcaseToggle.svelte';
 	import LockedAction from '$lib/components/shell/LockedAction.svelte';
+	import GuestNote from '$lib/components/shell/GuestNote.svelte';
 	import { isGuest } from '$lib/guest';
 	import TemplateMenu from '$lib/valuation/components/TemplateMenu.svelte';
 	import type { ValuationTemplate } from '$lib/valuation/templates';
@@ -861,7 +862,7 @@
 	</div>
 
 	{#if priceRefreshError}
-		<div class="price-error">{priceRefreshError}</div>
+		{#if guest}<GuestNote message={priceRefreshError} />{:else}<div class="price-error">{priceRefreshError}</div>{/if}
 	{/if}
 
 	<details class="depth-panel co-fold"><summary class="exhibit-cap co-fold-sum">Order Book (Live, Angel One)</summary>
@@ -876,7 +877,7 @@
 			{/if}
 		</div>
 		{#if depthError}
-			<div class="price-error">{depthError}</div>
+			{#if guest}<GuestNote message={depthError} />{:else}<div class="price-error">{depthError}</div>{/if}
 		{/if}
 		{#if depthResult}
 			{@const totalQuan = depthResult.totBuyQuan + depthResult.totSellQuan}
@@ -1046,7 +1047,7 @@
 		{#if chartLoading}
 			<div class="line-chart-empty">Loading price history…</div>
 		{:else if chartError}
-			<div class="price-error">{chartError}</div>
+			{#if guest}<GuestNote message={chartError} />{:else}<div class="price-error">{chartError}</div>{/if}
 		{:else if chartPoints}
 			<PriceChart points={chartPoints} bind:range={chartRange} />
 		{/if}
@@ -1097,7 +1098,7 @@
 			</button>
 		</div>
 		{#if stageError}
-			<div class="price-error">{stageError}</div>
+			{#if guest}<GuestNote message={stageError} />{:else}<div class="price-error">{stageError}</div>{/if}
 		{/if}
 		{#if stageResult}
 			<div

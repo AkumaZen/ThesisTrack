@@ -3,7 +3,7 @@
 	// logging, price entry + performance, health-check/outcome submission) into
 	// Svelte 5. position_decisions is append-only via a DB trigger, so the
 	// decision panel is insert-only - no edit/delete UI, matching the backend.
-	import { api, ApiError } from '$lib/api';
+	import { api, apiErrorMessage } from '$lib/api';
 	import { session } from '$lib/session.svelte';
 	import { STATUS_STYLES } from '$lib/format';
 
@@ -19,17 +19,6 @@
 		panel = 'decisions',
 		onChanged = async () => {}
 	}: { companyId: string; readOnly?: boolean; viewedOwner?: string | null; panel?: 'decisions' | 'monitoring'; onChanged?: () => Promise<void> } = $props();
-
-	function apiErrorMessage(e: unknown): string {
-		if (e instanceof ApiError) {
-			// Server errors are FastAPI-shaped {"detail": "..."} - reading
-			// `.message` here (a key that never exists on this body) fell
-			// through to `e.message`, the raw JSON.stringify'd body.
-			const body = e.body as { detail?: string } | string;
-			return typeof body === 'string' ? body : (body?.detail ?? e.message);
-		}
-		return String(e);
-	}
 
 	const today = () => new Date().toISOString().slice(0, 10);
 

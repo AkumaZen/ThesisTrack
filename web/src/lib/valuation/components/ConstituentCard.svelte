@@ -8,6 +8,8 @@
 	import { formatAsOf } from '$lib/valuation/priceAge';
 	import { whenVisible } from '$lib/valuation/whenVisible';
 	import { companyName } from '$lib/valuation/symbolNames';
+	import { isGuest } from '$lib/guest';
+	import { session } from '$lib/session.svelte';
 
 	// A card starts empty: `closes` is undefined until the card scrolls into view, 'loading'
 	// while that one request runs, null when there are no stored prices for the company. Each card
@@ -79,6 +81,8 @@
 				Couldn't load {name}.
 				<button type="button" class="sector-card-retry" onclick={onLoad}>Try again</button>
 			</div>
+		{:else if closes === null && isGuest(session.user)}
+			<div class="line-chart-empty">Prices for {name} aren't in the guest preview yet.</div>
 		{:else if closes === null}
 			<div class="line-chart-empty">
 				No stored prices for {name} yet. Press Refresh to fetch them (not every company is listed
