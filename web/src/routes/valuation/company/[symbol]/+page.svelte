@@ -705,7 +705,7 @@
 			{/each}
 		</div>
 		{#if data.user?.role === 'admin'}
-			<ShowcaseToggle symbol={company.symbol} showcased={data.showcased} />
+			<ShowcaseToggle symbol={company.symbol} />
 		{/if}
 		<div class="scan-match-line" data-testid="scan-match">
 			<span class="scan-match-label">Scan Match</span>

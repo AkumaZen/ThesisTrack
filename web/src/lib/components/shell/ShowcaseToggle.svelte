@@ -1,25 +1,25 @@
 <script lang="ts">
 	// Admin only: whether guests may see this company (its thesis, valuation and notes). One switch
 	// per listing symbol, so the same toggle on the thesis and valuation pages stays in step.
-	// Pass `showcased` when the page already knows it; otherwise it is read from the admin API.
-	let { symbol, showcased }: { symbol: string | null; showcased?: boolean } = $props();
+	// When every company is shown to guests, the switch is fixed on and offers to go back to a
+	// chosen list instead.
+	let { symbol }: { symbol: string | null } = $props();
 
 	let on = $state<boolean | null>(null);
+	let all = $state(false);
 	let saving = $state(false);
 	let failure = $state('');
 
 	$effect(() => {
 		if (!symbol) return;
-		if (showcased !== undefined) {
-			on = showcased;
-			return;
-		}
 		const want = symbol.toUpperCase();
 		let cancelled = false;
 		fetch('/api/admin/showcase')
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-			.then((body: { symbols: string[] }) => {
-				if (!cancelled) on = body.symbols.includes(want);
+			.then((body: { symbols: string[]; all: boolean }) => {
+				if (cancelled) return;
+				on = body.symbols.includes(want);
+				all = body.all;
 			})
 			.catch(() => {
 				if (!cancelled) failure = 'Could not read guest visibility.';
@@ -29,24 +29,34 @@
 		};
 	});
 
-	async function toggle() {
-		if (!symbol || on === null || saving) return;
-		const next = !on;
+	async function save(body: object): Promise<boolean> {
 		saving = true;
 		failure = '';
 		try {
 			const r = await fetch('/api/admin/showcase', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ symbol, showcase: next })
+				body: JSON.stringify(body)
 			});
 			if (!r.ok) throw new Error(`HTTP ${r.status}`);
-			on = next;
+			return true;
 		} catch {
 			failure = 'Could not save. Try again.';
+			return false;
 		} finally {
 			saving = false;
 		}
+	}
+
+	async function toggle() {
+		if (!symbol || on === null || all || saving) return;
+		const next = !on;
+		if (await save({ symbol, showcase: next })) on = next;
+	}
+
+	async function chooseCompanies() {
+		if (saving) return;
+		if (await save({ all: false })) all = false;
 	}
 </script>
 
@@ -55,9 +65,20 @@
 		<span class="hint">Add an NSE or BSE ticker to show this company to guests.</span>
 	{:else}
 		<label>
-			<input type="checkbox" checked={on === true} disabled={on === null || saving} onchange={toggle} />
+			<input
+				type="checkbox"
+				checked={all || on === true}
+				disabled={on === null || all || saving}
+				onchange={toggle}
+			/>
 			Show to guests
 		</label>
+		{#if all}
+			<span class="hint">All companies are shown.</span>
+			<button type="button" class="calm-btn" disabled={saving} onclick={chooseCompanies}>
+				Choose companies instead
+			</button>
+		{/if}
 	{/if}
 	{#if failure}<span class="hint err" role="alert">{failure}</span>{/if}
 </span>

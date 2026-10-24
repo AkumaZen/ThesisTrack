@@ -57,7 +57,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			scanMatchFor(data.symbol).catch(() => null),
 			// Stored segment table; likewise optional.
 			readSegments(data.symbol).catch(() => null),
-			// Whether guests may see this company's thesis and saved valuation (admins toggle it here).
+			// Whether guests may see this company's thesis.
 			isSymbolShowcased(data.symbol)
 		]);
 		// startingTemplate: what a valuation not yet on the watchlist starts from (or null).
@@ -68,8 +68,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			// A guest is only linked to a thesis they are allowed to open.
 			thesisId: guest && !showcased ? null : thesisId,
 			scanMatch,
-			segments,
-			showcased
+			segments
 		};
 	} catch (e) {
 		if (e instanceof CompanyNotLoadedError) error(404, e.message);

@@ -18,6 +18,7 @@ import { thesisCreate } from '$lib/server/schemas/thesis';
 import { createCompany, AlreadyExistsError, TaxonomyError } from '$lib/server/services/versioning';
 import { EntryPriceError } from '$lib/server/services/entryPrice';
 import { staleForMany } from '$lib/server/services/thesisInsights';
+import { showcaseAll } from '$lib/server/showcase';
 import { listScenarios } from '$lib/server/services/scenarios';
 import {
 	coreMetricsForScenarios,
@@ -75,8 +76,9 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 				)
 			)
 		];
-		// A guest sees only the showcased companies (matched on the same symbol priceSymbol() gives).
-		if (actor.role === 'guest') {
+		// A guest sees only the showcased companies (matched on the same symbol priceSymbol() gives),
+		// or all of them when the showcase is set to every company.
+		if (actor.role === 'guest' && !(await showcaseAll())) {
 			conditions.push(
 				sql`upper(coalesce(nullif(${companies.nseTicker}, ''), nullif(${companies.bseTicker}, ''))) in (select ${showcaseSymbols.symbol} from ${showcaseSymbols})`
 			);

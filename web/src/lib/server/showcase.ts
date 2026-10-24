@@ -13,6 +13,9 @@ let cache: { at: number; symbols: Set<string> } | null = null;
 
 export const normalizeShowcaseSymbol = (raw: string): string => raw.trim().toUpperCase();
 
+/** A row with this symbol shows every company to guests, including ones added later. */
+export const SHOWCASE_ALL = '*';
+
 async function showcaseSet(): Promise<Set<string>> {
 	if (cache && Date.now() - cache.at < CACHE_MS) return cache.symbols;
 	const rows = await db.select({ symbol: showcaseSymbols.symbol }).from(showcaseSymbols);
@@ -28,29 +31,35 @@ export async function listShowcaseSymbols(): Promise<string[]> {
 	return rows.map((r) => r.symbol);
 }
 
-/** The cached set, for filtering a list in one pass. */
-export const showcasedSymbols = (): Promise<Set<string>> => showcaseSet();
+/** Whether every company is shown to guests. */
+export const showcaseAll = async (): Promise<boolean> => (await showcaseSet()).has(SHOWCASE_ALL);
 
 /** For a guest, keep only the rows whose symbol is showcased; anyone else gets every row. */
 export async function showcaseOnly<T extends { symbol: string }>(rows: T[], guest: boolean): Promise<T[]> {
 	if (!guest) return rows;
 	const set = await showcaseSet();
+	if (set.has(SHOWCASE_ALL)) return rows;
 	return rows.filter((r) => set.has(normalizeShowcaseSymbol(r.symbol)));
 }
 
 export async function isSymbolShowcased(symbol: string): Promise<boolean> {
 	const s = normalizeShowcaseSymbol(symbol);
-	return s !== '' && (await showcaseSet()).has(s);
+	if (s === '') return false;
+	const set = await showcaseSet();
+	return set.has(SHOWCASE_ALL) || set.has(s);
 }
 
-/** A thesis company is showcased when its listing symbol is. Unknown ids are not. */
+/** A thesis company is showcased when its listing symbol is, or when every company is (then even
+ *  one without a ticker). Unknown ids are not. */
 export async function isCompanyShowcased(companyId: string): Promise<boolean> {
 	if (!companyId) return false;
 	const [row] = await db
 		.select({ nseTicker: companies.nseTicker, bseTicker: companies.bseTicker })
 		.from(companies)
 		.where(eq(companies.companyId, companyId));
-	const symbol = row ? priceSymbol(row) : null;
+	if (!row) return false;
+	if (await showcaseAll()) return true;
+	const symbol = priceSymbol(row);
 	return symbol ? isSymbolShowcased(symbol) : false;
 }
 
