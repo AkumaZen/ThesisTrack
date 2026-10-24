@@ -497,12 +497,19 @@ Type the company name to confirm:`
 				</div>
 			{/if}
 			<div class="mt-6 rounded-md border border-dashed border-border p-5 text-center">
-				<p class="text-sm text-muted-fg mb-3">You haven't started a thesis on this company yet.</p>
-				<button
-					type="button"
-					onclick={() => goto(`/ingest?companyId=${encodeURIComponent(companyId)}`)}
-					class="text-sm px-4 py-2 rounded-md bg-fg text-bg hover:brightness-90">+ Start Your Own Thesis</button
-				>
+				{#if session.isReadOnly}
+					<!-- A viewer or guest cannot start a thesis, so there is nothing to offer. -->
+					<p class="text-sm text-muted-fg">
+						{detail.other_scenarios?.length ? 'Pick a thesis above to read it.' : 'No thesis has been written on this company yet.'}
+					</p>
+				{:else}
+					<p class="text-sm text-muted-fg mb-3">You haven't started a thesis on this company yet.</p>
+					<button
+						type="button"
+						onclick={() => goto(`/ingest?companyId=${encodeURIComponent(companyId)}`)}
+						class="text-sm px-4 py-2 rounded-md bg-fg text-bg hover:brightness-90">+ Start Your Own Thesis</button
+					>
+				{/if}
 			</div>
 		</div>
 	{:else}
@@ -541,7 +548,7 @@ Type the company name to confirm:`
 					</div>
 				{/if}
 
-				{#if !viewingOwnScenario && !detail.has_own_scenario}
+				{#if !viewingOwnScenario && !detail.has_own_scenario && !session.isReadOnly}
 					<div class="mt-3 rounded-md border border-dashed border-border p-3 flex flex-wrap items-center justify-between gap-3">
 						<p class="text-xs text-muted-fg">You haven't started your own thesis on this company yet.</p>
 						<button

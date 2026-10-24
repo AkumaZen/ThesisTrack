@@ -13,6 +13,7 @@
 	import { api, apiErrorMessage } from '$lib/api';
 	import TableBuilderModal, { type BuiltTable } from '$lib/components/TableBuilderModal.svelte';
 	import TableCard from '$lib/components/TableCard.svelte';
+	import { session } from '$lib/session.svelte';
 
 	// `section` filters/tags tables to one thesis pillar (e.g. "the_business")
 	// when set - used when this component is mounted inside a pillar section
@@ -248,11 +249,13 @@
 	{#if !compact}
 		<div class="flex items-center justify-between">
 			<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">{heading}</h3>
-			<button
-				type="button"
-				onclick={() => openNoteBuilder()}
-				class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Section</button
-			>
+			{#if !session.isReadOnly}
+				<button
+					type="button"
+					onclick={() => openNoteBuilder()}
+					class="text-xs text-ok px-2 py-1 rounded-md cursor-pointer hover:bg-ok/10 transition-colors">+ Add Section</button
+				>
+			{/if}
 		</div>
 	{/if}
 
@@ -266,10 +269,12 @@
 				<div class="rounded-md border border-border p-3">
 					<div class="flex items-start justify-between gap-3">
 						<h4 class="text-sm font-semibold">{n.heading}</h4>
-						<div class="flex items-center gap-2 shrink-0">
-							<button type="button" onclick={() => openNoteBuilder(n)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:bg-surface-3 cursor-pointer">Edit</button>
-							<button type="button" onclick={() => deleteNoteItem(n.id)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
-						</div>
+						{#if !session.isReadOnly}
+							<div class="flex items-center gap-2 shrink-0">
+								<button type="button" onclick={() => openNoteBuilder(n)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:bg-surface-3 cursor-pointer">Edit</button>
+								<button type="button" onclick={() => deleteNoteItem(n.id)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
+							</div>
+						{/if}
 					</div>
 					<div class="mt-2 space-y-3">
 						{#each blocksForDisplay(n) as block, i (i)}
@@ -304,7 +309,7 @@
 		<div class="text-xs text-muted-fg mt-2">No sections yet.</div>
 	{/if}
 
-	{#if compact}
+	{#if compact && !session.isReadOnly}
 		<div class="mt-1 max-sm:mt-0 flex items-center justify-end gap-1">
 			<button
 				type="button"
