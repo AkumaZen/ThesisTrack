@@ -159,11 +159,13 @@ export function guestMayOpenPage(pathname: string): boolean {
 	return GUEST_EXACT_PAGES.includes(pathname) || GUEST_PAGE_PREFIXES.some((p) => startsWithPath(pathname, p));
 }
 
-/** Read-only API areas a guest may call (deny by default). /api/tables and /api/notes are
- *  deliberately absent: they are keyed by table or note id, so they would bypass showcase gating. */
+/** Read-only API areas a guest may call (deny by default). /api/notes is deliberately absent: it
+ *  is keyed by note id alone. /api/tables is keyed by table id, so the hook checks the table's
+ *  company is showcased (guestShowcaseTarget). */
 const GUEST_API_PREFIXES = [
 	'/api/auth/me',
 	'/api/companies',
+	'/api/tables',
 	'/api/taxonomy',
 	'/api/metrics',
 	'/api/valuation/symbol-search',
@@ -213,7 +215,10 @@ export function guestPageRedirect(pathname: string, search = ''): string | null 
 	return `/login?next=${encodeURIComponent(pathname + search)}`;
 }
 
-export type ShowcaseTarget = { kind: 'company'; id: string } | { kind: 'symbol'; symbol: string };
+export type ShowcaseTarget =
+	| { kind: 'company'; id: string }
+	| { kind: 'symbol'; symbol: string }
+	| { kind: 'table'; id: number };
 
 /** A malformed escape decodes to '' - which is never showcased, so the request is refused. */
 const decode = (part: string): string => {
@@ -224,10 +229,14 @@ const decode = (part: string): string => {
 	}
 };
 
-/** Which showcase check a guest API read needs: a thesis company by id, or a valuation symbol. */
+/** Which showcase check a guest API read needs: a thesis company by id, a valuation symbol, or a
+ *  custom table (checked through the company it belongs to). */
 export function guestShowcaseTarget(pathname: string): ShowcaseTarget | null {
 	let m = /^\/api\/companies\/([^/]+)(?:\/|$)/.exec(pathname);
 	if (m) return { kind: 'company', id: decode(m[1]) };
+	m = /^\/api\/tables(?:\/([^/]*))?(?:\/|$)/.exec(pathname);
+	// A bare or non-numeric id becomes 0, which matches no table, so the read is refused.
+	if (m) return { kind: 'table', id: /^\d+$/.test(m[1] ?? '') ? Number(m[1]) : 0 };
 	m = /^\/api\/valuation\/valuations\/([^/]+)(?:\/|$)/.exec(pathname);
 	if (m) return { kind: 'symbol', symbol: decode(m[1]).toUpperCase() };
 	m = /^\/api\/valuation\/company\/([^/]+)\/(?:team|notes)(?:\/|$)/.exec(pathname);

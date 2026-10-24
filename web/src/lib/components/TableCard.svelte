@@ -9,6 +9,7 @@
 	// never render as two different things in two different places.
 	import { untrack } from 'svelte';
 	import { api, ApiError } from '$lib/api';
+	import { session } from '$lib/session.svelte';
 	import TableBuilderModal, { type BuiltTable } from './TableBuilderModal.svelte';
 
 	type ColumnDef = { key: string; label: string; type: 'text' | 'number' | 'date' | 'enum'; options?: string[] | null };
@@ -149,7 +150,7 @@
 
 	async function handlePaste(e: ClipboardEvent) {
 		const text = e.clipboardData?.getData('text/plain');
-		if (!text || !text.trim() || !detail || !detail.columns.length) return;
+		if (session.isReadOnly || !text || !text.trim() || !detail || !detail.columns.length) return;
 		e.preventDefault();
 
 		const parsed = parseDelimitedText(text);
@@ -199,8 +200,10 @@
 			<button type="button" onclick={toggle} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3 cursor-pointer">
 				{expanded ? 'Hide' : 'Show'}
 			</button>
-			<button type="button" onclick={() => (builderOpen = true)} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3 cursor-pointer">Edit Columns</button>
-			<button type="button" onclick={deleteTable} class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
+			{#if !session.isReadOnly}
+				<button type="button" onclick={() => (builderOpen = true)} class="text-xs px-2 py-1 rounded-md border border-border hover:bg-surface-3 cursor-pointer">Edit Columns</button>
+				<button type="button" onclick={deleteTable} class="text-xs px-2 py-1 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
+			{/if}
 		</div>
 	</div>
 
@@ -237,8 +240,10 @@
 										<td class="px-3 py-2 whitespace-nowrap {c.type === 'number' ? 'font-mono text-right' : ''}">{formatCell(row.row_data[c.key])}</td>
 									{/each}
 									<td class="px-3 py-2 text-right whitespace-nowrap">
-										<button onclick={() => openRowForm(row)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:bg-surface-3 cursor-pointer">Edit</button>
-										<button onclick={() => deleteRow(row.id)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
+										{#if !session.isReadOnly}
+											<button onclick={() => openRowForm(row)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:bg-surface-3 cursor-pointer">Edit</button>
+											<button onclick={() => deleteRow(row.id)} class="text-xs px-2 py-0.5 rounded-md border border-border hover:text-danger cursor-pointer">Delete</button>
+										{/if}
 									</td>
 								</tr>
 							{:else}
@@ -247,7 +252,9 @@
 						</tbody>
 					</table>
 				</div>
-				{#if detail.columns.length}
+				{#if session.isReadOnly}
+					<!-- Viewers read the table only: no add, paste or edit hints. -->
+				{:else if detail.columns.length}
 					<div class="flex items-center justify-between mt-3">
 						<button onclick={() => openRowForm()} class="text-xs text-ok">+ Add Row</button>
 						<span class="text-xs text-muted-fg">Tip: click the table above and paste (Ctrl+V) rows copied from Excel/Sheets</span>

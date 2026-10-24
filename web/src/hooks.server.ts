@@ -12,7 +12,7 @@ import { startAlertScheduler } from '$lib/valuation/server/alertScheduler';
 import { IDLE_GRACE_MS, holdIdleConnections } from '$lib/server/db';
 import { isTrackerTestRequest, mockCompanies } from '$lib/valuation/server/masterTrackerMock';
 import { GUEST_COOKIE, GUEST_USER, guestShowcaseTarget, isGuest, lockedFeatureForPath } from '$lib/guest';
-import { isCompanyShowcased, isSymbolShowcased } from '$lib/server/showcase';
+import { isCompanyShowcased, isSymbolShowcased, isTableShowcased } from '$lib/server/showcase';
 import { GuestLiveFetchError, runAsGuest } from '$lib/server/guestContext';
 
 // Background jobs for the valuation tools: refresh the stored prices four times each weekday
@@ -116,7 +116,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 		const target = guestShowcaseTarget(pathname);
 		if (target) {
 			const shown =
-				target.kind === 'company' ? await isCompanyShowcased(target.id) : await isSymbolShowcased(target.symbol);
+				target.kind === 'company'
+					? await isCompanyShowcased(target.id)
+					: target.kind === 'table'
+						? await isTableShowcased(target.id)
+						: await isSymbolShowcased(target.symbol);
 			if (!shown) return json({ message: 'Not found.', detail: 'Not found.' }, { status: 404 });
 		}
 	}

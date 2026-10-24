@@ -212,7 +212,7 @@ describe('decideAccess: guest', () => {
 			'/api/valuation/me/prefs',
 			'/api/valuation/valuations/removed',
 			'/api/valuation/company/TCS/refresh-price',
-			'/api/tables/1',
+			'/api/notes/1',
 			'/api/account/password'
 		]) {
 			expect(g(p), p).toBe('forbidden');

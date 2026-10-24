@@ -15,6 +15,8 @@
 		type StrengthView
 	} from '$lib/valuation/strength';
 	import type { PanelState } from '$lib/viewMemory';
+	import { session } from '$lib/session.svelte';
+	import { isGuest } from '$lib/guest';
 
 	// The Strength & Volume filter, the same panel on every level of the sector -> subsector ->
 	// company journey. It sends its settings to /api/valuation/strength (the one calculation the
@@ -89,6 +91,8 @@
 	let saveError = $state(false);
 
 	async function sendPref(pending: NonNullable<typeof unsaved>, leaving = false) {
+		// A guest has no account to remember settings in: the filter lasts for this visit only.
+		if (isGuest(session.user)) return;
 		try {
 			const res = await fetch(prefsUrl, {
 				method: 'PUT',
@@ -160,8 +164,10 @@
 		(async () => {
 			let saved: StrengthConfig | null = null;
 			try {
-				const res = await fetch(`${prefsUrl}?${new URLSearchParams({ level: lvl, scope: sc })}`);
-				if (res.ok) {
+				const res = isGuest(session.user)
+					? null
+					: await fetch(`${prefsUrl}?${new URLSearchParams({ level: lvl, scope: sc })}`);
+				if (res?.ok) {
 					const body = (await res.json()) as { config: unknown };
 					if (body.config) saved = parseStrengthConfig(body.config);
 				}

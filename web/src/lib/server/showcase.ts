@@ -3,7 +3,7 @@
 // company and the valuation tools use), so one switch covers its thesis, saved valuation and notes.
 import { asc, eq } from 'drizzle-orm';
 import { db } from './db';
-import { companies, showcaseSymbols } from './db/schema';
+import { companies, customTables, showcaseSymbols } from './db/schema';
 import { priceSymbol } from './services/entryPrice';
 
 // The set is tiny and read on every guest request, so it is cached briefly. A write here clears
@@ -52,6 +52,16 @@ export async function isCompanyShowcased(companyId: string): Promise<boolean> {
 		.where(eq(companies.companyId, companyId));
 	const symbol = row ? priceSymbol(row) : null;
 	return symbol ? isSymbolShowcased(symbol) : false;
+}
+
+/** A custom table is shown to guests when the thesis company it belongs to is. */
+export async function isTableShowcased(tableId: number): Promise<boolean> {
+	if (!Number.isSafeInteger(tableId) || tableId <= 0) return false;
+	const [row] = await db
+		.select({ companyId: customTables.companyId })
+		.from(customTables)
+		.where(eq(customTables.id, tableId));
+	return row ? isCompanyShowcased(row.companyId) : false;
 }
 
 export async function setShowcase(symbol: string, on: boolean, adminId: number): Promise<void> {

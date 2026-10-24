@@ -68,6 +68,7 @@ describe('guestMayCallApi', () => {
 			'/api/auth/me',
 			'/api/companies',
 			'/api/companies/X/thesis',
+			'/api/tables/5',
 			'/api/valuation/valuations',
 			'/api/valuation/valuations/TCS/history',
 			'/api/valuation/company/TCS',
@@ -88,7 +89,6 @@ describe('guestMayCallApi', () => {
 	it('refuses personal, admin and data-loading endpoints', () => {
 		for (const p of [
 			'/api/admin/showcase',
-			'/api/tables/1',
 			'/api/notes/1',
 			'/api/valuation/me/prefs',
 			'/api/valuation/alerts',
@@ -125,6 +125,8 @@ describe('guestShowcaseTarget', () => {
 		expect(guestShowcaseTarget('/api/valuation/valuations/TCS/history/3')).toEqual({ kind: 'symbol', symbol: 'TCS' });
 		expect(guestShowcaseTarget('/api/valuation/company/hfcl/team')).toEqual({ kind: 'symbol', symbol: 'HFCL' });
 		expect(guestShowcaseTarget('/api/valuation/company/HFCL/notes')).toEqual({ kind: 'symbol', symbol: 'HFCL' });
+		expect(guestShowcaseTarget('/api/tables/5')).toEqual({ kind: 'table', id: 5 });
+		expect(guestShowcaseTarget('/api/tables/5/rows')).toEqual({ kind: 'table', id: 5 });
 	});
 
 	it('leaves lists and market data alone', () => {
@@ -136,5 +138,7 @@ describe('guestShowcaseTarget', () => {
 
 	it('turns a malformed escape into a target that is never showcased', () => {
 		expect(guestShowcaseTarget('/api/companies/%E0%A4%A')).toEqual({ kind: 'company', id: '' });
+		expect(guestShowcaseTarget('/api/tables/abc')).toEqual({ kind: 'table', id: 0 });
+		expect(guestShowcaseTarget('/api/tables')).toEqual({ kind: 'table', id: 0 });
 	});
 });
