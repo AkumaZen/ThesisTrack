@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { timeAgo } from '$lib/valuation/activity';
+	import { isGuest } from '$lib/guest';
+	import LockedAction from '$lib/components/shell/LockedAction.svelte';
 	import {
 		REVIEW_STATUSES,
 		REVIEW_STATUS_LABELS,
@@ -48,6 +50,9 @@
 		status = $bindable(null),
 		coverage = $bindable(null)
 	}: Props = $props();
+
+	// A guest reads the team's notes and history but cannot write, cover or restore anything.
+	const guest = $derived(isGuest(me));
 
 	let tab = $state<'notes' | 'discussion' | 'history'>('notes');
 	let team = $state<CompanyTeamData | null>(null);
@@ -272,20 +277,20 @@
 		<div class="team-coverage" data-testid="coverage">
 			{#if coverage}
 				Covered by <strong>{coverage.username}</strong>
-				{#if coverage.userId === me.id}
+				{#if coverage.userId === me.id && !guest}
 					<button class="link-btn" type="button" disabled={busy} onclick={() => assign(null)}
 						>Stop covering</button
 					>
 				{/if}
 			{:else}
 				<span class="muted">No one covers this company yet.</span>
-				<button
+				{#if !guest}<button
 					class="link-btn"
 					type="button"
 					disabled={busy}
 					data-testid="cover-me"
 					onclick={() => assign(me.id)}>I'll cover it</button
-				>
+				>{/if}
 			{/if}
 			{#if me.role === 'admin' && team}
 				<label class="team-assign">
@@ -373,7 +378,7 @@
 					{theses[0].author} ·
 					<span title={fullDate(theses[0].createdAt)}>{timeAgo(theses[0].createdAt)}</span>
 				</div>
-				<button class="wl-strip-btn" type="button" onclick={startThesisEdit}>Update thesis</button>
+				{#if !guest}<button class="wl-strip-btn" type="button" onclick={startThesisEdit}>Update thesis</button>{/if}
 				{#if theses.length > 1}
 					<details class="thesis-history">
 						<summary>Earlier versions ({theses.length - 1})</summary>
@@ -387,12 +392,12 @@
 				{/if}
 			{:else}
 				<p class="muted">No thesis written yet.</p>
-				<button
+				{#if !guest}<button
 					class="wl-strip-btn"
 					type="button"
 					data-testid="write-thesis"
 					onclick={startThesisEdit}>Write the thesis</button
-				>
+				>{/if}
 			{/if}
 		</div>
 
@@ -426,6 +431,9 @@
 			{:else}
 				<p class="muted">No status yet.</p>
 			{/if}
+			{#if guest}
+				<LockedAction label="Set a review status" />
+			{:else}
 			<div class="status-form">
 				<label>
 					<span>Change to</span>
@@ -456,6 +464,7 @@
 					>
 				{/if}
 			</div>
+			{/if}
 			{#if formError.status}<p class="team-error" role="alert">{formError.status}</p>{/if}
 		</div>
 		<div class="team-block">
@@ -503,7 +512,9 @@
 									<button class="link-btn" type="button" onclick={() => showCompare(entry)}
 										>{compare?.id === entry.id ? 'Hide comparison' : 'Compare with current'}</button
 									>
-									{#if confirmRestoreId === entry.id}
+									{#if guest}
+										<!-- Restoring a version is a save. -->
+									{:else if confirmRestoreId === entry.id}
 										<span>Make v{entry.version} the current valuation?</span>
 										<button
 											class="wl-strip-btn btn-primary"
@@ -548,6 +559,9 @@
 </section>
 
 {#snippet composer(kind: NoteKind, placeholder: string, label: string)}
+	{#if guest}
+		<LockedAction label={kind === 'comment' ? 'Join the discussion' : 'Add research notes'} />
+	{:else}
 	<div class="composer">
 		<label class="sr-only" for="compose-{kind}">{label}</label>
 		<textarea id="compose-{kind}" rows="2" bind:value={drafts[kind]} {placeholder}></textarea>
@@ -560,6 +574,7 @@
 		>
 	</div>
 	{#if formError[kind]}<p class="team-error" role="alert">{formError[kind]}</p>{/if}
+	{/if}
 {/snippet}
 
 {#snippet noteList(list: CompanyNote[], empty: string)}

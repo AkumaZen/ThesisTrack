@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite as mayWrite } from '$lib/auth';
 
 	import { invalidateAll } from '$app/navigation';
 	import { describeScanConfig, scanOpenHref, scanShareHref } from '$lib/valuation/savedScans';
@@ -6,7 +7,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const canWrite = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
+	const canWrite = $derived(mayWrite(data.user?.role));
 	let message = $state<string | null>(null);
 	let busyId = $state<string | null>(null);
 

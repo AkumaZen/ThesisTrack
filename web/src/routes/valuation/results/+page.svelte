@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite } from '$lib/auth';
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
@@ -21,7 +22,7 @@
 	let quarter = $state('');
 	let sort = $state<{ key: ResultsSortKey; dir: 1 | -1 }>({ key: 'quarter', dir: -1 });
 
-	const canLoad = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
+	const canLoad = $derived(canWrite(data.user?.role));
 	const quarters = $derived(quarterOptions(data.rows));
 	const listSymbols = $derived(
 		list ? new Set(data.lists.find((l) => l.key === list)?.symbols ?? []) : null

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite as mayWrite } from '$lib/auth';
 
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -7,7 +8,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const canWrite = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
+	const canWrite = $derived(mayWrite(data.user?.role));
 	const added = $derived(new Set(data.diff.added));
 	const olderDates = $derived(data.date ? data.dates.filter((d) => d < data.date!) : []);
 	const nameOf = (s: string) => (data.names[s] && data.names[s] !== s ? data.names[s] : '');

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite } from '$lib/auth';
 	import AddCompanyPanel from '$lib/valuation/components/AddCompanyPanel.svelte';
 	import { untrack } from 'svelte';
 	import { tabWatchlistPrefs } from '$lib/valuation/tabPrefs';
@@ -931,7 +932,7 @@
 			<LockedAction label="Add companies and save your own valuations" />
 		{:else}
 			<AddCompanyPanel
-				canWrite={data.user?.role !== 'read_only'}
+				canWrite={canWrite(data.user?.role)}
 				isAdmin={data.user?.role === 'admin'}
 				onAdded={refreshSaved}
 			/>
@@ -1411,7 +1412,7 @@
 					<button type="button" class="trend-act" disabled title={TREND_LABEL.fetching.title}
 						>{TREND_LABEL.fetching.text}</button
 					>
-				{:else if data.user?.role === 'read_only' || guest}
+				{:else if !canWrite(data.user?.role)}
 					<span class="trend-note" title="No trend yet. The next scheduled price refresh will fill it.">No data yet</span>
 				{:else}
 					{@const label = TREND_LABEL[r.trend === 'error' ? 'error' : 'not_stored']}

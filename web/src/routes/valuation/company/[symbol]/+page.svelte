@@ -41,6 +41,9 @@
 	import { emptyStrengthView } from '$lib/valuation/strength';
 	import CompanyTeam from '$lib/valuation/components/CompanyTeam.svelte';
 	import ListMenu from '$lib/valuation/components/ListMenu.svelte';
+	import ShowcaseToggle from '$lib/components/shell/ShowcaseToggle.svelte';
+	import LockedAction from '$lib/components/shell/LockedAction.svelte';
+	import { isGuest } from '$lib/guest';
 	import TemplateMenu from '$lib/valuation/components/TemplateMenu.svelte';
 	import type { ValuationTemplate } from '$lib/valuation/templates';
 	import type { NamedWatchlist } from '$lib/valuation/watchlists';
@@ -211,6 +214,9 @@
 	// across navigations.
 	let hydratedFor = $state<string | null>(null);
 
+	// A guest can try different assumptions, but nothing is ever saved for them.
+	const guest = $derived(isGuest(data.user));
+
 	// --- Watchlist membership and saving -------------------------------------------------------
 	// Opening a company never saves anything. A company joins the shared watchlist only when
 	// someone clicks "Add to watchlist"; from then on real edits are autosaved. Every save carries
@@ -312,7 +318,7 @@
 	}
 
 	async function saveOnce(symbol: string) {
-		if (company.symbol !== symbol || !inWatchlist || conflict) return;
+		if (guest || company.symbol !== symbol || !inWatchlist || conflict) return;
 		const snapshot = snap();
 		if (snapshot === lastSavedSnapshot) return;
 		saveState = 'saving';
@@ -410,7 +416,7 @@
 		if (res.ok) namedLists = (await res.json()) as NamedWatchlist[];
 	}
 	$effect(() => {
-		void loadLists();
+		if (!guest) void loadLists();
 	});
 	async function setListMembership(listId: number, member: boolean): Promise<string | null> {
 		try {
@@ -697,6 +703,9 @@
 				>
 			{/each}
 		</div>
+		{#if data.user?.role === 'admin'}
+			<ShowcaseToggle symbol={company.symbol} showcased={data.showcased} />
+		{/if}
 		<div class="scan-match-line" data-testid="scan-match">
 			<span class="scan-match-label">Scan Match</span>
 			{#if data.scanMatch}
@@ -707,7 +716,10 @@
 			<span class="co-links"><a href={resolve('/valuation/stage-scanner')}>Preset scans &rarr;</a></span>
 		</div>
 		<div class="wl-strip" data-testid="watchlist-strip">
-			{#if hydratedFor !== company.symbol}
+			{#if guest}
+				<LockedAction label="Save valuations to the watchlist" />
+				<span class="wl-strip-note">Edits here are a what-if and are not saved.</span>
+			{:else if hydratedFor !== company.symbol}
 				<span class="wl-strip-note">Checking the watchlist…</span>
 			{:else if inWatchlist}
 				<span class="tag tag-good" data-testid="watchlist-status">On the watchlist</span>
@@ -795,16 +807,19 @@
 			<div class="l">CMP</div>
 			<div class="v">
 				₹{company.cmp ?? '-'}
-				<button
-					class="refresh-btn"
-					onclick={refreshPrice}
-					disabled={priceRefreshing}
-					title="Fetch live price from Angel One"
-				>
-					{priceRefreshing ? '⟳ Refreshing…' : '⟳ Refresh'}
-				</button>
+				{#if !guest}
+					<button
+						class="refresh-btn"
+						onclick={refreshPrice}
+						disabled={priceRefreshing}
+						title="Fetch live price from Angel One"
+					>
+						{priceRefreshing ? '⟳ Refreshing…' : '⟳ Refresh'}
+					</button>
+				{/if}
 			</div>
 			<div class="refreshed-at">{formatRefreshedAt(company.cmpFetchedAt)}</div>
+			{#if guest}<LockedAction label="Live price refresh" />{/if}
 		</div>
 		<div class="item">
 			<div class="l">Market Cap</div>
@@ -852,9 +867,13 @@
 	<details class="depth-panel co-fold"><summary class="exhibit-cap co-fold-sum">Order Book (Live, Angel One)</summary>
 		<div class="depth-head">
 			
-			<button class="diagnosis-apply" onclick={loadDepth} disabled={depthLoading}>
-				{depthLoading ? 'Loading…' : depthResult ? 'Refresh' : 'Load order book'}
-			</button>
+			{#if guest}
+				<LockedAction label="Live order book" />
+			{:else}
+				<button class="diagnosis-apply" onclick={loadDepth} disabled={depthLoading}>
+					{depthLoading ? 'Loading…' : depthResult ? 'Refresh' : 'Load order book'}
+				</button>
+			{/if}
 		</div>
 		{#if depthError}
 			<div class="price-error">{depthError}</div>
@@ -1040,7 +1059,7 @@
 		profitHistory={company.history.map((h) => h.netProfit)}
 	/>
 
-	<SegmentsPanel symbol={company.symbol} initial={data.segments} canLoad={data.user?.role !== 'read_only'} />
+	<SegmentsPanel symbol={company.symbol} initial={data.segments} canLoad={canWrite(data.user?.role)} />
 
 	<!-- Loaded on first open: it asks NSE for fresh filings, which not every page view needs. -->
 	<details class="stage-panel pc-panel" ontoggle={(e) => (filingsOpened ||= e.currentTarget.open)}>
@@ -1061,7 +1080,7 @@
 			kind="company"
 			title="Track strength & volume"
 			scopeLabel={`${company.symbol}`}
-			canSave={data.user?.role !== 'read_only'}
+			canSave={canWrite(data.user?.role)}
 			bind:view={strengthView}
 			bind:openState={strengthPanel}
 		/>
@@ -1226,7 +1245,7 @@
 			{/each}
 		</div>
 		<button class="reset-btn" onclick={resetActive}>Reset active scenario to defaults</button>
-		{#if data.user}
+		{#if data.user && !guest}
 			<TemplateMenu
 				baskets={companyBaskets}
 				me={data.user}

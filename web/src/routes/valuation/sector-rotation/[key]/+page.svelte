@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite } from '$lib/auth';
 	import { resolve } from '$app/paths';
 	import { flip } from 'svelte/animate';
 	import CardMetricsChooser from '$lib/valuation/components/CardMetricsChooser.svelte';
@@ -221,7 +222,7 @@
 			parentKey={data.majorKey}
 			kind="group"
 			scopeLabel={`the subsectors of ${data.majorLabel}`}
-			canSave={data.user?.role !== 'read_only'}
+			canSave={canWrite(data.user?.role)}
 			bind:view={strength}
 			bind:openState={strengthPanel}
 			bind:settled={strengthSettled}

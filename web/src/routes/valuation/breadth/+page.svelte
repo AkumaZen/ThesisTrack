@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite } from '$lib/auth';
 	import { invalidateAll } from '$app/navigation';
 	import { advanceDeclineRatio, breadthRead, headlineBreadth, pct } from '$lib/valuation/breadth';
 	import DmaBreadthChart from '$lib/valuation/components/DmaBreadthChart.svelte';
@@ -7,7 +8,7 @@
 	let { data }: { data: PageData } = $props();
 
 	const isAdmin = $derived(data.user?.role === 'admin');
-	const canRefresh = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
+	const canRefresh = $derived(canWrite(data.user?.role));
 	const headline = $derived(headlineBreadth(data.rows));
 	// The headline tiles only ever show a session that nearly the whole universe has reported.
 	const latest = $derived(headline.row);

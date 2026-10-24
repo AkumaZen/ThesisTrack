@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite } from '$lib/auth';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
@@ -115,7 +116,7 @@
 		}
 		void scanMissing();
 	}
-	const canLoadHistory = $derived(Boolean(data.user?.role && data.user.role !== 'read_only'));
+	const canLoadHistory = $derived(canWrite(data.user?.role));
 
 	type StageKey = Exclude<(typeof SCANNER_STAGE_KEYS)[number], 'all'>;
 	const STAGES: { id: Stage; key: StageKey; short: string; tone: string }[] = [

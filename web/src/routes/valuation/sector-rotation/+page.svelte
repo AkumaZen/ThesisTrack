@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite } from '$lib/auth';
 	import { resolve } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import { flip } from 'svelte/animate';
@@ -314,7 +315,7 @@
 <div class="wrap">
 	<SectorSearch entries={data.search} />
 
-	{#if data.user?.role && data.user.role !== 'read_only'}
+	{#if canWrite(data.user?.role)}
 	<details class="calm-disclosure calm-data no-print" open={importOpen}>
 		<summary>Data</summary>
 		<div class="calm-data-body">
@@ -410,7 +411,7 @@
 			level="sectors"
 			kind="group"
 			scopeLabel="every sector"
-			canSave={data.user?.role !== 'read_only'}
+			canSave={canWrite(data.user?.role)}
 			bind:view={strength}
 			bind:openState={strengthPanel}
 			bind:settled={strengthSettled}

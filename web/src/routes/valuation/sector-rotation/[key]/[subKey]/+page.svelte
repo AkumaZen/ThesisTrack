@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { canWrite } from '$lib/auth';
 	import { resolve } from '$app/paths';
 	import ConstituentCard from '$lib/valuation/components/ConstituentCard.svelte';
 	import StrengthPanel from '$lib/valuation/components/StrengthPanel.svelte';
@@ -205,7 +206,7 @@
 			parentKey={data.key}
 			kind="company"
 			scopeLabel={`the companies in ${data.label}`}
-			canSave={data.user?.role !== 'read_only'}
+			canSave={canWrite(data.user?.role)}
 			bind:view={strength}
 			bind:openState={strengthPanel}
 		/>
