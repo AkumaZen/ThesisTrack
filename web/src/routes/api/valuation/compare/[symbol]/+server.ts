@@ -2,6 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { Config } from '@sveltejs/adapter-vercel';
 import type { RequestHandler } from './$types';
 import { getCompareStatements } from '$lib/valuation/server/compareStatements';
+import { CompanyNotLoadedError } from '$lib/valuation/server/companyCache';
 
 // An uncached company is one page plus about a dozen spaced breakdown calls.
 export const config: Config = { maxDuration: 60 };
@@ -13,6 +14,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		const data = await getCompareStatements(symbol, { refresh: url.searchParams.get('refresh') === '1' });
 		return json(data);
 	} catch (e) {
+		if (e instanceof CompanyNotLoadedError) error(404, e.message);
 		const message = e instanceof Error ? e.message : 'Unknown scrape error';
 		if (message.startsWith('NOT_FOUND')) error(404, `Not found on Screener: ${symbol}`);
 		error(502, message);

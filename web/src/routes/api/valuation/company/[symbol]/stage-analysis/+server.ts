@@ -4,11 +4,18 @@ import { fetchDailyCandles, fetchIndexCandles } from '$lib/valuation/server/ange
 import { readFreshCandles } from '$lib/valuation/server/companyGrowthSeries';
 import { BENCHMARK_INDEX } from '$lib/valuation/server/sectorIndices';
 import { computeStageAnalysis } from '$lib/valuation/stageAnalysis';
+import { isGuest } from '$lib/guest';
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
 	try {
 		// 400 calendar days of buffer so the 200-day MA still has ~20 trading days of margin
 		// behind it to check whether it's trending up (see computeStageAnalysis).
+		// A guest gets the stored series at any age and no live Angel One calls.
+		if (isGuest(locals.user)) {
+			const stored = await readFreshCandles(params.symbol, 400, Date.now(), Infinity);
+			if (!stored) error(404, `No stored price history for ${params.symbol.toUpperCase()} yet. Sign in to load it.`);
+			return json(computeStageAnalysis(stored, null));
+		}
 		const [candles, niftyCandles] = await Promise.all([
 			readFreshCandles(params.symbol, 400).then((c) => c ?? fetchDailyCandles(params.symbol, 400)),
 			fetchIndexCandles(BENCHMARK_INDEX.token, 400).catch(() => null)

@@ -13,7 +13,7 @@ import { IDLE_GRACE_MS, holdIdleConnections } from '$lib/server/db';
 import { isTrackerTestRequest, mockCompanies } from '$lib/valuation/server/masterTrackerMock';
 import { GUEST_COOKIE, GUEST_USER, guestShowcaseTarget, isGuest, lockedFeatureForPath } from '$lib/guest';
 import { isCompanyShowcased, isSymbolShowcased } from '$lib/server/showcase';
-import { runAsGuest } from '$lib/server/guestContext';
+import { GuestLiveFetchError, runAsGuest } from '$lib/server/guestContext';
 
 // Background jobs for the valuation tools: refresh the stored prices four times each weekday
 // (see refreshSlots.ts) and check prices against fair value every 10 min in market hours. A long-running server (local
@@ -138,5 +138,7 @@ export const handleError: HandleServerError = ({ error, event, status, message }
 	console.error(
 		`[error ${errorId}] ${status} ${event.request.method} ${event.url.pathname} user=${who}\n${detail}`
 	);
+	// A guest reached code that would load live data and nothing caught it: say why, plainly.
+	if (error instanceof GuestLiveFetchError) return { message: error.message, errorId };
 	return { message, errorId };
 };

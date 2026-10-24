@@ -1,12 +1,13 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getCompanyData } from '$lib/valuation/server/companyCache';
+import { CompanyNotLoadedError, getCompanyData } from '$lib/valuation/server/companyCache';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const { data, cacheHit } = await getCompanyData(params.symbol);
 		return json({ ...data, cacheHit });
 	} catch (e) {
+		if (e instanceof CompanyNotLoadedError) error(404, e.message);
 		const message = e instanceof Error ? e.message : 'Unknown scrape error';
 		if (message.startsWith('NOT_FOUND')) {
 			error(404, `Company symbol not found on Screener: ${params.symbol}`);

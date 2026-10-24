@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { fetchDailyCandles } from '$lib/valuation/server/angelone';
 import { readFreshCandles } from '$lib/valuation/server/companyGrowthSeries';
 import { buildPriceSeries } from '$lib/valuation/priceChart';
+import { isGuest } from '$lib/guest';
 
 // About 700 calendar days (~480 sessions) so the 200-day average is complete across a full
 // 252-session chart. Cached briefly in memory: the page asks once per visit.
@@ -10,8 +11,14 @@ const DAYS = 700;
 const TTL_MS = 10 * 60 * 1000;
 const cache = new Map<string, { at: number; body: unknown }>();
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
 	const symbol = params.symbol.toUpperCase();
+	// A guest gets the stored series at any age, never a live fetch, and never fills the cache.
+	if (isGuest(locals.user)) {
+		const stored = await readFreshCandles(symbol, DAYS, Date.now(), Infinity);
+		if (!stored) error(404, `No stored price history for ${symbol} yet. Sign in to load it.`);
+		return json({ symbol, sessionsFetched: stored.length, points: buildPriceSeries(stored, 252) });
+	}
 	const hit = cache.get(symbol);
 	if (hit && Date.now() - hit.at < TTL_MS) return json(hit.body);
 

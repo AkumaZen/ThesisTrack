@@ -4,6 +4,8 @@ import { db } from '$lib/server/db';
 import { companyCache } from '$lib/server/db/valuationSchema';
 import { detectBasis } from './scraper';
 import { bseSlugFor } from './screenerSlug';
+import { CompanyNotLoadedError } from './companyCache';
+import { inGuestContext } from '$lib/server/guestContext';
 import {
 	metricKey,
 	periodIndex,
@@ -366,6 +368,11 @@ export async function getCompareStatements(
 	const cacheKey = CACHE_PREFIX + key;
 	const [row] = await db.select().from(companyCache).where(eq(companyCache.symbol, cacheKey));
 	const cached = row?.data as Cached | undefined;
+	// A guest is shown what is stored, however old, and never starts a scrape.
+	if (inGuestContext()) {
+		if (row && cached?.shapeVersion === SHAPE_VERSION) return publicShape(cached);
+		throw new CompanyNotLoadedError();
+	}
 	if (row && cached?.shapeVersion === SHAPE_VERSION) {
 		const ttl = refresh ? MIN_REFRESH_GAP_MS : cached.partial ? PARTIAL_TTL_MS : TTL_MS;
 		if (Date.now() - row.fetchedAt < ttl) return publicShape(cached);

@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getCompanyData } from '$lib/valuation/server/companyCache';
+import { CompanyNotLoadedError, getCompanyData } from '$lib/valuation/server/companyCache';
 import { listAllBaskets, listAllMajorSectors } from '$lib/valuation/server/sectorStore';
 import { scanMatchFor } from '$lib/valuation/server/presetStore';
 import { readSegments } from '$lib/valuation/server/segmentStore';
@@ -8,6 +8,8 @@ import { startingTemplateFor } from '$lib/valuation/server/templatesStore';
 import { db } from '$lib/server/db';
 import { companies } from '$lib/server/db/schema';
 import { eq, or } from 'drizzle-orm';
+import { isSymbolShowcased } from '$lib/server/showcase';
+import { isGuest } from '$lib/guest';
 
 /** The thesis on this company, if the team has one (matched by NSE/BSE ticker). */
 async function thesisFor(symbol: string) {
@@ -44,18 +46,31 @@ async function sectorsFor(symbol: string) {
 export const load: PageServerLoad = async ({ params, locals }) => {
 	try {
 		const { data } = await getCompanyData(params.symbol);
-		const [sectors, startingTemplate, thesisId, scanMatch, segments] = await Promise.all([
+		const guest = isGuest(locals.user);
+		const [sectors, startingTemplate, thesisId, scanMatch, segments, showcased] = await Promise.all([
 			sectorsFor(data.symbol),
 			startingTemplateFor(data.symbol, locals.user!.id),
 			thesisFor(data.symbol),
 			// Scan Match is a bonus: a failure here must never break the page.
 			scanMatchFor(data.symbol).catch(() => null),
 			// Stored segment table; likewise optional.
-			readSegments(data.symbol).catch(() => null)
+			readSegments(data.symbol).catch(() => null),
+			// Whether guests may see this company's thesis and saved valuation (admins toggle it here).
+			isSymbolShowcased(data.symbol)
 		]);
 		// startingTemplate: what a valuation not yet on the watchlist starts from (or null).
-		return { company: data, sectors, startingTemplate, thesisId, scanMatch, segments };
+		return {
+			company: data,
+			sectors,
+			startingTemplate,
+			// A guest is only linked to a thesis they are allowed to open.
+			thesisId: guest && !showcased ? null : thesisId,
+			scanMatch,
+			segments,
+			showcased
+		};
 	} catch (e) {
+		if (e instanceof CompanyNotLoadedError) error(404, e.message);
 		const message = e instanceof Error ? e.message : 'Unknown scrape error';
 		if (message.startsWith('NOT_FOUND')) {
 			error(404, `Company symbol not found on Screener: ${params.symbol}`);

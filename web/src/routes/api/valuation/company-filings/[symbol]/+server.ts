@@ -4,15 +4,19 @@ import { istDay } from '$lib/valuation/boardMeetings';
 import { dividendStats } from '$lib/valuation/corporateActions';
 import { holdingTimeline } from '$lib/valuation/insiderTrades';
 import { refreshCompanyFilings } from '$lib/valuation/server/marketIntelJob';
+import { isGuest } from '$lib/guest';
 import { annualEps, companyHoldingFilings, lastStoredCloses, listCompanyActions } from '$lib/valuation/server/marketIntelStore';
 
 // One company's corporate actions and dividend ratios, and its insider/SAST holding-change history,
 // for the company page components. NSE is asked at most once a day per company; if it is slow or
 // down, what is already stored is served with `stale` set.
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
 	const symbol = params.symbol.toUpperCase();
 	if (!/^[A-Z0-9&-]{1,20}$/.test(symbol) || /^\d+$/.test(symbol)) error(400, 'Only NSE-listed companies are supported.');
-	const refreshed = await refreshCompanyFilings(symbol).catch((err) => ({ refreshed: false, error: err instanceof Error ? err.message : String(err) }));
+	// A guest sees what is stored; only signed-in visits ask NSE for anything new.
+	const refreshed = isGuest(locals.user)
+		? { refreshed: false, error: null }
+		: await refreshCompanyFilings(symbol).catch((err) => ({ refreshed: false, error: err instanceof Error ? err.message : String(err) }));
 	const today = istDay(new Date());
 	const [actions, closes, eps, filings] = await Promise.all([
 		listCompanyActions(symbol),

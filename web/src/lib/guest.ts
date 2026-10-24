@@ -167,7 +167,6 @@ const GUEST_API_PREFIXES = [
 	'/api/taxonomy',
 	'/api/metrics',
 	'/api/valuation/symbol-search',
-	'/api/valuation/search',
 	'/api/valuation/valuations',
 	'/api/valuation/company',
 	'/api/valuation/company-filings',

@@ -5,8 +5,17 @@ import { fetchCompanyFinancials, type CompanyFinancials } from './scraper';
 import { fetchLtp } from './angelone';
 import { bseSlugFor } from './screenerSlug';
 import { isMarketOpenIST } from './marketHours';
+import { inGuestContext } from '$lib/server/guestContext';
 
 const TTL_MS = 24 * 60 * 60 * 1000;
+
+/** A guest asked for a company nobody has loaded: guests never trigger a live scrape. */
+export class CompanyNotLoadedError extends Error {
+	constructor() {
+		super('This company has not been loaded yet. Sign in to load it.');
+		this.name = 'CompanyNotLoadedError';
+	}
+}
 
 export async function getCompanyData(
 	symbol: string
@@ -18,8 +27,14 @@ export async function getCompanyData(
 	// CompanyFinancials, and every field is set together in one `scrapeOnce()` return, so its
 	// presence implies every earlier addition is present too. Bump this to whatever's newest
 	// so stale cache rows self-heal instead of needing a manual wipe each time the shape grows.
-	if (row && Date.now() - row.fetchedAt < TTL_MS && 'annual' in (row.data as object)) {
+	const complete = !!row && 'annual' in (row.data as object);
+	if (row && complete && Date.now() - row.fetchedAt < TTL_MS) {
 		return { data: row.data as CompanyFinancials, cacheHit: true };
+	}
+	// A guest sees what is stored, however old; loading fresh data is for signed-in people.
+	if (inGuestContext()) {
+		if (row && complete) return { data: row.data as CompanyFinancials, cacheHit: true };
+		throw new CompanyNotLoadedError();
 	}
 
 	const data = await fetchFinancials(key);

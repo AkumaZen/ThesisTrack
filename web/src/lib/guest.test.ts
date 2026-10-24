@@ -95,6 +95,7 @@ describe('guestMayCallApi', () => {
 			'/api/valuation/valuations/removed',
 			'/api/valuation/strength/prefs',
 			'/api/valuation/search/all',
+			'/api/valuation/search',
 			'/api/valuation/company/TCS/depth',
 			'/api/valuation/company/TCS/refresh-price',
 			'/api/valuation/company/TCS/refresh-series',
