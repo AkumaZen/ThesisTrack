@@ -32,7 +32,7 @@ describe('guest fetch guard', () => {
 		await mod.runAsGuest('http://app.test', async () => {
 			expect(mod.inGuestContext()).toBe(true);
 			await expect(fetch('https://www.nseindia.com/api/quote')).rejects.toBeInstanceOf(mod.GuestLiveFetchError);
-			await expect(fetch(new URL('https://api.openai.com/v1'))).rejects.toThrow(/signed-in users/);
+			await expect(fetch(new URL('https://api.openai.com/v1'))).rejects.toThrow(/signed-in members/);
 			await fetch('/api/companies');
 			await fetch('http://app.test/api/valuation/valuations');
 			expect(mod.guestBlockedFetches()).toBe(2);

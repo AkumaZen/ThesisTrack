@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		// A guest gets the stored series at any age and no live Angel One calls.
 		if (isGuest(locals.user)) {
 			const stored = await readFreshCandles(params.symbol, 400, Date.now(), Infinity);
-			if (!stored) error(404, `No stored price history for ${params.symbol.toUpperCase()} yet. Sign in to load it.`);
+			if (!stored) error(404, `The price history for ${params.symbol.toUpperCase()} isn't in the guest preview yet. Sign in to load it.`);
 			return json(computeStageAnalysis(stored, null));
 		}
 		const [candles, niftyCandles] = await Promise.all([

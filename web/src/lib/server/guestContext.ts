@@ -20,7 +20,7 @@ export class GuestLiveFetchError extends Error {
 	/** The origin that was blocked, for logs; the message itself is safe to show a guest. */
 	readonly blockedOrigin: string;
 	constructor(origin: string) {
-		super('This needs live market data, which loads only for signed-in users. Sign in to load it.');
+		super('Thanks for looking around! This needs live market data, which loads for signed-in members. Sign in to see it.');
 		this.name = 'GuestLiveFetchError';
 		this.blockedOrigin = origin;
 	}

@@ -16,7 +16,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	// A guest gets the stored series at any age, never a live fetch, and never fills the cache.
 	if (isGuest(locals.user)) {
 		const stored = await readFreshCandles(symbol, DAYS, Date.now(), Infinity);
-		if (!stored) error(404, `No stored price history for ${symbol} yet. Sign in to load it.`);
+		if (!stored) error(404, `The price history for ${symbol} isn't in the guest preview yet. Sign in to load it.`);
 		return json({ symbol, sessionsFetched: stored.length, points: buildPriceSeries(stored, 252) });
 	}
 	const hit = cache.get(symbol);

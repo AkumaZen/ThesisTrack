@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
 	GUEST_USER,
+	GUEST_WRITE_MESSAGE,
 	LOCKED_FEATURES,
 	guestMayCallApi,
 	guestMayOpenPage,
 	guestPageRedirect,
+	guestRefusalMessage,
 	guestShowcaseTarget,
+	guestSignInHref,
+	membersOnlyPath,
 	isGuest,
 	lockedFeatureByKey,
 	lockedFeatureForPath
@@ -53,6 +57,7 @@ describe('guestMayOpenPage', () => {
 		expect(guestMayOpenPage('/valuation/company/TCS')).toBe(true);
 		expect(guestMayOpenPage('/company/ABC')).toBe(true);
 		expect(guestMayOpenPage('/locked/alerts')).toBe(true);
+		expect(guestMayOpenPage('/guest/members-only')).toBe(true);
 	});
 
 	it('does not open anything else', () => {
@@ -110,10 +115,43 @@ describe('guestMayCallApi', () => {
 });
 
 describe('guestPageRedirect', () => {
-	it('sends locked pages to their preview, open pages nowhere, the rest to sign in', () => {
+	it('sends locked pages to their preview, open pages nowhere, the rest to the members-only note', () => {
 		expect(guestPageRedirect('/valuation/alerts')).toBe('/locked/alerts');
 		expect(guestPageRedirect('/valuation/company/TCS')).toBeNull();
-		expect(guestPageRedirect('/admin/users', '?tab=1')).toBe('/login?next=%2Fadmin%2Fusers%3Ftab%3D1');
+		expect(guestPageRedirect('/admin/users', '?tab=1')).toBe(
+			'/guest/members-only?next=%2Fadmin%2Fusers%3Ftab%3D1'
+		);
+	});
+});
+
+describe('friendly guest refusals', () => {
+	it('builds the members-only path with the page to return to', () => {
+		expect(membersOnlyPath('/admin/users')).toBe('/guest/members-only?next=%2Fadmin%2Fusers');
+		expect(membersOnlyPath('/valuation/lists', '?id=3')).toBe(
+			'/guest/members-only?next=%2Fvaluation%2Flists%3Fid%3D3'
+		);
+	});
+
+	it('links to sign in, keeping only a safe next path', () => {
+		expect(guestSignInHref('/company/ABC')).toBe('/login?next=%2Fcompany%2FABC');
+		expect(guestSignInHref('/')).toBe('/login');
+		for (const unsafe of ['//evil.example', '/\\evil', 'https://evil.example', '/login', '/logout', '']) {
+			expect(guestSignInHref(unsafe), unsafe).toBe('/login');
+		}
+	});
+
+	it('recognises only guest-marked 403 bodies', () => {
+		expect(guestRefusalMessage(403, { message: 'Hello', guest: true })).toBe('Hello');
+		expect(guestRefusalMessage(403, { guest: true })).toBe(GUEST_WRITE_MESSAGE);
+		expect(guestRefusalMessage(403, { detail: 'Forbidden' })).toBeNull();
+		expect(guestRefusalMessage(403, 'Forbidden')).toBeNull();
+		expect(guestRefusalMessage(404, { message: 'x', guest: true })).toBeNull();
+		expect(guestRefusalMessage(403, null)).toBeNull();
+	});
+
+	it('keeps the guest copy friendly and free of status jargon', () => {
+		expect(GUEST_WRITE_MESSAGE).toMatch(/Sign in/);
+		expect(GUEST_WRITE_MESSAGE).not.toMatch(/40[34]|Forbidden|Error/i);
 	});
 });
 

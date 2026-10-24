@@ -1,7 +1,7 @@
 // Guest mode: anyone can explore the app without an account, read only. Pure helpers shared by the
 // access policy, the hook, the client router and the UI - no I/O. A guest is a request that carries
 // the (unsigned) tt_guest cookie and no real session; it can only ever do what this file allows.
-import type { SessionUser } from './auth';
+import { safeNextPath, type SessionUser } from './auth';
 
 export const GUEST_COOKIE = 'tt_guest';
 export const GUEST_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -17,6 +17,31 @@ export const GUEST_USER: SessionUser = {
 };
 
 export const isGuest = (user: { role?: string } | null | undefined): boolean => user?.role === 'guest';
+
+/** What a guest is told when a change or a live-data load is refused (the hook's 403 JSON). */
+export const GUEST_WRITE_MESSAGE =
+	'Thanks for exploring! Saving changes and loading live data are for signed-in members. Sign in to do this.';
+
+/** The friendly in-app page a guest lands on instead of a page they cannot open. */
+export const MEMBERS_ONLY_PATH = '/guest/members-only';
+
+export const membersOnlyPath = (pathname: string, search = ''): string =>
+	`${MEMBERS_ONLY_PATH}?next=${encodeURIComponent(pathname + search)}`;
+
+/** The sign-in link offered to a guest, coming back to `next` (a same-site path only) afterwards. */
+export function guestSignInHref(next: string | null | undefined): string {
+	const safe = safeNextPath(next);
+	return safe === '/' ? '/login' : `/login?next=${encodeURIComponent(safe)}`;
+}
+
+/** The message of a guest refusal (the hook's 403 JSON, marked `guest: true`), or null for any
+ *  other response - a signed-in person's 403 keeps its usual handling. */
+export function guestRefusalMessage(status: number, body: unknown): string | null {
+	if (status !== 403 || typeof body !== 'object' || body === null) return null;
+	const { guest, message } = body as { guest?: unknown; message?: unknown };
+	if (guest !== true) return null;
+	return typeof message === 'string' && message ? message : GUEST_WRITE_MESSAGE;
+}
 
 export interface LockedFeature {
 	key: string;
@@ -138,6 +163,7 @@ const GUEST_EXACT_PAGES = ['/', '/valuation'];
 
 const GUEST_PAGE_PREFIXES = [
 	'/company',
+	'/guest',
 	'/locked',
 	'/valuation/company',
 	'/valuation/compare',
@@ -207,12 +233,12 @@ export function guestMayCallApi(pathname: string, method: string): boolean {
 }
 
 /** Where a guest asking for this page should land: the preview of a locked feature, nowhere
- *  (null: the page is open to guests) or the sign-in page for everything else. */
+ *  (null: the page is open to guests) or the friendly members-only page for everything else. */
 export function guestPageRedirect(pathname: string, search = ''): string | null {
 	const locked = lockedFeatureForPath(pathname);
 	if (locked) return `/locked/${locked.key}`;
 	if (guestMayOpenPage(pathname)) return null;
-	return `/login?next=${encodeURIComponent(pathname + search)}`;
+	return membersOnlyPath(pathname, search);
 }
 
 export type ShowcaseTarget =

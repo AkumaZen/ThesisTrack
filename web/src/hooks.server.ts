@@ -11,7 +11,15 @@ import { startIntradayPriceScheduler } from '$lib/valuation/server/intradayPrice
 import { startAlertScheduler } from '$lib/valuation/server/alertScheduler';
 import { IDLE_GRACE_MS, holdIdleConnections } from '$lib/server/db';
 import { isTrackerTestRequest, mockCompanies } from '$lib/valuation/server/masterTrackerMock';
-import { GUEST_COOKIE, GUEST_USER, guestShowcaseTarget, isGuest, lockedFeatureForPath } from '$lib/guest';
+import {
+	GUEST_COOKIE,
+	GUEST_USER,
+	GUEST_WRITE_MESSAGE,
+	guestShowcaseTarget,
+	isGuest,
+	lockedFeatureForPath,
+	membersOnlyPath
+} from '$lib/guest';
 import { isCompanyShowcased, isSymbolShowcased, isTableShowcased } from '$lib/server/showcase';
 import { GuestLiveFetchError, runAsGuest } from '$lib/server/guestContext';
 
@@ -87,6 +95,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	if (decision === 'login') {
 		if (isApiPath(pathname)) return json({ message: 'Sign in required.', detail: 'Sign in required.' }, { status: 401 });
+		// A guest gets a friendly note with a way to sign in, not the bare login form.
+		if (guest) redirect(303, membersOnlyPath(pathname, search));
 		const next = encodeURIComponent(pathname + search);
 		redirect(303, pathname === '/' ? '/login' : `/login?next=${next}`);
 	}
@@ -99,12 +109,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	if (decision === 'forbidden') {
 		if (isApiPath(pathname)) {
-			const message = guest
-				? 'Guests can look around but not make changes. Sign in to do this.'
-				: 'You do not have access to this action.';
+			// `guest: true` lets the browser show its gentle sign-in notice instead of an error.
+			if (guest) return json({ message: GUEST_WRITE_MESSAGE, detail: GUEST_WRITE_MESSAGE, guest: true }, { status: 403 });
+			const message = 'You do not have access to this action.';
 			return json({ message, detail: message }, { status: 403 });
 		}
-		return new Response(guest ? 'Guests can look around but not make changes.' : 'Forbidden: this page is limited to the admin.', {
+		if (guest) redirect(303, membersOnlyPath(pathname, search));
+		return new Response('Forbidden: this page is limited to the admin.', {
 			status: 403,
 			headers: { 'content-type': 'text/plain; charset=utf-8' }
 		});

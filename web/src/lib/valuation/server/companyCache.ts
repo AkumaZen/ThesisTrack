@@ -12,7 +12,7 @@ const TTL_MS = 24 * 60 * 60 * 1000;
 /** A guest asked for a company nobody has loaded: guests never trigger a live scrape. */
 export class CompanyNotLoadedError extends Error {
 	constructor() {
-		super('This company has not been loaded yet. Sign in to load it.');
+		super("This company isn't part of the guest preview yet. Sign in to load it.");
 		this.name = 'CompanyNotLoadedError';
 	}
 }
