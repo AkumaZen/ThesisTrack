@@ -122,6 +122,11 @@ describe('decideAccess: analyst', () => {
 		expect(d('/api/valuation/breadth/refresh', 'POST', member)).toBe('allow');
 	});
 
+	it('lets editors but not read-only accounts refresh breadth from live quotes', () => {
+		expect(d('/api/valuation/breadth/live', 'POST', member)).toBe('allow');
+		expect(d('/api/valuation/breadth/live', 'POST', viewer)).toBe('forbidden');
+	});
+
 	it('must change a temporary password before anything else', () => {
 		expect(d('/', 'GET', fresh)).toBe('change-password');
 		expect(d('/api/valuation/valuations', 'GET', fresh)).toBe('change-password');

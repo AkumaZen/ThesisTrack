@@ -129,6 +129,10 @@ export function typicalTotal(rows: Pick<BreadthRow, 'total'>[]): number {
 /** Share (0 to 1) of the typical stock count that a row measured. */
 export const coverage = (r: Pick<BreadthRow, 'total'>, typical: number): number => (typical > 0 ? r.total / typical : 0);
 
+/** A live (provisional) session is shown from this share of the typical stock count; below it the
+ *  quotes have clearly not arrived and the usual rule applies. */
+export const LIVE_MIN_COVERAGE = 0.5;
+
 export interface HeadlineBreadth {
 	/** The most recent session with enough coverage, or null when none qualifies. */
 	row: BreadthRow | null;
@@ -138,13 +142,19 @@ export interface HeadlineBreadth {
 	partial: BreadthRow | null;
 	/** Rows (by date) too thin to trust. */
 	partialDates: Set<string>;
+	/** The newest session when it is live today and shown despite the 90% rule, else null. */
+	live: BreadthRow | null;
 }
 
 /** Picks the session the headline tiles may show: the latest one that is at least 90% covered.
- *  Rows are oldest first. A partial newest session is reported separately so the page can say so. */
-export function headlineBreadth(rows: BreadthRow[]): HeadlineBreadth {
+ *  Rows are oldest first. A partial newest session is reported separately so the page can say so.
+ *  `liveDay` is the session still provisional (today, before the close): while live it is shown
+ *  from LIVE_MIN_COVERAGE instead of 90%, because the quotes arrive through the day. Past days
+ *  keep the 90% rule. */
+export function headlineBreadth(rows: BreadthRow[], liveDay: string | null = null): HeadlineBreadth {
 	const typical = typicalTotal(rows);
-	const isPartial = (r: BreadthRow) => coverage(r, typical) < MIN_COVERAGE;
+	const isLive = (r: BreadthRow) => liveDay != null && r.asOf === liveDay && coverage(r, typical) >= LIVE_MIN_COVERAGE;
+	const isPartial = (r: BreadthRow) => !isLive(r) && coverage(r, typical) < MIN_COVERAGE;
 	const partialDates = new Set(rows.filter(isPartial).map((r) => r.asOf));
 	let row: BreadthRow | null = null;
 	for (let i = rows.length - 1; i >= 0; i--) {
@@ -154,5 +164,11 @@ export function headlineBreadth(rows: BreadthRow[]): HeadlineBreadth {
 		}
 	}
 	const newest = rows.length ? rows[rows.length - 1] : null;
-	return { row, typical, partial: newest && isPartial(newest) ? newest : null, partialDates };
+	return {
+		row,
+		typical,
+		partial: newest && isPartial(newest) ? newest : null,
+		partialDates,
+		live: newest && isLive(newest) && row === newest ? newest : null
+	};
 }

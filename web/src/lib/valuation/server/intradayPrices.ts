@@ -5,13 +5,25 @@
 // after the previous one started, from 09:15 to 15:30 IST on weekdays, plus one settle pass after
 // 16:00 IST so the day's last candle stops being provisional. The nightly job and manual Refresh
 // remain; a lease in app_meta keeps the passes from overlapping them.
+//
+// A pass covers the sector/scanner symbols AND the whole-market breadth list. Each batch of 50
+// costs ONE quote request; that result feeds the stored price series (refreshBatch) and the
+// breadth closes at once. When every symbol is done the pass still has two follow-up steps, the
+// scanner-universe breadth cards and the whole-market chart aggregate. They are kept in the pass
+// state, so a slice that runs out of time leaves them for the next minute's slice.
 import { eq, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { appMeta } from '$lib/server/db/valuationSchema';
+import type { StoredTip } from '../breadthDma';
+import { passUniverse } from '../livePass';
+import { fetchDayQuotes } from './angelone';
 import { BATCH_SIZE, refreshBatch } from './batchRefresh';
 import { refreshBenchmarkCandles } from './benchmarkSeries';
+import { applyBreadthQuotes, readBreadthTips, recomputeBreadthDma } from './breadthDmaStore';
+import { refreshBreadth } from './breadthStore';
+import { listBreadthUniverse } from './mcapUniverseStore';
 import { istClock } from './refreshMerge';
-import { listAllSymbols } from './sectorStore';
+import { getStageScanUniverse } from './stageScanUniverse';
 
 export const PASS_EVERY_MS = 30 * 60_000;
 /** A call stops starting batches after this long (the cron has its own time limits). */
@@ -35,9 +47,14 @@ const SETTLE_UNTIL = 19 * 60;
 
 export type PassKind = 'live' | 'settle';
 
+/** Follow-up steps once every symbol is done: the scanner-universe breadth rows (cards and table),
+ *  then the whole-market DMA aggregate (chart). */
+export type BreadthStep = 'cards' | 'market';
+
 export interface PassState {
-	/** The pass being worked through, if any. `cursor` is the last symbol done. */
-	current: { kind: PassKind; day: string; startedAt: number; cursor: string | null } | null;
+	/** The pass being worked through, if any. `cursor` is the last symbol done. `todo` appears once
+	 *  every symbol is done: the breadth steps still to run (a later slice carries them on). */
+	current: { kind: PassKind; day: string; startedAt: number; cursor: string | null; todo?: BreadthStep[] } | null;
 	/** When the newest live pass started (the 30 minute cadence counts from it). */
 	lastLiveStartedAt: number;
 	/** IST day of the newest settle pass start. */
@@ -72,7 +89,8 @@ export function decide(
 	const kind = windowKind(now);
 	const day = istClock(now).day;
 	const cur = state.current;
-	if (cur && cur.day === day && cur.kind === kind) return { action: 'resume' };
+	// A pass whose symbols are done but whose breadth steps are not may finish a little past its window.
+	if (cur && cur.day === day && (cur.kind === kind || cur.todo?.length)) return { action: 'resume' };
 	if (!kind) return { action: 'idle' };
 	if (kind === 'live') {
 		return now.getTime() - state.lastLiveStartedAt >= PASS_EVERY_MS ? { action: 'start', kind } : { action: 'idle' };
@@ -87,9 +105,19 @@ export interface IntradayDeps {
 	/** True when the lease was free or expired and is now ours until `expiresAt`. */
 	acquire: (key: string, now: number, expiresAt: number) => Promise<boolean>;
 	release: (key: string) => Promise<void>;
+	/** Sector and scanner symbols: the ones whose price series is stored. */
 	listSymbols: () => Promise<string[]>;
+	/** The whole-market breadth list: only their closes for the breadth chart are kept. */
+	listBreadthSymbols: () => Promise<string[]>;
 	refreshBenchmark: () => Promise<unknown>;
 	refreshBatch: typeof refreshBatch;
+	fetchQuotes: typeof fetchDayQuotes;
+	readBreadthTips: () => Promise<StoredTip[]>;
+	applyBreadthQuotes: typeof applyBreadthQuotes;
+	/** Recomputes the scanner-universe breadth rows from the stored series. */
+	refreshBreadthCards: () => Promise<unknown>;
+	/** Recomputes the whole-market DMA aggregate from the stored closes. */
+	recomputeBreadthMarket: () => Promise<unknown>;
 }
 
 export interface SliceSummary {
@@ -101,6 +129,12 @@ export interface SliceSummary {
 	fullFetches: number;
 	deferred: number;
 	failed: number;
+	/** Breadth closes appended or settled by this slice, and batches whose breadth could not be applied. */
+	breadthApplied: number;
+	breadthErrors: number;
+	/** Follow-up steps this slice ran, and the ones still waiting for the next slice. */
+	stepsRun: BreadthStep[];
+	stepsLeft: BreadthStep[];
 	cursor?: string | null;
 	ms: number;
 	error?: string;
@@ -130,10 +164,103 @@ const realDeps: IntradayDeps = {
 	async release(key) {
 		await db.update(appMeta).set({ value: '0' }).where(eq(appMeta.key, key));
 	},
-	listSymbols: listAllSymbols,
+	listSymbols: getStageScanUniverse,
+	listBreadthSymbols: async () => (await listBreadthUniverse()).map((u) => u.symbol),
 	refreshBenchmark: refreshBenchmarkCandles,
-	refreshBatch
+	refreshBatch,
+	fetchQuotes: fetchDayQuotes,
+	readBreadthTips,
+	applyBreadthQuotes,
+	refreshBreadthCards: refreshBreadth,
+	recomputeBreadthMarket: () => recomputeBreadthDma()
 };
+
+export interface LiveBatchContext {
+	/** Symbols that keep a stored price series (sector and scanner). */
+	cache: Set<string>;
+	/** Symbols of the whole-market breadth list. */
+	breadth: Set<string>;
+	/** Every stored breadth tip, to tell a missed session from a normal one. */
+	tips: StoredTip[];
+}
+
+export interface LiveBatchResult {
+	appended: number;
+	deferred: number;
+	failed: number;
+	fullFetches: number;
+	breadthApplied: number;
+	breadthError: boolean;
+}
+
+/** The symbols a live pass covers, with which of them keep a price series and which are breadth. */
+export async function loadLiveContext(deps: Pick<IntradayDeps, 'listSymbols' | 'listBreadthSymbols' | 'readBreadthTips'> = realDeps) {
+	const [cacheList, breadthList] = await Promise.all([deps.listSymbols(), deps.listBreadthSymbols()]);
+	const ctx: LiveBatchContext = {
+		cache: new Set(cacheList.map((s) => s.toUpperCase())),
+		breadth: new Set(breadthList.map((s) => s.toUpperCase())),
+		tips: await deps.readBreadthTips().catch(() => [])
+	};
+	return { symbols: passUniverse(cacheList, breadthList), ctx };
+}
+
+/** One batch of up to BATCH_SIZE symbols: ONE quote request, whose result feeds both the stored
+ *  price series (symbols in `cache`, through refreshBatch, cold ones capped) and the breadth closes
+ *  (symbols in `breadth`). A failed quote request leaves the breadth alone and lets refreshBatch
+ *  fall back as it always does; a failed breadth write never fails the price part. */
+export async function refreshLiveBatch(
+	batch: string[],
+	ctx: LiveBatchContext,
+	deps: Pick<IntradayDeps, 'fetchQuotes' | 'refreshBatch' | 'applyBreadthQuotes'> = realDeps
+): Promise<LiveBatchResult> {
+	const out: LiveBatchResult = { appended: 0, deferred: 0, failed: 0, fullFetches: 0, breadthApplied: 0, breadthError: false };
+	let quoted: Awaited<ReturnType<typeof fetchDayQuotes>> | null = null;
+	try {
+		quoted = await deps.fetchQuotes(batch);
+	} catch {
+		quoted = null;
+	}
+
+	const cacheSymbols = batch.filter((s) => ctx.cache.has(s));
+	if (cacheSymbols.length > 0) {
+		const shared = quoted;
+		const r = await deps.refreshBatch(
+			cacheSymbols,
+			shared
+				? {
+						fetchQuotes: async (symbols: string[]) => {
+							const want = new Set(symbols.map((s) => s.toUpperCase()));
+							return {
+								quotes: new Map([...shared.quotes].filter(([s]) => want.has(s))),
+								unlisted: shared.unlisted.filter((s) => want.has(s)),
+								missing: shared.missing.filter((s) => want.has(s))
+							};
+						}
+					}
+				: {},
+			{ maxFull: MAX_FULL_PER_BATCH }
+		);
+		out.fullFetches = r.fullFetches;
+		for (const x of r.results) {
+			if (x.outcome === 'appended') out.appended++;
+			else if (x.outcome === 'deferred') out.deferred++;
+			else if (x.outcome === 'failed') out.failed++;
+		}
+	}
+
+	if (quoted) {
+		const breadthSymbols = batch.filter((s) => ctx.breadth.has(s));
+		if (breadthSymbols.length > 0) {
+			try {
+				const r = await deps.applyBreadthQuotes(breadthSymbols, quoted.quotes, ctx.tips);
+				out.breadthApplied = r.appended + r.replaced;
+			} catch {
+				out.breadthError = true;
+			}
+		}
+	}
+	return out;
+}
 
 export async function readPassState(deps: Pick<IntradayDeps, 'getMeta'> = realDeps): Promise<PassState> {
 	try {
@@ -192,6 +319,10 @@ export async function runIntradaySlice(
 		fullFetches: 0,
 		deferred: 0,
 		failed: 0,
+		breadthApplied: 0,
+		breadthErrors: 0,
+		stepsRun: [],
+		stepsLeft: [],
 		ms: 0
 	};
 	const done = (patch: Partial<SliceSummary>): SliceSummary => ({ ...out, ...patch, ms: Date.now() - started });
@@ -220,37 +351,55 @@ export async function runIntradaySlice(
 		if (!cur) return done({});
 		out.kind = cur.kind;
 
-		const symbols = (await deps.listSymbols()).map((s) => s.toUpperCase()).sort();
-		const after = cur.cursor;
-		let remaining = after ? symbols.filter((s) => s > after) : symbols;
 		let error: string | undefined;
-		while (remaining.length > 0 && out.batches < MAX_BATCHES_PER_SLICE && Date.now() - started < budgetMs) {
-			const batch = remaining.slice(0, BATCH_SIZE);
-			try {
-				const r = await deps.refreshBatch(batch, {}, { maxFull: MAX_FULL_PER_BATCH });
-				out.fullFetches += r.fullFetches;
-				for (const x of r.results) {
-					if (x.outcome === 'appended') out.appended++;
-					else if (x.outcome === 'deferred') out.deferred++;
-					else if (x.outcome === 'failed') out.failed++;
+		if (!cur.todo) {
+			const { symbols, ctx } = await loadLiveContext(deps);
+			const after = cur.cursor;
+			let remaining = after ? symbols.filter((s) => s > after) : symbols;
+			while (remaining.length > 0 && out.batches < MAX_BATCHES_PER_SLICE && Date.now() - started < budgetMs) {
+				const batch = remaining.slice(0, BATCH_SIZE);
+				try {
+					const r = await refreshLiveBatch(batch, ctx, deps);
+					out.fullFetches += r.fullFetches;
+					out.appended += r.appended;
+					out.deferred += r.deferred;
+					out.failed += r.failed;
+					out.breadthApplied += r.breadthApplied;
+					if (r.breadthError) out.breadthErrors++;
+				} catch (e) {
+					// Skip past the batch rather than wedge on it; the next pass tries it again.
+					error = e instanceof Error ? e.message : String(e);
 				}
-			} catch (e) {
-				// Skip past the batch rather than wedge on it; the next pass tries it again.
-				error = e instanceof Error ? e.message : String(e);
+				out.batches++;
+				out.symbols += batch.length;
+				cur.cursor = batch[batch.length - 1];
+				remaining = remaining.slice(batch.length);
 			}
-			out.batches++;
-			out.symbols += batch.length;
-			cur.cursor = batch[batch.length - 1];
-			remaining = remaining.slice(batch.length);
+			if (remaining.length === 0) {
+				// Prices are in: stamp them. The breadth steps follow here if time allows, else next slice.
+				state.lastCompletedAt = deps.now().getTime();
+				cur.todo = ['cards', 'market'];
+			}
 		}
 
-		const completed = remaining.length === 0;
-		if (completed) {
-			state.lastCompletedAt = deps.now().getTime();
-			state.current = null;
-		} else {
-			state.current = cur;
+		// A step starts only while the slice still has time; what is left stays in the pass state for
+		// the next minute's slice. A failing step is dropped (the next pass or the nightly job
+		// recomputes it) rather than retried forever.
+		while (cur.todo?.length && Date.now() - started < budgetMs) {
+			const step = cur.todo[0];
+			try {
+				if (step === 'cards') await deps.refreshBreadthCards();
+				else await deps.recomputeBreadthMarket();
+			} catch (e) {
+				error = `breadth ${step}: ${e instanceof Error ? e.message : String(e)}`;
+			}
+			cur.todo.shift();
+			out.stepsRun.push(step);
 		}
+		if (cur.todo) out.stepsLeft = [...cur.todo];
+
+		const completed = cur.todo != null && cur.todo.length === 0;
+		state.current = completed ? null : cur;
 		await deps.setMeta(STATE_KEY, JSON.stringify(state));
 		return done({ status: completed ? 'completed' : 'running', cursor: cur.cursor, error });
 	} catch (e) {

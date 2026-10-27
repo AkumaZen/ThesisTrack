@@ -169,13 +169,15 @@ export function commonLastDay(tips: StoredTip[]): number | null {
  *  figures on weekends) and quotes older than the stored session are skipped; a symbol with no
  *  quote (delisted, suspended) is left as it is. A symbol whose stored session is older than the
  *  market's previous common session, and which now has a newer quote, has a hole in its history, so it
- *  is marked stale instead of getting a close appended across the hole. */
-export function planDailyAppend(tips: StoredTip[], quotes: Map<string, QuotePoint>): DailyPlan {
+ *  is marked stale instead of getting a close appended across the hole. `reference` (default: the
+ *  same tips) is what that common session is read from, so a batch of the market can be planned
+ *  against the whole market's tips. */
+export function planDailyAppend(tips: StoredTip[], quotes: Map<string, QuotePoint>, reference: StoredTip[] = tips): DailyPlan {
 	const plan: DailyPlan = { append: [], replace: [], stale: [], skipped: { noQuote: 0, weekend: 0, old: 0 } };
 	// The market's previous common session: the usual last day among symbols still behind the newest quote day.
 	let newest = 0;
 	for (const q of quotes.values()) if (!isWeekend(q.iso) && q.day > newest) newest = q.day;
-	const previous = commonLastDay(tips.filter((t) => t.lastDay < newest));
+	const previous = commonLastDay(reference.filter((t) => t.lastDay < newest));
 	for (const t of tips) {
 		const q = quotes.get(t.symbol);
 		if (!q) {

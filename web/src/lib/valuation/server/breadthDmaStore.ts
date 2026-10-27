@@ -287,14 +287,38 @@ export async function applyDailyPlan(plan: { append: DailyChange[]; replace: Dai
 	}
 }
 
+/** The last stored session of every finished symbol of the universe (light: no arrays). */
+export async function readBreadthTips(): Promise<StoredTip[]> {
+	const rows = await db
+		.select({ symbol: breadthCloses.symbol, lastDay: breadthCloses.lastDay })
+		.from(breadthCloses)
+		.where(sql`${breadthCloses.status} = 'done' and ${inUniverse((await listBreadthUniverse()).map((u) => u.symbol))}`);
+	return rows.filter((r) => r.lastDay != null).map((r) => ({ symbol: r.symbol, lastDay: r.lastDay as number }));
+}
+
+/** Feeds quotes the caller already has (one intraday batch) into the stored closes, without
+ *  recomputing the aggregate: today's close is appended or the same day's close replaced, exactly as
+ *  the daily step does. `allTips` is the whole market's tips, so the "previous common session" that
+ *  decides what is stale is read from the market and not from one batch of 50. */
+export async function applyBreadthQuotes(
+	symbols: string[],
+	quotes: Map<string, { date: string; ltp: number }>,
+	allTips: StoredTip[],
+	apply: (plan: { append: DailyChange[]; replace: DailyChange[]; stale: string[] }) => Promise<void> = applyDailyPlan
+): Promise<{ appended: number; replaced: number; stale: number }> {
+	const wanted = new Set(symbols);
+	const points = new Map<string, QuotePoint>();
+	for (const s of wanted) {
+		const q = quotes.get(s);
+		if (q) points.set(s, { day: isoToDay(q.date), iso: q.date, price: q.ltp });
+	}
+	const plan = planDailyAppend(allTips.filter((t) => wanted.has(t.symbol)), points, allTips);
+	if (plan.append.length + plan.replace.length + plan.stale.length > 0) await apply(plan);
+	return { appended: plan.append.length, replaced: plan.replace.length, stale: plan.stale.length };
+}
+
 const realAppendDeps: AppendDeps = {
-	async readTips() {
-		const rows = await db
-			.select({ symbol: breadthCloses.symbol, lastDay: breadthCloses.lastDay })
-			.from(breadthCloses)
-			.where(sql`${breadthCloses.status} = 'done' and ${inUniverse((await listBreadthUniverse()).map((u) => u.symbol))}`);
-		return rows.filter((r) => r.lastDay != null).map((r) => ({ symbol: r.symbol, lastDay: r.lastDay as number }));
-	},
+	readTips: readBreadthTips,
 	fetchQuotes: fetchDayQuotes,
 	apply: applyDailyPlan,
 	recompute: () => recomputeBreadthDma()

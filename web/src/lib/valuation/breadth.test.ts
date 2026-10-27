@@ -119,6 +119,33 @@ describe('headlineBreadth', () => {
 		expect(h.partialDates.has('b')).toBe(true);
 	});
 
+	it('shows today while it is live even below 90%', () => {
+		const h = headlineBreadth([r('a', 1500), r('b', 1500), r('today', 1000)], 'today');
+		expect(h.row?.asOf).toBe('today');
+		expect(h.live?.asOf).toBe('today');
+		expect(h.partial).toBeNull();
+		expect(h.partialDates.has('today')).toBe(false);
+	});
+
+	it('still gates a live day with really low coverage', () => {
+		const h = headlineBreadth([r('a', 1500), r('b', 1500), r('today', 200)], 'today');
+		expect(h.row?.asOf).toBe('b');
+		expect(h.live).toBeNull();
+		expect(h.partial?.asOf).toBe('today');
+	});
+
+	it('keeps the 90% rule for past days even when another day is live', () => {
+		const h = headlineBreadth([r('a', 1500), r('b', 1500), r('past', 1000), r('today', 1200)], 'today');
+		expect(h.row?.asOf).toBe('today');
+		expect(h.partialDates.has('past')).toBe(true);
+	});
+
+	it('does not relax a past day that is not the live day', () => {
+		const h = headlineBreadth([r('a', 1500), r('b', 1500), r('c', 1000)], 'other');
+		expect(h.row?.asOf).toBe('b');
+		expect(h.live).toBeNull();
+	});
+
 	it('accepts exactly 90% coverage', () => {
 		const h = headlineBreadth([r('a', 1000), r('b', 1000), r('c', 900)]);
 		expect(h.row?.asOf).toBe('c');
