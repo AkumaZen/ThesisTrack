@@ -655,7 +655,7 @@ Type the company name to confirm:`
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
 					<p class="text-sm mt-3 empty:hidden">{t.the_business?.what_it_does}</p>
 					<div class="mt-3 space-y-2 empty:hidden">
-						{#each t.the_business?.revenue_split ?? [] as r (r.segment)}
+						{#each t.the_business?.revenue_split ?? [] as r, i (i)}
 							<div class="flex justify-between text-sm"><span>{r.segment}</span><span class="font-mono">{r.share_pct}%</span></div>
 						{/each}
 					</div>
@@ -801,7 +801,7 @@ Type the company name to confirm:`
 				<section id="cp-sec-references" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">References</h3>
 					<div class="mt-3 space-y-2">
-						{#each t.references ?? [] as r (r.url)}
+						{#each t.references ?? [] as r, i (i)}
 							<a href={r.url} target="_blank" rel="noopener" class="block text-sm text-ok hover:underline">{r.title}</a>
 						{:else}
 							<div class="text-xs text-muted-fg">None added.</div>
