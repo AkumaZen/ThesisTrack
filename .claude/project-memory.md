@@ -92,6 +92,8 @@ significant changes. Historical references, loaded only as relevant: `harness/me
 - Opus 5.5 works directly in the main session. The master, executor-medium, executor-low and
   executor-haiku agent definitions were removed on user request (too slow, too many tokens).
   Use built-in subagents only when the user explicitly asks. Older harness notes: git history.
+- 2026-11-01: product-review agent removed too, and the project model/effort pin dropped from
+  .claude/settings.json; sessions use plain Opus 5.5 from the user-level settings.
 
 ## Background runs and unpriced companies (feat/breadth-50dma, Oct 22, not pushed)
 - Commits 65cc9b2, 51077a4, 4d75301. Long batch jobs (Refresh all sectors, Load missing history,
