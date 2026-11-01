@@ -1498,7 +1498,7 @@ My data:
 						<table class="w-full text-xs">
 							<thead>
 								<tr class="bg-surface-2">
-									{#each qt.built.columns as c (c.key)}
+									{#each qt.built.columns as c, ci (ci)}
 										<th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">{c.label}</th>
 									{/each}
 								</tr>
@@ -1506,7 +1506,7 @@ My data:
 							<tbody>
 								{#each qt.built.rows.slice(0, 5) as row, r (r)}
 									<tr class="border-t border-border">
-										{#each qt.built.columns as c (c.key)}
+										{#each qt.built.columns as c, ci (ci)}
 											<td class="px-2 py-1.5 whitespace-nowrap">{row[c.key] ?? '-'}</td>
 										{/each}
 									</tr>
