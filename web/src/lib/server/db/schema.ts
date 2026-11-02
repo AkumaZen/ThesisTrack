@@ -417,6 +417,17 @@ export const customNotes = pgTable('custom_notes', {
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
+export const thesisImages = pgTable('thesis_images', {
+	id: bigserial('id', { mode: 'number' }).primaryKey(),
+	scenarioId: bigint('scenario_id', { mode: 'number' }).notNull().references(() => thesisScenarios.id, { onDelete: 'cascade' }),
+	title: varchar('title', { length: 120 }).notNull(),
+	category: varchar('category', { length: 30 }).notNull(),
+	caption: text('caption').notNull().default(''),
+	sourceUrl: text('source_url').notNull().default(''),
+	imageData: text('image_data').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
 export const sectors = pgTable('sectors', {
 	id: bigserial('id', { mode: 'number' }).primaryKey(),
 	name: varchar('name', { length: 100 }).notNull().unique(),

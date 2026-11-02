@@ -12,6 +12,7 @@
 	import { formatReturn, returnPct } from '$lib/entryPrice.js';
 	import ThesisPriceStatus from '$lib/components/ThesisPriceStatus.svelte';
 	import CompanyDocuments from '$lib/components/CompanyDocuments.svelte';
+	import ThesisImages from '$lib/components/ThesisImages.svelte';
 
 	// Admin-only, irreversible: removes the company with every scenario, version, observation and note.
 	let deleteError = $state('');
@@ -662,6 +663,7 @@ Type the company name to confirm:`
 							<div class="flex justify-between text-sm"><span>{r.segment}</span><span class="font-mono">{r.share_pct}%</span></div>
 						{/each}
 					</div>
+					{#key companyId + detail.scenario_owner}<ThesisImages {companyId} owner={detail.scenario_owner ?? session.email ?? ''} canWrite={viewingOwnScenario && !session.isReadOnly} />{/key}
 					{@render pillarNotesDisplay('the_business')}
 					<CustomTables {companyId} section="the_business" compact excludeTableIds={pillarNoteTableIds('the_business')} />
 				</section>
