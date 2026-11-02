@@ -10,6 +10,8 @@ NSE-listed companies and trusted NSE HTTPS PDF URLs are supported in this versio
 
 Apply `web/drizzle/0035_company_document_summaries.sql` before deploying dependent code. It adds a nullable JSONB document summary to `valuation.announcements`. Existing short announcement summaries remain separate.
 
+Production Vercel builds run `scripts/migrate-company-documents.mjs` before compiling the application. The script checks the expected Neon production endpoint, applies migration 0035 idempotently with bounded lock/statement timeouts, and verifies the column type. A failure stops the deployment. Other environments skip this production-only step. Production credentials remain inside Vercel.
+
 ## Local verification, 2 November 2026
 
 - Applied all migrations through 0035 to a separate local database, `thesis_documents_test`, on port 45432. Existing local application data was left untouched.
