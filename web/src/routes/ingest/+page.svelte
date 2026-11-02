@@ -65,6 +65,10 @@
 	let jsonText = $state('');
 	let jsonValidateMsg = $state('');
 	let jsonValidateOk = $state(false);
+	// The pasted text the form last loaded. Anything else in the box is pending:
+	// it must be loaded before saving, or the save would silently ignore it.
+	let loadedJsonText = $state('');
+	let jsonPending = $derived(jsonText.trim() !== '' && jsonText !== loadedJsonText);
 	// Fields a JSON import got wrong in a way the server would hard-reject
 	// (wrong type, value outside an enum) get auto-corrected here instead -
 	// dropped/defaulted with a note added here, so the import still loads
@@ -750,6 +754,10 @@
 	async function submit() {
 		submitError = '';
 		fieldErrors = [];
+		if (jsonPending) {
+			if (validateJson()) fieldErrors = ['Your pasted JSON is now loaded into the form. Review it, then save again.'];
+			return;
+		}
 		const problem = entryProblem();
 		if (problem) {
 			entryError = problem;
@@ -1017,7 +1025,8 @@ My data:
 		queuedTables = s.queuedTables;
 	}
 
-	function validateJson() {
+	/** Loads the pasted JSON into the form. Returns false (and stays on the JSON tab) if it can't be parsed. */
+	function validateJson(): boolean {
 		jsonValidateMsg = '';
 		jsonValidateOk = false;
 		importWarnings = [];
@@ -1026,13 +1035,17 @@ My data:
 			parsed = JSON.parse(jsonText);
 		} catch (e) {
 			jsonValidateMsg = `Not valid JSON: ${String(e)}`;
-			return;
+			activeTab = 'json';
+			return false;
 		}
 		// Only snapshot once per review cycle - re-validating after tweaking the
 		// JSON (still under "Edit JSON") must not overwrite the ORIGINAL
 		// pre-import state with an already-imported one, or "discard" would
-		// restore the wrong thing.
-		if (!preImportSnapshot) preImportSnapshot = captureFormSnapshot();
+		// restore the wrong thing. A re-load starts from that original state, so
+		// the previous load's tables and notes aren't added a second time.
+		if (preImportSnapshot) restoreFormSnapshot(preImportSnapshot);
+		preImportSnapshot = captureFormSnapshot();
+		loadedJsonText = jsonText;
 		if (mode === 'amend') {
 			const obj = parsed as { thesis_data?: unknown };
 			if (!obj.thesis_data || typeof obj.thesis_data !== 'object') {
@@ -1042,7 +1055,7 @@ My data:
 				jsonValidateOk = true;
 				jsonValidateMsg = 'Loaded for preview below (as thesis_data) - review each section, then Confirm or Save Amendment.';
 				activeTab = 'form';
-				return;
+				return true;
 			}
 			applyParsedPayload(obj as { thesis_data: ThesisDataShape });
 		} else {
@@ -1060,6 +1073,13 @@ My data:
 		jsonValidateOk = true;
 		jsonValidateMsg = 'Loaded for preview below - review each section, then Confirm or submit.';
 		activeTab = 'form';
+		return true;
+	}
+
+	// Leaving the JSON tab with unloaded text loads it, so the form never hides an ignored paste.
+	function showFormTab() {
+		if (jsonPending) validateJson();
+		else activeTab = 'form';
 	}
 
 	// The reviewer is done looking at the imported data rendered in the Form
@@ -1076,6 +1096,7 @@ My data:
 		if (preImportSnapshot) restoreFormSnapshot(preImportSnapshot);
 		preImportSnapshot = null;
 		jsonText = '';
+		loadedJsonText = '';
 		jsonValidateOk = false;
 		jsonValidateMsg = '';
 		importWarnings = [];
@@ -1107,7 +1128,7 @@ My data:
 		<div class="flex border border-border rounded-md overflow-hidden shrink-0">
 			<button
 				type="button"
-				onclick={() => (activeTab = 'form')}
+				onclick={showFormTab}
 				class="px-3 py-1.5 text-xs font-medium {activeTab === 'form' ? 'bg-surface-3' : 'text-muted-fg'}">Form</button
 			>
 			<button
@@ -1163,7 +1184,7 @@ My data:
 			{#if jsonValidateMsg}
 				<div class="mt-2 text-xs {jsonValidateOk ? 'text-good' : 'text-danger'}">{jsonValidateMsg}</div>
 			{/if}
-			<button type="button" onclick={validateJson} class="text-xs text-ok mt-2">Preview in Form tab</button>
+			<button type="button" onclick={validateJson} class="btn btn-primary mt-2">Load into form</button>
 		</div>
 	{:else}
 		{#if preImportSnapshot}
@@ -1477,7 +1498,7 @@ My data:
 						<table class="w-full text-xs">
 							<thead>
 								<tr class="bg-surface-2">
-									{#each qt.built.columns as c (c.key)}
+									{#each qt.built.columns as c, ci (ci)}
 										<th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">{c.label}</th>
 									{/each}
 								</tr>
@@ -1485,7 +1506,7 @@ My data:
 							<tbody>
 								{#each qt.built.rows.slice(0, 5) as row, r (r)}
 									<tr class="border-t border-border">
-										{#each qt.built.columns as c (c.key)}
+										{#each qt.built.columns as c, ci (ci)}
 											<td class="px-2 py-1.5 whitespace-nowrap">{row[c.key] ?? '-'}</td>
 										{/each}
 									</tr>
