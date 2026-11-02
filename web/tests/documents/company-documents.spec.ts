@@ -43,7 +43,8 @@ test('company documents: refresh, PDF summaries, categories, expansion, persiste
 	await expect(section.getByText(/No summarised important documents/)).toBeVisible();
 	await section.getByRole('button', { name: 'Refresh documents', exact: true }).click();
 	const order = section.locator('details').filter({ hasText: 'secured a new manufacturing contract' });
-	await expect(order).toBeVisible(); await expect(section.locator('details')).toHaveCount(2);
+	await expect(order).toBeVisible(); await expect(section.locator('details')).toHaveCount(10);
+	await expect(section.getByText(/Processed 11 of 11 candidate documents/)).toBeVisible();
 	await expect(order.locator('p').filter({ hasText: 'INR 100 crore' })).not.toBeVisible();
 	await order.locator('summary').click(); await expect(order.getByText(/INR 100 crore/)).toBeVisible();
 	await expect(order.getByRole('link', { name: 'Open original filing (PDF)' })).toHaveAttribute('href', /docs-e2e-order.pdf$/);
@@ -52,11 +53,11 @@ test('company documents: refresh, PDF summaries, categories, expansion, persiste
 	await section.getByLabel('Document type').selectOption('Results'); await expect(section.getByText(/No summarised important documents in this category/)).toBeVisible();
 	await section.getByLabel('Document type').selectOption('All');
 	const [cached] = await sql`select count(*)::int as count from valuation.announcements where nse_symbol=${symbol} and document_summary is not null`;
-	expect(cached.count).toBe(3); // Includes a reviewed, excluded routine meeting.
-	await page.reload(); await expect(section.locator('details')).toHaveCount(2);
+	expect(cached.count).toBe(11); // Every candidate, including the oldest and a reviewed routine meeting.
+	await page.reload(); await expect(section.locator('details')).toHaveCount(10);
 	expect((await page.request.get('/api/companies/NOT_A_CARD/documents')).status()).toBe(404);
 	await sql`update public.users set role='read_only' where id=${userId}`;
-	await page.reload(); await expect(section.locator('details')).toHaveCount(2);
+	await page.reload(); await expect(section.locator('details')).toHaveCount(10);
 	await expect(section.getByRole('button', { name: 'Refresh documents', exact: true })).toHaveCount(0);
 	expect((await page.request.post(`/api/companies/${companyId}/documents`)).status()).toBe(403);
 	await page.screenshot({ path: info.outputPath('company-documents.png'), fullPage: true });

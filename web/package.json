@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"dev:tracker": "node scripts/dev-master-tracker.mjs",
-		"build": "node scripts/migrate-company-documents.mjs && vite build && node scripts/package-concall.mjs",
+		"build": "node scripts/migrate-company-documents.mjs && vite build && node scripts/package-concall.mjs && node scripts/validate-company-document-history.mjs",
 		"preview": "vite preview",
 		"test:tracker": "playwright test tests/e2e/master-tracker.spec.ts",
 		"prepare": "svelte-kit sync || echo ''",

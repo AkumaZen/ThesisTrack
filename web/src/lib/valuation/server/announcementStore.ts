@@ -81,13 +81,14 @@ export async function saveAnnouncements(rows: ParsedAnnouncement[]): Promise<num
 	return inserted.length;
 }
 
-export const listAnnouncements = (nseSymbol: string, limit = 50) =>
-	db
+export const listAnnouncements = (nseSymbol: string, limit: number | null = 50) => {
+	const query = db
 		.select()
 		.from(announcements)
 		.where(eq(announcements.nseSymbol, nseSymbol))
-		.orderBy(desc(announcements.announcedAt))
-		.limit(limit);
+		.orderBy(desc(announcements.announcedAt));
+	return limit === null ? query : query.limit(limit);
+};
 
 /** Recent announcements of tracked companies that still lack a summary (newest first). */
 export function listToSummarise(symbols: string[], now: Date, limit: number): Promise<AnnouncementRow[]> {

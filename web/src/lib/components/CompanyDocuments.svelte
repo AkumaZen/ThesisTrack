@@ -1,20 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { DOCUMENT_TYPES, type CompanyDocument } from '$lib/companyDocuments';
+	import { loadDocumentHistory } from '$lib/companyDocumentRefresh';
+	import { DOCUMENT_TYPES, type DocumentRefreshProgress, type CompanyDocument } from '$lib/companyDocuments';
 	let { companyId, canWrite }: { companyId: string; canWrite: boolean } = $props();
 	let documents = $state<CompanyDocument[]>([]);
 	let warnings = $state<string[]>([]);
 	let busy = $state(false);
 	let loaded = $state(false);
+	let progress = $state<DocumentRefreshProgress | null>(null);
 	let category = $state('All');
 	let visible = $derived(documents.filter((d) => d.analysis?.important && (category === 'All' || d.analysis.category === category)));
 	let pending = $derived(documents.filter((d) => !d.analysis).length);
 	async function load(refresh = false) {
 		busy = true; warnings = [];
 		try {
-			const response = await fetch(`/api/companies/${encodeURIComponent(companyId)}/documents`, { method: refresh ? 'POST' : 'GET' });
-			if (!response.ok) { const body = await response.json(); throw new Error(body.detail ?? body.message ?? 'Documents could not be loaded.'); }
-			const body = await response.json(); documents = body.documents; warnings = body.warnings; loaded = true;
+			await loadDocumentHistory(companyId, refresh, (body) => { documents = body.documents; warnings = body.warnings; progress = body.progress ?? null; loaded = true; });
 		} catch (e) { warnings = [e instanceof Error ? e.message : 'Documents could not be loaded.']; }
 		finally { busy = false; }
 	}
@@ -30,6 +30,7 @@
 	<label class="block text-xs mt-4">Document type
 		<select aria-label="Document type" class="ml-2 max-w-full" bind:value={category}><option>All</option>{#each DOCUMENT_TYPES as type}<option>{type}</option>{/each}</select>
 	</label>
+	{#if progress}<p role="status" class="text-sm mt-3">{progress.state === 'reviewing' ? 'Reviewing' : 'Processed'} {progress.processed} of {progress.total} candidate documents from {progress.discovered} exchange filings.{progress.failed ? ` ${progress.failed} need retry.` : ''}</p>{#if progress.state === 'reviewing'}<progress class="w-full mt-2" value={progress.processed} max={Math.max(1, progress.total)} aria-label="Document review progress"></progress>{/if}<p class="text-xs text-muted-fg mt-2">Available NSE history: {progress.oldest ? new Date(progress.oldest).toLocaleDateString('en-IN') : 'not available'} to {progress.newest ? new Date(progress.newest).toLocaleDateString('en-IN') : 'not available'}.</p>{/if}
 	{#each warnings as warning}<p role="status" class="text-sm mt-3 text-danger">{warning}</p>{/each}
 	{#if !loaded && busy}<p role="status" class="text-sm mt-3">Loading saved documents…</p>{/if}
 	{#if loaded && !visible.length}<p class="text-sm mt-4">No summarised important documents{category !== 'All' ? ' in this category' : ''} yet.{canWrite ? ' Refresh documents to check recent filings.' : ''}</p>{/if}
@@ -41,5 +42,6 @@
 			<a class="text-sm underline inline-block mt-3" href={doc.pdfUrl} target="_blank" rel="noopener noreferrer">Open original filing (PDF)</a>
 		</details>
 	{/each}
-	{#if pending}<p class="text-xs text-muted-fg mt-4">{pending} filing(s) awaiting document review. Refresh processes up to five at a time; routine filings are excluded after review.</p>{/if}
+	{#if pending}<p class="text-xs text-muted-fg mt-4">{pending} filing(s) awaiting document review. One Refresh automatically reviews the full history; saved summaries are reused.</p>{/if}
+	{#if documents.some((d) => d.reviewError)}<details class="mt-4"><summary class="text-sm font-medium">Documents requiring retry</summary><ul class="mt-2 space-y-3">{#each documents.filter((d) => d.reviewError) as doc (doc.id)}<li class="text-sm"><a class="underline" href={doc.pdfUrl} target="_blank" rel="noopener noreferrer">{doc.subject}</a><p class="text-xs text-muted-fg mt-1">{doc.reviewError}</p></li>{/each}</ul></details>{/if}
 </section>

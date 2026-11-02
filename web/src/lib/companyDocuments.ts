@@ -7,7 +7,12 @@ export const documentSummarySchema = z.object({
 	takeaway: z.string().min(1).max(400), summary: z.string().min(1).max(4000)
 });
 export type DocumentSummary = z.infer<typeof documentSummarySchema>;
-export type CompanyDocument = { id: number; subject: string; announcedAt: string; pdfUrl: string; analysis: DocumentSummary | null };
+export type CompanyDocument = { id: number; subject: string; announcedAt: string; pdfUrl: string; analysis: DocumentSummary | null; reviewError?: string };
+export type DocumentRefreshProgress = {
+	runId: string; state: 'reviewing' | 'complete' | 'failed'; discovered: number; total: number;
+	processed: number; failed: number; oldest: string | null; newest: string | null;
+};
+export type DocumentResponse = { documents: CompanyDocument[]; warnings: string[]; progress?: DocumentRefreshProgress | null };
 
 export function trustedDocumentUrl(value: string | null): string | null {
 	try {

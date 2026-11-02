@@ -21,14 +21,14 @@ const ddmmyyyy = (d: Date) => {
  *  A date window keeps the answer small: without one NSE returns the whole history (about 1 MB). */
 export async function fetchSymbolAnnouncements(
 	symbol: string,
-	days: number,
+	days: number | null,
 	fetcher: typeof fetch = fetch,
 	now: Date = new Date()
 ): Promise<ParsedAnnouncement[]> {
 	const params = new URLSearchParams({
 		index: 'equities',
 		symbol,
-		from_date: ddmmyyyy(new Date(now.getTime() - days * DAY_MS)),
+		from_date: days === null ? '01-01-1990' : ddmmyyyy(new Date(now.getTime() - days * DAY_MS)),
 		to_date: ddmmyyyy(now)
 	});
 	const res = await fetcher(`https://www.nseindia.com/api/corporate-announcements?${params}`, {
