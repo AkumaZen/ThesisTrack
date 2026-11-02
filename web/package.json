@@ -11,7 +11,8 @@
 		"test:tracker": "playwright test tests/e2e/master-tracker.spec.ts",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"dev:documents-preview": "vite --config vite.documents-preview.config.ts"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.63.0",

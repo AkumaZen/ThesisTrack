@@ -40,20 +40,30 @@ test('company documents: refresh, PDF summaries, categories, expansion, persiste
 	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 	await expect(page).toHaveURL(new RegExp(`/company/${companyId}$`));
 	const section = page.getByRole('region', { name: 'Important documents', exact: true });
-	await expect(section.getByText(/No summarised important documents/)).toBeVisible();
+	await expect(section.getByRole('heading', { name: 'No important documents yet' })).toBeVisible();
 	await section.getByRole('button', { name: 'Refresh documents', exact: true }).click();
 	const order = section.locator('details').filter({ hasText: 'secured a new manufacturing contract' });
 	await expect(order).toBeVisible(); await expect(section.locator('details')).toHaveCount(10);
 	await expect(section.getByText(/Processed 11 of 11 candidate documents/)).toBeVisible();
 	await expect(order.locator('p').filter({ hasText: 'INR 100 crore' })).not.toBeVisible();
 	await order.locator('summary').click(); await expect(order.getByText(/INR 100 crore/)).toBeVisible();
-	await expect(order.getByRole('link', { name: 'Open original filing (PDF)' })).toHaveAttribute('href', /docs-e2e-order.pdf$/);
+	await expect(order.getByRole('link', { name: /^View original PDF/ })).toHaveAttribute('href', /docs-e2e-order.pdf$/);
+	await section.getByLabel('Sort documents').selectOption('oldest');
+	await expect(section.locator('details').first()).toContainText('Historical contract 0');
+	await section.getByLabel('Sort documents').selectOption('newest');
+	await expect(section.locator('details').first()).toContainText('manufacturing contract');
+	await section.getByLabel('Search documents').fill('payment terms');
+	await expect(section.locator('details')).toHaveCount(1);
+	await section.getByLabel('Search documents').fill('no matching phrase');
+	await expect(section.getByRole('heading', { name: 'No matching documents' })).toBeVisible();
+	await section.getByRole('button', { name: 'Clear filters', exact: true }).first().click();
+	await expect(section.locator('details')).toHaveCount(10);
 	await section.getByLabel('Document type').selectOption('Management'); await expect(section.locator('details')).toHaveCount(1);
 	await expect(section.getByText('A new chief financial officer was appointed.')).toBeVisible();
-	await section.getByLabel('Document type').selectOption('Results'); await expect(section.getByText(/No summarised important documents in this category/)).toBeVisible();
+	await section.getByLabel('Document type').selectOption('Results'); await expect(section.getByRole('heading', { name: 'No matching documents' })).toBeVisible();
 	await section.getByLabel('Document type').selectOption('All');
 	const [cached] = await sql`select count(*)::int as count from valuation.announcements where nse_symbol=${symbol} and document_summary is not null`;
-	expect(cached.count).toBe(11); // Every candidate, including the oldest and a reviewed routine meeting.
+	expect(cached.count).toBe(11); // Includes a reviewed, excluded routine meeting.
 	await page.reload(); await expect(section.locator('details')).toHaveCount(10);
 	expect((await page.request.get('/api/companies/NOT_A_CARD/documents')).status()).toBe(404);
 	await sql`update public.users set role='read_only' where id=${userId}`;
