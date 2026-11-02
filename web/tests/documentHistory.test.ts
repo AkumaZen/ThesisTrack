@@ -51,4 +51,13 @@ describe('full document history', () => {
 		expect(url.searchParams.get('from_date')).toBe('01-01-1990');
 		expect(url.searchParams.get('to_date')).toBe('02-11-2026');
 	});
+	it('automatically retries failed reviews instead of leaving them behind after one click', async () => {
+		const fetcher = vi.fn<typeof fetch>()
+			.mockResolvedValueOnce(Response.json({ documents: [], warnings: [], progress: { state: 'complete', failed: 1 } }))
+			.mockResolvedValueOnce(Response.json({ documents: [], warnings: [], progress: { state: 'reviewing', failed: 0 } }))
+			.mockResolvedValueOnce(Response.json({ documents: [], warnings: [], progress: { state: 'complete', failed: 0 } }));
+		await loadDocumentHistory('BALUFORGE', true, vi.fn(), fetcher);
+		expect(fetcher).toHaveBeenCalledTimes(3);
+		expect(JSON.parse(fetcher.mock.calls[1][1]!.body as string).action).toBe('start');
+	});
 });

@@ -17,6 +17,7 @@ if (process.env.VERCEL_ENV === 'production' && company) {
   let result;
   let previousProgress;
   let action = 'start';
+  let retries = 0;
   const started = Date.now();
   for (;;) {
     if (Date.now() - started > 25 * 60_000) throw new Error('Document validation exceeded 25 minutes; its persisted queue can be resumed.');
@@ -29,6 +30,7 @@ if (process.env.VERCEL_ENV === 'production' && company) {
     const newProcessed = (result.progress?.processed ?? 0) - (previousProgress?.processed ?? 0);
     if (newFailures >= 3 && newFailures === newProcessed && result.documents.filter((d) => d.reviewError).every((d) => /OpenAI.*HTTP (400|401|403|404)/.test(d.reviewError))) throw new Error('BALUFORGE validation stopped after repeated provider rejection; inspect the AI request before spending on more documents.');
     previousProgress = result.progress;
+    if (result.progress?.state === 'complete' && result.progress.failed > 0 && retries < 2) { retries++; action = 'start'; continue; }
     if (result.progress?.state !== 'reviewing') break;
     action = 'continue';
   }

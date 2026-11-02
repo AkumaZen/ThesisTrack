@@ -12,6 +12,8 @@ describe('PDF summaries', () => {
 		expect(await summariseDocument(filing, fetcher)).toEqual(analysis);
 		const input = JSON.parse(fetcher.mock.calls[0][1].body);
 		expect(input.model).toBe('gpt-5.6-luna'); expect(input.store).toBe(false);
+		expect(input.text.format.type).toBe('json_schema'); expect(input.text.format.strict).toBe(true);
+		expect(input.text.format.schema.additionalProperties).toBe(false);
 		expect(input.input[0].content[1]).toEqual({ type: 'input_file', file_url: filing.pdfUrl });
 	});
 	it('does not replace failed or unreadable PDFs with a title summary', async () => {
