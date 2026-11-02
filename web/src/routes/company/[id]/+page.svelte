@@ -11,6 +11,7 @@
 	import { session } from '$lib/session.svelte';
 	import { formatReturn, returnPct } from '$lib/entryPrice.js';
 	import ThesisPriceStatus from '$lib/components/ThesisPriceStatus.svelte';
+	import CompanyDocuments from '$lib/components/CompanyDocuments.svelte';
 
 	// Admin-only, irreversible: removes the company with every scenario, version, observation and note.
 	let deleteError = $state('');
@@ -45,6 +46,7 @@ Type the company name to confirm:`
 	let { data }: { data: PageData } = $props();
 
 	const BASE_SECTIONS = [
+		{ id: 'documents', label: 'Important documents' },
 		...THESIS_SECTIONS,
 		{ id: 'references', label: 'References' }
 	];
@@ -650,6 +652,7 @@ Type the company name to confirm:`
 				{/snippet}
 
 				<!-- 1. The Business -->
+				{#key companyId}<CompanyDocuments {companyId} canWrite={session.role !== 'read_only'} />{/key}
 				<section id="cp-sec-business" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
 					<p class="text-sm mt-3 empty:hidden">{t.the_business?.what_it_does}</p>

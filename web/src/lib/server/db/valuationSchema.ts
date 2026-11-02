@@ -407,6 +407,7 @@ export const announcements = pgTable('announcements', {
 	announcedAt: timestamp('announced_at', { withTimezone: true }).notNull(),
 	pdfUrl: text('pdf_url'),
 	summary: text('summary'),
+	documentSummary: jsonb('document_summary'),
 	summarisedAt: timestamp('summarised_at', { withTimezone: true }),
 	summaryAttempts: integer('summary_attempts').notNull().default(0),
 	tag: text('tag'),
