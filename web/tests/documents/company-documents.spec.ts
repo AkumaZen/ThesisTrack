@@ -63,3 +63,17 @@ test('company documents: refresh, PDF summaries, categories, expansion, persiste
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 	expect(errors).toEqual([]);
 });
+
+test('company documents remain visible when a colleague owns the only thesis', async ({ page }) => {
+	await sql`update public.thesis_scenarios set owner=${`colleague-${email}`} where company_id=${companyId}`;
+	await page.goto(`/login?next=${encodeURIComponent(`/company/${companyId}`)}`);
+	await page.getByLabel('Email', { exact: true }).fill(email);
+	await page.getByLabel('Password', { exact: true }).fill(password);
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await expect(page).toHaveURL(new RegExp(`/company/${companyId}$`));
+	await expect(page.getByText("You haven't started a thesis on this company yet.", { exact: true })).toBeVisible();
+	await expect(page.getByRole('region', { name: 'Important documents', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: /colleague-/ }).click();
+	await expect(page.getByRole('region', { name: 'Important documents', exact: true })).toHaveCount(1);
+	await expect(page.getByRole('region', { name: 'Important documents', exact: true })).toBeVisible();
+});

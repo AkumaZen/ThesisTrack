@@ -505,6 +505,7 @@ Type the company name to confirm:`
 					{/each}
 				</div>
 			{/if}
+			{#key companyId}<CompanyDocuments {companyId} canWrite={!session.isReadOnly} />{/key}
 			<div class="mt-6 rounded-md border border-dashed border-border p-5 text-center">
 				<p class="text-sm text-muted-fg mb-3">You haven't started a thesis on this company yet.</p>
 				<button
@@ -652,7 +653,7 @@ Type the company name to confirm:`
 				{/snippet}
 
 				<!-- 1. The Business -->
-				{#key companyId}<CompanyDocuments {companyId} canWrite={session.role !== 'read_only'} />{/key}
+				{#key companyId}<CompanyDocuments {companyId} canWrite={!session.isReadOnly} />{/key}
 				<section id="cp-sec-business" class="mt-5 rounded-xl border border-border bg-surface p-5 max-sm:p-4 scroll-mt-20">
 					<h3 class="font-medium text-sm text-muted-fg uppercase tracking-wide">1. The Business</h3>
 					<p class="text-sm mt-3 empty:hidden">{t.the_business?.what_it_does}</p>
