@@ -1,4 +1,5 @@
 Read `.claude/project-memory.md` at the start of meaningful work and after compaction.
+For how the whole system fits together (architecture, data model, every tool, APIs, jobs, recipes, invariants), read `docs/SYSTEM.md`.
 
 ## Working mode
 - The main session is plain Opus 5.5 with default settings and does the work itself: reading, editing, running commands and tests.
