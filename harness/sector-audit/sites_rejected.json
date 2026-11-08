@@ -1,4 +1,11 @@
 {
+ "ABINFRA": {
+  "rejected": "infrabuild.com is an unrelated Australian steel company",
+  "strict": "domain carries the full name",
+  "url": "https://www.infrabuild.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['infrabuild'] matched 1.00; investor section linked"
+ },
  "AKCAPIT": {
   "rejected": "foreign trading platform capital.com",
   "url": "https://capital.com/"
@@ -141,6 +148,13 @@
   "via": "name-derived domain",
   "why": "name tokens ['prakash'] matched 1.00; investor section linked"
  },
+ "PRIMESECU": {
+  "rejected": "primesecurities.in shows Prime Secure & Hospitality Services, a namesake",
+  "strict": "domain carries the full name",
+  "url": "https://www.primesecurities.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['prime', 'securities'] matched 1.00; investor section linked"
+ },
  "PTL": {
   "rejected": "homepage unreachable on recheck: Blocked",
   "url": "https://expireddomains.com/",
@@ -204,6 +218,13 @@
   "url": "https://www.vaibhav.co.in/",
   "via": "name-derived domain",
   "why": "name tokens ['vaibhav'] matched 1.00; investor section linked"
+ },
+ "VHL": {
+  "rejected": "vardhman.com is the Vardhman textile group site",
+  "strict": "domain carries the full name",
+  "url": "https://www.vardhman.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['vardhman'] matched 1.00; investor section linked"
  },
  "VSSL": {
   "rejected": "manual review: vardhman.com is the Vardhman textile group, not Vardhman Special Steels",

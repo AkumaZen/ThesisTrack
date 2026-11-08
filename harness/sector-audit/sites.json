@@ -23,12 +23,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['aarti', 'pharmalabs'] matched 1.00; investor section linked"
  },
- "ABINFRA": {
-  "strict": "domain carries the full name",
-  "url": "https://www.infrabuild.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['infrabuild'] matched 1.00; investor section linked"
- },
  "ADOR": {
   "strict": "domain carries the full name",
   "url": "https://adorwelding.com/",
@@ -2009,12 +2003,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['prevest', 'denpro'] matched 1.00; investor section linked"
  },
- "PRIMESECU": {
-  "strict": "domain carries the full name",
-  "url": "https://www.primesecurities.in/",
-  "via": "name-derived domain",
-  "why": "name tokens ['prime', 'securities'] matched 1.00; investor section linked"
- },
  "PRIMO": {
   "strict": "domain carries the full name",
   "url": "https://primochemicals.in/",
@@ -2866,12 +2854,6 @@
   "url": "https://www.verandalearning.com/",
   "via": "name-derived domain",
   "why": "name tokens ['veranda', 'learning'] matched 1.00; investor section linked"
- },
- "VHL": {
-  "strict": "domain carries the full name",
-  "url": "https://www.vardhman.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['vardhman'] matched 1.00; investor section linked"
  },
  "VHLTD": {
   "strict": "domain carries the full name",
