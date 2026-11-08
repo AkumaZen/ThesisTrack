@@ -143,10 +143,11 @@
   "why": "name tokens ['ncl'] matched 1.00; investor section linked"
  },
  "NIITMTS": {
-  "rejected": "legal name not on page and domain lacks full name [title: NIIT India \u2013 Job-Ready Tech and GenAI Courses Online]",
+  "rejected": "niitmts.com redirects to niit.com, which shows NIIT Ltd retail courses, not NIIT Learning Systems",
+  "strict": "manual: page reached, company brand/legal name variant on page",
   "url": "https://www.niit.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['niit', 'learning'] matched 1.00; investor section linked"
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
  },
  "NOVARTIND": {
   "rejected": "manual review: novartis.com is the global parent, not Novartis India Ltd",

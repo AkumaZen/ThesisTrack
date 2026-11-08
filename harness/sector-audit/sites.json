@@ -35,6 +35,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['advance', 'agrolife'] matched 1.00; investor section linked"
  },
+ "AEROFLEX": {
+  "strict": "domain carries the full name and page is Indian [title: Aeroflex Industries | Home]",
+  "url": "https://www.aeroflexindia.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "AFSL": {
   "strict": "strict-checked",
   "url": "https://abans.co.in/",
@@ -58,6 +64,18 @@
   "url": "https://www.anlon.in/",
   "via": "name-derived domain",
   "why": "name tokens ['anlon', 'healthcare'] matched 1.00; investor section linked"
+ },
+ "AHLUCONT": {
+  "strict": "page states the legal name [title: AHLUWALIA CONTRACTS (INDIA) LTD. | ACIL]",
+  "url": "https://www.acilnet.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "AJAXENGG": {
+  "strict": "page states the legal name [title: AJAX-Engg Where Dreams Dare]",
+  "url": "https://www.ajax-engg.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "ALLCARGO": {
   "strict": "domain carries the full name",
@@ -106,6 +124,12 @@
   "url": "https://www.anuhpharma.com/",
   "via": "name-derived domain",
   "why": "name tokens ['anuh', 'pharma'] matched 1.00; investor section linked"
+ },
+ "ANUP": {
+  "strict": "page states the legal name [title: Anup Engineering Limited | Shell and Tube Heat Exchanger]",
+  "url": "https://www.anupengg.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "APCOTEXIND": {
   "strict": "domain carries the full name",
@@ -173,6 +197,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['anand', 'rathi', 'share', 'stock', 'brokers'] matched 1.00; investor section linked"
  },
+ "ARTEMISMED": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.artemishospitals.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
+ },
  "ARVINDFASN": {
   "strict": "domain carries the full name",
   "url": "https://www.arvindfashions.com/",
@@ -185,6 +215,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['arvind', 'smartspaces'] matched 1.00; investor section linked"
  },
+ "ASHAPURMIN": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.ashapura.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
+ },
  "ASHOKA": {
   "strict": "domain carries the full name",
   "url": "https://www.ashokabuildcon.com/",
@@ -196,6 +232,12 @@
   "url": "https://www.asianenergy.com/",
   "via": "name-derived domain",
   "why": "name tokens ['asian', 'energy'] matched 1.00; investor section linked"
+ },
+ "ASMTEC": {
+  "strict": "page states the legal name [title: ASM Technologies Ltd - Technological Services | Digital Solutions | Co]",
+  "url": "https://www.asmltd.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "ATL": {
   "strict": "domain carries the full name",
@@ -220,6 +262,12 @@
   "url": "https://avadhsugar.com/",
   "via": "strict-checked",
   "why": "name tokens ['avadh', 'sugar', 'energy'] matched 1.00; investor section linked"
+ },
+ "AVANTEL": {
+  "strict": "domain carries the full name and page is Indian [title: Avantel]",
+  "url": "https://www.avantel.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "AVTNPL": {
   "strict": "domain carries the full name",
@@ -287,6 +335,18 @@
   "via": "name-derived domain",
   "why": "name tokens ['balmer', 'lawrie'] matched 1.00; investor section linked"
  },
+ "BALUFORGE": {
+  "strict": "page states the legal name [title: Balu Forge Industries | Forging & Precision Machining]",
+  "url": "https://www.baluindustries.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "BANSALWIRE": {
+  "strict": "domain carries the full name and page is Indian [title: Stainless Steel Wire Suppliers and Exporters in India]",
+  "url": "https://www.bansalwire.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "BBL": {
   "strict": "domain carries the full name",
   "url": "https://www.bharatbijlee.com/",
@@ -298,6 +358,12 @@
   "url": "https://www.brightcomgroup.com/",
   "via": "name-derived domain",
   "why": "name tokens ['brightcom'] matched 1.00; investor section linked"
+ },
+ "BECTORFOOD": {
+  "strict": "page states the legal name [title: Home]",
+  "url": "https://www.bectorfoods.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "BEEKAY": {
   "strict": "domain carries the full name",
@@ -388,6 +454,12 @@
   "url": "https://www.bnagrochem.com/",
   "via": "name-derived domain",
   "why": "name tokens ['bn', 'agrochem'] matched 1.00; investor section linked"
+ },
+ "BONDADA": {
+  "strict": "page states the legal name [title: Bondada Group | Engineering & Infrastructure Solutions]",
+  "url": "https://www.bondada.net/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "BOROLTD": {
   "strict": "domain carries the full name",
@@ -671,6 +743,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['electrotherm'] matched 1.00; investor section linked"
  },
+ "ELLEN": {
+  "strict": "page states the legal name [title: Ellenbarrie]",
+  "url": "https://www.ellenbarrie.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "ELPROINTL": {
   "strict": "domain carries the full name",
   "url": "https://www.elpro.co.in/",
@@ -719,6 +797,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['epigral'] matched 1.00; investor section linked"
  },
+ "EPL": {
+  "strict": "page states the legal name [title: Home - EPL - Leading the pack]",
+  "url": "https://www.eplglobal.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "ESTER": {
   "strict": "domain carries the full name",
   "url": "https://www.esterindustries.com/",
@@ -760,6 +844,12 @@
   "url": "https://feddersholding.com/",
   "via": "name-derived domain",
   "why": "name tokens ['fedders', 'holding'] matched 1.00; investor section linked"
+ },
+ "FEDFINA": {
+  "strict": "page states the legal name [title: Fedfina \u2013 Financial Institution for Gold loan, Home loan & Property Lo]",
+  "url": "https://www.fedfina.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "FERMENTA": {
   "strict": "domain carries the full name",
@@ -845,6 +935,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['geojit', 'financial'] matched 1.00; investor section linked"
  },
+ "GHCL": {
+  "strict": "page states the legal name [title: GHCL \u2013 Industrial Salt, Soda Ash Manufacturer India]",
+  "url": "https://www.ghcl.co.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "GHCLTEXTIL": {
   "strict": "domain carries the full name",
   "url": "https://ghcltextiles.co.in/",
@@ -893,6 +989,24 @@
   "via": "name-derived domain",
   "why": "name tokens ['gokul', 'agro', 'resources'] matched 1.00; investor section linked"
  },
+ "GOLDIAM": {
+  "strict": "domain carries the full name and page is Indian [title: Goldiam - Diamond Jewelry Manufacturing]",
+  "url": "https://www.goldiam.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "GOODLUCK": {
+  "strict": "domain carries the full name and page is Indian [title: Goodluck India: Leading Manufacturer of Industrial Steel Products]",
+  "url": "https://www.goodluckindia.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "GOPAL": {
+  "strict": "page states the legal name [title: home - Gopal Snacks Limited.]",
+  "url": "https://www.gopalnamkeen.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "GREENLAM": {
   "strict": "domain carries the full name",
   "url": "https://www.greenlamindustries.com/",
@@ -923,6 +1037,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['grm', 'overseas'] matched 1.00; investor section linked"
  },
+ "GSFC": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.gsfclimited.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
+ },
  "GSPCROP": {
   "strict": "page states the legal name [title: GSP Crop Science Limited: Innovating Agriculture with Cutting-Edge Sol]",
   "url": "https://www.gspcrop.in/",
@@ -940,6 +1060,24 @@
   "url": "https://www.gufic.com/",
   "via": "name-derived domain",
   "why": "name tokens ['gufic', 'biosciences'] matched 1.00; investor section linked"
+ },
+ "GUJALKALI": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.gacl.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
+ },
+ "GUJTHEM": {
+  "strict": "page states the legal name [title: Fermentation Driven APIs and Biopharmaceutical Manufacturing | Gujarat]",
+  "url": "https://www.gtbl.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "GULFOILLUB": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://india.gulfoilltd.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
  },
  "HALDYNGL": {
   "strict": "domain carries the full name",
@@ -977,11 +1115,29 @@
   "via": "name-derived domain",
   "why": "name tokens ['hawkins', 'cooker'] matched 1.00; investor section linked"
  },
+ "HCC": {
+  "strict": "page states the legal name [title: Welcome to the HCC website]",
+  "url": "https://www.hccindia.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "HEALTHX": {
   "strict": "strict-checked",
   "url": "https://www.healthxplatform.com/",
   "via": "strict-checked",
   "why": "name tokens ['health', 'platform'] matched 1.00; investor section linked"
+ },
+ "HEIDELBERG": {
+  "strict": "page states the legal name [title: Top Cement Manufacturer Companies in India by mycem cement]",
+  "url": "https://www.mycemco.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "HEMIPROP": {
+  "strict": "page states the legal name [title: HPIL \u2013 Hemisphere Properties India Limited]",
+  "url": "https://www.hpil.co.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "HERANBA": {
   "strict": "domain carries the full name",
@@ -1073,6 +1229,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['indo', 'count'] matched 1.00; investor section linked"
  },
+ "ICRA": {
+  "strict": "page states the legal name [title: Home - ICRA An Affiliate of Moody's]",
+  "url": "https://www.icra.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "IFBAGRO": {
   "strict": "domain carries the full name",
   "url": "https://www.ifbagro.in/",
@@ -1120,6 +1282,12 @@
   "url": "https://indianhumepipe.com/",
   "via": "name-derived domain",
   "why": "name tokens ['hume', 'pipe'] matched 1.00; investor section linked"
+ },
+ "INDIGOPNTS": {
+  "strict": "domain carries the full name and page is Indian [title: Indigo Paints: Wall Paint & Waterproofing Solutions]",
+  "url": "https://www.indigopaints.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "INDOAMIN": {
   "strict": "domain carries the full name",
@@ -1223,6 +1391,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['jagsonpal', 'pharmaceuticals'] matched 1.00; investor section linked"
  },
+ "JAMNAAUTO": {
+  "strict": "page states the legal name [title: Jamna Auto Industries Ltd]",
+  "url": "https://www.jaispring.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "JAYAGROGN": {
   "strict": "page states the legal name [title: Jayant Agro-Organics Limited]",
   "url": "https://www.jayantagro.com/",
@@ -1234,6 +1408,12 @@
   "url": "https://www.jindalpoly.com/",
   "via": "name-derived domain",
   "why": "name tokens ['jindal', 'poly', 'films'] matched 1.00; investor section linked"
+ },
+ "JKIL": {
+  "strict": "page states the legal name [title: J. Kumar]",
+  "url": "https://www.jkumar.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "JKPAPER": {
   "strict": "domain carries the full name",
@@ -1252,6 +1432,12 @@
   "url": "https://jojolimited.com/",
   "via": "name-derived domain",
   "why": "name tokens ['jojo'] matched 1.00; investor section linked"
+ },
+ "JSFB": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://jana.bank.in/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
  },
  "JUBLCPL": {
   "strict": "page states the legal name [title: Jubilant Agri - Empowering Farmers with Sustainable Crop Nutrition & A]",
@@ -1313,6 +1499,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['kilitch', 'drugs'] matched 1.00; investor section linked"
  },
+ "KINGFA": {
+  "strict": "page states the legal name [title: High Quality Polymer Compounding & PPE Manufacturer in India]",
+  "url": "https://www.kingfaindia.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "KIRLOSIND": {
   "strict": "domain carries the full name",
   "url": "https://www.kirloskarindustries.com/",
@@ -1336,6 +1528,12 @@
   "url": "https://www.kmew.in/",
   "via": "strict-checked",
   "why": "name tokens ['knowledge', 'marine', 'engineering', 'works'] matched 1.00; investor section linked"
+ },
+ "KNRCON": {
+  "strict": "page states the legal name [title: Welcome to KNR Constructions Ltd]",
+  "url": "https://www.knrcl.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "KOKUYOCMLN": {
   "strict": "domain carries the full name",
@@ -1361,6 +1559,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['kothari', 'petrochem'] matched 1.00; investor section linked"
  },
+ "KOVAI": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.kmchhospitals.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
+ },
  "KPEL": {
   "strict": "domain carries the full name",
   "url": "https://kpenergy.in/",
@@ -1373,11 +1577,23 @@
   "via": "name-derived domain",
   "why": "name tokens ['krishival', 'foods'] matched 1.00; investor section linked"
  },
+ "KRN": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.krnheatexchanger.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
+ },
  "KRSNAA": {
   "strict": "domain carries the full name",
   "url": "https://krsnaadiagnostics.com/",
   "via": "name-derived domain",
   "why": "name tokens ['krsnaa', 'diagnostics'] matched 1.00; investor section linked"
+ },
+ "KSCL": {
+  "strict": "domain carries the full name and page is Indian [title: India\u2019s largest agriculture company - KAVERISEEDS]",
+  "url": "https://www.kaveriseeds.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "KSHINTL": {
   "strict": "page states the legal name [title: KSH International | India's Leading Magnet Winding Wires Exporter]",
@@ -1432,6 +1648,12 @@
   "url": "https://www.lemeriteexports.com/",
   "via": "name-derived domain",
   "why": "name tokens ['le', 'merite', 'exports'] matched 1.00; investor section linked"
+ },
+ "LGBBROSLTD": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.lgb.co.in/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
  },
  "LIKHITHA": {
   "strict": "page states the legal name [title: Likhitha Infrastructure Limited]",
@@ -1517,11 +1739,29 @@
   "via": "name-derived domain",
   "why": "name tokens ['mangalam', 'cement'] matched 1.00; investor section linked"
  },
+ "MANINFRA": {
+  "strict": "page states the legal name [title: Maninfra]",
+  "url": "https://www.maninfra.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "MAPMYINDIA": {
+  "strict": "page states the legal name [title: MapmyIndia - India\u2019s best maps | Bringing deep tech to Maps, Location ]",
+  "url": "https://www.mapmyindia.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "MARATHON": {
   "strict": "strict-checked",
   "url": "https://marathon.in/",
   "via": "strict-checked",
   "why": "name tokens ['marathon', 'nextgen', 'realty'] matched 1.00; investor section linked"
+ },
+ "MASFIN": {
+  "strict": "page states the legal name [title: Home - MAS Financial Services]",
+  "url": "https://www.mas.co.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "MASTERTR": {
   "strict": "domain carries the full name",
@@ -1540,6 +1780,12 @@
   "url": "https://www.mayuruniquoters.com/",
   "via": "name-derived domain",
   "why": "name tokens ['mayur', 'uniquoters'] matched 1.00; investor section linked"
+ },
+ "MBAPL": {
+  "strict": "page states the legal name [title: MBAPL]",
+  "url": "https://www.mbapl.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "MCLEODRUSS": {
   "strict": "domain carries the full name",
@@ -1612,6 +1858,12 @@
   "url": "https://www.modisonltd.com/",
   "via": "name-derived domain",
   "why": "name tokens ['modison'] matched 1.00; investor section linked"
+ },
+ "MOIL": {
+  "strict": "page states the legal name [title: Moil Limited \u2013 Leading Producer of Manganese Ore in India]",
+  "url": "https://www.moil.nic.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "MOL": {
   "strict": "page states the legal name [title: Home - Meghmani Organics Ltd, Chemistry of Success at Work]",
@@ -1703,6 +1955,24 @@
   "via": "name-derived domain",
   "why": "name tokens ['ndr', 'auto', 'components'] matched 1.00; investor section linked"
  },
+ "NEOGEN": {
+  "strict": "page states the legal name [title: Pioneer in Bromine and Lithium Chemistry in India | Pioneer in Bromine]",
+  "url": "https://www.neogenchem.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "NEPHROPLUS": {
+  "strict": "page states the legal name [title: Trusted Dialysis Clinic Across India | 500+ NephroPlus Dialysis Center]",
+  "url": "https://www.nephroplus.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "NETWORK18": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.nw18.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
+ },
  "NEUEON": {
   "strict": "domain carries the full name",
   "url": "https://www.neueon.in/",
@@ -1769,6 +2039,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['nocil'] matched 1.00; investor section linked"
  },
+ "NORTHARC": {
+  "strict": "page states the legal name [title: Northern Arc]",
+  "url": "https://www.northernarc.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "NRBBEARING": {
   "strict": "domain carries the full name",
   "url": "https://nrbbearings.com/",
@@ -1816,6 +2092,12 @@
   "url": "https://www.onmobile.com/",
   "via": "name-derived domain",
   "why": "name tokens ['onmobile'] matched 1.00; investor section linked"
+ },
+ "OPTIEMUS": {
+  "strict": "page states the legal name [title: Optiemus Infracom \u2013 Indian Technology Enterprise & Telecom Group]",
+  "url": "https://www.optiemus.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "ORICONENT": {
   "strict": "domain carries the full name",
@@ -1901,6 +2183,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['parag', 'milk', 'foods'] matched 1.00; investor section linked"
  },
+ "PARAS": {
+  "strict": "page states the legal name [title: Paras Defence & Space Technologies Ltd | Indian Defence]",
+  "url": "https://parasdefence.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "PASHUPATI": {
   "strict": "domain carries the full name",
   "url": "https://www.pashupaticotspin.com/",
@@ -1912,6 +2200,12 @@
   "url": "https://pudumjee.com/",
   "via": "name-derived domain",
   "why": "name tokens ['pudumjee', 'paper'] matched 1.00; investor section linked"
+ },
+ "PDSL": {
+  "strict": "page states the legal name [title: Who We Are - PDS]",
+  "url": "https://www.pdsltd.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "PENIND": {
   "strict": "domain carries the full name",
@@ -1984,6 +2278,18 @@
   "url": "https://prabhaenergy.com/",
   "via": "name-derived domain",
   "why": "name tokens ['prabha', 'energy'] matched 1.00; investor section linked"
+ },
+ "PRAJIND": {
+  "strict": "page states the legal name [title: Home - Praj Industries]",
+  "url": "https://www.praj.net/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "PRECWIRE": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.precisionwires.com/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
  },
  "PREVEST": {
   "strict": "domain carries the full name",
@@ -2063,11 +2369,23 @@
   "via": "name-derived domain",
   "why": "name tokens ['radhika', 'jeweltech'] matched 1.00; investor section linked"
  },
+ "RAIN": {
+  "strict": "page states the legal name [title: Home Page | Rain Industries Limited]",
+  "url": "https://www.rain-industries.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "RAJESH": {
   "strict": "domain carries the full name",
   "url": "https://www.rajeshpower.com/",
   "via": "name-derived domain",
   "why": "name tokens ['rajesh', 'power'] matched 1.00; investor section linked"
+ },
+ "RAJESHEXPO": {
+  "strict": "page states the legal name [title: Rajesh Exports | Gold and Diamond Jewellery Manufacturer]",
+  "url": "https://www.rajeshindia.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "RAJOOENG": {
   "strict": "page states the legal name [title: Rajoo Engineers | Leading Manufacturer & Exporter of Plastic Extrusion]",
@@ -2123,11 +2441,23 @@
   "via": "name-derived domain",
   "why": "name tokens ['raymond', 'realty'] matched 1.00; investor section linked"
  },
+ "RBA": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.burgerking.in/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
+ },
  "RBZJEWEL": {
   "strict": "domain carries the full name",
   "url": "https://rbzjewellers.com/",
   "via": "name-derived domain",
   "why": "name tokens ['rbz', 'jewellers'] matched 1.00; investor section linked"
+ },
+ "RELINFRA": {
+  "strict": "page states the legal name [title: Reliance Infrastructure]",
+  "url": "https://www.rinfra.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "RELTD": {
   "strict": "domain carries the full name",
@@ -2146,6 +2476,12 @@
   "url": "https://www.reproindialtd.com/",
   "via": "name-derived domain",
   "why": "name tokens ['repro'] matched 1.00; investor section linked"
+ },
+ "RESPONIND": {
+  "strict": "domain carries the full name and page is Indian [title: Vinyl Flooring & Synthetic Leather | Responsive Industries]",
+  "url": "https://www.responsiveindustries.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "RGL": {
   "strict": "domain carries the full name",
@@ -2255,6 +2591,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['rushil', 'decor'] matched 1.00; investor section linked"
  },
+ "RUSTOMJEE": {
+  "strict": "page states the legal name [title: Top Builders & Real Estate Developers in Mumbai | Luxury Realty Develo]",
+  "url": "https://www.rustomjee.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "SAATVIKGL": {
   "strict": "page states the legal name [title: Saatvik Green Energy \u2014 Top Solar PV Module Manufacturer]",
   "url": "https://www.saatvikgroup.com/",
@@ -2357,6 +2699,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['senco', 'gold'] matched 1.00; investor section linked"
  },
+ "SENORES": {
+  "strict": "page states the legal name [title: Home - Senores Pharmaceuticals]",
+  "url": "https://www.senorespharma.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "SEPC": {
   "strict": "page states the legal name [title: Shriram EPC | Home]",
   "url": "https://www.sepc.in/",
@@ -2393,6 +2741,12 @@
   "via": "name-derived domain",
   "why": "name tokens ['sharda', 'motor'] matched 1.00; investor section linked"
  },
+ "SHILCTECH": {
+  "strict": "domain carries the full name and page is Indian [title: Shilchar Technologies Ltd.]",
+  "url": "https://www.shilchar.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "SHINDL": {
   "strict": "domain carries the full name",
   "url": "https://sharatindustries.com/",
@@ -2410,6 +2764,12 @@
   "url": "https://shivacement.com/",
   "via": "name-derived domain",
   "why": "name tokens ['shiva', 'cement'] matched 1.00; investor section linked"
+ },
+ "SHOPERSTOP": {
+  "strict": "domain carries the full name and page is Indian [title: Shoppers Stop]",
+  "url": "https://corporate.shoppersstop.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "SHRADDHA": {
   "strict": "domain carries the full name",
@@ -2471,17 +2831,35 @@
   "via": "name-derived domain",
   "why": "name tokens ['sirca', 'paints'] matched 1.00; investor section linked"
  },
+ "SIS": {
+  "strict": "page states the legal name [title: SIS India \u2013 A Market Leader in Security, Facility Management & Cash Lo]",
+  "url": "https://www.sisindia.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "SIYSIL": {
   "strict": "page states the legal name [title: Siyaram's - Top Fabric & Clothing Manufacturers in India | Men's Cloth]",
   "url": "https://www.siyaram.com/",
   "via": "name-derived domain",
   "why": "name tokens ['siyaram', 'silk', 'mills'] matched 1.00; investor section linked"
  },
+ "SJS": {
+  "strict": "page states the legal name [title: SJS]",
+  "url": "https://www.sjsindia.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "SKIPPER": {
   "strict": "domain carries the full name",
   "url": "https://www.skipperlimited.com/",
   "via": "name-derived domain",
   "why": "name tokens ['skipper'] matched 1.00; investor section linked"
+ },
+ "SKYGOLD": {
+  "strict": "manual: page reached, company brand/legal name variant on page",
+  "url": "https://www.skygold.co.in/",
+  "via": "manual",
+  "why": "known official domain; strict test failed only on name spelling or brand title"
  },
  "SOLEX": {
   "strict": "page states the legal name [title: Solar PV Module Manufacturers Gujarat | Solar Panel Manufacturing Comp]",
@@ -2645,6 +3023,24 @@
   "via": "name-derived domain",
   "why": "name tokens ['suven', 'life', 'sciences'] matched 1.00; investor section linked"
  },
+ "SWARAJENG": {
+  "strict": "page states the legal name [title: Home - Swaraj Engines - SwarajEnterprise]",
+  "url": "https://www.swarajenterprise.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "SWSOLAR": {
+  "strict": "page states the legal name [title: Sterling & Wilson Renewable Energy | Solar EPC Contractors]",
+  "url": "https://www.sterlingandwilsonre.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "SYMPHONY": {
+  "strict": "domain carries the full name and page is Indian [title: Symphony Limited: Best Air Coolers in India for Home, Commercial & Ind]",
+  "url": "https://www.symphonylimited.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "SYNCOMF": {
   "strict": "domain carries the full name",
   "url": "https://syncomformulations.com/",
@@ -2728,6 +3124,12 @@
   "url": "https://www.thomascook.in/",
   "via": "name-derived domain",
   "why": "name tokens ['thomas', 'cook'] matched 1.00; investor section linked"
+ },
+ "TIIL": {
+  "strict": "domain carries the full name and page is Indian [title: Technocraft Industries | Engineering Excellence Since 1972]",
+  "url": "https://www.technocraftgroup.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "TINNARUBR": {
   "strict": "page states the legal name [title: Tinna \u2013 Caring for Environment]",
@@ -2873,11 +3275,35 @@
   "via": "name-derived domain",
   "why": "name tokens ['vishnu', 'chemicals'] matched 1.00; investor section linked"
  },
+ "VMART": {
+  "strict": "page states the legal name [title: ]",
+  "url": "https://www.vmart.co.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "VPRPL": {
   "strict": "page states the legal name [title: Vishnu Prakash R. Punglia Limited]",
   "url": "https://www.vprp.co.in/",
   "via": "name-derived domain",
   "why": "name tokens ['vishnu', 'prakash', 'punglia'] matched 1.00; investor section linked"
+ },
+ "VRLLOG": {
+  "strict": "page states the legal name [title: Home - VRL Logistics Ltd]",
+  "url": "https://www.vrlgroup.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "VSTIND": {
+  "strict": "page states the legal name [title: VST - ECOPOWER]",
+  "url": "https://www.vsthyd.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
+ "VSTTILLERS": {
+  "strict": "page states the legal name [title: VST Tillers Tractors \u2013 Global Leader in Compact Tractors & Farm Machin]",
+  "url": "https://www.vsttractors.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "WAAREEINDO": {
   "strict": "domain carries the full name",
