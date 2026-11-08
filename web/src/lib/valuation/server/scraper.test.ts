@@ -44,6 +44,18 @@ describe('extractAnnual', () => {
 			{ label: 'Mar 2025', sales: 1200, opmPct: 22, netProfit: 150, equity: 600, borrowings: 150, fixedAssets: 330, cwip: 40, roce: 21 }
 		]);
 	});
+	it('reads Sales, not the "Sales growth" row Screener lists right below it', () => {
+		const rows = extractAnnual(
+			cheerio.load(
+				table('profit-loss', ['Mar 2024', 'Mar 2025'], [
+					['Sales&nbsp;+', ['46,447', '66,231']],
+					['Sales growth', ['90%', '42%']],
+					['Net Profit&nbsp;+', ['76', '227']]
+				])
+			)
+		);
+		expect(rows.map((r) => r.sales)).toEqual([46447, 66231]);
+	});
 	it('leaves lines null when a table is absent', () => {
 		const rows = extractAnnual(cheerio.load(table('profit-loss', ['Mar 2025'], [['Sales', [5]]])));
 		expect(rows).toEqual([

@@ -137,19 +137,30 @@ function extractRatio($: cheerio.CheerioAPI, label: string): number | null {
 	return value;
 }
 
-function extractRow($: cheerio.CheerioAPI, sectionId: string, rowLabel: string): (number | null)[] {
-	let cells: (number | null)[] = [];
-	$(`#${sectionId} table tbody tr`).each((_, tr) => {
-		const label = $(tr).find('td').first().text().trim();
-		if (label.toLowerCase().startsWith(rowLabel.toLowerCase())) {
-			cells = $(tr)
-				.find('td')
-				.slice(1)
-				.map((_, td) => parseNumber($(td).text()))
-				.get();
-		}
+/** The row for `rowLabel` among `rows`: an exact label match (ignoring Screener's "+" expander)
+ *  wins, else the first row whose label starts with it. Screener lists derived rows such as
+ *  "Sales growth" right below "Sales +", so a later prefix match must never replace an earlier one. */
+function findRowCells($: cheerio.CheerioAPI, rows: ReturnType<cheerio.CheerioAPI>, rowLabel: string): (number | null)[] {
+	const want = rowLabel.toLowerCase();
+	let exact = -1;
+	let prefix = -1;
+	rows.each((i, tr) => {
+		const label = $(tr).find('td').first().text().replace(/ /g, ' ').replace(/\+\s*$/, '').trim().toLowerCase();
+		if (label === want && exact < 0) exact = i;
+		else if (label.startsWith(want) && prefix < 0) prefix = i;
 	});
-	return cells;
+	const index = exact >= 0 ? exact : prefix;
+	if (index < 0) return [];
+	return rows
+		.eq(index)
+		.find('td')
+		.slice(1)
+		.map((_, td) => parseNumber($(td).text()))
+		.get();
+}
+
+function extractRow($: cheerio.CheerioAPI, sectionId: string, rowLabel: string): (number | null)[] {
+	return findRowCells($, $(`#${sectionId} table tbody tr`), rowLabel);
 }
 
 function extractYearLabels($: cheerio.CheerioAPI, sectionId: string): string[] {
@@ -186,21 +197,7 @@ function extractShareholding($: cheerio.CheerioAPI): CompanyFinancials['sharehol
 	if (labels.length === 0) return null;
 
 	function rowCells(rowLabel: string): (number | null)[] {
-		let cells: (number | null)[] = [];
-		$('#shareholding table')
-			.first()
-			.find('tbody tr')
-			.each((_, tr) => {
-				const label = $(tr).find('td').first().text().trim();
-				if (label.toLowerCase().startsWith(rowLabel.toLowerCase())) {
-					cells = $(tr)
-						.find('td')
-						.slice(1)
-						.map((_, td) => parseNumber($(td).text()))
-						.get();
-				}
-			});
-		return cells;
+		return findRowCells($, $('#shareholding table').first().find('tbody tr'), rowLabel);
 	}
 	function nthFromEnd(cells: (number | null)[], fromEnd: number): number | null {
 		const idx = cells.length - 1 - fromEnd;
