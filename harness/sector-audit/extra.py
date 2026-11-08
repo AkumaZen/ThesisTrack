@@ -25,7 +25,13 @@ def main():
         final, page = fetch.get(url)
         title = " | ".join(fetch.meta(page))
         text = fetch.visible_text(page)
-    ev.setdefault("extra", []).append({"url": final, "title": title, "text": text[:12000]})
+    kept = text[:12000]
+    if pattern:
+        # Long filings put the business description past the first 12,000 chars; keep the matched lines too.
+        tail = [ln for ln in text[12000:].splitlines() if pattern.search(ln)]
+        if tail:
+            kept += "\n[matched lines beyond 12,000 chars]\n" + "\n".join(tail)[:8000]
+    ev.setdefault("extra", []).append({"url": final, "title": title, "text": kept})
     json.dump(ev, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(final, "|", title[:200])
     if pattern:
