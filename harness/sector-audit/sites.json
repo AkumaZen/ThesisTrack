@@ -329,12 +329,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['bharat', 'developers'] matched 1.00; investor section linked"
  },
- "BHAGERIA": {
-  "strict": "domain carries the full name",
-  "url": "https://www.bhageria.co.in/",
-  "via": "name-derived domain",
-  "why": "name tokens ['bhageria'] matched 1.00; investor section linked"
- },
  "BHARATSE": {
   "strict": "domain carries the full name",
   "url": "https://bharatseats.com/",
@@ -1090,12 +1084,6 @@
   "url": "https://www.ifbindustries.com/",
   "via": "name-derived domain",
   "why": "name tokens ['ifb'] matched 1.00; investor section linked"
- },
- "IFINSEC": {
-  "strict": "domain carries the full name",
-  "url": "https://www.finsec.in/",
-  "via": "name-derived domain",
-  "why": "name tokens ['finsec'] matched 1.00; investor section linked"
  },
  "IKIO": {
   "strict": "page states the legal name [title: Home | IKIO TECHNOLOGIES LIMITED]",
@@ -2309,12 +2297,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['samhi', 'hotels'] matched 1.00; investor section linked"
  },
- "SANDESH": {
-  "strict": "domain carries the full name",
-  "url": "https://www.sandesh.co.in/",
-  "via": "name-derived domain",
-  "why": "name tokens ['sandesh'] matched 1.00; investor section linked"
- },
  "SANSTAR": {
   "strict": "domain carries the full name",
   "url": "https://sanstar.in/",
@@ -2885,12 +2867,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['visa', 'chrome'] matched 1.00; investor section linked"
  },
- "VISHAL": {
-  "strict": "domain carries the full name",
-  "url": "https://vishalfabricsltd.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['vishal', 'fabrics'] matched 1.00; investor section linked"
- },
  "VISHNU": {
   "strict": "domain carries the full name",
   "url": "https://vishnuchemicals.com/",
@@ -3004,11 +2980,5 @@
   "url": "https://www.zuari.in/",
   "via": "name-derived domain",
   "why": "name tokens ['zuari', 'agro', 'chemicals'] matched 1.00; investor section linked"
- },
- "ZUARIIND": {
-  "strict": "domain carries the full name",
-  "url": "https://www.zuari.in/",
-  "via": "name-derived domain",
-  "why": "name tokens ['zuari'] matched 1.00; investor section linked"
  }
 }
