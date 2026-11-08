@@ -34,9 +34,30 @@
   "via": "name-derived domain",
   "why": "name tokens ['capital', 'finance'] matched 1.00; investor section linked"
  },
+ "DLINKINDIA": {
+  "rejected": "dlink.com is the global parent",
+  "strict": "page states the legal name [title: Smart Home, SMB and Enterprise solutions | D-Link]",
+  "url": "https://www.dlink.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['link'] matched 1.00; investor section linked"
+ },
+ "DOLLAR": {
+  "rejected": "dollar.in is an unrelated news page",
+  "strict": "domain carries the full name",
+  "url": "https://www.dollar.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['dollar'] matched 1.00; investor section linked"
+ },
  "ETHOSLTD": {
   "rejected": "US life insurer ethos.com",
   "url": "https://www.ethos.com/"
+ },
+ "EXPLEOSOL": {
+  "rejected": "expleo.com is the global group site",
+  "strict": "domain carries the full name",
+  "url": "https://expleo.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['expleo'] matched 1.00; investor section linked"
  },
  "GFLLIMITED": {
   "rejected": "legal name not on page and domain lacks full name [title: GFL - Gujarat Fluorochemicals Limited | Fluorochemicals]",
@@ -44,12 +65,33 @@
   "via": "name-derived domain",
   "why": "name tokens ['gfl'] matched 1.00; investor section linked"
  },
+ "GOODYEAR": {
+  "rejected": "goodyear.com is the global parent",
+  "strict": "domain carries the full name",
+  "url": "https://www.goodyear.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['goodyear'] matched 1.00; investor section linked"
+ },
  "GVPIL": {
   "rejected": "manual review: gepower.in is an unrelated solar products firm, not GE Power India Ltd",
   "strict": "domain carries the full name",
   "url": "https://www.gepower.in/",
   "via": "name-derived domain",
   "why": "name tokens ['ge', 'power'] matched 1.00; investor section linked"
+ },
+ "HGS": {
+  "rejected": "hinduja.co.in is an unrelated recruiting startup",
+  "strict": "domain carries the full name",
+  "url": "https://www.hinduja.co.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['hinduja'] matched 1.00; investor section linked"
+ },
+ "HUHTAMAKI": {
+  "rejected": "huhtamaki.com is the global parent",
+  "strict": "domain carries the full name",
+  "url": "https://www.huhtamaki.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['huhtamaki'] matched 1.00; investor section linked"
  },
  "IONEXCHANG": {
   "rejected": "legal name not on page and domain lacks full name [title: \u25b7 Specialty Chemicals | Energizing Chemistry | LANXESS]",

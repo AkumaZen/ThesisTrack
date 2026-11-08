@@ -611,12 +611,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['digitide'] matched 1.00; investor section linked"
  },
- "DLINKINDIA": {
-  "strict": "page states the legal name [title: Smart Home, SMB and Enterprise solutions | D-Link]",
-  "url": "https://www.dlink.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['link'] matched 1.00; investor section linked"
- },
  "DODLA": {
   "strict": "domain carries the full name",
   "url": "https://dodladairy.com/",
@@ -628,12 +622,6 @@
   "url": "https://www.dolatalgotech.in/",
   "via": "name-derived domain",
   "why": "name tokens ['dolat', 'algotech'] matched 1.00; investor section linked"
- },
- "DOLLAR": {
-  "strict": "domain carries the full name",
-  "url": "https://www.dollar.in/",
-  "via": "name-derived domain",
-  "why": "name tokens ['dollar'] matched 1.00; investor section linked"
  },
  "DOLPHIN": {
   "strict": "domain carries the full name",
@@ -754,12 +742,6 @@
   "url": "https://www.eveready.in/",
   "via": "name-derived domain",
   "why": "name tokens ['eveready'] matched 1.00; investor section linked"
- },
- "EXPLEOSOL": {
-  "strict": "domain carries the full name",
-  "url": "https://expleo.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['expleo'] matched 1.00; investor section linked"
  },
  "FAIRCHEMOR": {
   "strict": "page states the legal name [title: Specialty Chemical Manufacturing Company in India | Fairchem]",
@@ -923,12 +905,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['gokul', 'agro', 'resources'] matched 1.00; investor section linked"
  },
- "GOODYEAR": {
-  "strict": "domain carries the full name",
-  "url": "https://www.goodyear.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['goodyear'] matched 1.00; investor section linked"
- },
  "GREENLAM": {
   "strict": "domain carries the full name",
   "url": "https://www.greenlamindustries.com/",
@@ -1049,12 +1025,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['hexa', 'tradex'] matched 1.00; investor section linked"
  },
- "HGS": {
-  "strict": "domain carries the full name",
-  "url": "https://www.hinduja.co.in/",
-  "via": "name-derived domain",
-  "why": "name tokens ['hinduja'] matched 1.00; investor section linked"
- },
  "HIIL": {
   "strict": "domain carries the full name",
   "url": "https://www.hindusthaninsulators.com/",
@@ -1102,12 +1072,6 @@
   "url": "https://www.hindustanfoodslimited.com/",
   "via": "name-derived domain",
   "why": "name tokens ['hindustan', 'foods'] matched 1.00; investor section linked"
- },
- "HUHTAMAKI": {
-  "strict": "domain carries the full name",
-  "url": "https://www.huhtamaki.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['huhtamaki'] matched 1.00; investor section linked"
  },
  "IBULLSLTD": {
   "strict": "domain carries the full name",
