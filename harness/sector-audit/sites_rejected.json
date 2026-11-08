@@ -3,6 +3,13 @@
   "rejected": "foreign trading platform capital.com",
   "url": "https://capital.com/"
  },
+ "ALEMBICLTD": {
+  "rejected": "alembicpharmaceuticals.com is the separately listed Alembic Pharmaceuticals",
+  "strict": "domain carries the full name",
+  "url": "https://alembicpharmaceuticals.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['alembic'] matched 1.00; investor section linked"
+ },
  "ASMTEC": {
   "rejected": "legal name not on page and domain lacks full name [title: Home | ASM]",
   "url": "https://www.asm.com/",
@@ -78,11 +85,32 @@
   "via": "name-derived domain",
   "why": "name tokens ['niit', 'learning'] matched 1.00; investor section linked"
  },
+ "NOVARTIND": {
+  "rejected": "manual review: novartis.com is the global parent, not Novartis India Ltd",
+  "strict": "domain carries the full name",
+  "url": "https://www.novartis.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['novartis'] matched 1.00; investor section linked"
+ },
+ "PRAKASH": {
+  "rejected": "prakash.co.in is an unrelated road-safety brand site",
+  "strict": "domain carries the full name",
+  "url": "https://www.prakash.co.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['prakash'] matched 1.00; investor section linked"
+ },
  "PTL": {
   "rejected": "homepage unreachable on recheck: Blocked",
   "url": "https://expireddomains.com/",
   "via": "name-derived domain",
   "why": "name tokens ['ptl'] matched 1.00; investor section linked"
+ },
+ "RAMCOIND": {
+  "rejected": "manual review: ramco.com is Ramco Systems, not Ramco Industries",
+  "strict": "domain carries the full name",
+  "url": "https://www.ramco.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['ramco'] matched 1.00; investor section linked"
  },
  "RESPONIND": {
   "rejected": "US RFP software firm",
@@ -134,6 +162,13 @@
   "url": "https://www.vaibhav.co.in/",
   "via": "name-derived domain",
   "why": "name tokens ['vaibhav'] matched 1.00; investor section linked"
+ },
+ "VSSL": {
+  "rejected": "manual review: vardhman.com is the Vardhman textile group, not Vardhman Special Steels",
+  "strict": "page states the legal name [title: Vardhman - India's largest vertically integrated textile producer]",
+  "url": "https://www.vardhman.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['vardhman', 'special', 'steels'] matched 1.00; investor section linked"
  },
  "YATRA": {
   "rejected": "legal name not on page and domain lacks full name [title: yatra.co.in \u2014 Honest food, from the source.]",

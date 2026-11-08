@@ -65,12 +65,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['anlon', 'healthcare'] matched 1.00; investor section linked"
  },
- "ALEMBICLTD": {
-  "strict": "domain carries the full name",
-  "url": "https://alembicpharmaceuticals.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['alembic'] matched 1.00; investor section linked"
- },
  "ALLCARGO": {
   "strict": "domain carries the full name",
   "url": "https://www.allcargologistics.com/",
@@ -1829,12 +1823,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['nocil'] matched 1.00; investor section linked"
  },
- "NOVARTIND": {
-  "strict": "domain carries the full name",
-  "url": "https://www.novartis.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['novartis'] matched 1.00; investor section linked"
- },
  "NRBBEARING": {
   "strict": "domain carries the full name",
   "url": "https://nrbbearings.com/",
@@ -2051,12 +2039,6 @@
   "via": "name-derived domain",
   "why": "name tokens ['prabha', 'energy'] matched 1.00; investor section linked"
  },
- "PRAKASH": {
-  "strict": "domain carries the full name",
-  "url": "https://www.prakash.co.in/",
-  "via": "name-derived domain",
-  "why": "name tokens ['prakash'] matched 1.00; investor section linked"
- },
  "PREVEST": {
   "strict": "domain carries the full name",
   "url": "https://www.prevestdenpro.com/",
@@ -2176,12 +2158,6 @@
   "url": "https://www.rallis.com/",
   "via": "name-derived domain",
   "why": "name tokens ['rallis'] matched 1.00; investor section linked"
- },
- "RAMCOIND": {
-  "strict": "domain carries the full name",
-  "url": "https://www.ramco.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['ramco'] matched 1.00; investor section linked"
  },
  "RAMCOSYS": {
   "strict": "domain carries the full name",
@@ -2980,12 +2956,6 @@
   "url": "https://www.vprp.co.in/",
   "via": "name-derived domain",
   "why": "name tokens ['vishnu', 'prakash', 'punglia'] matched 1.00; investor section linked"
- },
- "VSSL": {
-  "strict": "page states the legal name [title: Vardhman - India's largest vertically integrated textile producer]",
-  "url": "https://www.vardhman.com/",
-  "via": "name-derived domain",
-  "why": "name tokens ['vardhman', 'special', 'steels'] matched 1.00; investor section linked"
  },
  "WAAREEINDO": {
   "strict": "domain carries the full name",
