@@ -156,6 +156,13 @@
   "via": "name-derived domain",
   "why": "name tokens ['novartis'] matched 1.00; investor section linked"
  },
+ "ORISSAMINE": {
+  "rejected": "birdgroup.co.in is the Bird group site, not the company",
+  "strict": "page states the legal name [title: Mining \u2013 Iron, Manganese, Sponge Iron, Limestone, Dolomite : Bird Grou]",
+  "url": "https://www.birdgroup.co.in/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
+ },
  "PRAKASH": {
   "rejected": "prakash.co.in is an unrelated road-safety brand site",
   "strict": "domain carries the full name",
@@ -186,6 +193,13 @@
  "RESPONIND": {
   "rejected": "US RFP software firm",
   "url": "https://www.responsive.io/"
+ },
+ "RML": {
+  "rejected": "ranegroup.com is the Rane group site, not Rane (Madras)",
+  "strict": "page states the legal name [title: Rane Group \u2013 Expanding Horizons]",
+  "url": "https://www.ranegroup.com/",
+  "via": "known-domain",
+  "why": "official domain, strict identity check passed"
  },
  "RSYSTEMS": {
   "rejected": "legal name not on page and domain lacks full name [title: Marketing websites using traffic exchanges, PTC, banner advertising, t]",
