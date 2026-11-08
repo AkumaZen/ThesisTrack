@@ -1,0 +1,144 @@
+{
+ "AKCAPIT": {
+  "rejected": "foreign trading platform capital.com",
+  "url": "https://capital.com/"
+ },
+ "ASMTEC": {
+  "rejected": "legal name not on page and domain lacks full name [title: Home | ASM]",
+  "url": "https://www.asm.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['asm'] matched 1.00; investor section linked"
+ },
+ "AXISOL": {
+  "rejected": "legal name not on page and domain lacks full name [title: Axis Communications - Leader in network cameras and other IP networkin]",
+  "url": "https://www.axis.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['axis'] matched 1.00; investor section linked"
+ },
+ "CAPITALSFB": {
+  "rejected": "legal name not on page and domain lacks full name [title: Online Trading with Our Award-winning Platform | Capital.com]",
+  "url": "https://capital.com:443/",
+  "via": "name-derived domain",
+  "why": "name tokens ['capital', 'small', 'finance', 'bank'] matched 0.75; investor section linked"
+ },
+ "CIFL": {
+  "rejected": "legal name not on page and domain lacks full name [title: Online Trading with Our Award-winning Platform | Capital.com]",
+  "url": "https://capital.com:443/",
+  "via": "name-derived domain",
+  "why": "name tokens ['capital', 'finance'] matched 1.00; investor section linked"
+ },
+ "ETHOSLTD": {
+  "rejected": "US life insurer ethos.com",
+  "url": "https://www.ethos.com/"
+ },
+ "GFLLIMITED": {
+  "rejected": "legal name not on page and domain lacks full name [title: GFL - Gujarat Fluorochemicals Limited | Fluorochemicals]",
+  "url": "https://gfl.co.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['gfl'] matched 1.00; investor section linked"
+ },
+ "GVPIL": {
+  "rejected": "manual review: gepower.in is an unrelated solar products firm, not GE Power India Ltd",
+  "strict": "domain carries the full name",
+  "url": "https://www.gepower.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['ge', 'power'] matched 1.00; investor section linked"
+ },
+ "IONEXCHANG": {
+  "rejected": "legal name not on page and domain lacks full name [title: \u25b7 Specialty Chemicals | Energizing Chemistry | LANXESS]",
+  "url": "https://lanxess.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['ion', 'exchange'] matched 1.00; investor section linked"
+ },
+ "KNRCON": {
+  "rejected": "US construction estimating firm",
+  "url": "https://www.knrconstructions.com/"
+ },
+ "KSE": {
+  "rejected": "legal name not on page and domain lacks full name [title: KSE]",
+  "url": "https://www.kse.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['kse'] matched 1.00; investor section linked"
+ },
+ "MANINDS": {
+  "rejected": "legal name not on page and domain lacks full name [title: Man | Man Group]",
+  "url": "https://www.man.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['man'] matched 1.00; investor section linked"
+ },
+ "NCLIND": {
+  "rejected": "legal name not on page and domain lacks full name [title: Cruise Holidays \u2013 Experience Norwegian Cruise Line | NCL]",
+  "url": "https://www.ncl.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['ncl'] matched 1.00; investor section linked"
+ },
+ "NIITMTS": {
+  "rejected": "legal name not on page and domain lacks full name [title: NIIT India \u2013 Job-Ready Tech and GenAI Courses Online]",
+  "url": "https://www.niit.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['niit', 'learning'] matched 1.00; investor section linked"
+ },
+ "PTL": {
+  "rejected": "homepage unreachable on recheck: Blocked",
+  "url": "https://expireddomains.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['ptl'] matched 1.00; investor section linked"
+ },
+ "RESPONIND": {
+  "rejected": "US RFP software firm",
+  "url": "https://www.responsive.io/"
+ },
+ "RSYSTEMS": {
+  "rejected": "legal name not on page and domain lacks full name [title: Marketing websites using traffic exchanges, PTC, banner advertising, t]",
+  "url": "https://www.rsi.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['r'] matched 1.00; investor section linked"
+ },
+ "SILVERTUC": {
+  "rejected": "legal name not on page and domain lacks full name [title: Buy Silver & Gold Bullion Online - Fast Shipping - Silver.com]",
+  "url": "https://www.silver.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['silver', 'touch'] matched 1.00; investor section linked"
+ },
+ "SIS": {
+  "rejected": "legal name not on page and domain lacks full name [title: Silicon Integrated Systems Corp | SiS \u77fd\u7d71\u79d1\u6280]",
+  "url": "https://www.sis.com/",
+  "via": "name-derived domain",
+  "why": "name tokens ['sis'] matched 1.00; investor section linked"
+ },
+ "SUPREMEINF": {
+  "rejected": "legal name not on page and domain lacks full name [title: Supreme is India's largest manufacturer and processor of plastics]",
+  "url": "https://www.supreme.co.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['supreme', 'infrastructure'] matched 1.00; investor section linked"
+ },
+ "TAALTECH": {
+  "rejected": "legal name not on page and domain lacks full name [title: Taneja Aerospace & Aviation Ltd. |]",
+  "url": "https://taal.co.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['taal'] matched 1.00; investor section linked"
+ },
+ "TEXINFRA": {
+  "rejected": "legal name not on page and domain lacks full name [title: Texmaco rail & Engineering Ltd.]",
+  "url": "https://www.texmaco.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['texmaco', 'infrastructure'] matched 1.00; investor section linked"
+ },
+ "UDS": {
+  "rejected": "US moving-services firm",
+  "url": "https://updater.com/"
+ },
+ "VAIBHAVGBL": {
+  "rejected": "manual review: vaibhav.co.in is an unrelated lending startup",
+  "strict": "domain carries the full name",
+  "url": "https://www.vaibhav.co.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['vaibhav'] matched 1.00; investor section linked"
+ },
+ "YATRA": {
+  "rejected": "legal name not on page and domain lacks full name [title: yatra.co.in \u2014 Honest food, from the source.]",
+  "url": "https://www.yatra.co.in/",
+  "via": "name-derived domain",
+  "why": "name tokens ['yatra', 'online'] matched 1.00; investor section linked"
+ }
+}

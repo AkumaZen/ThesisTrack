@@ -1,0 +1,1168 @@
+{"sym": "LATENTVIEW", "status": "no-source", "site": null, "ppt": null, "period": null, "ppt_via": null, "errors": ["no official source found: search[Latent View Analytics official website] candidates: []; search[Latent View Analytics company] candidates: []; ppt candidates 0: []"], "at": "2026-11-08T22:08:50"}
+{"sym": "ALKYLAMINE", "status": "ok", "site": "https://alkylamines.com/", "ppt": "https://alkylamines.com/wp-content/uploads/2022/03/AACL-Corporate-presentation-26-06-2026.pdf", "period": "2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:08:57"}
+{"sym": "JSLL", "status": "partial", "site": "https://jeenasikholifecare.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:09:02"}
+{"sym": "EPL", "status": "no-source", "site": null, "ppt": null, "period": null, "ppt_via": null, "errors": ["no official source found: search[EPL official website] candidates: []; search[EPL company] candidates: []; ppt candidates 0: []"], "at": "2026-11-08T22:09:06"}
+{"sym": "GAEL", "status": "no-source", "site": null, "ppt": null, "period": null, "ppt_via": null, "errors": ["no official source found: search[Gujarat Ambuja Exports official website] candidates: []; search[Gujarat Ambuja Exports company] candidates: []; ppt candidates 0: []"], "at": "2026-11-08T22:09:10"}
+{"sym": "DODLA", "status": "no-source", "site": null, "ppt": null, "period": null, "ppt_via": null, "errors": ["no official source found: search[Dodla Dairy official website] candidates: []; search[Dodla Dairy company] candidates: []; ppt candidates 0: []"], "at": "2026-11-08T22:09:13"}
+{"sym": "TANLA", "status": "partial", "site": "https://www.tanla.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:22:49"}
+{"sym": "GALAXYSURF", "status": "ok", "site": "https://galaxysurfactants.com/", "ppt": "https://galaxysurfactants.com/pdf/presentations/Financial-Year-2025-26/Q1-Apr-Jun/Earnings-Call-Transcript-Q1-FY26.pdf", "period": "Q1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:23:11"}
+{"sym": "INDIAGLYCO", "status": "partial", "site": "https://www.indiaglycols.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:12"}
+{"sym": "ARVINDFASN", "status": "ok", "site": "https://www.arvindfashions.com/", "ppt": "https://www.arvindfashions.com/wp-content/uploads/2026/05/Investor-Conference-29th-May-2026.pdf", "period": "May 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:23:12"}
+{"sym": "DODLA", "status": "ok", "site": "https://dodladairy.com/", "ppt": "https://dodladairy.com/wp-content/uploads/2026/10/Q2-FY27-Results-Earnings-Call-29-10-2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:23:13"}
+{"sym": "ETHOSLTD", "status": "partial", "site": "https://www.ethos.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:15"}
+{"sym": "SHREEJISPG", "status": "no-source", "site": "https://www.shreejishipping.in/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: URLError <urlopen error [Errno 11001] getaddrinfo failed>", "no official source found: site https://www.shreejishipping.in/ via name-derived domain: name tokens ['shreeji', 'shipping'] matched 1.00; investor section linked; IR crawl: 4 investor pages, 0 presentation links; ppt candidates 0: []"], "at": "2026-11-08T22:23:18"}
+{"sym": "KALPATARU", "status": "no-source", "site": "https://www.kalpataru.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: URLError <urlopen error [Errno 11001] getaddrinfo failed>", "no official source found: site https://www.kalpataru.com/ via name-derived domain: name tokens ['kalpataru'] matched 1.00; investor section linked; IR crawl: 1 investor pages, 0 presentation links; ppt candidates 0: []"], "at": "2026-11-08T22:23:19"}
+{"sym": "LATENTVIEW", "status": "no-source", "site": "https://www.latentview.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: HTTPError HTTP Error 307: Temporary Redirect", "no official source found: site https://www.latentview.com/ via name-derived domain: name tokens ['latent', 'view', 'analytics'] matched 1.00; investor section linked; IR crawl: homepage HTTPError HTTP Error 307: Temporary Redirect; ppt candidates 0: []"], "at": "2026-11-08T22:23:20"}
+{"sym": "AARTIPHARM", "status": "partial", "site": "https://www.aartipharmalabs.com/", "ppt": "https://www.aartipharmalabs.com/wp-content/uploads/2026/10/AARTIPHARM_2910signed.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": ["website: URLError <urlopen error [Errno 11001] getaddrinfo failed>"], "at": "2026-11-08T22:23:28"}
+{"sym": "GOKULAGRO", "status": "ok", "site": "https://www.gokulagro.com/", "ppt": "https://www.gokulagro.com/wp-content/uploads/2026/10/Gokul-Agro-Investor-Presentation-Q2FY27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:23:29"}
+{"sym": "GREENLAM", "status": "partial", "site": "https://www.greenlamindustries.com/", "ppt": "https://www.greenlamindustries.com/wp-content/uploads/2026/11/Greenlam-Result-Presentation-Q2FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": ["website: URLError <urlopen error [Errno 11001] getaddrinfo failed>"], "at": "2026-11-08T22:23:31"}
+{"sym": "DCBBANK", "status": "partial", "site": "https://www.dcb.bank.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:33"}
+{"sym": "JKPAPER", "status": "partial", "site": "https://www.jkpaper.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:36"}
+{"sym": "SUPRAJIT", "status": "ok", "site": "https://suprajit.com/", "ppt": "https://suprajit.com/wp-content/uploads/2026/07/InvestorPresentation8July2026.pdf", "period": "July 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:23:36"}
+{"sym": "SFL", "status": "ok", "site": "https://www.sheelafoam.com/", "ppt": "https://res.cloudinary.com/dduaiugsj/images/v1793629386/Intimation-of-Investor-Presentation_Sep-2027/Intimation-of-Investor-Presentation_Sep-2027.pdf?_i=AA", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:23:39"}
+{"sym": "CEIGALL", "status": "partial", "site": "https://ceigall.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:41"}
+{"sym": "SURYAROSNI", "status": "partial", "site": "https://www.surya.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:45"}
+{"sym": "POWERICA", "status": "partial", "site": "https://www.powericaltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:47"}
+{"sym": "SUNTECK", "status": "partial", "site": "https://sunteckrealtyltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:52"}
+{"sym": "HNDFDS", "status": "partial", "site": "https://www.hindustanfoodslimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:23:55"}
+{"sym": "PURVA", "status": "ok", "site": "https://www.puravankara.com/", "ppt": "https://www.puravankara.com/uploads/Investor_Presentation_on_Q4_FY26_Financial_Results_2.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:23:57"}
+{"sym": "PILANIINVS", "status": "partial", "site": "https://www.pilaniinvestment.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:00"}
+{"sym": "MHRIL", "status": "partial", "site": "https://www.mahindra.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:00"}
+{"sym": "ENTERO", "status": "no-source", "site": "https://www.enterohealthcare.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.enterohealthcare.com/ via name-derived domain: name tokens ['entero', 'healthcare'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:24:02"}
+{"sym": "BAJAJCON", "status": "ok", "site": "https://bajajconsumercare.com/", "ppt": "https://bajajconsumercare.com/pdf/investors/investors_presentation/Investors_Presentation_Q2_2026-27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:24:03"}
+{"sym": "FDC", "status": "partial", "site": "https://fdcindia.com/", "ppt": "https://www.fdcindia.com/pdf/stock-exchange/Investors_Presentation_Compressed.pdf", "period": "November 2021", "ppt_via": "company IR page", "errors": ["website: URLError <urlopen error [Errno 11001] getaddrinfo failed>"], "at": "2026-11-08T22:24:08"}
+{"sym": "SUBROS", "status": "no-source", "site": "https://www.subros.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.subros.com/ via name-derived domain: name tokens ['subros'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:24:12"}
+{"sym": "GOKEX", "status": "ok", "site": "https://www.gokaldasexports.com/", "ppt": "https://www.gokaldasexports.com/uploads/2026/11/Investor-Presentation-2QFY27-Gokaldas-Exports.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:24:12"}
+{"sym": "SAATVIKGL", "status": "partial", "site": "https://www.saatvikgroup.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:14"}
+{"sym": "LUMAXIND", "status": "ok", "site": "https://lumaxworld.in/", "ppt": "https://www.lumaxworld.in/lumaxautotech/downloads/LATL_investorpresentation_q1FY2027.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:24:14"}
+{"sym": "ICIL", "status": "ok", "site": "https://www.indocount.com/", "ppt": "https://www.indocount.com/images/investor/Investor-Presentation-Q2-H1-FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:24:15"}
+{"sym": "SUPRIYA", "status": "partial", "site": "https://www.supriyalifescience.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:17"}
+{"sym": "JUSTDIAL", "status": "partial", "site": "https://www.justdial.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:21"}
+{"sym": "NIRLON", "status": "partial", "site": "https://www.nirlonltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:21"}
+{"sym": "IONEXCHANG", "status": "partial", "site": "https://lanxess.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:23"}
+{"sym": "SENCO", "status": "partial", "site": "https://www.sencogold.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:23"}
+{"sym": "MIDWESTLTD", "status": "partial", "site": "https://midwest.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:33"}
+{"sym": "CMSINFO", "status": "ok", "site": "https://www.cms.com/", "ppt": "https://www.cms.com/secretarial-admin/uploads/quarterly_performance_data/cms-q1fy27-investor-ppt-updated-592430.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:24:37"}
+{"sym": "SIS", "status": "partial", "site": "https://www.sis.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:38"}
+{"sym": "CARERATING", "status": "partial", "site": "https://www.careratings.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:24:39"}
+{"sym": "HAPPSTMNDS", "status": "ok", "site": "https://www.happiestminds.com/", "ppt": "https://www.happiestminds.com/investors/Investor%20Presentations/2021-2022-Q3/HappiestMinds_earning%20presentation_Jan%2028,%202022.pdf", "period": "Q3 FY22", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:24:39"}
+{"sym": "PRSMJOHNSN", "status": "ok", "site": "https://www.prismjohnson.in/", "ppt": "https://www.prismjohnson.in/wp-content/uploads/2026/05/Investor-Presentation-May-2026.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:24:43"}
+{"sym": "PICCADIL", "status": "ok", "site": "https://www.piccadily.com/", "ppt": "https://www.piccadily.com/sites/default/files/2026-08/Piccadily_Earnings_PPT_12.08.2026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:24:58"}
+{"sym": "AURIONPRO", "status": "ok", "site": "https://www.aurionpro.com/", "ppt": "https://www.aurionpro.com/wp-content/uploads/2026/08/Investor-Presentation_July-2026_sd-1.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:03"}
+{"sym": "ELECTCAST", "status": "partial", "site": "https://www.electrosteel.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:08"}
+{"sym": "DHANUKA", "status": "partial", "site": "https://www.dhanuka.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:09"}
+{"sym": "RESPONIND", "status": "partial", "site": "https://www.responsive.io/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:14"}
+{"sym": "CRAMC", "status": "partial", "site": "https://www.canararobeco.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:16"}
+{"sym": "BALAMINES", "status": "partial", "site": "https://www.balajiamines.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:17"}
+{"sym": "RTNPOWER", "status": "ok", "site": "https://www.rattanindiapower.com/", "ppt": "https://www.rattanindiapower.com/wp-content/uploads/2026/07/RPLEPJUNE2026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:18"}
+{"sym": "UNIMECH", "status": "partial", "site": "https://www.unimechaerospace.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:20"}
+{"sym": "SKIPPER", "status": "partial", "site": "https://www.skipperlimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:25"}
+{"sym": "RAYMONDLSL", "status": "ok", "site": "https://www.raymondlifestyle.com/", "ppt": "https://www.raymondlifestyle.com/uploads/Investor_Presentation-August_06_2025(3).pdf", "period": "Q1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:27"}
+{"sym": "SUVEN", "status": "partial", "site": "https://www.suven.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:28"}
+{"sym": "KISSHT", "status": "partial", "site": "https://www.onemi.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:30"}
+{"sym": "DATAMATICS", "status": "ok", "site": "https://www.datamatics.com/", "ppt": "https://www.datamatics.com/hubfs/Investors/Investors-Presentation/Datamatics_Investor_Presentation_Q2FY27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:31"}
+{"sym": "TANFACIND", "status": "partial", "site": "https://www.tanfac.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:37"}
+{"sym": "VIPIND", "status": "ok", "site": "https://www.vipindustries.co.in/", "ppt": "https://vipindustries.co.in/storage/investor-presentations/August2026/AC5408820.pdf", "period": "August 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:40"}
+{"sym": "SHARDAMOTR", "status": "ok", "site": "https://www.shardamotor.com/", "ppt": "http://www.shardamotor.com/wp-content/uploads/2026/08/Presentation30062026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:41"}
+{"sym": "CENTUM", "status": "no-source", "site": "https://www.centumelectronics.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.centumelectronics.com/ via name-derived domain: name tokens ['centum', 'electronics'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:25:41"}
+{"sym": "BAJAJELEC", "status": "ok", "site": "https://www.bajajelectricals.com/", "ppt": "https://cdn.shopify.com/s/files/1/0881/0849/9244/files/Presentation_on_the_Unaudited_financial_results_for_Q2FY27.pdf?v=1793191581", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:41"}
+{"sym": "RALLIS", "status": "ok", "site": "https://www.rallis.com/", "ppt": "https://www.rallis.com/Upload/PDF/rallis-investor-presentation-q2fy2026-27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:42"}
+{"sym": "THOMASCOOK", "status": "partial", "site": "https://www.thomascook.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:42"}
+{"sym": "STYLAMIND", "status": "partial", "site": "https://www.stylam.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:42"}
+{"sym": "RTNINDIA", "status": "ok", "site": "https://www.rattanindia.com/", "ppt": "https://www.rattanindia.com/wp-content/uploads/2026/11/RELEUQSEP26.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:42"}
+{"sym": "TARC", "status": "partial", "site": "https://www.tarc.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:43"}
+{"sym": "EMIL", "status": "no-source", "site": "https://www.electronicsmartindia.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.electronicsmartindia.com/ via name-derived domain: name tokens ['electronics', 'mart'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:25:45"}
+{"sym": "HAWKINCOOK", "status": "partial", "site": "https://www.hawkinscookers.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:45"}
+{"sym": "ASMTEC", "status": "ok", "site": "https://www.asm.com/", "ppt": "https://www.asm.com/downloads/presentations-other/2026-q3-investor-presentation", "period": "October 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:51"}
+{"sym": "DHENUBUILD", "status": "partial", "site": "https://www.dhenubuildconinfra.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:55"}
+{"sym": "OSWALPUMPS", "status": "ok", "site": "https://www.oswalpumps.com/", "ppt": "https://www.oswalpumps.com/investor-relations/Presentations-for-Analysts-Institutional-Investors-Meets/SELetterInvestorPresentationOPL13112025.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:55"}
+{"sym": "LXCHEM", "status": "ok", "site": "https://www.laxmi.com/", "ppt": "https://www.laxmi.com/documents/default.aspx?f=investor-relations/q2fy27-laxmi-earning-deck-november-5-2026-583.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:25:55"}
+{"sym": "AGI", "status": "partial", "site": "https://agigreenpac.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:56"}
+{"sym": "AGIIL", "status": "partial", "site": "https://www.agiinfra.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:25:57"}
+{"sym": "KMEW", "status": "ok", "site": "https://www.kmew.in/", "ppt": "https://www.kmew.in/images/pdf/investor-presnetation-h1-fy26-27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:01"}
+{"sym": "EMUDHRA", "status": "ok", "site": "https://emudhra.com/", "ppt": "https://emudhra.com/investors/fy2027/q2-fy2027-earnings-presentation.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:03"}
+{"sym": "PACEDIGITK", "status": "partial", "site": "https://www.pacedigitek.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:03"}
+{"sym": "MOSCHIP", "status": "partial", "site": "https://moschip.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:08"}
+{"sym": "TURTLEMINT", "status": "ok", "site": "https://www.turtlemint.com/", "ppt": "https://cdn.turtlemint.com/wp-content/uploads/20260814130645/Turtlemint_Investor-Presentation_Q1FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:08"}
+{"sym": "VAIBHAVGBL", "status": "partial", "site": "https://www.vaibhav.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:09"}
+{"sym": "DBCORP", "status": "partial", "site": "https://www.dbcorpltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:12"}
+{"sym": "KNRCON", "status": "partial", "site": "https://www.knrconstructions.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:13"}
+{"sym": "TEXRAIL", "status": "ok", "site": "https://www.texmaco.in/", "ppt": "https://www.texmaco.in/wp-content/uploads/2026/08/Texmaco-Rail-Engineering-Earnings-Presentation-Q1-FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:14"}
+{"sym": "ORIENTELEC", "status": "partial", "site": "https://orientelectric.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:17"}
+{"sym": "ZOTA", "status": "partial", "site": "https://www.zotahealthcare.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:18"}
+{"sym": "NIITMTS", "status": "partial", "site": "https://www.niit.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:24"}
+{"sym": "NACLIND", "status": "ok", "site": "https://naclind.com/", "ppt": "https://naclind.com/wp-content/uploads/2026/03/Investor-Presentation-Q3-2023-24.pdf", "period": "9M FY24", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:24"}
+{"sym": "GVPIL", "status": "partial", "site": "https://www.gepower.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:25"}
+{"sym": "WPIL", "status": "ok", "site": "https://www.wpil.co.in/", "ppt": "https://www.wpil.co.in/wp-content/uploads/2026/11/WPIL-DISCLOSURE-REG-30-31.10.2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:25"}
+{"sym": "KSHINTL", "status": "ok", "site": "https://kshinternational.com/", "ppt": "https://kshinternational.com/investor-relations-documents/Financial-Results/KSHUpdatedInvestorPresentation04112026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:28"}
+{"sym": "SINDHUTRAD", "status": "partial", "site": "https://sindhutrade.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:30"}
+{"sym": "RSYSTEMS", "status": "partial", "site": "https://www.rsi.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:30"}
+{"sym": "IBULLSLTD", "status": "partial", "site": "https://www.indiabulls.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:32"}
+{"sym": "CHEMPLASTS", "status": "ok", "site": "https://www.chemplastsanmar.com/", "ppt": "https://www.chemplastsanmar.com/downloads/investor-relations/2025-26/Q4/LettertoSEInvestorpresentation25052026SD.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:32"}
+{"sym": "IFBIND", "status": "ok", "site": "https://www.ifbindustries.com/", "ppt": "https://www.ifbindustries.com/assets/Investor_Presentation_Q2FY27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:34"}
+{"sym": "MAHLOG", "status": "partial", "site": "https://mahindralogistics.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:34"}
+{"sym": "HARSHA", "status": "partial", "site": "https://www.harshaengineers.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:35"}
+{"sym": "ASHOKA", "status": "ok", "site": "https://www.ashokabuildcon.com/", "ppt": "https://www.ashokabuildcon.com/files/investors/presentations/ABL_Investor_Presentation_H1_FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:35"}
+{"sym": "NFL", "status": "ok", "site": "https://www.nationalfertilizers.com/", "ppt": "https://www.nationalfertilizers.com/wp-content/uploads/2026/08/Hindi-Investors-PPT-Q1-June-26.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:36"}
+{"sym": "STYRENIX", "status": "ok", "site": "https://styrenix.com/", "ppt": "https://styrenix.com/wp-content/uploads/2026/10/SPML_Q2FY27_Investor_Presentation-Final.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:36"}
+{"sym": "KESAR", "status": "no-source", "site": "https://www.kesarindia.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.kesarindia.com/ via name-derived domain: name tokens ['kesar'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:26:37"}
+{"sym": "PAISALO", "status": "ok", "site": "https://www.paisalo.in/", "ppt": "https://www.paisalo.in/pdf/pdf/Investor_PPT_Q2FY2027.pdf", "period": "H2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:38"}
+{"sym": "ARSSBL", "status": "partial", "site": "https://anandrathi.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:41"}
+{"sym": "RPGLIFE", "status": "ok", "site": "https://www.rpglifesciences.com/", "ppt": "https://www.rpglifesciences.com/documents/conference_calls/Conference_Call_Q2_FY27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:42"}
+{"sym": "AARTIDRUGS", "status": "partial", "site": "https://www.aartidrugs.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:43"}
+{"sym": "SHANTIGEAR", "status": "ok", "site": "https://www.shanthigears.com/", "ppt": "https://www.shanthigears.com/wp-content/uploads/2018/07/sgl-corporate-presentation.pdf", "period": "2018", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:43"}
+{"sym": "RAYMONDREL", "status": "partial", "site": "https://raymondrealtyltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:44"}
+{"sym": "GMMPFAUDLR", "status": "ok", "site": "https://www.gmmpfaudler.com/", "ppt": "https://www.gmmpfaudler.com/file/Earnings-Presentation-Q1FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:46"}
+{"sym": "INDOTHAI", "status": "partial", "site": "https://indothai.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:48"}
+{"sym": "ROUTE", "status": "ok", "site": "https://routemobile.com/", "ppt": "https://routemobile.com/wp-content/uploads/2026/10/Q2-FY27-Investor-Presentation.pdf", "period": "H1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:52"}
+{"sym": "INDOSTAR", "status": "ok", "site": "https://www.indostarcapital.com/", "ppt": "https://www.indostarcapital.com/assets/pdfs/investor-presentations/Q2-FY27-Investor-Presentation.pdf", "period": "October 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:52"}
+{"sym": "MANINDS", "status": "partial", "site": "https://www.man.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:52"}
+{"sym": "INNOVACAP", "status": "partial", "site": "https://www.innovacaptab.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:52"}
+{"sym": "KSL", "status": "ok", "site": "https://www.kalyanisteels.com/", "ppt": "https://www.kalyanisteels.com/wp-content/uploads/KSLpresn_2015.pdf", "period": "2015", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:26:53"}
+{"sym": "PSPPROJECT", "status": "no-source", "site": "https://www.pspprojects.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.pspprojects.com/ via name-derived domain: name tokens ['psp'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:26:53"}
+{"sym": "GUFICBIO", "status": "partial", "site": "https://www.gufic.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:53"}
+{"sym": "VISHNU", "status": "partial", "site": "https://vishnuchemicals.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:54"}
+{"sym": "BAJAJHIND", "status": "partial", "site": "https://www.bajajhindusthan.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:59"}
+{"sym": "SEAMECLTD", "status": "partial", "site": "https://seamec.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:26:59"}
+{"sym": "FCL", "status": "ok", "site": "https://fineotex.com/", "ppt": "https://fineotex.com/wp-content/uploads/2025/09/Q2FY27_Chemicals_Result-Preview_Oct-09-2026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:02"}
+{"sym": "SAMBHV", "status": "ok", "site": "https://www.sambhv.com/", "ppt": "https://www.sambhv.com/uploads/pdf/investors/financial-performance/results/2026-2027/Investor-Presentation.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:03"}
+{"sym": "GREENPLY", "status": "no-source", "site": "https://www.greenply.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.greenply.com/ via name-derived domain: name tokens ['greenply'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:27:04"}
+{"sym": "KOLTEPATIL", "status": "ok", "site": "https://www.koltepatil.com/", "ppt": "https://www.koltepatil.com/assets/uploads/investor_services/17937194701326644019.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:04"}
+{"sym": "BBL", "status": "partial", "site": "https://www.bharatbijlee.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:08"}
+{"sym": "ROSSTECH", "status": "partial", "site": "https://rosselltechsys.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:09"}
+{"sym": "KIRLOSIND", "status": "partial", "site": "https://www.kirloskarindustries.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:13"}
+{"sym": "MARATHON", "status": "partial", "site": "https://marathon.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:15"}
+{"sym": "NSIL", "status": "ok", "site": "https://www.nalwasons.com/", "ppt": "https://www.nalwasons.com/pdf/StockExchangeIntimation-MisrepresentationNSIL.pdf", "period": "December 2024", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:18"}
+{"sym": "EFCIL", "status": "ok", "site": "https://efclimited.in/", "ppt": "https://efclimited.in/wp-content/uploads/2026/11/EFC-I-Investors-Presentation_Q2-FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:22"}
+{"sym": "63MOONS", "status": "partial", "site": "https://www.63moons.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:23"}
+{"sym": "MUTHOOTMF", "status": "ok", "site": "https://muthootmicrofin.com/", "ppt": "https://muthootmicrofin.com/wp-content/uploads/2026/08/Investor-Presentation-Q1-2026-27.pdf", "period": "August 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:24"}
+{"sym": "NRBBEARING", "status": "ok", "site": "https://nrbbearings.com/", "ppt": "https://media.nrbbearings.com/Earnings_Calls_Invite_nov_5_19007f82db.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:25"}
+{"sym": "MPSLTD", "status": "ok", "site": "https://www.mpslimited.com/", "ppt": "https://d12ux7ql5zx5ks.cloudfront.net/wp-content/uploads/Earnings-Presentation-Q1FY271.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:28"}
+{"sym": "UFLEX", "status": "ok", "site": "https://www.uflexltd.com/", "ppt": "https://www.uflexltd.com/pdf/IR/Investor_Presentation_10Sep_2026.pdf", "period": "September 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:29"}
+{"sym": "RAMKY", "status": "ok", "site": "https://ramkyinfrastructure.com/", "ppt": "https://ramkyinfrastructure.com/docs/pdf/investordesk/announcements/Invpre25-05-2026.pdf", "period": "2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:31"}
+{"sym": "BLISSGVS", "status": "partial", "site": "https://www.blissgvs.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:33"}
+{"sym": "MAITHANALL", "status": "ok", "site": "https://www.maithanalloys.com/", "ppt": "https://www.maithanalloys.com/wp-content/uploads/2023/09/FY-2022-2023-Investor-Presentation.pdf", "period": "FY22", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:34"}
+{"sym": "HERITGFOOD", "status": "ok", "site": "https://www.heritagefoods.in/", "ppt": "https://www.heritagefoods.in/uploads/investors/pdf/Investor_PPT_16102026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:35"}
+{"sym": "KKCL", "status": "ok", "site": "https://www.kewalkiran.com/", "ppt": "https://kewalkiran.com/admin/uploads/categoryfiles/700KKCL-IRPresentationH1FY2027[vF].pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:35"}
+{"sym": "PARAGMILK", "status": "partial", "site": "https://www.paragmilkfoods.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:36"}
+{"sym": "BOROLTD", "status": "ok", "site": "https://www.borosil.com/", "ppt": "https://www.borosil.com/site/assets/files/8719/presentation_on_companys_performance_for_the_quarter_and_half_year_ended_september_30-_2026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:37"}
+{"sym": "MEDIASSIST", "status": "ok", "site": "https://www.mediassist.in/", "ppt": "https://www.mediassist.in/assets/pdf/investor-relations/mahs/disclosure-under-reg-30/investors-presentation-30092026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:39"}
+{"sym": "JUBLCPL", "status": "partial", "site": "https://www.jubilantagri.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:40"}
+{"sym": "GATEWAY", "status": "ok", "site": "https://www.gatewaydistriparks.com/", "ppt": "https://www.gatewaydistriparks.com/Uploads/prospectus/2293pdctfile_InvestorPresentation_28.10.2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:41"}
+{"sym": "BNAGROCHEM", "status": "partial", "site": "https://www.bnagrochem.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:45"}
+{"sym": "GRMOVER", "status": "ok", "site": "https://www.grmrice.com/", "ppt": "https://www.grmrice.com/investor-documents/26-05-23-05-55-1931st_March__2023.pdf", "period": "March 2023", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:46"}
+{"sym": "COCKERILL", "status": "ok", "site": "https://johncockerillindia.com/", "ppt": "https://johncockerillindia.com/wp-content/uploads/2026/05/JCIL-Investors-Presentation-for-March-2026.pdf", "period": "May 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:47"}
+{"sym": "PRINCEPIPE", "status": "ok", "site": "https://www.princepipes.com/", "ppt": "https://www.princepipes.com/pdf/IP_PrincePipes_Q2_FY27_Final.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:49"}
+{"sym": "PNCINFRA", "status": "ok", "site": "https://www.pncinfratech.com/", "ppt": "https://www.pncinfratech.com/pdfs/investors-presentation-may-2016.pdf", "period": "Q4 FY15", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:51"}
+{"sym": "SOTL", "status": "ok", "site": "https://savita.com/", "ppt": "https://savita.com/wp-content/uploads/2026/09/investorpresentation.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:52"}
+{"sym": "WELSPLSOL", "status": "partial", "site": "https://www.welspunspecialty.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:52"}
+{"sym": "DALMIASUG", "status": "partial", "site": "https://www.dalmiabharat.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:54"}
+{"sym": "CARYSIL", "status": "partial", "site": "https://carysil.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:56"}
+{"sym": "INA", "status": "partial", "site": "https://insolationenergy.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:56"}
+{"sym": "JINDALPOLY", "status": "ok", "site": "https://www.jindalpoly.com/", "ppt": "https://www.jindalpoly.com/Uploads/image/492imguf_InvestorPresentation,feb_2023.pdf", "period": "February 2023", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:27:58"}
+{"sym": "NOCIL", "status": "partial", "site": "https://www.nocil.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:27:59"}
+{"sym": "IMAGICAA", "status": "partial", "site": "https://www.imagicaaworld.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:00"}
+{"sym": "KDDL", "status": "partial", "site": "https://www.kddl.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:02"}
+{"sym": "ARVSMART", "status": "ok", "site": "https://www.arvindsmartspaces.com/", "ppt": "https://www.arvindsmartspaces.com/wp-content/uploads/2026/11/Newspaper-Advertisement-Unaudited-Financial-Results-Q2-H1-FY27-06-11-2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:05"}
+{"sym": "POLYPLEX", "status": "ok", "site": "https://www.polyplex.com/", "ppt": "https://reports.dionglobal.in/polyplexiradmin/Financial/Q1_Polyplex_Investor_Presentation_Q1UFR_signed_13082026_070947_7938497c.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:09"}
+{"sym": "MAYURUNIQ", "status": "ok", "site": "https://www.mayuruniquoters.com/", "ppt": "https://www.mayuruniquoters.com/pdf/for-the-q2-fy-2027-earning-conference-call-november-05-2026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:11"}
+{"sym": "CYIENTDLM", "status": "ok", "site": "https://www.cyientdlm.com/", "ppt": "https://www.cyientdlm.com/images/pdf/Investor_Presentation_Q3FY26.pdf", "period": "Q3 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:13"}
+{"sym": "RELTD", "status": "ok", "site": "https://www.ravindraenergy.com/", "ppt": "http://www.ravindraenergy.com/wp-content/uploads/2026/01/Disclosure-of-Investor-Meet-presentation-27-01-2026.pdf", "period": "January 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:14"}
+{"sym": "AQYLON", "status": "partial", "site": "https://www.aqylonnexuslimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:18"}
+{"sym": "SIYSIL", "status": "ok", "site": "https://www.siyaram.com/", "ppt": "https://prod-siyaram-bucket.s3.ap-south-1.amazonaws.com/images/investor-relationship-doc/communications/2026-2027/Investor+Presentation+Q2+FY27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:22"}
+{"sym": "ORIENTCEM", "status": "ok", "site": "https://orientcement.com/", "ppt": "https://orientcement.com/wp-content/uploads/2026/10/OCL_InvestorPresentation_29102026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:23"}
+{"sym": "GREENPANEL", "status": "ok", "site": "https://www.greenpanel.com/", "ppt": "https://www.greenpanel.com/pdf/Q1-FY27-Earnings-Conference-Call-Transcript_August-11-2026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:24"}
+{"sym": "NOVARTIND", "status": "ok", "site": "https://www.novartis.com/", "ppt": "https://www.novartis.com/sites/novartis_com/files/q3-2026-investor-presentation.pdf", "period": "October 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:24"}
+{"sym": "VENUSPIPES", "status": "ok", "site": "https://www.venuspipes.com/", "ppt": "https://www.venuspipes.com/wp-content/uploads/2025/12/Investor-Presentation-Q2FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:26"}
+{"sym": "GLOBUSSPR", "status": "ok", "site": "https://www.globusspirits.com/", "ppt": "https://www.globusspirits.com/documents/Investor-Presentation-Q2-FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:29"}
+{"sym": "REPCOHOME", "status": "ok", "site": "https://www.repcohome.com/", "ppt": "https://s3.ap-south-1.amazonaws.com/rhfl-strapi/RHFL_Q2_FY_27_Earnings_Presentation_V1_11350d2a25.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:30"}
+{"sym": "PRAKASH", "status": "partial", "site": "https://www.prakash.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:30"}
+{"sym": "XPROINDIA", "status": "ok", "site": "https://xproindia.com/", "ppt": "https://xproindia.com/wp-content/uploads/2026/11/Investor-Presentation.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:32"}
+{"sym": "POKARNA", "status": "ok", "site": "https://www.pokarna.com/", "ppt": "https://www.pokarna.com//wp-content/uploads/2025/07/Pokarna_Q1_Investor-Presentation.pdf", "period": "Q1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:38"}
+{"sym": "BALMLAWRIE", "status": "partial", "site": "https://www.balmerlawrie.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:42"}
+{"sym": "PANACEABIO", "status": "ok", "site": "https://www.panaceabiotec.com/", "ppt": "https://cdn.prod.website-files.com/692d766399cbd0d1b7c1462b/6a28e6095a6a8226f40c770c_Corporate_Presentation.pdf", "period": null, "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:43"}
+{"sym": "BUILDPRO", "status": "partial", "site": "https://www.shankarabuildpro.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:44"}
+{"sym": "TCPLPACK", "status": "ok", "site": "https://www.tcpl.in/", "ppt": "https://www.tcpl.in/wp-content/uploads/2026/11/Earning-Presentation-Q3-FY-2026-27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:48"}
+{"sym": "GKENERGY", "status": "partial", "site": "https://gkenergy.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:50"}
+{"sym": "DRAGARWQ", "status": "ok", "site": "https://dragarwals.co.in/", "ppt": "https://dragarwals.co.in/wp-content/uploads/2026/08/DAHCL-Q1FY27-Investor-Presentation-Final.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:51"}
+{"sym": "SAGCEM", "status": "ok", "site": "https://sagarcements.in/", "ppt": "https://sagarcements.in/wp-content/uploads/2020/09/SCLPressreleaseQ3FY24.pdf", "period": "9M FY24", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:51"}
+{"sym": "HIKAL", "status": "ok", "site": "https://www.hikal.com/", "ppt": "https://www.hikal.com/./uploads/documents/HikalQ2FY27ResultsPresentation.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:52"}
+{"sym": "EVEREADY", "status": "partial", "site": "https://www.eveready.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:55"}
+{"sym": "RAMCOIND", "status": "partial", "site": "https://www.ramco.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:28:56"}
+{"sym": "HLEGLAS", "status": "ok", "site": "https://www.hleglascoat.com/", "ppt": "https://www.hleglascoat.com/wp-content/uploads/2026/11/522215_Q2_H1_FY2027_Investor_Presentation.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:28:57"}
+{"sym": "MANGLMCEM", "status": "partial", "site": "https://www.mangalamcement.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:01"}
+{"sym": "TIRUMALCHM", "status": "partial", "site": "https://thirumalaichemicals.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:01"}
+{"sym": "SASKEN", "status": "partial", "site": "https://www.sasken.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:05"}
+{"sym": "ALEMBICLTD", "status": "ok", "site": "https://alembicpharmaceuticals.com/", "ppt": "https://alembicpharmaceuticals.com/webfiles/pdf/Investor/investors_presentations/2026-2027/Q2/investor-presentation-september-2026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:05"}
+{"sym": "MOREPENLAB", "status": "ok", "site": "https://www.morepen.com/", "ppt": "https://morepen.s3.ap-south-1.amazonaws.com/investor/uploads/investor/Morepen6a71a8193d1fe.pdf", "period": "Q2 FY28", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:07"}
+{"sym": "AWFIS", "status": "ok", "site": "https://www.awfis.com/", "ppt": "https://www.awfis.com/images/reports/financial-report/annual-reports/Q4/Awfis_Investor_Presentation_Q4FY26_25.05.2026.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:10"}
+{"sym": "SIRCA", "status": "ok", "site": "https://www.sircapaints.com/", "ppt": "https://www.sircapaints.com/wp-content/uploads/2026/05/IntimationInvestorPresentation.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:14"}
+{"sym": "VSSL", "status": "partial", "site": "https://www.vardhman.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:16"}
+{"sym": "PENIND", "status": "ok", "site": "https://www.pennarindia.com/", "ppt": "https://www.pennarindia.com/investors/investor-updates/Investor-Presentation-Q1FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:22"}
+{"sym": "KERNEX", "status": "ok", "site": "https://www.kernex.in/", "ppt": "https://www.kernex.in/wp-content/uploads/2025/03/Investors-Presentation-24th-March-2025.pdf", "period": "March 2025", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:23"}
+{"sym": "PRABHA", "status": "ok", "site": "https://prabhaenergy.com/", "ppt": "https://prabhaenergy.com/wp-content/uploads/2026/08/Intimation-2.pdf", "period": "Q4 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:25"}
+{"sym": "ARKADE", "status": "ok", "site": "https://arkade.in/", "ppt": "https://arkade.in/wp-content/uploads/2026/10/Investor-Presentation-for-Quarter-Sep-2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:25"}
+{"sym": "VIMTALABS", "status": "ok", "site": "https://vimta.com/", "ppt": "https://vimta.com/wp-content/uploads/2026/11/Reg_30_IEC30102026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:28"}
+{"sym": "APCOTEXIND", "status": "partial", "site": "https://apcotex.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:28"}
+{"sym": "MMFL", "status": "ok", "site": "https://www.mmforgings.com/", "ppt": "https://www.mmforgings.com/uploads/quarter/0c9220917b73aa55436788014494ddd8.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:28"}
+{"sym": "NITINSPIN", "status": "ok", "site": "https://nitinspinners.com/", "ppt": "https://nitinspinners.com/wp-content/uploads/2026/08/Investor-Presentation-Financial-Results-For-the-Quarter-ended-30.06.2026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:30"}
+{"sym": "NITCO", "status": "partial", "site": "https://www.nitco.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:33"}
+{"sym": "YASHO", "status": "ok", "site": "https://www.yashoindustries.com/", "ppt": "https://www.yashoindustries.com/uploads/7/9/4/9/7949862/investor_presentation_q2fy27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:34"}
+{"sym": "TEAMLEASE", "status": "partial", "site": "https://www.teamlease.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:34"}
+{"sym": "FILATEX", "status": "no-source", "site": "https://www.filatex.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.filatex.com/ via name-derived domain: name tokens ['filatex'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:29:35"}
+{"sym": "RHETAN", "status": "partial", "site": "https://www.rhetan.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:37"}
+{"sym": "MUFIN", "status": "ok", "site": "https://mufingreenfinance.com/", "ppt": "https://mufingreenfinance.com/wp-content/uploads/2026/08/Investor-Presentation-Q1-FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:41"}
+{"sym": "ONIXSOLAR", "status": "partial", "site": "https://www.onixsolarenergy.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:44"}
+{"sym": "RPSGVENT", "status": "partial", "site": "https://www.rpsgventuresltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:45"}
+{"sym": "RAJRATAN", "status": "partial", "site": "https://rajratan.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:49"}
+{"sym": "LUXIND", "status": "ok", "site": "https://luxindustries.com/", "ppt": "https://luxindustries.com/wp-content/uploads/2025/08/Investor-presentation_2025-26_Q1.pdf", "period": "Q1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:50"}
+{"sym": "SUNDROP", "status": "ok", "site": "https://www.sundropbrands.com/", "ppt": "https://www.sundropbrands.com/pdf/analyst-calls/PresentationforAnalystsandInvestorsConferenceCallNov062026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:52"}
+{"sym": "NILKAMAL", "status": "partial", "site": "https://nilkamal.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:53"}
+{"sym": "LAOPALA", "status": "ok", "site": "https://www.laopala.in/", "ppt": "https://www.laopala.in/uploads/documents/LORG_InvestorsPresentation_June2026_F.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:54"}
+{"sym": "EIHAHOTELS", "status": "partial", "site": "https://www.eihassociatedhotels.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:54"}
+{"sym": "TCIEXP", "status": "ok", "site": "https://www.tciexpress.in/", "ppt": "https://www.tciexpress.in/images/pdf/1246_InvMeetQ4FY2025.pdf", "period": "Q4 FY25", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:54"}
+{"sym": "KRSNAA", "status": "ok", "site": "https://krsnaadiagnostics.com/", "ppt": "https://krsnaadiagnostics.com/investor-docs/2027/Earning%20Presentation/Earnings%20Presentation%20for%20Quarter%20ended%20June%2030%2C%202026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:54"}
+{"sym": "INDOCO", "status": "partial", "site": "https://www.indoco.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:29:57"}
+{"sym": "GSPCROP", "status": "ok", "site": "https://www.gspcrop.in/", "ppt": "https://cdn.prod.website-files.com/64a41d7fe20bb4386d083958/6a7bf74f598cb49d1141c5fa_Investor%20presentation.pdf", "period": "August 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:29:58"}
+{"sym": "EPACK", "status": "ok", "site": "https://epackdurable.com/", "ppt": "https://epackdurable.com/wp-content/uploads/2024/06/EPACK-Investor-Presentation-28-June-2024.pdf", "period": "January 2024", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:04"}
+{"sym": "KPEL", "status": "partial", "site": "https://kpenergy.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:07"}
+{"sym": "SATIN", "status": "ok", "site": "https://satincreditcare.com/", "ppt": "https://satincreditcare.com/wp-content/uploads/2026/10/SCNL-Q2-FY27-IR-PPT.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:11"}
+{"sym": "YATRA", "status": "partial", "site": "https://www.yatra.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:12"}
+{"sym": "HGS", "status": "partial", "site": "https://www.hinduja.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:12"}
+{"sym": "VERANDA", "status": "partial", "site": "https://www.verandalearning.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:15"}
+{"sym": "GEOJITFSL", "status": "partial", "site": "https://www.geojit.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:15"}
+{"sym": "SERVOTECH", "status": "ok", "site": "https://www.servotech.in/", "ppt": "https://www.servotech.in/blog/wp-content/uploads/2026/07/Intimation-about-Investor-Presentation-Q1-2026-27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:18"}
+{"sym": "ELPROINTL", "status": "ok", "site": "https://www.elpro.co.in/", "ppt": "https://www.elpro.co.in/resources/images/PDF/Company%20Presentation/ELPRO%20Investor%20Presentation%20June%202015.pdf", "period": "June 2015", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:20"}
+{"sym": "ORIENTHOT", "status": "partial", "site": "https://orientalhotels.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:24"}
+{"sym": "SILVERTUC", "status": "partial", "site": "https://www.silver.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:26"}
+{"sym": "EMSLIMITED", "status": "partial", "site": "https://ems.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:27"}
+{"sym": "SPANDANA", "status": "partial", "site": "https://www.spandanasphoorty.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:30"}
+{"sym": "EPIGRAL", "status": "ok", "site": "https://epigral.com/", "ppt": "https://epigral.com/wp-content/uploads/2026/11/Epigral-Q2FY27-Investor-Presentation.pdf", "period": "H2 FY28", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:31"}
+{"sym": "MOBAVENUE", "status": "ok", "site": "https://www.mobavenue.ai/", "ppt": "https://www.mobavenue.ai/investor_doc/Investor_Presentation_2026-27-q1.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:32"}
+{"sym": "IPL", "status": "partial", "site": "https://www.indiapesticideslimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:32"}
+{"sym": "TALBROAUTO", "status": "no-source", "site": "https://www.talbros.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.talbros.com/ via name-derived domain: name tokens ['talbros', 'automotive', 'components'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:30:34"}
+{"sym": "COSMOFIRST", "status": "ok", "site": "https://www.cosmofirst.com/", "ppt": "https://www.cosmofirst.com/public/uploads/pdf/40202323365.pdf", "period": "2023", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:36"}
+{"sym": "NDRAUTO", "status": "partial", "site": "https://ndrauto.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:37"}
+{"sym": "ADOR", "status": "ok", "site": "https://adorwelding.com/", "ppt": "https://adorwelding.com/wp-content/uploads/2026/10/Analyst-Meet-ppt-23.10.2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:40"}
+{"sym": "SOMANYCERA", "status": "partial", "site": "https://www.somanyceramics.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:41"}
+{"sym": "INDIANHUME", "status": "partial", "site": "https://indianhumepipe.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:41"}
+{"sym": "RAMCOSYS", "status": "partial", "site": "https://www.ramco.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:42"}
+{"sym": "GOODYEAR", "status": "partial", "site": "https://www.goodyear.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:44"}
+{"sym": "WINDMACHIN", "status": "ok", "site": "https://windsormachines.com/", "ppt": "https://windsormachines.com/wp-content/uploads/2026/05/Investor-Presentation.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:44"}
+{"sym": "HATHWAY", "status": "partial", "site": "https://www.hathway.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:45"}
+{"sym": "RISHABH", "status": "partial", "site": "https://www.rishabh.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:46"}
+{"sym": "FRONTSP", "status": "partial", "site": "https://frontiersprings.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:51"}
+{"sym": "HITECH", "status": "ok", "site": "https://hitechpipes.in/", "ppt": "https://hitechpipes.in/wp-content/uploads/2026/11/Q2FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:52"}
+{"sym": "STOVEKRAFT", "status": "ok", "site": "https://www.stovekraft.com/", "ppt": "https://www.stovekraft.com/storage/investors/pdf/xwwhrccLaN6mcibAq8OccStdetcnY35JhI1MNiKv.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:52"}
+{"sym": "MUKANDLTD", "status": "partial", "site": "https://www.mukand.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:53"}
+{"sym": "STALLION", "status": "ok", "site": "https://stallionfluorochemicals.com/", "ppt": "https://stallionfluorochemicals.com/PDFs/Investors-Information/Financials-and-Presentations/Investor-Presentations/Q1FY27.pdf", "period": "August 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:30:54"}
+{"sym": "NIBE", "status": "partial", "site": "https://www.nibelimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:58"}
+{"sym": "GNA", "status": "partial", "site": "https://www.gnaaxles.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:30:59"}
+{"sym": "WAAREEINDO", "status": "partial", "site": "https://www.indosolar.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:01"}
+{"sym": "DOLPHIN", "status": "partial", "site": "https://dolphinoffshore.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:07"}
+{"sym": "SPORTKING", "status": "ok", "site": "https://sportking.co.in/", "ppt": "https://sportking.co.in/wp-content/uploads/2026/08/Investor-Presentation.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:31:07"}
+{"sym": "AMRUTANJAN", "status": "partial", "site": "https://www.amrutanjan.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:08"}
+{"sym": "UGROCAP", "status": "partial", "site": "https://www.ugrocapital.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:09"}
+{"sym": "JNKINDIA", "status": "partial", "site": "https://www.jnkindia.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:11"}
+{"sym": "SHUKRAPHAR", "status": "partial", "site": "https://www.shukrapharmaceuticals.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:12"}
+{"sym": "GARUDA", "status": "partial", "site": "https://garudaconstructionengineering.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:14"}
+{"sym": "YASHHV", "status": "no-source", "site": "https://www.yashhv.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.yashhv.com/ via name-derived domain: name tokens ['yash', 'highvoltage'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:31:16"}
+{"sym": "DOLLAR", "status": "partial", "site": "https://www.dollar.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:18"}
+{"sym": "PFS", "status": "partial", "site": "https://www.ptcfinancial.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:19"}
+{"sym": "WEL", "status": "ok", "site": "https://www.wonderelectricals.com/", "ppt": "https://www.wonderelectricals.com/wp-content/uploads/2024/11/Wonder-Electricals-Q2-FY25-Presentation.pdf", "period": "Q2 FY25", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:31:22"}
+{"sym": "SBC", "status": "partial", "site": "https://www.sbcexportslimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:25"}
+{"sym": "DLINKINDIA", "status": "partial", "site": "https://www.dlink.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:26"}
+{"sym": "ALLTIME", "status": "ok", "site": "https://www.alltimeplastics.com/", "ppt": "https://dhxsmo2hh5phd.cloudfront.net/media/Tni9Ef_ATPL---Q1FY27-Investor-Presentation_v4.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:31:28"}
+{"sym": "DYCL", "status": "no-source", "site": "https://www.dynamiccables.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.dynamiccables.co.in/ via name-derived domain: name tokens ['dynamic', 'cables'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:31:28"}
+{"sym": "BLIL", "status": "partial", "site": "https://www.balmerlawrie.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:30"}
+{"sym": "APOLLOPIPE", "status": "partial", "site": "https://www.apollopipes.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:33"}
+{"sym": "INFOBEAN", "status": "ok", "site": "https://infobeans.ai/", "ppt": "https://infobeans.ai/wp-content/uploads/2026/10/Investors-Presentation-Sep-2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:31:37"}
+{"sym": "SANSTAR", "status": "partial", "site": "https://sanstar.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:38"}
+{"sym": "EPACKPEB", "status": "ok", "site": "https://epackprefab.com/", "ppt": "https://epackprefab.com/wp-content/uploads/2026/11/Intimation-Presentation_Q2FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:31:38"}
+{"sym": "TITANBIO", "status": "partial", "site": "https://titanbiotechltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:39"}
+{"sym": "KHAZANCHI", "status": "partial", "site": "https://www.khazanchi.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:41"}
+{"sym": "PASHUPATI", "status": "partial", "site": "https://www.pashupaticotspin.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:43"}
+{"sym": "SUMEETINDS", "status": "partial", "site": "https://www.sumeetindustries.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:44"}
+{"sym": "SHANTIGOLD", "status": "ok", "site": "https://shantigold.in/", "ppt": "https://shantigold.in/wp-content/uploads/2026/02/Investor-Presentation-Q3.pdf", "period": "9M FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:31:46"}
+{"sym": "MRUTR", "status": "partial", "site": "https://mrugeshtradinglimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:31:47"}
+{"sym": "SPMLINFRA", "status": "ok", "site": "https://www.spml.co.in/", "ppt": "https://www.spml.co.in/pdfs/investors/investor-presentation/investor-presentation-updated.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:31:51"}
+{"sym": "GANDHAR", "status": "ok", "site": "https://gandharoil.com/", "ppt": "https://gandharoil.com/wp-content/uploads/2026/10/Final-Investor-Presentation.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:00"}
+{"sym": "MODINSU", "status": "partial", "site": "https://www.moderninsulators.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:06"}
+{"sym": "OMAXE", "status": "partial", "site": "https://www.omaxe.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:08"}
+{"sym": "GODAVARIB", "status": "ok", "site": "https://www.godavaribiorefineries.com/", "ppt": "https://www.godavaribiorefineries.com/sites/default/files/Investor_Presentation_Q2_and_H1_of_FY-27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:08"}
+{"sym": "HESTERBIO", "status": "ok", "site": "https://www.hester.in/", "ppt": "https://cdn.prod.website-files.com/628b3c79136f616e4ba82ff6/6a6af0edfc26b31dfa59c6ed_20260730%20Q1%20FY27%20Press%20Release.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:11"}
+{"sym": "BETA", "status": "ok", "site": "https://www.betadrugslimited.com/", "ppt": "https://www.betadrugslimited.com/wp-content/uploads/2026/05/Investors-presentation-14.05.2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:12"}
+{"sym": "WINDLAS", "status": "ok", "site": "https://windlas.com/", "ppt": "https://windlas.com/wp-content/uploads/2026/08/Investor-Presentation.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:13"}
+{"sym": "AURUM", "status": "partial", "site": "https://www.aurumproptech.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:13"}
+{"sym": "SHRIRAMPPS", "status": "partial", "site": "https://www.shriramproperties.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:13"}
+{"sym": "DOLATALGO", "status": "partial", "site": "https://www.dolatalgotech.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:13"}
+{"sym": "HUHTAMAKI", "status": "ok", "site": "https://www.huhtamaki.com/", "ppt": "https://www.huhtamaki.com/globalassets/global/investors/reports-and-presentations/en/2026/huhtamaki-roadshow-presentation-may-june-2026.pdf", "period": "June 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:23"}
+{"sym": "RICOAUTO", "status": "partial", "site": "https://www.ricoauto.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:24"}
+{"sym": "BLUECLOUDS", "status": "partial", "site": "https://bluecloudsoftech.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:25"}
+{"sym": "MOTISONS", "status": "partial", "site": "https://motisonsjewellers.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:26"}
+{"sym": "DEN", "status": "ok", "site": "https://dennetworks.com/", "ppt": "https://dennetworks.com/upload/results/Investor_Presentation_Q4_2023_24.pdf", "period": "Q4 FY23", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:28"}
+{"sym": "NGLFINE", "status": "ok", "site": "https://www.nglfinechem.com/", "ppt": "https://www.nglfinechem.com/wp-content/uploads/2026/08/Investors-Presentation_Q1FY27_.pdf", "period": "H2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:36"}
+{"sym": "TINNARUBR", "status": "partial", "site": "https://tinna.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:36"}
+{"sym": "RAJESH", "status": "ok", "site": "https://www.rajeshpower.com/", "ppt": "https://www.rajeshpower.com/img/Investor-Presentation-RPSL-H2FY26.pdf", "period": "H2 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:37"}
+{"sym": "META", "status": "partial", "site": "https://www.stringmetaverse.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:40"}
+{"sym": "ASIANENE", "status": "ok", "site": "https://www.asianenergy.com/", "ppt": "https://www.asianenergy.com/pdf/Investor-Relations/investor-presentations/Investor_PPT_Q2_FY2027.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:43"}
+{"sym": "SALASAR", "status": "ok", "site": "https://salasartechno.com/", "ppt": "http://salasartechno.com/wp-content/uploads/2026/04/2.-Investor-Presentation_November-18-2024.pdf", "period": "November 2024", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:48"}
+{"sym": "EXPLEOSOL", "status": "partial", "site": "https://expleo.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:55"}
+{"sym": "PUNJABCHEM", "status": "ok", "site": "https://www.punjabchemicals.com/", "ppt": "https://www.punjabchemicals.com/wp-content/uploads/2026/11/Investor-Presentation.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:32:56"}
+{"sym": "ALLCARGO", "status": "partial", "site": "https://www.allcargologistics.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:56"}
+{"sym": "UFBL", "status": "partial", "site": "https://www.unitedfoodbrands.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:57"}
+{"sym": "ANDHRAPAP", "status": "partial", "site": "https://andhrapaper.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:32:57"}
+{"sym": "ARFIN", "status": "ok", "site": "https://www.arfin.co.in/", "ppt": "https://www.arfin.co.in/pdf/investor-update/investor-update-fy-2026-27-q1.pdf", "period": "May 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:01"}
+{"sym": "BENARAS", "status": "partial", "site": "https://www.benareshotelslimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:02"}
+{"sym": "DSSL", "status": "partial", "site": "https://www.dynacons.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:02"}
+{"sym": "SAKAR", "status": "partial", "site": "https://sakarhealthcare.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:02"}
+{"sym": "JAGSNPHARM", "status": "ok", "site": "https://www.jagsonpal.com/", "ppt": "https://www.jagsonpal.com/wp-content/uploads/2026/01/InvestorPresentationsigned.pdf", "period": "9M FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:03"}
+{"sym": "SYNCOMF", "status": "partial", "site": "https://syncomformulations.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:04"}
+{"sym": "QUADFUTURE", "status": "partial", "site": "https://www.quadrantfuturetek.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:04"}
+{"sym": "SEPC", "status": "partial", "site": "https://www.sepc.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:05"}
+{"sym": "TEXINFRA", "status": "ok", "site": "https://www.texmaco.in/", "ppt": "https://www.texmaco.in/wp-content/uploads/2026/08/Texmaco-Rail-Engineering-Earnings-Presentation-Q1-FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:07"}
+{"sym": "DIGITIDE", "status": "partial", "site": "https://www.digitide.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:13"}
+{"sym": "PLATIND", "status": "ok", "site": "https://platinumindustriesltd.com/", "ppt": "https://platinumindustriesltd.com/wp-content/uploads/2026/11/Investor-Presentation-Sept2026_Compressed-3-1.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:13"}
+{"sym": "SOLEX", "status": "ok", "site": "https://solex.in/", "ppt": "https://solex.in/wp-content/uploads/2026/08/Investor-Presentation.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:13"}
+{"sym": "ALLDIGI", "status": "ok", "site": "https://www.alldigitech.com/", "ppt": "https://www.alldigitech.com/wp-content/uploads/2026/05/Investor-Deck-705.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:15"}
+{"sym": "SULA", "status": "partial", "site": "https://sulavineyards.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:15"}
+{"sym": "CAPITALSFB", "status": "partial", "site": "https://capital.com:443/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:16"}
+{"sym": "HITECHGEAR", "status": "ok", "site": "http://www.thehitechgears.com/", "ppt": "http://www.thehitechgears.com/Content/pdf/EarningPresentation_Aug26.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:18"}
+{"sym": "MANAKCOAT", "status": "ok", "site": "https://www.manaksiacoatedmetals.com/", "ppt": "https://www.manaksiacoatedmetals.com/assets/upload/pdf/d66e79fb865110a14bee72772136f70e.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:21"}
+{"sym": "AYMSYNTEX", "status": "partial", "site": "https://www.aymsyntex.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:23"}
+{"sym": "ZSARACOM", "status": "partial", "site": "https://www.saraswaticommercial.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:24"}
+{"sym": "RUPA", "status": "ok", "site": "https://rupa.co.in/", "ppt": "https://rupa.co.in/media/wysiwyg/file/03/Investor_Presentation_September_2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:24"}
+{"sym": "HIMATSEIDE", "status": "partial", "site": "https://www.himatsingka.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:26"}
+{"sym": "BHARATWIRE", "status": "partial", "site": "https://www.bharatwireropes.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:26"}
+{"sym": "IKIO", "status": "ok", "site": "https://ikiotech.com/", "ppt": "https://ikiotech.com/uploads/investormeetandearningcall/IKIO_Investor_Presentation_Q1FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:27"}
+{"sym": "RGL", "status": "ok", "site": "https://renaissanceglobal.com/", "ppt": "https://renaissanceglobal.com/wp-content/uploads/2026/08/Q1-FY27-Earnings-Presentation.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:31"}
+{"sym": "LAXMIDENTL", "status": "partial", "site": "https://laxmidentallimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:34"}
+{"sym": "3BBLACKBIO", "status": "partial", "site": "https://3bblackbio.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:35"}
+{"sym": "DAMCAPITAL", "status": "partial", "site": "https://www.damcapital.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:37"}
+{"sym": "IZMO", "status": "ok", "site": "https://www.izmoltd.com/", "ppt": "https://assetsin-h2.izmocars.com/userfiles/104273/izmoltd_q1fy27_c.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:38"}
+{"sym": "SHREEPUSHK", "status": "ok", "site": "https://www.shreepushkar.com/", "ppt": "https://www.shreepushkar.com/wp-content/uploads/2026/08/SEIntimationEarningsPresentationQ1FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:38"}
+{"sym": "ROTO", "status": "no-source", "site": "https://rotopumps.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://rotopumps.com/ via name-derived domain: name tokens ['roto', 'pumps'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:33:39"}
+{"sym": "FAZE3Q", "status": "partial", "site": "https://www.fazethree.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:39"}
+{"sym": "CIFL", "status": "partial", "site": "https://capital.com:443/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:41"}
+{"sym": "BIRLANU", "status": "ok", "site": "https://www.birlanu.com/", "ppt": "https://cms.birlanu.com/public/media/2026/10/29/investorcallintimationq2fy27signed.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:42"}
+{"sym": "DIFFNKG", "status": "ok", "site": "https://diffusionengineers.com/", "ppt": "https://diffusionengineers.com/wp-content/uploads/2026/11/Investors-Presentation-Q2-FY-2026-27.pdf", "period": "Q3 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:44"}
+{"sym": "PANORAMA", "status": "partial", "site": "https://panoramastudios.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:46"}
+{"sym": "BGDL", "status": "partial", "site": "https://www.bharatglobaldevelopers.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:49"}
+{"sym": "RAJRILTD", "status": "partial", "site": "https://www.rajrayon.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:51"}
+{"sym": "BHARATSE", "status": "partial", "site": "https://bharatseats.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:52"}
+{"sym": "GREENPOWER", "status": "partial", "site": "https://www.orientgreenpower.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:53"}
+{"sym": "RAJOOENG", "status": "partial", "site": "https://rajoo.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:53"}
+{"sym": "UDS", "status": "partial", "site": "https://updater.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:53"}
+{"sym": "ANDREWYU", "status": "partial", "site": "https://www.andrewyule.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:55"}
+{"sym": "ONIDA", "status": "ok", "site": "https://onida.com/", "ppt": "https://onida.com/wp-content/uploads/2026/11/Investor-Presentation-04.11.2026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:57"}
+{"sym": "EKC", "status": "ok", "site": "https://everestkanto.com/", "ppt": "https://everestkanto.com/wp-content/uploads/2026/06/Presentation-June-2026.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:33:57"}
+{"sym": "AKCAPIT", "status": "partial", "site": "https://capital.com:443/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:57"}
+{"sym": "MASTERTR", "status": "partial", "site": "https://mastertrust.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:33:57"}
+{"sym": "SURAJEST", "status": "partial", "site": "https://surajestate.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:02"}
+{"sym": "TARSONS", "status": "ok", "site": "https://www.tarsons.com/", "ppt": "https://www.tarsons.com/wp-content/uploads/2026/08/SE_Presentation_Q1FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:05"}
+{"sym": "AFSL", "status": "partial", "site": "https://abans.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:08"}
+{"sym": "BOROSCI", "status": "ok", "site": "https://www.borosilscientific.com/", "ppt": "https://www.borosilscientific.com/wp-content/uploads/2026/10/SEIntimation_presentation.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:09"}
+{"sym": "ABINFRA", "status": "partial", "site": "https://www.infrabuild.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:12"}
+{"sym": "BCG", "status": "ok", "site": "https://www.brightcomgroup.com/", "ppt": "https://www.brightcomgroup.com/wp-content/uploads/2024/08/InvestorPresentationQ2-23-24.pdf", "period": "Q2 FY23", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:14"}
+{"sym": "IRMENERGY", "status": "ok", "site": "https://www.irmenergy.com/", "ppt": "https://www.irmenergy.com/wp-content/uploads/2022/12/investorpresentationQ2FY27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:15"}
+{"sym": "ELECTHERM", "status": "partial", "site": "https://www.electrotherm.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:15"}
+{"sym": "CREST", "status": "partial", "site": "https://www.crest.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:16"}
+{"sym": "AXISOL", "status": "partial", "site": "https://www.axis.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:17"}
+{"sym": "BALAJITELE", "status": "partial", "site": "https://www.balajitelefilms.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:18"}
+{"sym": "GANDHITUBE", "status": "partial", "site": "https://www.gandhispecialtubes.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:19"}
+{"sym": "AVTNPL", "status": "partial", "site": "https://www.avtnatural.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:24"}
+{"sym": "MWL", "status": "partial", "site": "https://mangalamworldwide.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:25"}
+{"sym": "GANECOS", "status": "ok", "site": "https://www.ganeshaecosphere.com/", "ppt": "https://www.ganeshaecosphere.com/uploads/investors/1790245420_2e28cf1be9671f1d4620.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:26"}
+{"sym": "BLUSPRING", "status": "partial", "site": "https://www.bluspring.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:26"}
+{"sym": "BIL", "status": "partial", "site": "https://www.bhartiya.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:27"}
+{"sym": "INSECTICID", "status": "ok", "site": "https://insecticidesindia.com/", "ppt": "https://insecticidesindia.com/wp-content/uploads/2026/08/STXEP30062026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:29"}
+{"sym": "YUKEN", "status": "partial", "site": "https://www.yukenindia.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:33"}
+{"sym": "HARDWYN", "status": "partial", "site": "https://www.hardwyn.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:33"}
+{"sym": "EPL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GSFC", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GAEL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "KWIL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GARFIBRES", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "PARAS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "KINGFA", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "MOIL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SKYGOLD", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "JAIBALAJI", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "PRAJIND", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "PRECWIRE", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "ASHAPURMIN", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "BECTORFOOD", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "KRN", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SAPPHIRE", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SGMART", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "DBREALTY", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "AJAXENGG", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "KOVAI", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SMLMAH", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "FIEMIND", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SJS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "MAPMYINDIA", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GANESHHOU", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "NEPHROPLUS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "MASFIN", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "LGBBROSLTD", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "AHLUCONT", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "FEDFINA", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SYMPHONY", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "IONEXCHANG", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "CMRGREEN", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "BALUFORGE", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "KENNAMET", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "RUSTOMJEE", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "ICRA", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "MASTEK", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "NETWORK18", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "RENUKA", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "TIIL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "PTC", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "HCC", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "CCAVENUE", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SUNFLAG", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "WAKEFIT", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SPARC", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "JAMNAAUTO", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GULFOILLUB", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "RAIN", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SMARTWORKS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "TVSSCS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "VMART", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SIS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "JUNIPER", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "OMNI", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "ITDC", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SHILCTECH", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SWSOLAR", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "INDIGOPNTS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "VSTTILLERS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "BANARISUG", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "KSCL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "VRLLOG", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SWARAJENG", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "BANSALWIRE", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GHCL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "MANINFRA", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "PDSL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "JSFB", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "CAPILLARY", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "EBGNG", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "MBAPL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "ASMTEC", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "NIITMTS", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GUJALKALI", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "NORTHARC", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "SENORES", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GOLDIAM", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "STYL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "VSTIND", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "AVANTEL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GOODLUCK", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "NEOGEN", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "JKIL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "ARTEMISMED", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "RELINFRA", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "CRIZAC", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "HEMIPROP", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "GREAVESCOT", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "HGINFRA", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "POCL", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "ANUP", "status": "no-site", "at": "2026-11-08T22:34:34"}
+{"sym": "RBA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SIGMAADV", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AEROFLEX", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RAJESHEXPO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CIANAGRO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RPEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JTEKTINDIA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GUJTHEM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SHOPERSTOP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TRUALT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TECHNVISN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BOSCH-HCIL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "WEBELSOLAR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "FOSECOIND", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ROLEXRINGS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "INDRAMEDCO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GOPAL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "OPTIEMUS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BONDADA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ELLEN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HEIDELBERG", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "INDIQUBE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ADVENZYMES", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SANATHAN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RSYSTEMS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KRISHANA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "UEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ORCHPHARMA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SMSPHARMA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VADILALIND", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "REFEX", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TIMEX", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MANINDS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KITEX", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MSTCLTD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ZAGGLE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ASHIANA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SANDHAR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RAMRAT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PITTIENG", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SSWL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TFCILTD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "FLAIR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AYE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "INTERARCH", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "EIEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "WONDERLA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "NAVNETEDUL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GRAUWEIL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SBCL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "QUESS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SHAREINDIA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CARRARO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TVSSRICHAK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "WSTCSTPAPR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HUBTOWN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DCAL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BHAGCHEM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RAYMOND", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RPTECH", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SUNCLAY", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SEIL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PREMEXPLN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "UNIVCABLES", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MARINE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HIRECT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DREDGECORP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CPML", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ROSSARI", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "NATIONSTD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "FUSION", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AUTOAXLES", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DEEPINDS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SETL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PATELENG", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "WHEELS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SANGHVIMOV", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "EASEMYTRIP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "IOLCP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DDEVPLSTIK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KLBRENG-B", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SGFIN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AJMERA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JINDWORLD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "UNICHEMLAB", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HMT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DEEDEV", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JTLIND", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "NPST", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "EUROPRATIK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KIRIINDUS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PARKHOTELS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BHARATRAS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KSSMART", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JASH", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CNCRD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DECNGOLD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CAMLINFINE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "STEELCAS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DPABHUSHAN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DIAMONDYD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ADFFOODS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "IDEAFORGE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VEEDOL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ORISSAMINE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JISLJALEQS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "FISCHER", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BOMDYEING", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "FMGOETZE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "UTKARSHBNK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MARSONS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SANGAMIND", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PROTEAN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "STYLEBAAZA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SPICEJET", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BRIGHOTEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "UNIPARTS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RML", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BGRENERGY", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GIPCL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MONARCH", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AFCOM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ELCIDIN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GMBREW", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BEPL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SAIPARENT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HPL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HONDAPOWER", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ANTELOPUS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BELDING", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DIVGIITTS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BPAGRI", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "NUCLEUS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SPECTRUM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TAJGVK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JAYKAY", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KCP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CANTABIL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KICL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SCILAL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VINCOFE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SHRINGARMS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DCXINDIA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VENKEYS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BFUTILITIE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PIXTRANS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ADVAIT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HINDOILEXP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "INDOTECH", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MSPL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BAJEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SHK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CAPACITE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JAICORPLTD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SPICELOUNG", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MOLDTKPAC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KPGEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KOTIC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SAKSOFT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "STUDDS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VIKRAN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SOLARA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SPAL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GHVINFRA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TASTYBITE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "YATRA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MTNL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HINDWAREAP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SILVERTUC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "THEJO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PANAMAPET", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RANEHOLDIN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TCC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "INDNIPPON", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GOCOLORS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MBEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ACCELYA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SUMMITSEC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CEINSYS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SOLARWORLD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SHALBY", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DELTACORP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DISAQ", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SIMPLEXINF", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VINDHYATEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KPL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "LANDMARK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KALAMANDIR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AAYUSHBULL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "QUICKHEAL", "status": "ok", "site": "https://www.quickheal.co.in/", "ppt": "https://www.quickheal.co.in/media/investorrelations/presentation/earnings-presentation-quick-heal-q2-fy-27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:35"}
+{"sym": "ARMANFIN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GRANDOAK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BLSE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SDBL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "INDOKEM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ASHIKAG", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ALGOQUANT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ASIANTILES", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ASALCBR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CONFIPET", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "EXICOM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MOBIKWIK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GTLINFRA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KRISHNADEF", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SESHAPAPER", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JINDRILL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AMIC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SURYODAY", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "NELCO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BFINVEST", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VIDHIING", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GOCLCORP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SMCGLOBAL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ASTEC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KMCSHIL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RMDRIP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RACLGEAR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MCLOUD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JGCHEM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VIDYAWIRES", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TIL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ONEPOINT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "NAVKARCORP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GYFTR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JAGRAN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GPTINFRA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SURAKSHA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SPIC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MAHASTEEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PNBGILTS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "FINOPB", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DCW", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "WENDT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MIIL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ESAFSFB", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RIR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PRECAM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AWHCL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JYOTISTRUC", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "WALCHANNAG", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CFF", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "AEROPLANE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VENUSREM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PARACABLES", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ORIENTTECH", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "IVALUE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CLSEL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "LGHL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SIGNPOST", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "5PAISA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "IMPAL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TTKHLTCARE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "UNITECH", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "IFGLEXPOR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ATULAUTO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GNRL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HMAAGRO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "KROSS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MMWL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "TEXINFRA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JINDALPHOT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GENESYS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PNGSREVA", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ICEMAKE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "IGPL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CAPITALSFB", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ULTRAMAR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "LINCOLN", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "IGARASHI", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "PAUSHAKLTD", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "STEELXIND", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "EXCELINDUS", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BLKASHYAP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VALIANT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MONTECARLO", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "INDSWFTLAB", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ALICON", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CENTRUM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "STLNETWORK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JPOLYINVST", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ARIHANTSUP", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "VOEPL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "RIIL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JAYBARMARU", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BUTTERFLY", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "HARIOMPIPE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ACGL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "MADRASFERT", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "JYOTIRES", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "CIFL", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "GPTHEALTH", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "UNIECOM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "DHANBANK", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "ANDHRSUGAR", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SHREDIGCEM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "NELCAST", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SRM", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "BAJAJHCARE", "status": "no-site", "at": "2026-11-08T22:34:35"}
+{"sym": "SALZERELEC", "status": "partial", "site": "https://www.salzergroup.net/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:36"}
+{"sym": "WCIL", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "RATNAVEER", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "TGVSL", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "JARO", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "GULPOLY", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "GALAPREC", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "SYSTMTXC", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "INDORAMA", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "TBZ", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "SAPL", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "RAMASTEEL", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "CONTROLPR", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "FREDUN", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "AEROENTER", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "AXISOL", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "ASTAR", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "GKWLIMITED", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "SKMEGGPROD", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "BSHSL", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "CNL", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "ARIHANT", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "TNPL", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "INDPRUD", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "BMW", "status": "no-site", "at": "2026-11-08T22:34:36"}
+{"sym": "RSL", "status": "partial", "site": "https://www.rajputanastainless.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:36"}
+{"sym": "ZUARI", "status": "ok", "site": "https://www.zuari.in/", "ppt": "https://www.zuari.in/assets/files/Zuari-Agrochemicals-3QFY19-Earnig-call-hosted-by-B-and-K-securities-Held-on-12th-Feb-2019.pdf", "period": "February 2019", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:40"}
+{"sym": "ZUARI", "status": "ok", "site": "https://www.zuari.in/", "ppt": "https://www.zuari.in/assets/files/Zuari-Agrochemicals-3QFY19-Earnig-call-hosted-by-B-and-K-securities-Held-on-12th-Feb-2019.pdf", "period": "February 2019", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:41"}
+{"sym": "MANALIPETC", "status": "no-site", "at": "2026-11-08T22:34:41"}
+{"sym": "VHL", "status": "partial", "site": "https://www.vardhman.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:42"}
+{"sym": "MICEL", "status": "partial", "site": "https://mic.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:43"}
+{"sym": "NIITLTD", "status": "partial", "site": "https://www.niit.ai/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:44"}
+{"sym": "MICEL", "status": "partial", "site": "https://mic.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:44"}
+{"sym": "GRPLTD", "status": "no-site", "at": "2026-11-08T22:34:44"}
+{"sym": "MAFATIND", "status": "no-site", "at": "2026-11-08T22:34:44"}
+{"sym": "SEKURITIND", "status": "no-site", "at": "2026-11-08T22:34:44"}
+{"sym": "WEALTH", "status": "partial", "site": "https://wealthfirst.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:44"}
+{"sym": "WEALTH", "status": "partial", "site": "https://wealthfirst.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:46"}
+{"sym": "MATRIMONY", "status": "no-site", "at": "2026-11-08T22:34:46"}
+{"sym": "EXCELSOFT", "status": "no-site", "at": "2026-11-08T22:34:46"}
+{"sym": "MAMATA", "status": "ok", "site": "https://www.mamata.com/", "ppt": "https://www.mamata.com/investors/Investor-Meet/investor-presentation-07-11-2025.pdf", "period": "H1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:48"}
+{"sym": "CENTENKA", "status": "ok", "site": "https://www.centuryenka.com/", "ppt": "https://www.centuryenka.com/pdf/enka-earnings-conference-call-presentation-q1fy27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:50"}
+{"sym": "MAMATA", "status": "ok", "site": "https://www.mamata.com/", "ppt": "https://www.mamata.com/investors/Investor-Meet/investor-presentation-07-11-2025.pdf", "period": "H1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:52"}
+{"sym": "PRIMESECU", "status": "partial", "site": "https://www.primesecurities.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:53"}
+{"sym": "OAL", "status": "ok", "site": "https://www.orientalaromatics.com/", "ppt": "https://www.orientalaromatics.com/corporate-announcements/TranscriptQ22627.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:55"}
+{"sym": "CENTENKA", "status": "ok", "site": "https://www.centuryenka.com/", "ppt": "https://www.centuryenka.com/pdf/enka-earnings-conference-call-presentation-q1fy27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:57"}
+{"sym": "NITTAGELA", "status": "no-site", "at": "2026-11-08T22:34:57"}
+{"sym": "ASIANHOTNR", "status": "no-site", "at": "2026-11-08T22:34:57"}
+{"sym": "OAL", "status": "ok", "site": "https://www.orientalaromatics.com/", "ppt": "https://www.orientalaromatics.com/corporate-announcements/TranscriptQ22627.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:34:57"}
+{"sym": "ARIS", "status": "partial", "site": "https://aris.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:34:58"}
+{"sym": "ORICONENT", "status": "ok", "site": "https://www.oriconenterprises.com/", "ppt": "https://www.oriconenterprises.com/pdf/OutcomeOfInevestorMeet2019.pdf", "period": "March 2019", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:09"}
+{"sym": "LEMERITE", "status": "ok", "site": "https://www.lemeriteexports.com/", "ppt": "https://www.lemeriteexports.com/pdf/LMEL_06062025190641_Final_Investor_Presentation.pdf", "period": "Jun 2025", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:10"}
+{"sym": "LOTUSCHO", "status": "partial", "site": "https://www.lotuschocolate.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:11"}
+{"sym": "ROBU", "status": "no-site", "at": "2026-11-08T22:35:11"}
+{"sym": "IFBAGRO", "status": "partial", "site": "https://www.ifbagro.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:12"}
+{"sym": "TAALTECH", "status": "no-site", "at": "2026-11-08T22:35:12"}
+{"sym": "BCLIND", "status": "no-site", "at": "2026-11-08T22:35:12"}
+{"sym": "ORIRAIL", "status": "no-site", "at": "2026-11-08T22:35:12"}
+{"sym": "EIMCOELECO", "status": "no-site", "at": "2026-11-08T22:35:12"}
+{"sym": "GARGI", "status": "no-site", "at": "2026-11-08T22:35:12"}
+{"sym": "ORICONENT", "status": "ok", "site": "https://www.oriconenterprises.com/", "ppt": "https://www.oriconenterprises.com/pdf/OutcomeOfInevestorMeet2019.pdf", "period": "March 2019", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:13"}
+{"sym": "ADVENTHTL", "status": "no-site", "at": "2026-11-08T22:35:13"}
+{"sym": "RSL", "status": "partial", "site": "https://www.rajputanastainless.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:14"}
+{"sym": "APIS", "status": "partial", "site": "https://apisindia.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:14"}
+{"sym": "BORANA", "status": "no-site", "at": "2026-11-08T22:35:14"}
+{"sym": "GKSL", "status": "no-site", "at": "2026-11-08T22:35:14"}
+{"sym": "NDTV", "status": "no-site", "at": "2026-11-08T22:35:14"}
+{"sym": "STANLEY", "status": "partial", "site": "https://www.stanleylifestyles.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:15"}
+{"sym": "DECCANCE", "status": "partial", "site": "https://deccancements.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:18"}
+{"sym": "NIITLTD", "status": "partial", "site": "https://www.niit.ai/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:20"}
+{"sym": "VHL", "status": "partial", "site": "https://www.vardhman.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:24"}
+{"sym": "TEMBO", "status": "ok", "site": "https://tembo.in/", "ppt": "https://tembo.in/wp-content/uploads/2026/08/Investor-Presentation-FY-2026-27-Q1.pdf", "period": "Q1 FY28", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:24"}
+{"sym": "ECOSMOBLTY", "status": "no-site", "at": "2026-11-08T22:35:24"}
+{"sym": "KAPSTON", "status": "no-site", "at": "2026-11-08T22:35:24"}
+{"sym": "SWELECTES", "status": "no-site", "at": "2026-11-08T22:35:24"}
+{"sym": "SALZERELEC", "status": "partial", "site": "https://www.salzergroup.net/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:24"}
+{"sym": "LEMERITE", "status": "ok", "site": "https://www.lemeriteexports.com/", "ppt": "https://www.lemeriteexports.com/pdf/LMEL_06062025190641_Final_Investor_Presentation.pdf", "period": "Jun 2025", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:24"}
+{"sym": "INDOBORAX", "status": "partial", "site": "https://www.indoborax.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:25"}
+{"sym": "FERMENTA", "status": "ok", "site": "https://fermentabiotech.com/", "ppt": "https://fermentabiotech.com/wp-content/uploads/2026/09/Investor-PresentationQ1FY27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:26"}
+{"sym": "BAJAJINDEF", "status": "partial", "site": "https://indef.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:27"}
+{"sym": "RDBIPL", "status": "no-site", "at": "2026-11-08T22:35:27"}
+{"sym": "COSMICCRF", "status": "ok", "site": "https://cosmiccrf.com/", "ppt": "https://cosmiccrf.com/wp-content/uploads/2024/05/INVESTOR-PRESENTATION.pdf", "period": "May 2024", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:30"}
+{"sym": "BAJAJST", "status": "no-site", "at": "2026-11-08T22:35:30"}
+{"sym": "UTTAMSUGAR", "status": "partial", "site": "https://www.uttamsugar.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:32"}
+{"sym": "HEXATRADEX", "status": "partial", "site": "https://hexatradex.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:32"}
+{"sym": "NINSYS", "status": "partial", "site": "https://www.nintecsystems.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:33"}
+{"sym": "WANBURY", "status": "no-site", "at": "2026-11-08T22:35:33"}
+{"sym": "STEL", "status": "partial", "site": "https://stelholdings.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:35"}
+{"sym": "ONEGLOBAL", "status": "no-site", "at": "2026-11-08T22:35:35"}
+{"sym": "KRISHIVAL", "status": "ok", "site": "https://krishival.com/", "ppt": "https://cdn.shopify.com/s/files/1/0613/6240/5516/files/EMPYREAN_04112026224632_InvestorPresentation.pdf?v=1793813710", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:36"}
+{"sym": "SICALLOG", "status": "partial", "site": "https://sical.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:37"}
+{"sym": "DPSCLTD", "status": "no-site", "at": "2026-11-08T22:35:37"}
+{"sym": "BRRL", "status": "no-site", "at": "2026-11-08T22:35:37"}
+{"sym": "BRIGHT", "status": "partial", "site": "https://www.brightoutdoor.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:38"}
+{"sym": "KOKUYOCMLN", "status": "partial", "site": "https://www.kokuyocamlin.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:39"}
+{"sym": "VADILENT", "status": "no-site", "at": "2026-11-08T22:35:39"}
+{"sym": "VIVIANA", "status": "no-site", "at": "2026-11-08T22:35:39"}
+{"sym": "MCCHRLS-B", "status": "no-site", "at": "2026-11-08T22:35:39"}
+{"sym": "DVL", "status": "no-site", "at": "2026-11-08T22:35:39"}
+{"sym": "DHARMAJ", "status": "ok", "site": "https://www.dharmajcrop.com/", "ppt": "https://www.dharmajcrop.com/wp-content/uploads/2026/05/Investor-Presentation_Q4_FY-26.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:43"}
+{"sym": "THEMISMED", "status": "ok", "site": "https://www.themismedicare.com/", "ppt": "http://www.themismedicare.com/uploads/statutory/pdf/investor-presentation-30-06-26.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:47"}
+{"sym": "KELLTONTEC", "status": "partial", "site": "https://www.kellton.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:35:48"}
+{"sym": "SUNRAKSHAK", "status": "no-site", "at": "2026-11-08T22:35:48"}
+{"sym": "INDOAMIN", "status": "ok", "site": "https://indoaminesltd.com/", "ppt": "https://indoaminesltd.com/files/news/Investor_Presentation_June_2021.pdf", "period": "August 2021", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:53"}
+{"sym": "ZELIO", "status": "no-site", "at": "2026-11-08T22:35:53"}
+{"sym": "APEX", "status": "ok", "site": "https://apexfrozenfoods.in/", "ppt": "https://apexfrozenfoods.in/wp-content/uploads/investor-presentation-sd.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:56"}
+{"sym": "HEALTHX", "status": "ok", "site": "https://www.healthxplatform.com/", "ppt": "https://www.healthxplatform.com/Pdf/HXPLInvestorPresentationQ1FY27dsc_Signed.pdf", "period": "August 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:58"}
+{"sym": "OMINFRAL", "status": "no-site", "at": "2026-11-08T22:35:58"}
+{"sym": "STERTOOLS", "status": "no-site", "at": "2026-11-08T22:35:58"}
+{"sym": "GICHSGFIN", "status": "no-site", "at": "2026-11-08T22:35:58"}
+{"sym": "ELDEHSG", "status": "no-site", "at": "2026-11-08T22:35:58"}
+{"sym": "AVADHSUGAR", "status": "ok", "site": "https://avadhsugar.com/", "ppt": "https://avadhsugar.com/wp-content/uploads/2026/11/Aselinvtsep26-1.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:35:59"}
+{"sym": "SUDARCOLOR", "status": "no-site", "at": "2026-11-08T22:35:59"}
+{"sym": "MOL", "status": "ok", "site": "https://meghmani.com/", "ppt": "https://meghmani.com/wp-content/uploads/2026/11/Q2-FY27-Investor-Presentation.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:04"}
+{"sym": "NCLIND", "status": "no-site", "at": "2026-11-08T22:36:04"}
+{"sym": "SRHHYPOLTD", "status": "no-site", "at": "2026-11-08T22:36:04"}
+{"sym": "GEMAROMA", "status": "partial", "site": "https://gemaromatics.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:06"}
+{"sym": "SGIL", "status": "no-site", "at": "2026-11-08T22:36:06"}
+{"sym": "MUNJALAU", "status": "no-site", "at": "2026-11-08T22:36:06"}
+{"sym": "KRYSTAL", "status": "no-site", "at": "2026-11-08T22:36:06"}
+{"sym": "GCSL", "status": "ok", "site": "https://www.gretexcorporate.com/", "ppt": "https://www.gretexcorporate.com/assets/documents/investor-relations/investor-meet/2025-26/q3/q3-fy-26-investor-presentation-for-earning-call-to-be-held-on-19.01.2026.pdf", "period": "January 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:09"}
+{"sym": "TNPETRO", "status": "no-site", "at": "2026-11-08T22:36:09"}
+{"sym": "AMBIKCO", "status": "no-site", "at": "2026-11-08T22:36:09"}
+{"sym": "RNBDENIMS", "status": "no-site", "at": "2026-11-08T22:36:09"}
+{"sym": "CROPSTER", "status": "no-site", "at": "2026-11-08T22:36:09"}
+{"sym": "FEDDERSHOL", "status": "partial", "site": "https://feddersholding.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:12"}
+{"sym": "KABRAEXTRU", "status": "no-site", "at": "2026-11-08T22:36:12"}
+{"sym": "BPLPHARMA", "status": "no-site", "at": "2026-11-08T22:36:12"}
+{"sym": "ISTLTD", "status": "no-site", "at": "2026-11-08T22:36:12"}
+{"sym": "NWIL", "status": "partial", "site": "https://www.nurturewell.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:13"}
+{"sym": "SUYOG", "status": "no-site", "at": "2026-11-08T22:36:13"}
+{"sym": "MACPOWER", "status": "ok", "site": "https://macpowercnc.com/", "ppt": "https://macpowercnc.com/wp-content/uploads/2026/10/Investor-Presentation-Q2FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:14"}
+{"sym": "NAHARSPING", "status": "no-site", "at": "2026-11-08T22:36:14"}
+{"sym": "MEIL", "status": "no-site", "at": "2026-11-08T22:36:14"}
+{"sym": "TVSELECT", "status": "no-site", "at": "2026-11-08T22:36:14"}
+{"sym": "MAANALU", "status": "partial", "site": "https://www.maanaluminium.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:15"}
+{"sym": "ECORECO", "status": "no-site", "at": "2026-11-08T22:36:15"}
+{"sym": "MVGJL", "status": "no-site", "at": "2026-11-08T22:36:15"}
+{"sym": "MAXIND", "status": "partial", "site": "https://www.maxindia.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:15"}
+{"sym": "JITFINFRA", "status": "no-site", "at": "2026-11-08T22:36:15"}
+{"sym": "PROZONER", "status": "no-site", "at": "2026-11-08T22:36:15"}
+{"sym": "HERANBA", "status": "ok", "site": "https://www.heranba.com/", "ppt": "https://www.heranba.com/api/download?url=%2Fblob-images%2Fdocuments%2Finvestors%2Fdocs%2FQ2FY25_Investor_Presentation.pdf&name=Investor%20Presentation.pdf", "period": "Q2 FY25", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:16"}
+{"sym": "MACPOWER", "status": "ok", "site": "https://macpowercnc.com/", "ppt": "https://macpowercnc.com/wp-content/uploads/2026/10/Investor-Presentation-Q2FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:17"}
+{"sym": "ARIHANTCAP", "status": "partial", "site": "https://www.arihantcapital.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:17"}
+{"sym": "HYPERSOFT", "status": "no-site", "at": "2026-11-08T22:36:17"}
+{"sym": "AGARIND", "status": "no-site", "at": "2026-11-08T22:36:17"}
+{"sym": "SHREEREF", "status": "no-site", "at": "2026-11-08T22:36:17"}
+{"sym": "PDMJEPAPER", "status": "partial", "site": "https://pudumjee.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:18"}
+{"sym": "PROSTARM", "status": "ok", "site": "https://prostarm.com/", "ppt": "https://prostarm.com/wp-content/uploads/2019/09/investor-presentation-for-the-quarter-ended-june-30-2026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:18"}
+{"sym": "GANESHCP", "status": "no-site", "at": "2026-11-08T22:36:18"}
+{"sym": "VLSFINANCE", "status": "no-site", "at": "2026-11-08T22:36:18"}
+{"sym": "RUBYMILLS", "status": "partial", "site": "https://www.rubymills.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:19"}
+{"sym": "GTPL", "status": "partial", "site": "https://www.gtpl.net/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:20"}
+{"sym": "BLAL", "status": "no-site", "at": "2026-11-08T22:36:20"}
+{"sym": "UPHOT", "status": "no-site", "at": "2026-11-08T22:36:20"}
+{"sym": "VHLTD", "status": "partial", "site": "https://www.viceroyhotels.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:23"}
+{"sym": "ZUARIIND", "status": "ok", "site": "https://www.zuari.in/", "ppt": "https://www.zuari.in/assets/files/Zuari-Agrochemicals-3QFY19-Earnig-call-hosted-by-B-and-K-securities-Held-on-12th-Feb-2019.pdf", "period": "February 2019", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:23"}
+{"sym": "ADCINDIA", "status": "no-site", "at": "2026-11-08T22:36:23"}
+{"sym": "UNIENTER", "status": "no-site", "at": "2026-11-08T22:36:23"}
+{"sym": "PVP", "status": "no-site", "at": "2026-11-08T22:36:23"}
+{"sym": "NRAIL", "status": "no-site", "at": "2026-11-08T22:36:23"}
+{"sym": "INNOVANA", "status": "no-site", "at": "2026-11-08T22:36:23"}
+{"sym": "SELECTRIC", "status": "partial", "site": "https://www.schneiderelectricpresident.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:24"}
+{"sym": "BEEKAY", "status": "partial", "site": "https://www.beekaysteel.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:25"}
+{"sym": "ENKEIWHEL", "status": "no-site", "at": "2026-11-08T22:36:25"}
+{"sym": "REGAAL", "status": "no-site", "at": "2026-11-08T22:36:25"}
+{"sym": "ARYAMAN", "status": "no-site", "at": "2026-11-08T22:36:25"}
+{"sym": "SUNSHIEL", "status": "partial", "site": "https://sunshieldchemicals.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:29"}
+{"sym": "SANDESH", "status": "partial", "site": "https://www.sandesh.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:29"}
+{"sym": "FOSECOC", "status": "no-site", "at": "2026-11-08T22:36:29"}
+{"sym": "VEEFIN", "status": "no-site", "at": "2026-11-08T22:36:29"}
+{"sym": "VASCONEQ", "status": "partial", "site": "https://www.vascon.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:29"}
+{"sym": "ANUHPHR", "status": "ok", "site": "https://www.anuhpharma.com/", "ppt": "https://www.anuhpharma.com/downloads/Anuh-Pharma-Investor-Presentation.pdf?v=20261105", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:30"}
+{"sym": "ABCOTS", "status": "no-site", "at": "2026-11-08T22:36:30"}
+{"sym": "BIRLAMONEY", "status": "no-site", "at": "2026-11-08T22:36:30"}
+{"sym": "BIGBLOC", "status": "ok", "site": "https://bigbloc.in/", "ppt": "https://bigbloc.in/wp-content/uploads/2026/11/Earnings-Presentation-Q2-H1-FY27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:31"}
+{"sym": "HAZOOR", "status": "no-site", "at": "2026-11-08T22:36:31"}
+{"sym": "ASAL", "status": "no-site", "at": "2026-11-08T22:36:31"}
+{"sym": "BIZOTIC", "status": "no-site", "at": "2026-11-08T22:36:31"}
+{"sym": "ESTER", "status": "ok", "site": "https://www.esterindustries.com/", "ppt": "https://www.esterindustries.com/wp-content/themes/esterindustries/assets/pdf/governance-and-regulatory-information/institutional-and-analyst-meeting/InvestorPresentationQ4FY26.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:33"}
+{"sym": "INNOVISION", "status": "partial", "site": "https://www.innovision.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:33"}
+{"sym": "RSWM", "status": "ok", "site": "https://rswm.in/", "ppt": "https://rswm.in/wp-content/uploads/2026/05/InvestorPresentation-on-Q4-FY26.pdf", "period": "May 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:38"}
+{"sym": "BODALCHEM", "status": "no-site", "at": "2026-11-08T22:36:38"}
+{"sym": "XCHANGING", "status": "no-site", "at": "2026-11-08T22:36:38"}
+{"sym": "SARLAPOLY", "status": "no-site", "at": "2026-11-08T22:36:38"}
+{"sym": "UNIFIED", "status": "no-site", "at": "2026-11-08T22:36:38"}
+{"sym": "RAJPALAYAM", "status": "partial", "site": "https://rajapalayammills.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:42"}
+{"sym": "GHCLTEXTIL", "status": "ok", "site": "https://ghcltextiles.co.in/", "ppt": "https://ghcltextiles.co.in/wp-content/uploads/2026/11/Invester-meet_Presentation_Q2FY27_05_11_2026.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:42"}
+{"sym": "GAUDIUMIVF", "status": "no-site", "at": "2026-11-08T22:36:42"}
+{"sym": "BHAGERIA", "status": "partial", "site": "https://www.bhageria.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:47"}
+{"sym": "MENONBE", "status": "partial", "site": "https://menonbearings.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:47"}
+{"sym": "VALIANTORG", "status": "no-source", "site": "https://www.valiantorganics.com/", "ppt": null, "period": null, "ppt_via": null, "errors": ["website: Blocked bot challenge page", "no official source found: site https://www.valiantorganics.com/ via name-derived domain: name tokens ['valiant', 'organics'] matched 1.00; investor section linked; IR crawl: homepage Blocked bot challenge page; ppt candidates 0: []"], "at": "2026-11-08T22:36:49"}
+{"sym": "VTMLTD", "status": "no-site", "at": "2026-11-08T22:36:49"}
+{"sym": "RADHIKAJWE", "status": "partial", "site": "https://www.radhikajeweltech.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:50"}
+{"sym": "AIRFLOA", "status": "no-site", "at": "2026-11-08T22:36:50"}
+{"sym": "SCODATUBES", "status": "partial", "site": "https://www.scodatubes.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:51"}
+{"sym": "CCCL", "status": "no-site", "at": "2026-11-08T22:36:51"}
+{"sym": "DENTA", "status": "ok", "site": "https://denta.co.in/", "ppt": "https://denta.co.in/wp-content/uploads/2025/11/Denta-Water-And-Infra-Solutions-Limited-Presentation-_Final.pdf", "period": "H1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:51"}
+{"sym": "UNITEDPOLY", "status": "no-site", "at": "2026-11-08T22:36:51"}
+{"sym": "AMNPLST", "status": "ok", "site": "https://www.amines.com/", "ppt": "https://www.amines.com/pdf/investor-presentations-and-press-release/investor-presentation-q1-fy27.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:51"}
+{"sym": "DHAMPURSUG", "status": "ok", "site": "https://www.dhampursugar.com/", "ppt": "https://api.dhampursugar.com/uploads/Investors_Presentation31072026_4726ae1cbd.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:52"}
+{"sym": "ADVANCE", "status": "partial", "site": "https://www.advanceagrolife.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:52"}
+{"sym": "VAKRANGEE", "status": "no-site", "at": "2026-11-08T22:36:52"}
+{"sym": "BHAGYANGR", "status": "no-site", "at": "2026-11-08T22:36:52"}
+{"sym": "PERMAGN", "status": "no-site", "at": "2026-11-08T22:36:52"}
+{"sym": "YOGI", "status": "no-site", "at": "2026-11-08T22:36:52"}
+{"sym": "STCINDIA", "status": "no-site", "at": "2026-11-08T22:36:52"}
+{"sym": "TOTEM", "status": "no-site", "at": "2026-11-08T22:36:52"}
+{"sym": "PVSL", "status": "partial", "site": "https://www.popularvehicles.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:53"}
+{"sym": "EXHICON", "status": "no-site", "at": "2026-11-08T22:36:53"}
+{"sym": "TANAA", "status": "no-site", "at": "2026-11-08T22:36:53"}
+{"sym": "SVLL", "status": "no-site", "at": "2026-11-08T22:36:53"}
+{"sym": "TVTODAY", "status": "no-site", "at": "2026-11-08T22:36:53"}
+{"sym": "LIKHITHA", "status": "ok", "site": "https://www.likhitha.co.in/", "ppt": "https://www.likhitha.co.in/assets/pdf/InvestorPresentation/Investor%20Presentation_Q4%20&%20FY%2026.pdf", "period": "June 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:36:57"}
+{"sym": "KOTHARIPET", "status": "partial", "site": "https://www.kotharipetrochemicals.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:36:59"}
+{"sym": "CONSOFINVT", "status": "no-site", "at": "2026-11-08T22:36:59"}
+{"sym": "MUKKA", "status": "no-site", "at": "2026-11-08T22:36:59"}
+{"sym": "SPELS", "status": "no-site", "at": "2026-11-08T22:36:59"}
+{"sym": "INDOFARM", "status": "partial", "site": "https://www.indofarm.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:01"}
+{"sym": "SHRADDHA", "status": "partial", "site": "https://www.shraddhaprimeprojects.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:01"}
+{"sym": "AXTEL", "status": "no-site", "at": "2026-11-08T22:37:01"}
+{"sym": "INDIAHOMES", "status": "ok", "site": "https://www.indiahomesltd.com/", "ppt": "https://www.indiahomesltd.com/assets/investor_brief.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:04"}
+{"sym": "SAURASHCEM", "status": "partial", "site": "https://www.saurashtracement.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:06"}
+{"sym": "OSWALGREEN", "status": "no-site", "at": "2026-11-08T22:37:06"}
+{"sym": "ADSL", "status": "no-site", "at": "2026-11-08T22:37:06"}
+{"sym": "CEWATER", "status": "no-site", "at": "2026-11-08T22:37:06"}
+{"sym": "ASGARD", "status": "no-site", "at": "2026-11-08T22:37:06"}
+{"sym": "VOITHPAPR", "status": "no-site", "at": "2026-11-08T22:37:06"}
+{"sym": "SHREERAMA", "status": "no-site", "at": "2026-11-08T22:37:06"}
+{"sym": "MRTX", "status": "no-site", "at": "2026-11-08T22:37:06"}
+{"sym": "AMAL", "status": "no-site", "at": "2026-11-08T22:37:06"}
+{"sym": "KSOLVES", "status": "ok", "site": "https://www.ksolves.com/", "ppt": "https://www.ksolves.com/wp-content/uploads/2026/10/Investor-Presentation-Q2-FY27.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:09"}
+{"sym": "PRAVEG", "status": "no-site", "at": "2026-11-08T22:37:09"}
+{"sym": "AHCL", "status": "ok", "site": "https://www.anlon.in/", "ppt": "https://www.anlon.in/uploads/catalogues/Anlon_ppt_V19.pdf", "period": "H1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:10"}
+{"sym": "MALLCOM", "status": "no-site", "at": "2026-11-08T22:37:10"}
+{"sym": "ZFSTEERING", "status": "no-site", "at": "2026-11-08T22:37:10"}
+{"sym": "GLOSTERLTD", "status": "no-site", "at": "2026-11-08T22:37:10"}
+{"sym": "KECL", "status": "partial", "site": "https://www.kirloskarelectric.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:10"}
+{"sym": "HEXAGON", "status": "ok", "site": "https://hexagonnutrition.com/", "ppt": "https://hexagonnutrition.com/wp-content/uploads/2026/08/HNL-IR-presentation-with-cover-final.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:14"}
+{"sym": "SGRL", "status": "no-site", "at": "2026-11-08T22:37:14"}
+{"sym": "DBOL", "status": "ok", "site": "https://www.dhampur.com/", "ppt": "https://www.dhampur.com/wp-content/uploads/2026/07/DBO_Q1FY27_InvestorPresentation_15July-2026-V1-003.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:15"}
+{"sym": "KAMDHENU", "status": "no-site", "at": "2026-11-08T22:37:15"}
+{"sym": "KSE", "status": "no-site", "at": "2026-11-08T22:37:15"}
+{"sym": "UNIABEXAL", "status": "partial", "site": "https://uniabex.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:16"}
+{"sym": "MOL", "status": "ok", "site": "https://meghmani.com/", "ppt": "https://meghmani.com/wp-content/uploads/2026/11/Q2-FY27-Investor-Presentation.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:21"}
+{"sym": "MAGADSUGAR", "status": "ok", "site": "https://magadhsugar.com/", "ppt": "https://magadhsugar.com/wp-content/uploads/2026/11/Mselinvtsep26.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:22"}
+{"sym": "MINDTECK", "status": "no-site", "at": "2026-11-08T22:37:22"}
+{"sym": "MODIS", "status": "no-site", "at": "2026-11-08T22:37:22"}
+{"sym": "PRECOT", "status": "no-site", "at": "2026-11-08T22:37:22"}
+{"sym": "ATL", "status": "ok", "site": "https://www.allcargoterminals.com/", "ppt": "https://www.allcargoterminals.com/wp-content/uploads/2026/08/SE-upload_investor-presentation.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:22"}
+{"sym": "SOUTHWEST", "status": "no-site", "at": "2026-11-08T22:37:22"}
+{"sym": "SNOWMAN", "status": "no-site", "at": "2026-11-08T22:37:22"}
+{"sym": "PATELRMART", "status": "no-site", "at": "2026-11-08T22:37:22"}
+{"sym": "MMP", "status": "no-site", "at": "2026-11-08T22:37:22"}
+{"sym": "PRADPME", "status": "no-site", "at": "2026-11-08T22:37:22"}
+{"sym": "APEX", "status": "ok", "site": "https://apexfrozenfoods.in/", "ppt": "https://apexfrozenfoods.in/wp-content/uploads/investor-presentation-sd.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:24"}
+{"sym": "COMSYN", "status": "no-site", "at": "2026-11-08T22:37:24"}
+{"sym": "EMKAY", "status": "no-site", "at": "2026-11-08T22:37:24"}
+{"sym": "OMPOWER", "status": "no-site", "at": "2026-11-08T22:37:24"}
+{"sym": "RITCO", "status": "ok", "site": "https://www.ritcologistics.com/", "ppt": "https://www.ritcologistics.com/frontassets/images/Ritco_Presentation.pdf", "period": null, "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:28"}
+{"sym": "CHEMCON", "status": "no-site", "at": "2026-11-08T22:37:28"}
+{"sym": "GANESHBE", "status": "ok", "site": "https://www.ganeshbenzoplast.com/", "ppt": "https://www.ganeshbenzoplast.com/pdf/investor-presentations/Investor-Presentation-June-2026.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:29"}
+{"sym": "ARROWGREEN", "status": "partial", "site": "https://www.arrowgreentech.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:29"}
+{"sym": "GEECEE", "status": "partial", "site": "https://www.geeceeventures.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:29"}
+{"sym": "ELIN", "status": "no-site", "at": "2026-11-08T22:37:29"}
+{"sym": "TUTIALKA", "status": "no-site", "at": "2026-11-08T22:37:29"}
+{"sym": "COFFEEDAY", "status": "no-site", "at": "2026-11-08T22:37:29"}
+{"sym": "CHEVIOT", "status": "no-site", "at": "2026-11-08T22:37:29"}
+{"sym": "20MICRONS", "status": "no-site", "at": "2026-11-08T22:37:29"}
+{"sym": "SIGACHI", "status": "partial", "site": "https://sigachi.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:31"}
+{"sym": "EVERESTIND", "status": "no-site", "at": "2026-11-08T22:37:31"}
+{"sym": "SATIA", "status": "no-site", "at": "2026-11-08T22:37:31"}
+{"sym": "LINC", "status": "no-site", "at": "2026-11-08T22:37:31"}
+{"sym": "HINDCOMPOS", "status": "no-site", "at": "2026-11-08T22:37:31"}
+{"sym": "EIFFL", "status": "no-site", "at": "2026-11-08T22:37:31"}
+{"sym": "DMCC", "status": "no-site", "at": "2026-11-08T22:37:31"}
+{"sym": "ONWARDTEC", "status": "no-site", "at": "2026-11-08T22:37:31"}
+{"sym": "KINETICENG", "status": "no-site", "at": "2026-11-08T22:37:31"}
+{"sym": "MERCURYEV", "status": "partial", "site": "https://mercuryevtech.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:31"}
+{"sym": "JOJO", "status": "partial", "site": "https://jojolimited.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:32"}
+{"sym": "OSWALAGRO", "status": "partial", "site": "https://www.oswalagromills.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:32"}
+{"sym": "TRANSPEK", "status": "ok", "site": "https://transpek.com/", "ppt": "https://transpek.com/wp-content/uploads/2026/08/Investor-Presentation-August-2026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:41"}
+{"sym": "PENINLAND", "status": "ok", "site": "https://www.peninsulaland.in/", "ppt": "https://media.peninsulaland.in/media/vAw4hM_Investor-Presentation-Q1FY-20-130819.pdf", "period": "Q1 FY20", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:41"}
+{"sym": "TREL", "status": "ok", "site": "https://www.transindia.co.in/", "ppt": "https://www.transindia.co.in/wp-content/uploads/2025/05/TREL_BM_Investor-Presentation_15052025_signed.pdf", "period": "Q4 FY25", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:43"}
+{"sym": "SEJALLTD", "status": "ok", "site": "https://www.sejalglass.co.in/", "ppt": "https://www.sejalglass.co.in/document/SE_sept30.pdf", "period": "October 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:46"}
+{"sym": "INOVSYNTH", "status": "partial", "site": "https://www.innovassynth.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:47"}
+{"sym": "DISHTV", "status": "no-site", "at": "2026-11-08T22:37:47"}
+{"sym": "JAGAJITIND", "status": "no-site", "at": "2026-11-08T22:37:47"}
+{"sym": "MANBA", "status": "ok", "site": "https://www.manbafinance.com/", "ppt": "https://announcement2.s3.ap-south-1.amazonaws.com/Manba+Investor+Presentation+Q1-FY27+v15.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:49"}
+{"sym": "MODISONLTD", "status": "partial", "site": "https://www.modisonltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:50"}
+{"sym": "SHINDL", "status": "ok", "site": "https://sharatindustries.com/", "ppt": "https://sharatindustries.com/wp-content/uploads/2026/05/Investor-Presentation_Q4-FY26.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:50"}
+{"sym": "DCMSIL", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "SVRL", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "VISAKAIND", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "NBIFIN", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "INVPRECQ", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "KOPRAN", "status": "ok", "site": "https://www.kopran.com/", "ppt": "https://www.kopran.com/wp-content/uploads/2026/11/Investor-presentation_Q2_FY-2026-27.pdf", "period": "Q2 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:50"}
+{"sym": "PREMIERPOL", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "DAVANGERE", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "TAKE", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "KHAICHEM", "status": "no-site", "at": "2026-11-08T22:37:50"}
+{"sym": "SUDARSHAN", "status": "ok", "site": "https://www.sudarshanpharma.com/", "ppt": "https://www.sudarshanpharma.com/wp-content/uploads/2025/08/SPIL_Investor_Presentation_Aug2025.pdf", "period": "March 2023", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:51"}
+{"sym": "INTEGRAEN", "status": "partial", "site": "https://www.integraengineering.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:51"}
+{"sym": "CSLFINANCE", "status": "partial", "site": "https://cslfinance.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:52"}
+{"sym": "DHUNINV", "status": "partial", "site": "https://www.dhunseriinvestments.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:52"}
+{"sym": "ARTSON", "status": "no-site", "at": "2026-11-08T22:37:52"}
+{"sym": "EMPIND", "status": "no-site", "at": "2026-11-08T22:37:52"}
+{"sym": "PANCHMAHQ", "status": "partial", "site": "https://www.panchmahalsteel.co.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:53"}
+{"sym": "DWARKESH", "status": "ok", "site": "https://www.dwarikesh.com/", "ppt": "https://www.dwarikesh.com/wp-content/uploads/2026/07/Regulation30InvestorPresentationdtd-July282026.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:54"}
+{"sym": "JAYAGROGN", "status": "partial", "site": "https://www.jayantagro.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:37:56"}
+{"sym": "SUKHJITS", "status": "no-site", "at": "2026-11-08T22:37:56"}
+{"sym": "SCHAND", "status": "no-site", "at": "2026-11-08T22:37:56"}
+{"sym": "POEL", "status": "ok", "site": "https://pocl.com/", "ppt": "https://pocl.com/wp-content/uploads/pdocs/2026/01/IntimationsAudioLinkQ3FY26sd.pdf", "period": "January 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:37:59"}
+{"sym": "PYRAMID", "status": "partial", "site": "https://pyramidtechnoplast.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:01"}
+{"sym": "SUBEXLTD", "status": "partial", "site": "https://www.subex.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:03"}
+{"sym": "NISUS", "status": "no-site", "at": "2026-11-08T22:38:03"}
+{"sym": "IFINSEC", "status": "partial", "site": "https://www.finsec.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:03"}
+{"sym": "MUFTI", "status": "ok", "site": "https://www.credobrands.in/", "ppt": "https://www.credobrands.in/files/20261104_SE_Letter_IR-Presentation.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:03"}
+{"sym": "RIDDHI", "status": "no-site", "at": "2026-11-08T22:38:03"}
+{"sym": "AZADIND", "status": "partial", "site": "https://azadindiamobility.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:05"}
+{"sym": "LAXMIINDIA", "status": "no-site", "at": "2026-11-08T22:38:05"}
+{"sym": "KAMATHOTEL", "status": "no-site", "at": "2026-11-08T22:38:05"}
+{"sym": "NAHARPOLY", "status": "partial", "site": "https://www.naharpolyfilms.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:06"}
+{"sym": "APTECHT", "status": "no-site", "at": "2026-11-08T22:38:06"}
+{"sym": "THEINVEST", "status": "no-site", "at": "2026-11-08T22:38:06"}
+{"sym": "SHIVACEM", "status": "partial", "site": "https://shivacement.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:06"}
+{"sym": "NEUEON", "status": "partial", "site": "https://www.neueon.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:06"}
+{"sym": "ONMOBILE", "status": "partial", "site": "https://www.onmobile.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:07"}
+{"sym": "SRAMSET", "status": "no-site", "at": "2026-11-08T22:38:07"}
+{"sym": "NILASPACES", "status": "no-site", "at": "2026-11-08T22:38:07"}
+{"sym": "REPRO", "status": "ok", "site": "https://www.reproindialtd.com/", "ppt": "https://investor.reproindialtd.com/pdf/2026-2027/AnalystPresentation_23102026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:08"}
+{"sym": "SHISHIND", "status": "partial", "site": "https://shishind.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:09"}
+{"sym": "HLVLTD", "status": "partial", "site": "https://www.hlvltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:11"}
+{"sym": "WSI", "status": "partial", "site": "https://wsindustries.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:12"}
+{"sym": "URJA", "status": "partial", "site": "https://www.urjaglobal.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:13"}
+{"sym": "ENIL", "status": "no-site", "at": "2026-11-08T22:38:13"}
+{"sym": "SUPREMEINF", "status": "no-site", "at": "2026-11-08T22:38:13"}
+{"sym": "HIIL", "status": "partial", "site": "https://www.hindusthaninsulators.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:15"}
+{"sym": "VISHAL", "status": "partial", "site": "https://vishalfabricsltd.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:15"}
+{"sym": "SHRJAGP", "status": "partial", "site": "https://www.shrijagdamba.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:15"}
+{"sym": "ARYACAPM", "status": "no-site", "at": "2026-11-08T22:38:15"}
+{"sym": "SADHNANIQ", "status": "no-site", "at": "2026-11-08T22:38:15"}
+{"sym": "PRIMO", "status": "ok", "site": "https://primochemicals.in/", "ppt": "https://primochemicals.in/wp-content/uploads/2023/08/Earning-Presentation-June-2023.pdf", "period": "Q2 FY24", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:16"}
+{"sym": "MCLEODRUSS", "status": "partial", "site": "https://www.mcleodrussel.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:17"}
+{"sym": "IRIS", "status": "no-site", "at": "2026-11-08T22:38:17"}
+{"sym": "ESSARSHPNG", "status": "no-site", "at": "2026-11-08T22:38:17"}
+{"sym": "PTL", "status": "no-site", "at": "2026-11-08T22:38:17"}
+{"sym": "LAKSHMIMIL", "status": "partial", "site": "https://www.lakshmimills.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:18"}
+{"sym": "GFLLIMITED", "status": "no-site", "at": "2026-11-08T22:38:18"}
+{"sym": "WELINV", "status": "partial", "site": "https://www.welspuninvestments.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:19"}
+{"sym": "VIKRAMTH", "status": "partial", "site": "https://www.vikramthermo.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:20"}
+{"sym": "ACL", "status": "no-site", "at": "2026-11-08T22:38:20"}
+{"sym": "HMVL", "status": "no-site", "at": "2026-11-08T22:38:20"}
+{"sym": "ZEEMEDIA", "status": "partial", "site": "https://www.zeemedia.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:21"}
+{"sym": "GLOTTIS", "status": "no-site", "at": "2026-11-08T22:38:21"}
+{"sym": "TIRUPATIFL", "status": "no-site", "at": "2026-11-08T22:38:21"}
+{"sym": "MONIKA", "status": "ok", "site": "https://monikaalcobev.com/", "ppt": "https://monikaalcobev.com/assets/pdf/SEC35-Investor-Presentation.pdf", "period": "February 2026", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:24"}
+{"sym": "SAMHI", "status": "ok", "site": "https://samhi.co.in/", "ppt": "https://samhi.co.in/wp-content/uploads/2026/11/SAMHI_Investor-Presentation_Q2FY27_vff.pdf", "period": "H2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:24"}
+{"sym": "FOCUS", "status": "no-site", "at": "2026-11-08T22:38:24"}
+{"sym": "PPL", "status": "no-site", "at": "2026-11-08T22:38:24"}
+{"sym": "KUANTUM", "status": "ok", "site": "https://www.kuantumpapers.com/", "ppt": "https://www.kuantumpapers.com/wp-content/uploads/2026/11/Investor-Presentation-November-26.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:24"}
+{"sym": "KILITCH", "status": "partial", "site": "https://kilitch.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:25"}
+{"sym": "KIRANVYPAR", "status": "no-site", "at": "2026-11-08T22:38:25"}
+{"sym": "VISACHROME", "status": "partial", "site": "https://www.visachrome.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:28"}
+{"sym": "MUNJALSHOW", "status": "no-site", "at": "2026-11-08T22:38:28"}
+{"sym": "PANSARI", "status": "partial", "site": "https://www.pansaridevelopers.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:29"}
+{"sym": "NAMOEWASTE", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "HVAX", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "SUNLITE", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "BAHETI", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "NXST", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "SAHASRA", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "EMBASSY", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "TPLPLASTEH", "status": "partial", "site": "https://www.tplplastech.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:29"}
+{"sym": "MINDSPACE", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "AIMTRON", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "SUPREMEPWR", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "ZODIAC", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "BIRET", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "ARDEE", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "ALPEXSOLAR", "status": "no-site", "at": "2026-11-08T22:38:29"}
+{"sym": "TATVA", "status": "partial", "site": "https://www.tatvachintan.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:29"}
+{"sym": "VPRPL", "status": "ok", "site": "https://www.vprp.co.in/", "ppt": "https://www.vprp.co.in/images/presentation/VPRPL_14082025125058_Investor_presentation_Q1_FY2026.pdf", "period": "Q1 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:31"}
+{"sym": "IRISDOREME", "status": "partial", "site": "https://www.irisclothings.in/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:33"}
+{"sym": "PANACHE", "status": "partial", "site": "https://www.panachedigilife.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:38"}
+{"sym": "SPECIALITY", "status": "ok", "site": "https://www.speciality.co.in/", "ppt": "https://www.speciality.co.in/pdf/pdf_4/Presentation/INVESTORPRESENTATIONQ12027.pdf", "period": "Q1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:38"}
+{"sym": "RBZJEWEL", "status": "ok", "site": "https://rbzjewellers.com/", "ppt": "https://rbzjewellers.com/wp-content/uploads/2026/11/Investor-Presentation_November-2026.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:40"}
+{"sym": "HALDYNGL", "status": "partial", "site": "https://www.haldynglass.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:38:40"}
+{"sym": "PREVEST", "status": "ok", "site": "https://www.prevestdenpro.com/", "ppt": "https://www.prevestdenpro.com/wp-content/uploads/2022/02/Earnings-Presentation-PREVEST-Q3FY22.pdf", "period": "Q1 FY23", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:40"}
+{"sym": "CHEMFAB", "status": "ok", "site": "https://chemfabalkalis.com/", "ppt": "https://chemfabalkalis.com/wp-content/uploads/2025/08/Investor-Presentation-Q1FY-26.pdf", "period": "Q2 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:41"}
+{"sym": "RUSHIL", "status": "ok", "site": "https://www.rushil.com/", "ppt": "https://www.rushil.com/admin/uploads/8/44/Rushil-Decor-Limited-Q2-FY27-Investor-Presentation.pdf", "period": "Q2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:46"}
+{"sym": "SAMHI", "status": "ok", "site": "https://samhi.co.in/", "ppt": "https://samhi.co.in/wp-content/uploads/2026/11/SAMHI_Investor-Presentation_Q2FY27_vff.pdf", "period": "H2 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:38:46"}
+{"sym": "BESTAGRO", "status": "ok", "site": "https://www.bestagrolife.com/", "ppt": "https://www.bestagrolife.com/investorss/corporate-presentation-09022026.pdf", "period": "Q3 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:39:00"}
+{"sym": "TATVA", "status": "partial", "site": "https://www.tatvachintan.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:39:05"}
+{"sym": "FAIRCHEMOR", "status": "ok", "site": "https://fairchem.in/", "ppt": "https://fairchem.in/investor-relations/Investor-Presentation/Transcript-of-Earnings-Concall-for-Q2-FY-2026-27.pdf", "period": "H1 FY27", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:39:20"}
+{"sym": "SUTLEJTEX", "status": "partial", "site": "https://www.sutlejtextiles.com/", "ppt": null, "period": null, "ppt_via": null, "errors": [], "at": "2026-11-08T22:39:45"}
+{"sym": "ROHLTD", "status": "ok", "site": "https://www.royalorchidhotels.com/", "ppt": "https://www.royalorchidhotels.com/Images/factsheet/investorpresentationsigned1.25.05.2026.pdf", "period": "Q4 FY26", "ppt_via": "company IR page", "errors": [], "at": "2026-11-08T22:40:05"}

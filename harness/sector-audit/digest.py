@@ -13,6 +13,9 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 KEY = re.compile(r"manufactur|leading|largest|segment|product|revenue|business|engaged|provid|offer|we are|company is|"
                  r"portfolio|brand|customers|capacity|plant|services|solutions|lending|loan|aum|% of|share", re.I)
 
+SHORT = os.environ.get("DIGEST_SHORT") == "1"
+PPT_B, WEB_N, WEB_B = (450, 1, 300) if SHORT else (750, 2, 380)
+
 
 def ledger_syms():
     path = os.path.join(ROOT, "ledger.jsonl")
@@ -38,11 +41,11 @@ def pick(text, budget):
 def digest(ev):
     parts = [f"### {ev['sym']} | {ev['name']} | now: {', '.join(ev['current_baskets'])}"]
     if ev.get("ppt"):
-        parts.append(f"PPT ({ev.get('ppt_period')}) {ev['ppt_url']}\n{pick(ev["ppt"], 750)}")
-    for p in (ev.get("website") or [])[:2]:
+        parts.append(f"PPT ({ev.get('ppt_period')}) {ev['ppt_url']}\n{pick(ev["ppt"], PPT_B)}")
+    for p in (ev.get("website") or [])[:WEB_N]:
         if p.get("text"):
             head = " | ".join(x for x in (p.get("title"), p.get("description")) if x)
-            parts.append(f"WEB {p['url']}\n{head[:220]}\n{pick(p["text"], 380)}")
+            parts.append(f"WEB {p['url']}\n{head[:220]}\n{pick(p["text"], WEB_B)}")
     if len(parts) == 1:
         parts.append(f"NO SOURCE. website={ev.get('website_url')} ppt={ev.get('ppt_url')} errors={ev.get('errors')}")
     return "\n".join(parts)
@@ -56,6 +59,9 @@ def main():
     if "--syms" in args:
         order = args[args.index("--syms") + 1].split(",")
     done = ledger_syms()
+    skip = os.path.join(ROOT, 'pending_manual.txt')
+    if os.path.exists(skip) and '--syms' not in args:
+        done |= {l.strip() for l in open(skip) if l.strip()}
     shown = 0
     for sym in order:
         if sym in done and "--syms" not in args:
