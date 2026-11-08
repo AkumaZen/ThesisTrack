@@ -38,15 +38,49 @@
 <section class="mb-3 pb-3 border-b border-border" aria-label="Price target" data-testid="price-target">
 	<h3 class="text-xs font-semibold uppercase tracking-wide text-muted-fg mb-2">Price target (base case, FY+2E)</h3>
 
+	<!-- Target price always sits top left with the current price directly below it. -->
+	<div class="flex flex-wrap items-start gap-x-10 gap-y-3">
+		<dl class="text-sm" data-testid="pt-headline">
+			<div>
+				<dt class="text-xs text-muted-fg">Target price</dt>
+				<dd class="text-xl font-bold" data-testid="pt-target">{pt ? money(pt.target) : 'Not set'}</dd>
+			</div>
+			<div class="mt-2">
+				<dt class="text-xs text-muted-fg">Current price</dt>
+				<dd class="font-semibold" data-testid="pt-current">{currentPrice != null ? money(currentPrice) : 'No stored price yet'}</dd>
+			</div>
+		</dl>
+		{#if pt}
+			<dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+				<div>
+					<dt class="text-xs text-muted-fg">{pt.state === 'reached' ? 'Beyond target' : 'Upside to target'}</dt>
+					<dd class="font-semibold" data-testid="pt-upside">
+						{#if pt.upside_pct == null}
+							Not available
+						{:else if pt.state === 'reached'}
+							{signed(Math.abs(pt.upside_pct))}
+						{:else}
+							{signed(pt.upside_pct)}
+						{/if}
+					</dd>
+				</div>
+				<div>
+					<dt class="text-xs text-muted-fg">Entry price</dt>
+					<dd class="font-semibold" data-testid="pt-entry">{entryPrice != null ? money(entryPrice) : 'Not recorded'}</dd>
+				</div>
+			</dl>
+		{/if}
+	</div>
+
 	{#if !priceTarget || priceTarget.state === 'no_valuation'}
-		<p class="text-sm" data-testid="target-none">
+		<p class="mt-3 text-sm" data-testid="target-none">
 			<strong>No base-case valuation yet.</strong>
 			{#if priceTarget?.symbol}
 				<a class="underline ml-1" href={`/valuation/company/${encodeURIComponent(priceTarget.symbol)}`}>Open the valuation for {priceTarget.symbol}</a>
 			{/if}
 		</p>
 	{:else if priceTarget.state === 'no_target'}
-		<p class="text-sm" data-testid="target-unavailable">
+		<p class="mt-3 text-sm" data-testid="target-unavailable">
 			<strong>Base-case target unavailable.</strong>
 			{priceTarget.reason === 'no_company_data'
 				? 'The company data behind the valuation is not loaded yet.'
@@ -54,33 +88,6 @@
 			<a class="underline ml-1" href={`/valuation/company/${encodeURIComponent(priceTarget.symbol)}`}>Open the valuation</a>
 		</p>
 	{:else if pt}
-		<dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2 text-sm">
-			<div>
-				<dt class="text-xs text-muted-fg">Entry price</dt>
-				<dd class="font-semibold" data-testid="pt-entry">{entryPrice != null ? money(entryPrice) : 'Not recorded'}</dd>
-			</div>
-			<div>
-				<dt class="text-xs text-muted-fg">Current price</dt>
-				<dd class="font-semibold" data-testid="pt-current">{currentPrice != null ? money(currentPrice) : 'No stored price yet'}</dd>
-			</div>
-			<div>
-				<dt class="text-xs text-muted-fg">Target</dt>
-				<dd class="font-semibold" data-testid="pt-target">{money(pt.target)}</dd>
-			</div>
-			<div>
-				<dt class="text-xs text-muted-fg">{pt.state === 'reached' ? 'Beyond target' : 'Upside to target'}</dt>
-				<dd class="font-semibold" data-testid="pt-upside">
-					{#if pt.upside_pct == null}
-						Not available
-					{:else if pt.state === 'reached'}
-						{signed(Math.abs(pt.upside_pct))}
-					{:else}
-						{signed(pt.upside_pct)}
-					{/if}
-				</dd>
-			</div>
-		</dl>
-
 		<div class="mt-3" data-testid="pt-status">
 			{#if pt.state === 'no_current'}
 				<p class="text-sm">No stored current price yet, so progress to target can't be shown.</p>
