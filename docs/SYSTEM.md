@@ -342,7 +342,8 @@ This is shared by sector rotation, scanner, breadth, returns, watchlist trends a
 - Angel One client (`server/angelone.ts`): login with `ANGEL_CLIENT_CODE`, `ANGEL_PIN`, TOTP from `ANGEL_TOTP_SECRET`, `ANGEL_API_KEY`. Scrip master lookup (NSE `-EQ` preferred, then other series, then BSE), LTP, daily candles, index candles, market depth, batched quotes (50 tokens per request). Concurrent identical requests are collapsed.
 - Rate limits (`server/rateLimiter.ts`): multi-window sliding limiter per endpoint (login, candles about 2 per second, LTP, quote).
 - Stored series: `company_growth_series_cache` (about 700 calendar days so a 200-day average is complete across a year of chart). `readCachedSeries` never fetches.
-- Refresh from one quote (`server/refreshMerge.ts`, `server/batchRefresh.ts`): if the stored series is one session behind, append today's quote; if current, leave it; if far behind or a jump over 20% (split or bonus), refetch the full history. Quotes before about 15:30 IST plus settlement are provisional.
+- Refresh from one quote (`server/refreshMerge.ts`, `server/batchRefresh.ts`): if the stored series is one session behind, append today's quote; if current, leave it; if a jump over 20% (split or bonus), refetch the full history. Quotes before about 15:30 IST plus settlement are provisional.
+- Gap fill: a series up to 45 days behind (a missed run, a holiday week, a special session such as Sunday Muhurat trading, which a quote cannot bring) gets only the missing days from one short history fetch (`mergeGapFill`). The fetch must overlap the last stored session at the same close (within 2%) and show no jump over 20%, or the full history is refetched. Further behind, or no stored series: full refetch.
 - Who refreshes:
   - "Refresh all sectors" and "Load missing history" in the browser (`refreshAll.ts`, `historyLoad.ts`) send batches of 50 (25 for full-history loads) to `POST /api/valuation/refresh-batch`.
   - Long batch jobs run in a module-level `BackgroundRun` (`backgroundRun.svelte.ts`, `valuationRuns.ts`) so they continue across page navigation; `shell/BackgroundRuns.svelte` shows progress and Cancel on every page. A full reload ends them. (On `feat/guest-mode`; not on master yet.)
@@ -420,7 +421,7 @@ Personal alerts (Web Push and Telegram):
 | Trigger | Endpoint or function | What it does |
 | --- | --- | --- |
 | cron-job.org, every minute, `Authorization: Bearer $CRON_SECRET` | `GET/POST /api/cron/announcements` (60 s) | `runAnnouncementCheck`: tag backlog, fetch tracked companies' announcements (last 3 days, 4 at a time), summarise up to 5, deliver pushes, price alerts, then within a 30 s extras budget: board-meeting calendar, bulk/block deals, shareholding, deal and holding alerts, market-wide feeds (`runMarketIntel`). With time left (at least 5 s of a 50 s budget) one slice of the intraday price pass (`runIntradaySlice`). |
-| Vercel cron `0 11 * * 1-5` (16:30 IST) | `GET /api/cron/sector-rotation` (300 s) | Under the price lease: `warmAllSectors` (stalest first, every basket and watchlist symbol), then `refreshBreadth`, `appendDailyBreadth`, `runScanSnapshots`. |
+| Vercel cron `0 11 * * 1-5` (16:30 IST), catch-ups `0 13 * * 1-5` (18:30), `0 15 * * 1-5` (20:30), `0 2 * * 2-6` (07:30 next morning) | `GET /api/cron/sector-rotation` (300 s; the catch-ups add `?run=` so each is its own cron entry) | Under the price lease: `warmAllSectors` (stalest first, every basket, watchlist and market cap universe symbol; history fetches stop after the 150 s `PRICE_BUDGET_MS`, the rest wait for the next run), then `refreshBreadth`, `appendDailyBreadth`, `runScanSnapshots`. A run with nothing stale costs one quote request per 50 symbols. Returns the price tally (`prices`) and `pricesMs`. |
 | Vercel cron `30 9 * * 1-5` (15:00 IST) | `GET /api/cron/alerts` (120 s) | `runPriceChecks` (fair value crossings; skips outside market hours). |
 | Manual | `/api/cron/market-intel` | Extra top-up of the NSE feeds. |
 | Manual or script | `/api/cron/breadth-backfill?budget=&retry=1&rebuild=1` | One slice of the whole-market breadth backfill. |
@@ -428,7 +429,7 @@ Personal alerts (Web Push and Telegram):
 
 Intraday price passes (`server/intradayPrices.ts`): a new pass every 30 minutes from 09:15 to 15:30 IST on weekdays plus one settle pass after 16:00, worked in 15 s slices with a cursor in `app_meta`; a lease keeps it from overlapping the nightly job or a manual refresh.
 
-Vercel Hobby crons can run only once a day, which is why the per-minute work goes through cron-job.org.
+Vercel Hobby crons can run only once a day each (and fire anywhere within the scheduled hour), which is why the per-minute work goes through cron-job.org and the price catch-ups are separate entries.
 All cron endpoints return 503 when `CRON_SECRET` is not configured.
 
 ---

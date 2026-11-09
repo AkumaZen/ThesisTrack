@@ -43,9 +43,12 @@ export function buildRefreshQueue(
  *  full history fetch (about half a second at the candles rate limit), and the market cap list adds
  *  up to ~1,500 of them. */
 export const MAX_COLD_PER_RUN = 40;
-/** Stop starting batches once this many full history fetches have been made in one run (a batch
- *  can also turn up gaps, which cost a full fetch too). The stalest go first, so the rest wait. */
-export const MAX_FULL_PER_RUN = 100;
+/** How long a time-limited run (the Vercel cron, 300 s) spends fetching prices before it stops
+ *  starting history fetches: the rest wait for the next run (the stalest go first). The remainder
+ *  of the 300 s covers the fetches still in flight, the alert checks, breadth and scans. A fixed
+ *  count of fetches was the old limit; it let a market-wide gap (a special session such as Muhurat
+ *  trading) take two weeks of daily runs to clear. */
+export const PRICE_BUDGET_MS = 150_000;
 
 /** Keeps every symbol that already has a stored series (and any in `exempt`, the baskets and
  *  watchlists, which were never capped), but at most `max` of the others without one. The
@@ -67,7 +70,9 @@ export function capColdSymbols(
 	return { queue: queue.filter((s) => !coldSet.has(s) || keep.has(s)), deferred: cold.length - max };
 }
 
-export async function warmAllSectors() {
+/** `deadline` (epoch ms): stop starting price fetches after it. None for a long-running server. */
+export async function warmAllSectors(options: { deadline?: number } = {}) {
+	const { deadline } = options;
 	try {
 		await refreshBenchmarkCandles();
 	} catch (e) {
@@ -106,23 +111,33 @@ export async function warmAllSectors() {
 
 	// Fifty at a time: one quote request brings the symbols that are a session behind up to date;
 	// the rest (new, or a longer gap) are fetched in full. A failed batch must not stop the others.
-	let fullFetches = 0;
-	for (const batch of chunk(queue, BATCH_SIZE)) {
-		if (fullFetches >= MAX_FULL_PER_RUN) {
-			console.log('[sector-rotation-scheduler] full fetch budget used up; the rest wait for the next run');
+	const tally = { batches: 0, appended: 0, history: 0, deferred: 0, failed: 0 };
+	const batches = chunk(queue, BATCH_SIZE);
+	for (const batch of batches) {
+		if (deadline !== undefined && Date.now() >= deadline) {
+			console.log(`[sector-rotation-scheduler] time budget used up; ${batches.length - tally.batches} batches wait for the next run`);
 			break;
 		}
+		tally.batches++;
 		try {
-			const summary = await refreshBatch(batch);
-			fullFetches += summary.fullFetches;
-			const { results } = summary;
-			for (const r of results) {
-				if (r.outcome === 'failed') console.error(`[sector-rotation-scheduler] ${r.symbol} refresh failed: ${r.reason}`);
+			const summary = await refreshBatch(batch, {}, { deadline });
+			tally.history += summary.fullFetches;
+			for (const r of summary.results) {
+				if (r.outcome === 'appended') tally.appended++;
+				else if (r.outcome === 'deferred') tally.deferred++;
+				else if (r.outcome === 'failed') {
+					tally.failed++;
+					console.error(`[sector-rotation-scheduler] ${r.symbol} refresh failed: ${r.reason}`);
+				}
 			}
 		} catch (e) {
 			console.error(`[sector-rotation-scheduler] batch starting ${batch[0]} failed:`, e);
 		}
 	}
+
+	console.log(
+		`[sector-rotation-scheduler] ${queue.length} queued, ${tally.batches} batches, ${tally.appended} appended, ${tally.history} history fetches, ${tally.deferred} deferred, ${tally.failed} failed`
+	);
 
 	// Caches are now fresh: this is the cheap moment to look for sector flips and new breakouts
 	// (zero extra Angel One calls), so alerts land as soon as the data does.
@@ -131,6 +146,7 @@ export async function warmAllSectors() {
 	} catch (e) {
 		console.error('[sector-rotation-scheduler] alert checks failed:', e);
 	}
+	return { queued: queue.length, ...tally };
 }
 
 /** Starts the in-process stand-in for the Vercel crons (a long-running server, e.g. local dev):
