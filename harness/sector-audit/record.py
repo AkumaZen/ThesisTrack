@@ -51,8 +51,11 @@ def main():
             sources.append({"type": "official_website", "url": ev["website"][0]["url"], "fetched": ev["fetched_at"]})
         for x in ev.get("extra", []) if "extra" in kinds else []:
             sources.append({"type": "official_page", "url": x["url"]})
+        prev = ev["current_baskets"]
+        if isinstance(prev, str):  # some evidence stubs store the universe's pipe-joined string
+            prev = [b for b in prev.split("|") if b]
         known[sym] = {"sym": sym, "name": ev["name"], "status": "VERIFIED" if status == "V" else "UNVERIFIED",
-                      "baskets": [] if baskets == "-" else baskets.split(","), "previous_baskets": ev["current_baskets"],
+                      "baskets": [] if baskets == "-" else baskets.split(","), "previous_baskets": prev,
                       "sources": sources, "activities": activities, "rationale": rationale,
                       "reviewed_at": time.strftime("%Y-%m-%d")}
         added += 1
