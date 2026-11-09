@@ -312,7 +312,7 @@ export const users = pgTable('users', {
 	mustChangePassword: boolean('must_change_password').notNull().default(false)
 });
 
-// Guest mode (migration 0035): the listing symbols (uppercase NSE, else BSE) a visitor without
+// Guest mode (migration 0037): the listing symbols (uppercase NSE, else BSE) a visitor without
 // an account may see. Toggled by an admin from the company pages; read by lib/server/showcase.ts.
 export const showcaseSymbols = pgTable('showcase_symbols', {
 	symbol: text('symbol').primaryKey(),
@@ -423,6 +423,17 @@ export const customNotes = pgTable('custom_notes', {
 	createdBy: varchar('created_by', { length: 80 }).notNull(),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const thesisImages = pgTable('thesis_images', {
+	id: bigserial('id', { mode: 'number' }).primaryKey(),
+	scenarioId: bigint('scenario_id', { mode: 'number' }).notNull().references(() => thesisScenarios.id, { onDelete: 'cascade' }),
+	title: varchar('title', { length: 120 }).notNull(),
+	category: varchar('category', { length: 30 }).notNull(),
+	caption: text('caption').notNull().default(''),
+	sourceUrl: text('source_url').notNull().default(''),
+	imageData: text('image_data').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
 export const sectors = pgTable('sectors', {

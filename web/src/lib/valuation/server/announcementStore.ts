@@ -1,5 +1,7 @@
 import { and, asc, desc, eq, gt, inArray, isNull, lt, notExists, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
+import { companies, thesisScenarios, thesisVersions } from '$lib/server/db/schema';
+import { isSubstantiveThesis } from '$lib/server/services/versioning';
 import {
 	announcementDeliveries,
 	announcements,
@@ -49,7 +51,10 @@ export async function isTracked(userId: number, nseSymbol: string): Promise<bool
 /** Every symbol anybody tracks, once. */
 export async function distinctTrackedSymbols(): Promise<string[]> {
 	const rows = await db.selectDistinct({ symbol: trackedCompanies.nseSymbol }).from(trackedCompanies);
-	return rows.map((r) => r.symbol);
+	const theses = await db.select({ symbol: companies.nseTicker, data: thesisVersions.thesisData }).from(companies)
+		.innerJoin(thesisScenarios, eq(thesisScenarios.companyId, companies.companyId))
+		.innerJoin(thesisVersions, eq(thesisVersions.versionId, thesisScenarios.currentVersionId));
+	return [...new Set([...rows.map((r) => r.symbol), ...theses.filter((r) => r.symbol && isSubstantiveThesis(r.data)).map((r) => r.symbol!.toUpperCase())])];
 }
 
 // ---- announcements ----
@@ -76,13 +81,14 @@ export async function saveAnnouncements(rows: ParsedAnnouncement[]): Promise<num
 	return inserted.length;
 }
 
-export const listAnnouncements = (nseSymbol: string, limit = 50) =>
-	db
+export const listAnnouncements = (nseSymbol: string, limit: number | null = 50) => {
+	const query = db
 		.select()
 		.from(announcements)
 		.where(eq(announcements.nseSymbol, nseSymbol))
-		.orderBy(desc(announcements.announcedAt))
-		.limit(limit);
+		.orderBy(desc(announcements.announcedAt));
+	return limit === null ? query : query.limit(limit);
+};
 
 /** Recent announcements of tracked companies that still lack a summary (newest first). */
 export function listToSummarise(symbols: string[], now: Date, limit: number): Promise<AnnouncementRow[]> {

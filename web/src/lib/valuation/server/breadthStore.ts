@@ -1,4 +1,4 @@
-import { desc, inArray, sql } from 'drizzle-orm';
+import { desc, inArray, max, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { companyGrowthSeriesCache, marketBreadth } from '$lib/server/db/valuationSchema';
 import { addSymbolBreadth, BREADTH_DAYS, lastSessionDates, newBreadthRows, type BreadthRow } from '../breadth';
@@ -27,6 +27,12 @@ const toRow = (r: typeof marketBreadth.$inferSelect): BreadthRow => ({
 export async function readBreadth(days = BREADTH_DAYS): Promise<BreadthRow[]> {
 	const rows = await db.select().from(marketBreadth).orderBy(desc(marketBreadth.asOf)).limit(days);
 	return rows.map(toRow).reverse();
+}
+
+/** When the newest stored breadth was computed (ISO), or null when nothing is stored. */
+export async function readBreadthComputedAt(): Promise<string | null> {
+	const [row] = await db.select({ at: max(marketBreadth.computedAt) }).from(marketBreadth);
+	return row?.at ? new Date(row.at).toISOString() : null;
 }
 
 /** Recomputes breadth for the last BREADTH_DAYS sessions from the stored candles of the scanner

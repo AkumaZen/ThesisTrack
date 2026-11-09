@@ -222,6 +222,17 @@ describe('planDailyAppend', () => {
 		expect(plan.append.map((a) => a.symbol)).toEqual(['OK1', 'OK2']);
 	});
 
+	it('reads the previous common session from the reference tips, not a thin batch', () => {
+		// The batch holds one stock a session behind; on its own it would be taken as the previous session.
+		const batch = [{ symbol: 'LATE', lastDay: thu }];
+		const market = [...batch, ...Array.from({ length: 20 }, (_, i) => ({ symbol: `M${i}`, lastDay: fri }))];
+		const quotes = new Map([['LATE', q('2026-10-19', 5)]]);
+		expect(planDailyAppend(batch, quotes).append.map((a) => a.symbol)).toEqual(['LATE']);
+		const plan = planDailyAppend(batch, quotes, market);
+		expect(plan.append).toEqual([]);
+		expect(plan.stale).toEqual(['LATE']);
+	});
+
 	it('leaves a suspended symbol (old quote) alone', () => {
 		const tips = [
 			{ symbol: 'OK', lastDay: fri },

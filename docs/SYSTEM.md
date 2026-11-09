@@ -91,7 +91,7 @@ Live code:
 | `web/src/lib/valuation/components/` | Svelte components for the valuation tools. |
 | `web/src/lib/components/` | Thesis components and the app shell (`shell/`). |
 | `web/src/routes/` | Pages and API endpoints (section 9 lists every endpoint). |
-| `web/drizzle/` | Raw SQL migrations `0000` to `0035` (there is no `0029`). |
+| `web/drizzle/` | Raw SQL migrations `0000` to `0037` (there is no `0029`). |
 | `web/scripts/` | One-off and operational Node scripts (section 10). |
 | `web/_prod_*.mjs` | Production database tools that refuse any non-production host. |
 | `web/tests/` | Vitest integration tests, Playwright e2e (`tests/e2e`) and opt-in live tests (`tests/live`). |
@@ -164,7 +164,7 @@ Anyone can explore without an account.
 - "Explore without an account" on `/login` calls `POST /api/auth/guest`, which sets the unsigned cookie `tt_guest=1` (30 days). A real session always wins over it.
 - The guest is the stand-in user `GUEST_USER` (id 0, role `guest`) from `web/src/lib/guest.ts`. Id 0 matches no account, so personal stores come back empty.
 - Policy (`web/src/lib/guest.ts`): every non-GET is 403 with `{guest: true, message: GUEST_WRITE_MESSAGE}`; APIs are deny-by-default with an allowlist (`guestMayCallApi`); pages use `guestMayOpenPage`; locked features (keys `master-tracker`, `alerts`, `lists`, `scans`, `settings`, `team-review`, `ai-import`, `sectors`) redirect to a preview at `/locked/<key>`; other pages go to `/guest/members-only`.
-- Showcase: guests only see companies listed in `public.showcase_symbols` (migration `0035`, read through `web/src/lib/server/showcase.ts`, 30 second cache). The row `'*'` (`SHOWCASE_ALL`) shows every company, including future ones; production has it. Requests about other companies return 404 as if they did not exist. Admins toggle per company with `ShowcaseToggle.svelte` (`PUT /api/admin/showcase`).
+- Showcase: guests only see companies listed in `public.showcase_symbols` (migration `0037`, read through `web/src/lib/server/showcase.ts`, 30 second cache). The row `'*'` (`SHOWCASE_ALL`) shows every company, including future ones; production has it. Requests about other companies return 404 as if they did not exist. Admins toggle per company with `ShowcaseToggle.svelte` (`PUT /api/admin/showcase`).
 - No live loads: each guest request runs inside `runAsGuest()` (`web/src/lib/server/guestContext.ts`), where any cross-origin `fetch` throws `GuestLiveFetchError`. Code that would scrape or call an API serves stored data or a friendly "sign in to load it" 404 (for example `CompanyNotLoadedError` in `companyCache.ts`).
 - Identity redaction: every guest response passes `redactGuestResponse` (`guestResponse.ts`, pure rules in `guestRedact.ts`): person fields become "Analyst N" (stable by account age; unknown people "Team member"), account ids become null, `members` lists are emptied, emails and display names inside text are replaced. A guest's `?owner=Analyst N` is mapped back on the way in (`unmaskGuestParams`).
 - UI: guest banner, locks on nav tabs, `LockedAction.svelte` ("Subscribers only - coming soon") in place of write buttons, `GuestNotice.svelte` toast for refused calls (`guestNotice.svelte.ts` wraps `fetch`), `GuestNote.svelte` in valuation panels, a guest card in `+error.svelte`.
@@ -215,7 +215,7 @@ Anyone can explore without an account.
 | `sectors`, `sector_companies` | Thesis-side sector groupings (separate from the market sector taxonomy). |
 | `training_splits` | Train/eval split per company for the future SFT export. |
 | `users`, `sessions` | Accounts and sessions. |
-| `showcase_symbols` | Guest showcase (migration 0035). |
+| `showcase_symbols` | Guest showcase (migration 0037). |
 
 `valuation` (everything else, `valuationSchema.ts` and `marketIntelSchema.ts`):
 
@@ -509,7 +509,7 @@ Template: `web/.env.example`. Local secrets live in `web/.env` and the root `.en
 ### 10.2 Local development
 
 1. `docker compose up -d postgres` from the repo root (Postgres 16 on port 45432, user/db `thesis`).
-2. Apply migrations `0000` to `0035` in order with `docker exec -i thesistrack-postgres-1 psql -U thesis -d thesis < web/drizzle/<file>`.
+2. Apply migrations `0000` to `0037` in order with `docker exec -i thesistrack-postgres-1 psql -U thesis -d thesis < web/drizzle/<file>`.
 3. Seed taxonomy as needed (tests use `web/tests/taxonomyFixture.ts`); `web/_prod_to_local.mjs <prodEnvFile>` copies production into the local database (destructive locally).
 4. `cd web && npm ci && npm run dev`.
 5. Python (Master Tracker documents locally): create `services/concall/.venv` and install `requirements.txt`; the Node side runs it as a subprocess.
@@ -602,5 +602,5 @@ Template: `web/.env.example`. Local secrets live in `web/.env` and the root `.en
 Check `.claude/project-memory.md` and `git log` for anything newer.
 
 - On `master` (deployed): everything in this document except the items below. `feat/breadth-50dma` (DMA breadth, intraday price passes, lists merged into sections, calmer UI) is merged into master (`af42525`).
-- Only on `feat/guest-mode` (not pushed when last recorded): guest mode and showcase (migration `0035`, already applied to production with a `'*'` row), background runs that survive navigation, and recent fixes.
+- Only on `feat/guest-mode` (not pushed when last recorded): guest mode and showcase (migration `0037`, renamed from `0035`, already applied to production with a `'*'` row), background runs that survive navigation, and recent fixes.
 - Open items recorded in project memory: production browser verification of the HFCL document fix; retry or upload for failed document downloads; Telegram is configured only if its three env vars and the webhook exist; 13 active `mcap_universe` rows have no price source (deactivation not approved); weekend candles in some `company_growth_series_cache` rows (cleanup not approved); a leaked Vercel bypass secret should be rotated; the branch `feat/guidance-tables-import-redesign` is unmerged.

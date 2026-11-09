@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/server/db', () => ({ db: {} }));
 
-import { appendDailyBreadth, runBreadthBackfill, type SeriesRow } from './breadthDmaStore';
+import { appendDailyBreadth, applyBreadthQuotes, runBreadthBackfill, type SeriesRow } from './breadthDmaStore';
 import type { Candle } from './angelone';
 import type { ClosesStatus, UniverseScrip } from '../breadthDma';
 
@@ -157,5 +157,37 @@ describe('appendDailyBreadth', () => {
 		});
 		const r = await appendDailyBreadth(t.deps);
 		expect(r).toMatchObject({ appended: 0, weekend: 3 });
+	});
+});
+
+describe('applyBreadthQuotes', () => {
+	const day = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / 86_400_000);
+	const tips = [
+		{ symbol: 'A', lastDay: day('2026-10-26') },
+		{ symbol: 'B', lastDay: day('2026-10-27') },
+		{ symbol: 'C', lastDay: day('2026-10-26') },
+		{ symbol: 'OTHER', lastDay: day('2026-10-26') }
+	];
+
+	it('appends a new session, settles the same day and leaves other symbols alone', async () => {
+		const apply = vi.fn(async (_plan: { append: { symbol: string }[]; replace: { symbol: string }[] }) => {});
+		const quotes = new Map([
+			['A', { date: '2026-10-27', ltp: 101 }],
+			['B', { date: '2026-10-27', ltp: 202 }],
+			['OTHER', { date: '2026-10-27', ltp: 9 }]
+		]);
+		const r = await applyBreadthQuotes(['A', 'B', 'C'], quotes, tips, apply as never);
+		expect(r).toEqual({ appended: 1, replaced: 1, stale: 0 });
+		expect(apply).toHaveBeenCalledOnce();
+		const plan = apply.mock.calls[0][0];
+		expect(plan.append.map((p) => p.symbol)).toEqual(['A']);
+		expect(plan.replace.map((p) => p.symbol)).toEqual(['B']);
+	});
+
+	it('writes nothing when no symbol has a usable quote', async () => {
+		const apply = vi.fn(async () => {});
+		const r = await applyBreadthQuotes(['A'], new Map(), tips, apply);
+		expect(r).toEqual({ appended: 0, replaced: 0, stale: 0 });
+		expect(apply).not.toHaveBeenCalled();
 	});
 });

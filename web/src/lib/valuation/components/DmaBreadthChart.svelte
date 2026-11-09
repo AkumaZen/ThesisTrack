@@ -3,6 +3,7 @@
 	// (most stocks weak), a green zone below it, the area under the line, a dashed 50% reference and
 	// a hover/keyboard readout. Plain SVG measured to its container, like the app's other charts.
 	import { isoToDay, pctOf } from '../breadthDma';
+	import { formatIst } from '../livePass';
 
 	interface Point {
 		asOf: string;
@@ -12,7 +13,11 @@
 		below200: number;
 	}
 
-	let { points, computedAt }: { points: Point[]; computedAt: string | null } = $props();
+	let {
+		points,
+		computedAt,
+		liveAsOf = null
+	}: { points: Point[]; computedAt: string | null; liveAsOf?: string | null } = $props();
 
 	type Range = '6M' | '1Y' | 'All';
 	const RANGES: { id: Range; months: number | null }[] = [
@@ -122,19 +127,9 @@
 		return `${d} ${MONTHS[m - 1]} ${y}`;
 	};
 	const weekday = (iso: string) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(`${iso}T00:00:00Z`).getUTCDay()];
-	const stamp = $derived(
-		computedAt
-			? new Intl.DateTimeFormat('en-GB', {
-					timeZone: 'Asia/Kolkata',
-					day: 'numeric',
-					month: 'short',
-					year: 'numeric',
-					hour: '2-digit',
-					minute: '2-digit',
-					hour12: false
-				}).format(new Date(computedAt))
-			: null
-	);
+	const stamp = $derived(computedAt ? formatIst(computedAt) : null);
+	// The newest day is still live (before the close): say so in the stamp, the legend and the tooltip.
+	const liveShown = $derived(Boolean(liveAsOf && series.length && series[series.length - 1].asOf === liveAsOf));
 
 	function pointer(e: PointerEvent) {
 		const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -191,7 +186,11 @@
 			</div>
 		</div>
 	</div>
-	{#if stamp}<p class="dma-stamp">Updated {stamp} IST</p>{/if}
+	{#if stamp}
+		<p class="dma-stamp" data-testid="dma-stamp" role="status">
+			{#if liveShown}<strong class="dma-live">Live, provisional</strong> &middot; updated {stamp} IST &middot; final after the close{:else}Updated {stamp} IST{/if}
+		</p>
+	{/if}
 
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 	<div
@@ -229,7 +228,7 @@
 			{#if hover != null && visible[hover]}
 				{@const hp = visible[hover]}
 				<div class="dma-tip" style:left="{tipX}px" style:top="{Math.min(Math.max(yAt(hp.value) - 30, M.top), M.top + plotH - 64)}px" style:width="{TIP_W}px">
-					<strong>{weekday(hp.asOf)} {fmtDate(hp.asOf)}</strong>
+					<strong>{weekday(hp.asOf)} {fmtDate(hp.asOf)}{hp.asOf === liveAsOf ? ' (live, provisional)' : ''}</strong>
 					<span>% below {basis} dma: <b>{hp.value.toFixed(1)}</b></span>
 					<span class="dma-tip-n">{num.format(hp.below)} of {num.format(hp.eligible)} stocks</span>
 				</div>
@@ -242,10 +241,10 @@
 	{#if latest}
 		<figcaption class="dma-note" data-testid="dma-summary" aria-live="polite">
 			{#if hover != null && visible[hover]}
-				{fmtDate(visible[hover].asOf)}: {visible[hover].value.toFixed(1)}% of {num.format(visible[hover].eligible)} stocks closed below their
+				{fmtDate(visible[hover].asOf)}{visible[hover].asOf === liveAsOf ? ' (live, provisional)' : ''}: {visible[hover].value.toFixed(1)}% of {num.format(visible[hover].eligible)} stocks closed below their
 				{basis} day average ({num.format(visible[hover].below)}).
 			{:else}
-				{fmtDate(latest.asOf)}: {latest.value.toFixed(1)}% of {num.format(latest.eligible)} NSE stocks closed below their {basis} day average
+				{fmtDate(latest.asOf)}{latest.asOf === liveAsOf ? ' (live, provisional)' : ''}: {latest.value.toFixed(1)}% of {num.format(latest.eligible)} NSE stocks closed below their {basis} day average
 				({num.format(latest.below)}). Over {visible[0].asOf} to {latest.asOf} the range was {domain.min.toFixed(1)}% to {domain.max.toFixed(1)}%.
 			{/if}
 			Each day counts only stocks with at least {basis} closes up to that day (so the count varies).
@@ -304,6 +303,11 @@
 		font-size: 10px;
 		color: var(--muted);
 		text-align: right;
+	}
+	.dma-live {
+		color: var(--ink);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 	}
 	.dma-controls {
 		display: flex;
