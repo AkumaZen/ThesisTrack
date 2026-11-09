@@ -33,6 +33,9 @@ function setup(opts: {
 	unlisted?: string[];
 	quoteError?: boolean;
 	full?: (s: string) => Promise<unknown | null>;
+	/** The short history fetch for a gap fill. By default it returns nothing usable, so a gap
+	 *  falls through to the full refetch. */
+	recent?: (s: string, days: number) => Promise<Candle[] | null>;
 	calendar?: string[] | null;
 	now?: Date;
 }) {
@@ -45,16 +48,19 @@ function setup(opts: {
 		return { quotes, unlisted, missing };
 	});
 	const fullRefresh = vi.fn(opts.full ?? (async () => ({ candles: [] })));
+	const fetchRecent = vi.fn(opts.recent ?? (async (): Promise<Candle[] | null> => []));
 	return {
 		writes,
 		fetchQuotes,
 		fullRefresh,
+		fetchRecent,
 		deps: {
 			readSeries: async (symbols: string[]) =>
 				new Map(Object.entries(opts.stored).filter(([s]) => symbols.includes(s))),
 			fetchQuotes,
 			writeSeries: async (rows: { symbol: string; candles: Candle[] }[]) => void writes.push(rows),
 			fullRefresh,
+			fetchRecent,
 			readCalendar: async () => opts.calendar ?? null,
 			now: () => opts.now ?? NOW
 		}
@@ -94,8 +100,8 @@ describe('refreshBatch', () => {
 		expect(t.fetchQuotes).toHaveBeenCalledTimes(1);
 		expect(t.writes).toHaveLength(1);
 		expect(t.writes[0].map((w) => w.symbol)).toEqual(['AAA']);
-		expect(t.fullRefresh.mock.calls.map((c) => c[0])).toEqual(['NEW', 'CCC', 'EEE']);
-		expect(r).toMatchObject({ quoteCalls: 1, fullFetches: 3 });
+		expect(t.fullRefresh.mock.calls.map((c) => c[0]).sort()).toEqual(['CCC', 'EEE', 'NEW']);
+		expect(r).toMatchObject({ quoteCalls: 1, fullFetches: 4 }); // CCC: a short fetch, then the full one
 	});
 
 	it('reports unlisted when a full fetch finds no listing, and failed when it throws', async () => {
@@ -146,7 +152,7 @@ describe('refreshBatch', () => {
 			const t = setup({ stored, quotes, calendar, now: holidayNow });
 			const r = await refreshBatch(['AAA', 'BBB'], t.deps);
 			expect(r.results.map((x) => `${x.symbol}:${x.outcome}`)).toEqual(['AAA:appended', 'BBB:full']);
-			expect(r.fullFetches).toBe(1);
+			expect(r.fullFetches).toBe(2); // BBB: a short fetch, then the full one
 		});
 
 		it('falls back to the weekday rule when the benchmark is missing', async () => {
@@ -178,6 +184,81 @@ describe('refreshBatch', () => {
 			});
 			expect(r.results[0]).toMatchObject({ outcome: 'full', reason: 'gap' });
 		});
+	});
+
+	describe('gap fill', () => {
+		// Muhurat trading on Sunday 2026-11-08: the quote on Monday cannot bring that session.
+		const monday = new Date('2026-11-09T12:00:00Z');
+		const calendar = ['2026-11-05', '2026-11-06', '2026-11-08', '2026-11-09'];
+		const stored = { AAA: [candle('2026-11-05', 98), candle('2026-11-06', 100)] };
+		const quotes = { AAA: quote('AAA', '2026-11-09') };
+
+		it('fetches only the missing days and merges them onto the stored series', async () => {
+			const t = setup({
+				stored,
+				quotes,
+				calendar,
+				now: monday,
+				recent: async () => [candle('2026-11-06', 100), candle('2026-11-08', 101), candle('2026-11-09', 103)]
+			});
+			const r = await refreshBatch(['AAA'], t.deps);
+			expect(r.results[0]).toMatchObject({ outcome: 'appended', reason: 'gap filled' });
+			expect(r.fullFetches).toBe(1);
+			expect(t.fullRefresh).not.toHaveBeenCalled();
+			expect(t.fetchRecent).toHaveBeenCalledWith('AAA', 8);
+			expect(t.writes[1][0].candles.map((c) => c.date.slice(0, 10))).toEqual([
+				'2026-11-05',
+				'2026-11-06',
+				'2026-11-08',
+				'2026-11-09'
+			]);
+		});
+
+		it('refetches in full when the short fetch shows an adjusted history', async () => {
+			const t = setup({
+				stored,
+				quotes,
+				calendar,
+				now: monday,
+				recent: async () => [candle('2026-11-06', 50), candle('2026-11-08', 51), candle('2026-11-09', 52)]
+			});
+			const r = await refreshBatch(['AAA'], t.deps);
+			expect(r.results[0]).toMatchObject({ outcome: 'full', reason: 'corporate-action' });
+			expect(r.fullFetches).toBe(2);
+		});
+
+		it('reports unlisted when the short fetch finds no listing', async () => {
+			const t = setup({ stored, quotes, calendar, now: monday, recent: async () => null });
+			const r = await refreshBatch(['AAA'], t.deps);
+			expect(r.results[0]).toMatchObject({ outcome: 'unlisted' });
+			expect(t.fullRefresh).not.toHaveBeenCalled();
+		});
+
+		it('refetches in full, without a short fetch, when the series is far behind', async () => {
+			const t = setup({ stored: { AAA: [candle('2026-08-03', 100)] }, quotes, calendar, now: monday });
+			const r = await refreshBatch(['AAA'], t.deps);
+			expect(r.results[0]).toMatchObject({ outcome: 'full', reason: 'gap' });
+			expect(t.fetchRecent).not.toHaveBeenCalled();
+			expect(r.fullFetches).toBe(1);
+		});
+	});
+
+	it('defers the history fetches left once the deadline has passed', async () => {
+		let clock = NOW.getTime();
+		const t = setup({
+			stored: {},
+			full: async () => {
+				await new Promise((r) => setTimeout(r, 5));
+				clock += 1000;
+				return {};
+			}
+		});
+		const r = await refreshBatch(['A', 'B', 'C', 'D', 'E'], { ...t.deps, now: () => new Date(clock) }, { deadline: NOW.getTime() + 500 });
+		const outcomes = r.results.map((x) => x.outcome);
+		// The three workers each start one fetch before the clock moves; the next pick is past the deadline.
+		expect(outcomes.filter((o) => o === 'full')).toHaveLength(3);
+		expect(outcomes.filter((o) => o === 'deferred')).toHaveLength(2);
+		expect(r.fullFetches).toBe(3);
 	});
 
 	it('runs full refetches with bounded concurrency and keeps the result order', async () => {

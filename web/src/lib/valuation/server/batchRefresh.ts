@@ -1,9 +1,9 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { benchmarkSeriesCache, companyGrowthSeriesCache } from '$lib/server/db/valuationSchema';
-import { fetchDayQuotes, QUOTE_MAX_TOKENS, type Candle, type DayQuote } from './angelone';
+import { fetchDailyCandles, fetchDayQuotes, QUOTE_MAX_TOKENS, type Candle, type DayQuote } from './angelone';
 import { refreshCompanySeries } from './companyGrowthSeries';
-import { mergeQuote, type SessionCalendar } from './refreshMerge';
+import { candleDay, gapFillDays, mergeGapFill, mergeQuote, type SessionCalendar } from './refreshMerge';
 
 /** Full history refetches in flight at once inside one batch. candlesLimiter still enforces the
  *  Angel One caps per process; this only hides the network latency between calls. */
@@ -25,6 +25,7 @@ export interface BatchSummary {
 	results: BatchItem[];
 	/** Angel One calls this batch spent besides the full fetches, for the run log. */
 	quoteCalls: number;
+	/** History calls made (full refetches and short gap fills); each costs one candles request. */
 	fullFetches: number;
 }
 
@@ -33,6 +34,8 @@ interface Deps {
 	fetchQuotes: (symbols: string[]) => Promise<{ quotes: Map<string, DayQuote>; unlisted: string[]; missing: string[] }>;
 	writeSeries: (rows: { symbol: string; candles: Candle[] }[], fetchedAt: number) => Promise<void>;
 	fullRefresh: (symbol: string) => Promise<unknown | null>;
+	/** The last `days` calendar days of history, or null when Angel One has no listing. */
+	fetchRecent: (symbol: string, days: number) => Promise<Candle[] | null>;
 	/** Trading sessions from the stored Nifty 50, or null when unavailable. */
 	readCalendar: () => Promise<SessionCalendar | null>;
 	now: () => Date;
@@ -58,6 +61,7 @@ const realDeps: Deps = {
 			});
 	},
 	fullRefresh: refreshCompanySeries,
+	fetchRecent: fetchDailyCandles,
 	async readCalendar() {
 		try {
 			const [row] = await db
@@ -75,14 +79,16 @@ const realDeps: Deps = {
 
 /** Brings the stored prices of up to BATCH_SIZE symbols up to date. Symbols whose stored series
  *  ends the session before (or is current) are served from ONE quote request and a single
- *  database write; symbols with no series, a longer gap or a suspicious jump get the full
- *  history refetch. Results come back in the order given (duplicates dropped). */
+ *  database write; symbols a few sessions behind get only the missing days from one short history
+ *  fetch; symbols with no series, a long gap or a suspicious jump get the full history refetch.
+ *  Results come back in the order given (duplicates dropped). */
 export async function refreshBatch(
 	symbols: string[],
 	overrides: Partial<Deps> = {},
-	/** The background job caps the slow full refetches per call: the rest come back 'deferred'
-	 *  (untouched, nothing stored) and wait for the next pass or the nightly run. */
-	options: { maxFull?: number } = {}
+	/** The background jobs cap the slow history fetches: beyond `maxFull` per call, or once the
+	 *  clock passes `deadline` (epoch ms), the rest come back 'deferred' (untouched, nothing
+	 *  stored) and wait for the next pass. */
+	options: { maxFull?: number; deadline?: number } = {}
 ): Promise<BatchSummary> {
 	const deps = { ...realDeps, ...overrides };
 	const wanted = [...new Set(symbols.map((s) => s.toUpperCase()))];
@@ -139,13 +145,44 @@ export async function refreshBatch(
 	for (const [symbol] of queue.splice(options.maxFull ?? queue.length)) {
 		outcomes.set(symbol, { symbol, outcome: 'deferred', reason: needFull.get(symbol) });
 	}
-	const fullFetches = queue.length;
+	let fullFetches = 0;
+	const full = async (symbol: string, why: string) => {
+		fullFetches++;
+		const fresh = await deps.fullRefresh(symbol);
+		outcomes.set(symbol, fresh ? { symbol, outcome: 'full', reason: why } : { symbol, outcome: 'unlisted' });
+	};
+	// A series a few sessions behind (a missed run, a holiday week, a special session such as
+	// Muhurat trading) needs only the missing days: a short fetch merged onto what is stored.
+	const gapFill = async (symbol: string): Promise<boolean> => {
+		const series = stored.get(symbol);
+		const last = series?.at(-1);
+		const days = last ? gapFillDays(candleDay(last), deps.now()) : null;
+		if (!series || days === null) return false;
+		fullFetches++;
+		const fetched = await deps.fetchRecent(symbol, days);
+		if (!fetched) {
+			outcomes.set(symbol, { symbol, outcome: 'unlisted' });
+			return true;
+		}
+		const merged = mergeGapFill(series, fetched, deps.now());
+		if (merged.kind === 'full') {
+			await full(symbol, merged.reason);
+			return true;
+		}
+		await deps.writeSeries([{ symbol, candles: merged.candles }], deps.now().getTime());
+		outcomes.set(symbol, { symbol, outcome: 'appended', reason: 'gap filled' });
+		return true;
+	};
 	const worker = async () => {
 		for (let next = queue.shift(); next; next = queue.shift()) {
 			const [symbol, why] = next;
+			if (options.deadline !== undefined && deps.now().getTime() >= options.deadline) {
+				outcomes.set(symbol, { symbol, outcome: 'deferred', reason: why });
+				continue;
+			}
 			try {
-				const fresh = await deps.fullRefresh(symbol);
-				outcomes.set(symbol, fresh ? { symbol, outcome: 'full', reason: why } : { symbol, outcome: 'unlisted' });
+				if (why === 'gap' && (await gapFill(symbol))) continue;
+				await full(symbol, why);
 			} catch (e) {
 				outcomes.set(symbol, { symbol, outcome: 'failed', reason: e instanceof Error ? e.message : 'Unknown error' });
 			}

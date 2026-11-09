@@ -151,6 +151,63 @@ export function mergeQuote(
 	return { kind: 'appended', candles: [...kept, quoteToCandle(q, suffix, provisional)] };
 }
 
+/** A stored series this far behind (calendar days) is gap-filled with a short history fetch; one
+ *  further behind is refetched in full. */
+export const GAP_FILL_MAX_DAYS = 45;
+/** The overlapping session's close may differ this much between the stored and the freshly fetched
+ *  series (a settled live price vs the official close). More means the history was adjusted for a
+ *  split or bonus, and only a full refetch gives a consistent series. */
+const OVERLAP_TOLERANCE = 0.02;
+
+export type GapFillResult = { kind: 'appended'; candles: Candle[] } | { kind: 'full'; reason: 'gap' | 'corporate-action' };
+
+/** Calendar days to request so a short fetch reaches back to the last stored session (inclusive),
+ *  or null when the series is too far behind for a gap fill. */
+export function gapFillDays(lastStoredDay: string, now: Date = new Date()): number | null {
+	const behind = Math.ceil((Date.parse(`${istClock(now).day}T00:00:00Z`) - Date.parse(`${lastStoredDay}T00:00:00Z`)) / 86_400_000);
+	if (!(behind >= 0) || behind > GAP_FILL_MAX_DAYS) return null;
+	// A few days of slack so the last stored session is surely inside the range.
+	return behind + 5;
+}
+
+/** Fills the sessions missing after a stored series from a short history fetch (`fetched`, which
+ *  must reach back to the last stored session). The fetch is the exchange's own record, so it also
+ *  brings special sessions such as Muhurat trading that a single quote cannot. Falls back to a full
+ *  refetch when the overlap is missing or disagrees (an adjusted history) or the new sessions show
+ *  a corporate-action jump. */
+export function mergeGapFill(stored: Candle[], fetched: Candle[], now: Date = new Date()): GapFillResult {
+	const last = stored.at(-1);
+	if (!last) return { kind: 'full', reason: 'gap' };
+	const lastDay = candleDay(last);
+	const fresh = [...fetched].sort((a, b) => (candleDay(a) < candleDay(b) ? -1 : 1));
+	const overlap = fresh.find((c) => candleDay(c) === lastDay);
+	if (!overlap) return { kind: 'full', reason: 'gap' };
+	// A provisional stored close was a live price: hold it only to the corporate-action rule.
+	const tolerance = last.provisional ? CORPORATE_ACTION_JUMP : OVERLAP_TOLERANCE;
+	if (last.close > 0 && Math.abs(overlap.close - last.close) / last.close > tolerance) {
+		return { kind: 'full', reason: 'corporate-action' };
+	}
+	const added = fresh.filter((c) => candleDay(c) > lastDay);
+	let prev = overlap;
+	for (const c of added) {
+		if (jumped(prev.close, c.open) || jumped(prev.close, c.close)) return { kind: 'full', reason: 'corporate-action' };
+		prev = c;
+	}
+	const suffix = last.date.slice(10) || 'T00:00:00+05:30';
+	const restamp = (c: Candle): Candle => {
+		const out: Candle = { ...c, date: `${candleDay(c)}${suffix}` };
+		delete out.provisional;
+		if (isProvisionalQuote(candleDay(c), now)) out.provisional = true;
+		return out;
+	};
+	const newest = candleDay(added.at(-1) ?? overlap);
+	const cutoff = new Date(`${newest}T00:00:00Z`);
+	cutoff.setUTCDate(cutoff.getUTCDate() - KEEP_DAYS);
+	const keepFrom = ymd(cutoff);
+	const candles = [...stored.slice(0, -1), restamp(overlap), ...added.map(restamp)].filter((c) => candleDay(c) >= keepFrom);
+	return { kind: 'appended', candles };
+}
+
 /** Splits a list into runs of at most `size`. */
 export function chunk<T>(items: T[], size: number): T[][] {
 	const out: T[][] = [];

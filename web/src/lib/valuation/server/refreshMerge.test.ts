@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Candle, DayQuote } from './angelone';
-import { chunk, classifyGap, isProvisionalQuote, mergeQuote, previousSession, previousWeekday } from './refreshMerge';
+import {
+	chunk,
+	classifyGap,
+	gapFillDays,
+	isProvisionalQuote,
+	mergeGapFill,
+	mergeQuote,
+	previousSession,
+	previousWeekday
+} from './refreshMerge';
 
 const candle = (day: string, close: number, extra: Partial<Candle> = {}): Candle => ({
 	date: `${day}T00:00:00+05:30`,
@@ -171,5 +180,56 @@ describe('chunk', () => {
 		expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
 		expect(chunk([], 50)).toEqual([]);
 		expect(chunk(Array.from({ length: 101 }, (_, i) => i), 50).map((c) => c.length)).toEqual([50, 50, 1]);
+	});
+});
+
+describe('gap fill', () => {
+	// Muhurat trading on Sunday 2026-11-08 between Friday 11-06 and Monday 11-09.
+	const monday = new Date('2026-11-09T12:00:00Z'); // 17:30 IST
+	const stored = [candle('2026-11-05', 98), candle('2026-11-06', 100)];
+	const days = (cs: Candle[]) => cs.map((c) => c.date.slice(0, 10));
+
+	it('asks for enough days to reach the last stored session, and none when far behind', () => {
+		expect(gapFillDays('2026-11-06', monday)).toBe(8);
+		expect(gapFillDays('2026-11-09', monday)).toBe(5);
+		expect(gapFillDays('2026-09-01', monday)).toBeNull();
+	});
+
+	it('adds the missing sessions, special ones included, and takes the official overlap close', () => {
+		const r = mergeGapFill(stored, [candle('2026-11-09', 103), candle('2026-11-06', 100.5), candle('2026-11-08', 101)], monday);
+		expect(r.kind).toBe('appended');
+		if (r.kind !== 'appended') return;
+		expect(days(r.candles)).toEqual(['2026-11-05', '2026-11-06', '2026-11-08', '2026-11-09']);
+		expect(r.candles[1].close).toBe(100.5);
+		expect(r.candles.every((c) => c.date.endsWith('T00:00:00+05:30') && !c.provisional)).toBe(true);
+	});
+
+	it('marks a session still trading as provisional', () => {
+		const r = mergeGapFill(stored, [candle('2026-11-06', 100), candle('2026-11-09', 101)], new Date('2026-11-09T06:00:00Z'));
+		expect(r.kind === 'appended' && r.candles.at(-1)?.provisional).toBe(true);
+	});
+
+	it('needs a full refetch when the fetch does not reach the last stored session', () => {
+		expect(mergeGapFill(stored, [candle('2026-11-08', 101), candle('2026-11-09', 103)], monday)).toEqual({ kind: 'full', reason: 'gap' });
+		expect(mergeGapFill([], [candle('2026-11-09', 103)], monday)).toEqual({ kind: 'full', reason: 'gap' });
+	});
+
+	it('needs a full refetch when the overlap disagrees (the history was adjusted)', () => {
+		expect(mergeGapFill(stored, [candle('2026-11-06', 50), candle('2026-11-09', 51)], monday)).toEqual({
+			kind: 'full',
+			reason: 'corporate-action'
+		});
+	});
+
+	it('lets a provisional stored close differ by a normal price move', () => {
+		const live = [candle('2026-11-05', 98), candle('2026-11-06', 100, { provisional: true })];
+		expect(mergeGapFill(live, [candle('2026-11-06', 105), candle('2026-11-09', 106)], monday).kind).toBe('appended');
+	});
+
+	it('needs a full refetch on a corporate-action jump inside the new sessions', () => {
+		expect(mergeGapFill(stored, [candle('2026-11-06', 100), candle('2026-11-08', 101), candle('2026-11-09', 40)], monday)).toEqual({
+			kind: 'full',
+			reason: 'corporate-action'
+		});
 	});
 });
