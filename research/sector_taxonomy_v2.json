@@ -3178,6 +3178,13 @@
       "WSI",
       "VPRPL"
      ]
+    },
+    {
+     "key": "process_equipment",
+     "label": "Process & Industrial Equipment",
+     "description": "Dairy, food-process and industrial plant equipment, coding and marking systems",
+     "symbols": [],
+     "primary": []
     }
    ]
   },
